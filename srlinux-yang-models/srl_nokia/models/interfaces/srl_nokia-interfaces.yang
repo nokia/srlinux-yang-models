@@ -172,27 +172,27 @@ module srl_nokia-interfaces {
         error-message "Breakout not supported for this port or at this level";
       }
       leaf num-channels {
-        config false;
         description
-          "The number of channels (breakout ports) supported by this connector.
-          
-          This is not configurable because the only supported value is 4.";
-        type uint8 {
-          range "1..10";
+          "The number of channels (breakout ports) supported by this connector.";
+        type enumeration {
+          enum "4" {
+            if-feature "srl_nokia-feat:platform-7220-d3";
+          }
         }
+        mandatory "true";
       }
       leaf channel-speed {
-        config false;
         description
-          "The speed of each channel (breakout port).
-          
-          This is not configurable because the only supported value is 25G.";
+          "The speed of each channel (breakout port).";
         type enumeration {
-          enum "10G";
+          enum "10G" {
+            if-feature "srl_nokia-feat:future-21-6-3";
+          }
           enum "25G";
-          enum "50G";
-          enum "100G";
+          // enum "50G";
+          // enum "100G";
         }
+        mandatory "true";
       }
     } //breakout-mode
     leaf mtu {
@@ -228,6 +228,27 @@ module srl_nokia-interfaces {
       }
     }
   }
+
+  grouping interface-sflow-config {
+    description "Container for sFlow configuration applied at the interface level";
+  
+    container sflow {
+        description
+          "Context to configure sFlow parameters";
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          must 'starts-with(../../srl_nokia-if:name, "ethernet") or (../admin-state = "disable")' {
+            error-message "sFlow collector is supported only on ethernet interfaces.";
+          }
+          must 'not(../../breakout-mode) or (../admin-state = "disable")' {
+            error-message "sFlow collector is not supported when breakout-mode is enabled.";
+          }
+          description
+            "Administratively enable or disable sFlow on this interface";
+        }
+    }
+  }   
+
 
   grouping power-levels {
     container input-power {
@@ -1442,7 +1463,7 @@ module srl_nokia-interfaces {
               error-message "The valid percentage range is between 0% and 100%";
             }
             type uint32 {
-              range "0..1000000000";
+              range "0..100000000";
             }
             description "The maximum rate allowed for ingress broadcast frames on the interface";
           }
@@ -1451,7 +1472,7 @@ module srl_nokia-interfaces {
               error-message "The valid percentage range is between 0% and 100%";
             }
             type uint32 {
-              range "0..1000000000";
+              range "0..100000000";
             }
             description "The maximum rate allowed for ingress multicast frames on the interface";
           }
@@ -1460,7 +1481,7 @@ module srl_nokia-interfaces {
               error-message "The valid percentage range is between 0% and 100%";
             }
             type uint32 {
-              range "0..1000000000";
+              range "0..100000000";
             }
             description "The maximum rate allowed for ingress unknown unicast frames on the interface";
           }
@@ -1603,6 +1624,7 @@ module srl_nokia-interfaces {
         }
       }
       uses subinterface-top;
+      uses interface-sflow-config;
     }
   }
 

@@ -132,30 +132,8 @@ module srl_nokia-sflow {
       }
     }
 
-    grouping interface-sflow-config {
-      description "Container for sFlow configuration applied at the interface level";
-    
-      container sflow {
-          description
-            "Context to configure sFlow parameters";
-          leaf admin-state {
-            type srl_nokia-comm:admin-state;
-            must 'starts-with(../../srl_nokia-if:name, "ethernet") or (../admin-state = "disable")' {
-              error-message "sFlow collector is supported only on ethernet interfaces.";
-            }
-            description
-              "Administratively enable or disable sFlow on this interface";
-          }
-
-      }
-    }   
-
     augment "/srl_nokia-system:system" {
       uses sflow-agent-top;
     }
     
-    augment "/srl_nokia-if:interface" {
-      uses interface-sflow-config;
-    }
-
 }

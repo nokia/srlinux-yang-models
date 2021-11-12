@@ -10,6 +10,7 @@ module srl_nokia-ra_guard {
     import srl_nokia-common { prefix srl_nokia-comm; }
     import srl_nokia-extensions { prefix srl_nokia-ext; }
     import srl_nokia-interfaces { prefix srl_nokia-if; }
+    import srl_nokia-interfaces-vlans { prefix srl_nokia-if-vlan; }
     import srl_nokia-system { prefix srl_nokia-system; }
 //    import srl_nokia-network-instance { prefix srl-netinst; }
     import srl_nokia-routing-policy { prefix srl_rpol; }
@@ -41,6 +42,7 @@ system
        if-feature "srl-feat:ra-guard";
         description
           "List containing RA Guard Policy and parameters";
+        max-elements 64; // 64 is the maximum policies supported on Jericho. the td/th3 platforms limits are checked in fhs_mgr.
         key "name";
         leaf name {
           type srl_nokia-comm:name;
@@ -108,17 +110,18 @@ system
     }
            	
     grouping interface-raguard-config {
-      description "Container for RA Guard configuration applied at the sub-interface level and statistics";
-    
       container ra-guard {
         if-feature "srl-feat:ra-guard";
-        description
+        must "not (starts-with(../../srl_nokia-if:name, 'system') or starts-with(../../srl_nokia-if:name, 'lo') or starts-with(../../srl_nokia-if:name, 'irb'))" {
+         error-message "RA Guard not supported on the subinterface of this interface.";
+       }
+        presence
           "Context to configure RA Guard subinterface parameters";
         leaf policy {
           type leafref {
             path "/srl_nokia-system:system/srl_nokia-ra_guard:ra-guard-policy/name";
           }
-          description 
+          description
             "Reference to RA Guard Policy to apply to the associated subinterface";   
         }
         list vlan-list {
@@ -126,23 +129,21 @@ system
             "List of VLAN IDs that the RA policy should be matched against";
           key vlan-id;
           leaf vlan-id{
-            //must "../../vlan/encap = untagged"
+            must "string(../../../srl_nokia-if-vlan:vlan/srl_nokia-if-vlan:encap/srl_nokia-if-vlan:single-tagged/srl_nokia-if-vlan:vlan-id) = 'any' " {
+              error-message "vlan-list not configurable when encap single-tagged any not configured";
+            }
             type uint16{
               range 0..4095;
             }
           }
         }
-        leaf matched-ra-pkts {
-          config false;
-          type srl_nokia-comm:zero-based-counter64;
-        }
       }
-    }   
+    }
 
     augment "/srl_nokia-system:system" {
       uses ra_guard-top;
     }
-    
+
     augment "/srl_nokia-if:interface/srl_nokia-if:subinterface" {
       uses interface-raguard-config;
     }
