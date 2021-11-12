@@ -21,6 +21,10 @@ module srl_nokia-interfaces-bridge-table {
 
   // groupings
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2020-06-30 {
     description
       "SRLinux 20.6.1";
@@ -98,11 +102,10 @@ module srl_nokia-interfaces-bridge-table {
              - use-net-instance-action: upon detecting a duplicate mac on the subinterface, the action on the subinterface will be
                inherited from the action configured under network-instance/bridge-table/mac-duplication/action.
              - oper-down: if configured, upon detecting a duplicate mac on the subinterface, the subinterface
-               will be brought oper-down, with oper-down-reason “mac-dup-detected”. The duplicate macs on the interface will be kept
-               in CPM though and shown in the duplicate-entries state. In this case, arriving frames on a different subinterface with
-               source mac matching a duplicate mac on the oper-down subinterface, will not be dropped, but their source mac will not
-               be learned either. Arriving frames on a different subinterface with destination mac matching the duplicate mac on
-               the oper-down subinterface will be dropped.
+               will be brought oper-down, with oper-down-reason mac-dup-detected. The duplicate macs on the interface will be kept
+               in CPM though, and shown in the duplicate-entries state. In this case, arriving frames on a different subinterface with 
+               the duplicate mac as source mac are dropped. Arriving frames on a different subinterface with a destination mac 
+               matching the duplicate mac are dropped.
              - blackhole: upon detecting a duplicate mac on the subinterface, the mac will be blackholed. Any
                frame received on this or any other subinterface with source mac matching a blackhole mac will be discarded. Any frame
                received with destination mac matching the blackhole mac will be discarded, although still processed for source mac

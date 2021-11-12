@@ -9,10 +9,15 @@ module srl_nokia-interfaces-local-mirror-destination {
   // import some basic types
   import srl_nokia-interfaces { prefix srl_nokia-if; }
   import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-features { prefix srl_nokia-feat; }
 
   description
     "Model for managing subinterfaces of type local-mirror-destination";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -20,13 +25,14 @@ module srl_nokia-interfaces-local-mirror-destination {
 
   grouping subinterface-local-mirror-destination-top {
     container local-mirror-destination {
+      if-feature srl_nokia-feat:mirroring;
       presence "Performs local-mirror-destination";
       description
         "Container for options related to local mirror destination";
       must "not(starts-with(../srl_nokia-if:name, 'mgmt') or starts-with(../srl_nokia-if:name, 'lo') or starts-with(../srl_nokia-if:name, 'system') or starts-with(../srl_nokia-if:name, 'irb'))" {
         error-message "local mirror destination is not supported on mgmt, lo, system, or irb interfaces";
       }
-      must "(../../srl_nokia-if:subinterface/srl_nokia-if:type = 'local-mirror-dest')" {
+      must "(../srl_nokia-if:type = 'local-mirror-dest')" {
         error-message "local-mirror-destination is only allowed on subinterfaces with type local-mirror-dest";
       }
       leaf admin-state {
@@ -38,19 +44,6 @@ module srl_nokia-interfaces-local-mirror-destination {
         config false;
         type srl_nokia-comm:oper-state;
         description "The operational state of the local mirror destination"; // possible values are up or down
-      }
-      container statistics {
-        config false;
-        leaf mirrored-packets-forwarded {
-          type srl_nokia-comm:zero-based-counter64;
-          description
-            "Total forwarded mirrored packets";
-        }
-        leaf mirrored-packets-dropped {
-          type srl_nokia-comm:zero-based-counter64;
-          description
-            "Total dropped mirrored packets";
-        }
       }
     }
   }

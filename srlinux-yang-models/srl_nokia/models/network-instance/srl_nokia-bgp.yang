@@ -27,10 +27,17 @@ module srl_nokia-bgp {
     import srl_nokia-features {
         prefix srl_nokia-feat;
     }
+    import srl_nokia-system-reboot {
+        prefix srl_nokia-system-reboot;
+    }
 
     description
         "This yang file models configuration and state of the BGP protocol";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -89,7 +96,6 @@ module srl_nokia-bgp {
 
             list flag {
                 key name;
-                ordered-by user;
                 description "Tracing parameters";
                 leaf name {
                     type enumeration {
@@ -170,6 +176,13 @@ module srl_nokia-bgp {
             leaf admin-state {
                 type srl_nokia-comm:admin-state;
                 default "enable";
+                must ". = 'disable' or
+                  (((not(../ipv4-unicast/admin-state) and ../../ipv4-unicast/admin-state = 'enable') or (../ipv4-unicast/admin-state = 'enable')) or
+                      ((not(../ipv6-unicast/admin-state) and ../../ipv6-unicast/admin-state = 'enable') or (../ipv6-unicast/admin-state = 'enable')) or
+                      ((not(../evpn/admin-state) and ../../evpn/admin-state = 'enable') or (../evpn/admin-state = 'enable')))"
+               {
+                  error-message "One of the address families must be enabled.";
+               }
                 description
                     "Administratively enable or disable the peer group
 
@@ -393,19 +406,22 @@ module srl_nokia-bgp {
             }
 
             container evpn {
-                presence "evpn";
-                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                        error-message "EVPN is not supported in network instances other than default";
-                }
                 description
                   "Options related to the EVPN address family";
                 leaf admin-state {
                     type srl_nokia-comm:admin-state;
+                    must ". = 'disable' or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
                     description
                       "Administratively enable or disable the EVPN address family on the BGP sessions of the peer-group";
                 }
                 leaf advertise-ipv6-next-hops {
                     type boolean;
+                     must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
+
                     description
                       "Enables advertisement of EVPN routes with IPv6 next-hops to peers in the peer-group
                        
@@ -419,12 +435,19 @@ module srl_nokia-bgp {
                             range "1..4294967295";
                         }
                         default 4294967295;
+                        must ". = 4294967295 or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                           error-message "EVPN is not supported in network instances other than default";
+                       }
                         description
                           "Maximum number of EVPN routes that will be accepted from each neighbor, counting routes accepted and rejected by import policies";
                     }
                     leaf warning-threshold-pct {
                         type percentage;
                         default 90;
+                        must ". = 90 or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                           error-message "EVPN is not supported in network instances other than default";
+                        }
+
                         description
                           "When the number of EVPN routes received from the peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
                     }
@@ -586,7 +609,9 @@ module srl_nokia-bgp {
                     description
                         "The local TCP endpoint of used for all BGP sessions in the group
 
-                        This also the source address for next-hop-self, if it applies. The local-address can be specified as an IP address that is resolvable to a local interface.";
+                        This also the source address for next-hop-self, if it applies. The local-address can be specified as an IP address that is resolvable to a local interface.
+
+                        This address must be the primary address of an interface, otherwise the session will not come up.";
                 }
             }
             container statistics {
@@ -643,6 +668,13 @@ module srl_nokia-bgp {
     }
 
     grouping neighbor-state {
+        leaf peer-router-id {
+            config false;
+            srl_nokia-ext:show-importance high;
+            description
+                "The BGP identifier advertised by the peer in its OPEN message";
+            type srl_nokia-comm:dotted-quad;
+        }
         leaf session-state {
             config false;
             srl_nokia-ext:show-importance high;
@@ -1005,6 +1037,13 @@ module srl_nokia-bgp {
                     "Administratively enable or disable the peer
 
                     Disable will tear down the BGP session (return it to IDLE state).";
+                must ". = 'disable' or ../ipv4-unicast/admin-state = 'enable' or ../ipv6-unicast/admin-state = 'enable' or ../evpn/admin-state = 'enable' or
+                  (not(../ipv4-unicast/admin-state) and (../../group[group-name = current()/../peer-group]/ipv4-unicast/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/ipv4-unicast/admin-state) and ../../ipv4-unicast/admin-state = 'enable')))  or
+                  (not(../ipv6-unicast/admin-state) and (../../group[group-name = current()/../peer-group]/ipv6-unicast/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/ipv6-unicast/admin-state) and ../../ipv6-unicast/admin-state = 'enable'))) or
+                  (not(../evpn/admin-state) and (../../group[group-name = current()/../peer-group]/evpn/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/evpn/admin-state) and ../../evpn/admin-state = 'enable')))"
+                  {
+                      error-message "One of the address families must be enabled.";
+                  }
             }
             leaf description {
                 type srl_nokia-comm:description;
@@ -1183,20 +1222,6 @@ module srl_nokia-bgp {
                     description
                         "Set to true when the router is actively helping the neighbor for at least one address family – i.e. for that address family the peer restarted with F=1 in its capability and the stale-routes-time has not expired yet";
                 }
-                container warm-restart {
-                    if-feature srl_nokia-feat:future-21-6;
-                    description
-                        "GR configuration and state that relates to this router being helped by its peer during a restart caused by use of the tools reboot warm command.";
-                    leaf admin-state {
-                        type srl_nokia-comm:admin-state;
-                        description
-                            "Administratively enable or disable GR restarting router functionality for supported address families negotiated with this neighbor.
-
-                            When this is enabled the GR capability advertised by this router encodes R=1 when the router has just restarted because of the tools reboot warm command.
-
-                            When this is enabled the GR capability advertised by this router includes the ipv4-unicast AFI/SAFI and the ipv6-unicast AFI/SAFI, and the F bits for these two AFI/SAFI are set to 1 when the router has just restarted because of the tools reboot warm command and it maintained its forwarding state for IPv4-unicast and IPv6-unicast routes.";
-                    }
-                }
                 container neighbor-capability {
                     config false;
                     description
@@ -1359,14 +1384,14 @@ module srl_nokia-bgp {
                 }
             }
             container evpn {
-                presence "evpn";
-                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                        error-message "EVPN is not supported in network instances other than default";
-                }
                 description
                   "Options related to the EVPN address family";
                 leaf admin-state {
                     type srl_nokia-comm:admin-state;
+                    must ". = 'disable' or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
+
                     description
                       "Administratively enable or disable the EVPN address family on the BGP session";
                 }
@@ -1385,6 +1410,9 @@ module srl_nokia-bgp {
                 }
                 leaf advertise-ipv6-next-hops {
                     type boolean;
+                    must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
                     description
                       "Enables advertisement of EVPN routes with IPv6 next-hops to peers
                        
@@ -1397,11 +1425,17 @@ module srl_nokia-bgp {
                         type uint32 {
                             range "1..4294967295";
                         }
+                        must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                            error-message "EVPN is not supported in network instances other than default";
+                        }
                         description
                           "Maximum number of EVPN routes that will be accepted from the neighbor, counting routes accepted and rejected by import policies";
                     }
                     leaf warning-threshold-pct {
                         type percentage;
+                        must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                            error-message "EVPN is not supported in network instances other than default";
+                        }
                         description
                           "When the number of EVPN routes received from the peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
                     }
@@ -1600,7 +1634,9 @@ module srl_nokia-bgp {
                     description
                         "The local TCP endpoint of used for the BGP session
 
-                        This also the source address for next-hop-self, if it applies. The local-address can be specified as an IP address that is resolvable to a local interface.";
+                         This also the source address for next-hop-self, if it applies. The local-address can be specified as an IP address that is resolvable to a local interface.
+
+                         This address must be the primary address of an interface, otherwise the session will not come up.";
                 }
                 leaf local-port {
                     config false;
@@ -1734,6 +1770,39 @@ module srl_nokia-bgp {
         }
     }
 
+    grouping next-hop-resolution {
+      container next-hop-resolution {
+        if-feature srl_nokia-feat:future-21-6-3;  // supported from 21.6R3 release
+        description
+          "Options for controlling next-hop resolution procedures";
+        container ipv4-next-hops {
+          description
+            "Options related to the resolution of BGP next-hops that are IPv4 addresses";
+          container tunnel-resolution {
+            description
+              "Options related to resolution using tunnels in the tunnel table";
+            leaf mode {
+              description
+                "Mode to control the order of tunnel resolution compared to route resolution";
+              type enumeration {
+                enum "prefer";
+                enum "require";
+                enum "disabled";
+              }
+              default "disabled";
+            }
+            leaf-list allowed-tunnel-types {
+              description
+                "List of allowed tunnel types";
+              type identityref {
+                base srl_nokia-comm:tunnel-type;
+              }
+            }
+          }
+        }
+      }
+    }
+
     grouping bgp-top {
         container bgp {
             presence "Configure BGP";
@@ -1747,6 +1816,11 @@ module srl_nokia-bgp {
             leaf admin-state {
                 type srl_nokia-comm:admin-state;
                 default "enable";
+                must ". = 'disable' or (../ipv4-unicast/admin-state = 'enable' or ../ipv6-unicast/admin-state = 'enable' or ../evpn/admin-state = 'enable')"
+                {
+                  error-message "One of the address families must be enabled.";
+                }
+
                 description
                     "Administratively enable or disable the entire BGP instance
 
@@ -2087,6 +2161,7 @@ module srl_nokia-bgp {
                         When set to true, BGP advertises an extended NH encoding (RFC 5549) capability to its peers. This capability indicates that local router is prepared to accept BGP routes for IPv4 NLRI with IPv6 next-hops from  peers in the scope of the command. When set to false, BGP handles received IPV4 routes with IPv6 next-hops as an error and applies treat-as-withdraw.";
                 }
                 uses convergence-for-family;
+                uses next-hop-resolution;
                 uses multipath-family-config;
                 leaf received-routes {
                     config false;
@@ -2111,6 +2186,7 @@ module srl_nokia-bgp {
                         "Administratively enable or disable the IPv6 unicast address family on all sessions";
                 }
                 uses convergence-for-family;
+                uses next-hop-resolution;
                 uses multipath-family-config;
                 leaf received-routes {
                     config false;
@@ -2126,14 +2202,14 @@ module srl_nokia-bgp {
                 }
             }
             container evpn {
-                presence "evpn";
-                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                        error-message "EVPN is not supported in network instances other than default";
-                }
                 description
                   "Options related to the EVPN address family";
                 leaf admin-state {
                     type srl_nokia-comm:admin-state;
+                    must ". = 'disable' or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
+
                     default "disable";
                     description
                       "Administratively enable or disable the EVPN address family on all sessions";
@@ -2141,6 +2217,10 @@ module srl_nokia-bgp {
                 leaf advertise-ipv6-next-hops {
                     type boolean;
                     default false;
+                    must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
+
                     description
                       "Enables advertisement of EVPN routes with IPv6 next-hops to peers
                        
@@ -2152,12 +2232,19 @@ module srl_nokia-bgp {
                        
                        The value of this leaf is implicitly true when the BGP instance is configured as a route-reflector.";
                     type boolean;
+                    must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
                 }
                 leaf rapid-update {
                     description
                       "When this is set to true, EVPN UPDATEs advertising reachability and withdrawals are advertised immediately, bypassing the session level min-route-advertisement-interval. When this is false, reachability updates and withdrawals are subject to the MRAI interval.";
                     type boolean;
                     default false;
+                    must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
+
                 }
                 leaf received-routes {
                     config false;
@@ -2315,5 +2402,20 @@ module srl_nokia-bgp {
     
     augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
         uses bgp-top;
+    }
+
+    augment "/srl_nokia-system:system/srl_nokia-system-reboot:warm-reboot" {
+        if-feature srl_nokia-feat:warm-reboot;
+        leaf bgp-max-wait {
+            description
+                "The maximum amount of time that BGP will wait to receive End of RIB markers from all peers and for all address families that were up prior to warm reboot (in all network instances).
+
+                After this time elapses BGP declares that convergence has occurred and sends its own EOR markers to its peers.";
+            type uint16 {
+                range "0..3600";
+            }
+            units "seconds";
+            default 600;
+        }
     }
 }

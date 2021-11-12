@@ -11,6 +11,10 @@ module srl_nokia-common {
     "This module contains a set of Internet address related
      types for use in OpenConfig modules.";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -382,7 +386,15 @@ module srl_nokia-common {
     }
   }
 
-  // mgmt0-standby is not listed as mgmt0-standby does not support subinterfaces
+  typedef interface-eth-lag {
+    type interface-name {
+      length "3..20";  // based on the pattern below
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
+            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))';
+    }
+  }
+
+  // mgmt0-standby not listed as mgmt0-standby does not support subinterfaces
   typedef subinterface-all {
     // shortest subinterface is lo0.0
     type subinterface-name {
@@ -392,6 +404,14 @@ module srl_nokia-common {
             + 'lo(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
+            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))';
+    }
+  }
+
+  typedef subinterface-eth-lag {
+    type subinterface-name {
+      length "5..25";  // based on the pattern below
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
             + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))';
     }
   }
@@ -469,6 +489,18 @@ module srl_nokia-common {
         value 10;
         description
           "Component is offline due to insufficient system power";
+      }
+      enum degraded {
+        value 11;
+        description
+          "Component or process is in a degraded state";
+      }
+      enum warm-reboot {
+        value 12;
+        description
+          "Component or process is currently warm rebooting
+
+          This state is set during a warm reboot immediately following initiation of the reboot, continuing after startup until the system has completed audit. In this state the system will not accept configuration changes.";
       }
     }
     description
@@ -893,102 +925,162 @@ module srl_nokia-common {
     }
   }
 
-  identity ip-route-owner {
+  identity ip-route-type {
     description
-      "Base type for any application or protocol that can install IPv4 or IPv6 routes.";
+      "Base type for the types of entries that can be installed in the IP FIB.";
+  }
+
+  identity mpls-label-entry-type {
+    description
+      "Base type for the types of entries that can be installed in the MPLS label FIB.";
+  }
+
+  identity tunnel-type {
+    description
+      "Base type for the types of tunnels that can be installed in the tunnel table.";
+  }
+
+  identity aggregate {
+    base ip-route-type;
+    description
+      "Locally configured aggregate route";
+  }
+
+  identity arp-nd {
+    base ip-route-type;
+    description
+      "IP route added by ARP ND.";
   }
 
   identity bgp {
-    base ip-route-owner;
+    base ip-route-type;
+    // base mpls-label-entry-type;
+    // base tunnel-type;
     description
       "Border Gateway Protocol version 4";
     reference "RFC 4271";
   }
 
   identity bgp-evpn {
-    base ip-route-owner;
+    base ip-route-type;
     description
       "BGP Ethernet VPN (EVPN)";
   }
 
+  identity dhcp {
+    base ip-route-type;
+    description
+      "IP (default) route added by DHCP.";
+  }
+
+  identity host {
+    base ip-route-type;
+    description
+      "A host route";
+  }
+
   identity isis {
-    base ip-route-owner;
+    base ip-route-type;
     description
       "IS-IS";
     reference "ISO/IEC 10589";
   }
 
+  identity local {
+    base ip-route-type;
+    description
+      "A directly connected route";
+  }
+
+  identity ldp {
+    base mpls-label-entry-type;
+    base tunnel-type;
+    // base ip-route-type;
+    description
+      "Label distribution protocol";
+  }
+
+  identity linux {
+    base ip-route-type;
+    description
+      "IP route added by the linux kernel.";
+  }
+
+  identity ndk1 {
+    base ip-route-type;
+    // base mpls-label-entry-type;
+    description
+      "Route added by an agent application using the NDK";
+  }
+
+  identity ndk2 {
+    base ip-route-type;
+    // base mpls-label-entry-type;
+    description
+      "Route added by an agent application using the NDK";
+  }
+
   identity ospfv2 {
-    base ip-route-owner;
+    base ip-route-type;
     description
       "OSPFv2";
     reference "RFC 2328";
   }
 
   identity ospfv3 {
-    base ip-route-owner;
+    base ip-route-type;
     description
       "OSPFv3";
     reference "RFC 5340";
   }
 
+  identity sr-isis {
+    base tunnel-type;
+    description
+      "Segment routing using MPLS dataplane, programmed by IS-IS";
+  }
+
+  identity sr-ospfv2 {
+    base tunnel-type;
+    description
+      "Segment routing using MPLS dataplane, programmed by OSPFv2";
+  }
+
+  identity sr-ospfv3 {
+    base tunnel-type;
+    description
+      "Segment routing using MPLS dataplane, programmed by OSPFv3";
+  }
+  
+  identity sr-mpls {
+    base tunnel-type;
+    description
+      "Segment routing using MPLS dataplane, programmed by segment routing manager.";
+  }
+
+  identity sr-policy-mpls {
+    base tunnel-type;
+    description
+      "Tunnels setup using SR-POLICY.";
+  }
+
   identity static {
-    base ip-route-owner;
+    base ip-route-type;
     description
       "Locally configured static route";
   }
 
-  identity local {
-    base ip-route-owner;
+  identity static-mpls {
+    base mpls-label-entry-type;
+    // base tunnel-type;
     description
-      "A directly connected route";
+      "Locally configured static MPLS route.";
   }
 
-  identity host {
-    base ip-route-owner;
+  identity vxlan {
+    base tunnel-type;
     description
-      "A host route";
-  }
-
-  identity aggregate {
-    base ip-route-owner;
-    description
-      "Locally configured aggregate route";
-  }
-
-  identity sdk {
-    base ip-route-owner;
-    description
-      "IP route added by an agent application using the SDK";
-  }
-
-  identity linux {
-    base ip-route-owner;
-    description
-      "IP route added by the linux kernel.";
-  }
-
-  identity dhcp {
-    base ip-route-owner;
-    description
-      "IP (default) route added by DHCP.";
-  }
-
-  identity mpls-route-owner {
-    description
-      "Base type for any application or protocol that can install MPLS label entries.";
-  }
-
-  identity mpls-static {
-    base mpls-route-owner;
-    description
-      "Locally configured static route";
-  }
-
-  identity mpls-sdk {
-    base mpls-route-owner;
-    description
-      "MPLS label entry added by an agent application using the SDK";
+      "Tunnels based on VXLAN encapsulation";
   }
 
   identity bgp-address-family {
@@ -1013,48 +1105,7 @@ module srl_nokia-common {
     description
       "EVPN routes (AFI = 25, SAFI = 70)";
   }
-
-  identity tunnel-type {
-    description
-      "Base type for tunneling encapsulation formats.";
-  }
-
-  identity mpls {
-    base tunnel-type;
-    description
-      "Tunnels setup with an MPLS signaling protocol such as LDP, RSVP or BGP.";
-  }
-
-  identity sr-mpls {
-    base tunnel-type;
-    description
-      "Tunnels based on segment routing using MPLS dataplane";
-  }
-
-  identity srv6 {
-    base tunnel-type;
-    description
-      "Tunnels based on segment routing using SRV6 dataplane";
-  }
-
-  identity gre {
-    base tunnel-type;
-    description
-      "Tunnels based on GRE encapsulation";
-  }
-
-  identity ip-ip {
-    base tunnel-type;
-    description
-      "Tunnels based on IP-in-IP encapsulation";
-  }
-
-  identity vxlan {
-    base tunnel-type;
-    description
-      "Tunnels based on VXLAN encapsulation";
-  }
-
+  
   typedef queue-index {
       type uint8 {
         range "0..7";
@@ -1090,12 +1141,12 @@ module srl_nokia-common {
     type string {
       pattern '[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){9}';
     }
-    description 
+    description
       "Ethernet Segment Identifier that can be configured or autoderived.
-       Its length is always 10 bytes and it is used by BGP-EVPN to identify objects in the control plane that 
+       Its length is always 10 bytes and it is used by BGP-EVPN to identify objects in the control plane that
        belong to the same Ethernet Segment.";
 
-    reference "RFC7432";    
+    reference "RFC7432";
   }
 
   typedef multicast-type {
@@ -1116,7 +1167,7 @@ module srl_nokia-common {
     description
       "Encap type destination in the system";
   }
-  
+
   typedef routing-password {
     type string;
     srl_nokia-ext:generated-class-name "SecretKey";

@@ -16,10 +16,16 @@ module srl_nokia-isis {
     import srl_nokia-keychains { prefix srl-keychain; }
     import srl_nokia-traffic-engineering { prefix srl_nokia-te; }
     import srl_nokia-features { prefix srl-feat; }
+    import srl_nokia-mpls-label-management { prefix srl_nokia-mplslbl; }
+    import srl_nokia-ldp { prefix srl_nokia-ldp; }
 
     description
         "This yang file models configuration and state of the IS-IS protocol";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -683,6 +689,51 @@ module srl_nokia-isis {
             }
         }
 
+        container segment-routing {
+            if-feature srl-feat:segment-routing;
+              presence "Enable SR-MPLS extensions in IS-IS interface";
+            must "../../segment-routing/mpls" {
+                error-message "Segment routing must be configured at the instance level";
+            }
+            description
+              "Container with interface-specific segment routing options";
+            container mpls {
+                description
+                  "SR-MPLS interface options";
+                container ipv4-node-sid {
+                    description
+                      "Configuration of IPv4 node SID.
+                                    
+                       The (primary) IPv4 address of this interface is advertised as a prefix SID with the node-SID flag set. The associated label is derived from the label index configured in this container.";
+                    leaf index {
+                        mandatory true;
+                        description
+                          "Label index to add to SRGB base.
+                                        
+                           This causes the V-flag and L-flag in the prefix SID subTLV to be set to zero.";
+                        type uint32 {
+                            range "0..1048575";
+                        }
+                    }
+                }
+                container static-adjacency-sid {
+                    description
+                      "Configuration of a static adjacency SID
+                                    
+                       This configuration associates an MPLS label value (used as a static adjacency SID) with the the point-to-point adjacency established over this interface. The associated label value/SID is persistent across restarts of the router and interface flaps.";
+                    leaf label-value {
+                        description
+                          "The MPLS label value to use as a static adjacency SID value
+                        
+                           This label value must ";
+                        type uint32 {
+                            range "0..1048575";
+                        }
+                    }
+                }
+            }
+        }
+
         list level {
             description "List of IS-IS levels supported by this interface";
 
@@ -1156,6 +1207,89 @@ module srl_nokia-isis {
         }
     }
 
+    grouping isis-protocol-segment-routing {
+        leaf dynamic-label-block {
+            if-feature srl-feat:label-management;
+            type leafref {
+                path "/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:dynamic/srl_nokia-mplslbl:name";
+            }
+            description
+              "Reference to a dynamic label block
+                        
+               Configuration of this label block is mandatory in order to enable segment routing MPLS (SR-MPLS) in IS-IS. Dynamic adjacency SID labels come from this label block.
+                        
+               This label block is not advertised as an SRLB in the router capabilities TLV.";
+        }
+        leaf dynamic-label-block-status {
+            config false;
+            if-feature srl-feat:label-management;
+            type enumeration {
+                enum "available";
+                enum "unavailable";
+            }
+            description
+              "Status of the label block.
+                    
+               The label block may show as unavailable if there is pending cleanup.";
+        }
+    }
+
+    grouping isis-inst-mpls-segment-routing {
+        container segment-routing {
+            if-feature srl-feat:segment-routing;
+            must "../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                error-message "Segment routing is only supported in the default network instance";
+            }
+            must "../srl_nokia-isis:ipv6-unicast/srl_nokia-isis:multi-topology = false()" {
+                error-message "Segment routing is not supported in combination with IPv6 multi-topology";
+            }
+            container mpls {
+                presence "Enable SR-MPLS extensions in IS-IS";
+                must "boolean(../../../dynamic-label-block)";
+                description
+                            "Context used to configure SR-MPLS options";
+                leaf adjacency-sid-hold-time {
+                    description
+                      "Adjacency SID hold time";
+                    type union {
+                        type enumeration {
+                            enum "none";
+                        }
+                        type uint16 {
+                            range "1..300";
+                        }
+                    }
+                    units seconds;
+                    default 15;
+                }
+                leaf static-label-block {
+                    if-feature srl-feat:label-management;
+                    type leafref {
+                        path "/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static/srl_nokia-mplslbl:name";
+                    }
+                    description
+                      "Reference to a static label block to use an SRLB.
+
+                      Configuration of this label block is mandatory in order to assign static adjacency SID labels.
+
+                      This label block is advertised as an SRLB in the router capabilities TLV.";
+                }
+                leaf static-label-block-status {
+                    config false;
+                    if-feature srl-feat:label-management;
+                    type enumeration {
+                        enum "available";
+                        enum "unavailable";
+                    }
+                    description
+                      "Status of the label block.
+
+                       The label block may show as unavailable if there is pending cleanup.";
+                }
+            }
+        }
+    }
+
     grouping isis-inst-config {
         uses isis-inst-common-config;
 
@@ -1163,7 +1297,7 @@ module srl_nokia-isis {
 
         uses isis-interlevel-import-export-config;
 
-        uses ldp-sync-global-config;
+        uses srl_nokia-ldp:ldp-sync-global-config;
     }
 
     // Unused - has lot of information and may be used later
@@ -1385,6 +1519,355 @@ module srl_nokia-isis {
         uses isis-instance-statistics;
     }
 
+    grouping neighbor-sub-tlvs {
+        container sub-tlvs {
+            description
+              "SubTLVs of TLV 22 and TLV 222";
+            leaf admin-group {
+                if-feature srl-feat:traffic-engineering;
+                description
+                    "A bit mask representing the administrative groups to which the interface belongs. Sub-TLV = 3.";
+                type uint32;
+            }
+            leaf ipv4-interface-address {
+                description
+                    "The IPv4 address of the interface to the neighbor. Sub-TLV = 6.";
+                type srl_nokia-comm:ipv4-address;
+            }
+            leaf ipv4-neighbor-address {
+                description
+                    "The IPv4 address of the neighbor. Sub-TLV = 8.";
+                type srl_nokia-comm:ipv4-address;
+            }
+            leaf maximum-link-bandwidth {
+                if-feature srl-feat:traffic-engineering;
+                description
+                    "The (LAG aware) bandwidth of the interface to the neighbor. Sub-TLV = 9.";
+                type uint32;
+                units "bytes-per-second";
+            }
+            leaf ipv6-interface-address {
+                description
+                    "The IPv6 address of the interface to the neighbor. Sub-TLV = 12.";
+                type srl_nokia-comm:ipv6-address;
+            }
+            leaf ipv6-neighbor-address {
+                description
+                    "The IPv4 address of the neighbor. Sub-TLV = 13.";
+                type srl_nokia-comm:ipv6-address;
+            }
+            container link-msd {
+                if-feature srl-feat:segment-routing;
+                description
+                    "The maximum segment depth of the link to the neighbor. Sub-TLV = 15.";
+                list msd-info {
+                    description
+                        "List of MSD entries";
+                    key "msd-type msd-value";
+                    leaf msd-type {
+                        description
+                            "MSD type";
+                        type union {
+                            type enumeration {
+                                enum "base-mpls-imposition-msd" {
+                                    value 1;
+                                }
+                            }
+                            type uint8 {
+                                range "2..254";
+                            }
+                        }
+                    }
+                    leaf msd-value {
+                        description "A number in the range of 0-255 representing the maximum SID depth; for all MSD-Types, 0 represents the lack of ability to support a SID stack of any depth";
+                        type uint8;
+                    }
+                }
+            }
+            container application-specific-link-attributes {
+                if-feature srl-feat:traffic-engineering;
+                description
+                    "Application Specific Link Attributes. Sub-TLV = 16.";
+                reference "RFC8919";
+                leaf legacy {
+                    description
+                        "When the legacy flag is set, all of the applications specified in the bit mask MUST use the legacy advertisements for the corresponding link found in TLVs 22, 23, 25, 141, 222, and 223, in TLV 138, or in TLV 139 as appropriate.";
+                    type boolean;
+                }
+                leaf rsvp-te {
+                    description
+                        "R bit is set in the Standard Application Identifier Bit Mask";
+                    type boolean;
+                }
+                leaf sr-policy {
+                    description
+                        "S bit is set in the Standard Application Identifier Bit Mask";
+                    type boolean;
+                }
+                leaf loop-free-alternate {
+                    description
+                        "F bit is set in the Standard Application Identifier Bit Mask";
+                    type boolean;
+                }
+                container sub-sub-tlvs {
+                    leaf admin-group {
+                        description
+                            "A bit mask representing the administrative groups to which the interface belongs. Sub-Sub-TLV = 3.";
+                        type uint32;
+                    }
+                    leaf maximum-link-bandwidth {
+                        description
+                            "The (LAG aware) bandwidth of the interface to the neighbor. Sub-Sub-TLV = 9.";
+                        type uint32;
+                        units "bytes-per-second";
+                    }
+                    leaf te-default-metric {
+                        description
+                            "An administratively assigned metric used as an alternative to the normal SPF metric based (typically) on link bandwidth.";
+                        type uint32 {
+                            range "0..16777215";
+                        }
+                    }
+                    container min-max-unidirectional-link-delay {
+                        description
+                            "The minimum and maximum delay between two directly connected IS-IS neighbors.";
+                        leaf anomolous {
+                            description
+                                "If the A bit is cleared, the values represent steady-state link performance.";
+                            type boolean;
+                        }
+                        leaf min-delay {
+                            description
+                                "Minimum forward-path delay (from the advertising router to the remote neighbor)";
+                            type uint32;
+                            units "microseconds";
+                        }
+                        leaf max-delay {
+                            description
+                                "Maximum forward-path delay (from the advertising router to the remote neighbor)";
+                            type uint32;
+                            units "microseconds";
+                        }
+                    }
+                }
+            }
+            leaf te-default-metric {
+                if-feature srl-feat:traffic-engineering;
+                description
+                    "An administratively assigned metric used as an alternative to the normal SPF metric based (typically) on link bandwidth. Sub-TLV = 18.";
+                type uint32 {
+                    range "0..16777215";
+                }
+            }
+            list segment-routing-adjacency-sid {
+                if-feature srl-feat:segment-routing;
+                description
+                    "List of Adj-SID sub-TLVs associated with the neighbor. Sub-TLV = 31.";
+                key sr-index-or-label;
+                leaf sr-index-or-label {
+                    description
+                        "An index representing an offset in the SID/label space advertised by the router or else a direct encoding of an MPLS label value.";
+                    type uint32;
+                }
+                leaf ipv6-family {
+                    description
+                        "If set, then the Adj-SID is used for forwarding IPv6 traffic to the neighbor; else the Adj-SID is used for forwarding IPv4 traffic.";
+                    type boolean;
+                }
+                leaf backup {
+                    description
+                        "If set, the Adj-SID is eligible for protection";
+                    type boolean;
+                }
+                leaf value {
+                    description
+                        "If set then the Adj-SID carries a value";
+                    type boolean;
+                }
+                leaf local {
+                    description
+                        "If set, then the value/index carried by the Adj-SID has local significance.";
+                    type boolean;
+                }
+                leaf adj-set {
+                    description
+                        "When set, the S-Flag indicates that the Adj-SID refers to a set of adjacencies.";
+                    type boolean;
+                }
+                leaf persistent {
+                    description
+                        "When set, the P-Flag indicates that the Adj-SID is persistently allocated, i.e., the Adj-SID value remains consistent across router restart and/or interface flap";
+                    type boolean;
+                }
+                leaf weight {
+                    description
+                        "The value represents the weight of the Adj-SID for the purpose of load balancing";
+                    type uint8;
+                }
+            }
+            list segment-routing-lan-adjacency-sid {
+                if-feature srl-feat:segment-routing;
+                description
+                    "List of LAN Adj-SID sub-TLVs. Each describes the set of Adj-SIDs the router assigned to each of its LAN neighbors. Sub-TLV = 32.";
+                key sr-index-or-label;
+                leaf sr-index-or-label {
+                    description
+                        "An index representing an offset in the SID/label space advertised by the router or else a direct encoding of an MPLS label value.";
+                    type uint32;
+                }
+                leaf neighbor-system-id {
+                    description
+                        "IS-IS system-ID of the LAN neighbor";
+                    type isis-system-id;
+                }
+                leaf ipv6-family {
+                    description
+                        "If set, then the Adj-SID is used for forwarding IPv6 traffic to the neighbor; else the Adj-SID is used for forwarding IPv4 traffic.";
+                    type boolean;
+                }
+                leaf backup {
+                    description
+                        "If set, the Adj-SID is eligible for protection";
+                    type boolean;
+                }
+                leaf value {
+                    description
+                        "If set then the Adj-SID carries a value";
+                    type boolean;
+                }
+                leaf local {
+                    description
+                        "If set, then the value/index carried by the Adj-SID has local significance.";
+                    type boolean;
+                }
+                leaf adj-set {
+                    description
+                        "When set, the S-Flag indicates that the Adj-SID refers to a set of adjacencies.";
+                    type boolean;
+                }
+                leaf persistent {
+                    description
+                        "When set, the P-Flag indicates that the Adj-SID is persistently allocated, i.e., the Adj-SID value remains consistent across router restart and/or interface flap";
+                    type boolean;
+                }
+                leaf weight {
+                    description
+                        "The value represents the weight of the Adj-SID for the purpose of load balancing";
+                    type uint8;
+                }
+            }
+            container min-max-unidirectional-link-delay {
+                if-feature srl-feat:traffic-engineering;
+                description
+                    "The minimum and maximum delay between two directly connected IS-IS neighbors. Sub-TLV = 34.";
+                leaf anomolous {
+                    description
+                        "If the A bit is cleared, the values represent steady-state link performance.";
+                    type boolean;
+                }
+                leaf min-delay {
+                    description
+                        "Minimum forward-path delay (from the advertising router to the remote neighbor)";
+                    type uint32;
+                    units "microseconds";
+                }
+                leaf max-delay {
+                    description
+                        "Maximum forward-path delay (from the advertising router to the remote neighbor)";
+                    type uint32;
+                    units "microseconds";
+                }
+            } // min-max-unidirectional-link-delay
+        } // sub-tlvs
+    }
+
+    grouping prefix-sub-tlvs {
+        container sub-tlvs {
+            description
+              "SubTLVs of TLV 135, TLV 235, TLV 236 and TLV 237";
+            leaf-list route-tag-32bit {
+                description
+                  "List of 32-bit administrative tag values associated with the IPv4 prefix.";
+                type uint32 {
+                  range "1..4294967295";
+                }
+            }
+            leaf-list route-tag-64bit {
+                description
+                  "List of 64-bit administrative tag values associated with the IPv4 prefix.";
+                type uint64;
+            }
+            container segment-routing-prefix-sid {
+                if-feature srl-feat:segment-routing;
+                description
+                    "Carries a segment routing prefix SID";
+                leaf re-advertised {
+                    description
+                        "If set the prefix to which this Prefix-SID is attached has been propagated by the router from either another level or from another protocol.";
+                    type boolean;
+                }
+                leaf node-sid {
+                    description
+                        "If set the prefix SID refers to the router identified by the prefix.";
+                    type boolean;
+                }
+                leaf penultimate-hop-popping {
+                    description
+                        "If set the penultimate hop MUST NOT pop the Prefix-SID before delivering the packet to the node that advertised the Prefix-SID.";
+                    type boolean;
+                }
+                leaf explicit-null {
+                    description
+                        "If set any upstream neighbor of the Prefix-SID originator MUST replace the Prefix-SID with a Prefix-SID that has an Explicit NULL value (0 for IPv4 and 2 for IPv6) before forwarding the packet";
+                    type boolean;
+                }
+                leaf value {
+                    description
+                        "If set then the Prefix-SID carries a value";
+                    type boolean;
+                }
+                leaf local {
+                    description
+                        "If set, then the value/index carried by the Prefix-SID has local significance.";
+                    type boolean;
+                }
+                leaf algorithm {
+                    description
+                        "Contains the identifier of the algorithm the router uses to compute the reachability of the prefix to which the Prefix-SID is associated";
+                    type enumeration {
+                        enum "spf";
+                        enum "strict-spf";
+                    }
+                }
+                leaf sr-index-or-label {
+                    description
+                        "An index representing an offset in the SID/label space advertised by the router or else a direct encoding of an MPLS label value.";
+                    type uint32;
+                }
+            }
+            container prefix-attribute-flags {
+                if-feature srl-feat:traffic-engineering;
+                description
+                    "This sub-TLV supports the advertisement of additional flags associated with a given prefix advertisement.";
+                leaf external-prefix {
+                    description
+                        "Set if the prefix has been redistributed from another protocol (or another IS-IS instance).";
+                    type boolean;
+                }
+                leaf re-advertised {
+                    description
+                        "Set when the prefix has been leaked from one level to another (upwards or downwards).";
+                    type boolean;
+                }
+                leaf node-identifier {
+                    description
+                        "Set when the prefix identifies the advertising router; i.e. it is a host prefix advertising a globally reachable address typically associated with a loopback address.";
+                    type boolean;
+                }
+            }   
+        }
+    }
+
     grouping isis-adjacency-state {
         leaf neighbor-hostname {
             description
@@ -1484,84 +1967,6 @@ module srl_nokia-isis {
                     enum "never";
                 }
                 type srl_nokia-comm:date-and-time-delta;
-            }
-        }
-    }
-
-    grouping ldp-sync-global-config {
-        container ldp-synchronization {
-            if-feature srl-feat:ldp;
-            presence "Enable LDP-IGP synchronization procedures on all interfaces.";
-            description
-              "Enable LDP-IGP synchronization procedures on all P2P interfaces and all LAN interfaces with a single adjancency, except on interfaces where the functionality is explicitly disabled.";
-            leaf hold-down-timer {
-                description
-                  "The maximum amount of time that IS-IS advertises a maximum metric for an interface, while waiting for the LDP hello adjacency to come back up or for the LDP peer to send all its label-FEC bindings.";
-                units seconds;
-                type uint16 {
-                    range "1..1800";
-                }
-                default 60;
-            }
-            leaf end-of-lib {
-                description
-                  "When set to true, IS-IS waits until the LDP peer resends all its label-FEC bindings before restoring the normal metric for the interface, up to the maximum time defined by hold-down-timer.
-
-                   When set to false, IS-IS only waits until the LDP hellp adjacency coms back up before restoring the normal metric for the interface, up to the maximum time defined by hold-down-timer.";
-                type boolean;
-                default false;
-            }
-        }
-    }
-
-    grouping ldp-sync-interface {
-        container ldp-synchronization {
-            if-feature srl-feat:ldp;
-            description
-              "Container with configuration options and state that pertains to the operation of LDP-IGP synchronization on this interface.";
-
-            must "not (../passive = true())" {
-                error-message "ldp-sync configuration cannot be set on passive interfaces.";
-            }
-
-            leaf disable {
-                description
-                  "Disable LDP-IGP synchronization procedures on this interface, even if synchronization is enabled globally";
-                type empty;
-            }
-            leaf hold-down-timer {
-                description
-                  "The maximum amount of time that IS-IS advertises a maximum metric for an interface, while waiting for the LDP hello adjacency to come back up or for the LDP peer to send all its label-FEC bindings.
-                   This overrides the global/instance level setting.";
-                units seconds;
-                type uint16 {
-                    range "1..1800";
-                }
-            }
-            leaf end-of-lib {
-                description
-                  "When set to true, IS-IS waits until the LDP peer resends all its label-FEC bindings before restoring the normal metric for the interface, up to the maximum time defined by hold-down-timer.
-             
-                   When set to false, IS-IS only waits until the LDP hellp adjacency coms back up before restoring the normal metric for the interface, up to the maximum time defined by hold-down-timer.
-            
-                   This overrides the global/instance level setting.";
-                type boolean;
-            }
-            leaf sync-state {
-                config false; 
-                description
-                  "The current state of the interface with respect to LDP-IGP sync";
-                type enumeration {
-                  enum "in-sync";
-                  enum "out-of-sync";
-                }
-            }
-            leaf duration {
-                config false;
-                description
-                  "The length of time that the IGP interface has been in sync or out of sync";
-                type uint32;
-                units seconds;
             }
         }
     }
@@ -1732,15 +2137,8 @@ module srl_nokia-isis {
                   "The default metric to reach this adjacent neighbor.";
                 type isis-tlv-wide-metric;
             }
-            container sub-tlvs {
-                description
-                  "SubTLVs of TLV 22";
-                leaf ipv4-interface-address {
-                    description
-                      "The IPv4 address associated with the neighbor.";
-                    type srl_nokia-comm:ipv4-address;
-                }
-            }
+
+            uses neighbor-sub-tlvs;
         }
 
         list ipv4-internal-reachability {
@@ -1802,6 +2200,13 @@ module srl_nokia-isis {
             }
         }
 
+        leaf te-router-id {
+            config false;
+            description
+                "A single stable address that can always be referenced in a path that will be reachable from multiple hops away. TLV = 134.";
+            type srl_nokia-comm:ipv4-address;
+        }
+
         list extended-ipv4-reachability {
             config false;
             description
@@ -1824,23 +2229,80 @@ module srl_nokia-isis {
                   "Reads true when the IPv4 prefix was leaked down from Level2 to Level1.";
                 type boolean;
             }
-            container sub-tlvs {
-                description
-                  "SubTLVs of TLV 135";
 
-                leaf-list route-tag-32bit {
-                    description
-                      "List of 32-bit administrative tag values associated with the IPv4 prefix.";
-                    type uint32 {
-                      range "1..4294967295";
-                    }
-                }
-                leaf-list route-tag-64bit {
-                    description
-                      "List of 64-bit administrative tag values associated with the IPv4 prefix.";
-                    type uint64;
-                }
+            uses prefix-sub-tlvs;
+        }
+
+        list ipv4-srlg {
+            if-feature srl-feat:traffic-engineering;
+            config false;
+            description "List of SRLGs advertised by the router. TLV = 138.";
+            key neighbor;
+            leaf neighbor {
+                description
+                    "A neighbor, identified by its System ID and one octet to indicate the pseudonode number";
+                type isis-adjacent-neighbor;
             }
+            leaf numbered {
+                description
+                    "When set, the interface to the neighbor is numbered. When unset it is unnumbered.";
+                type boolean;
+            }
+            leaf ipv4-interface-address {
+                description
+                    "The IPv4 address of the interface to the neighbor";
+                type srl_nokia-comm:ipv4-address;
+            }
+            leaf ipv4-neighbor-address {
+                description
+                    "The IPv4 address of the neighbor";
+                type srl_nokia-comm:ipv4-address;
+            }
+            leaf-list shared-risk-link-group {
+                description
+                    "List of SRLGs that apply to the adjacency with this neighbor";
+                type uint32;
+            }
+        }
+
+        list ipv6-srlg {
+            if-feature srl-feat:traffic-engineering;
+            config false;
+            description "List of IPv6 SRLGs advertised by the router. TLV = 139.";
+            key neighbor;
+            leaf neighbor {
+                description
+                    "A neighbor, identified by its System ID and one octet to indicate the pseudonode number";
+                type isis-adjacent-neighbor;
+            }
+            leaf neighbor-address-included {
+                description
+                    "When set, the IPv6 neighbor address is included.";
+                type boolean;
+            }
+            leaf ipv6-interface-address {
+                description
+                    "The IPv6 address of the interface to the neighbor";
+                type srl_nokia-comm:ipv6-address;
+            }
+            leaf ipv6-neighbor-address {
+                description
+                    "The IPv6 address of the neighbor";
+                type srl_nokia-comm:ipv6-address;
+            }
+            leaf-list shared-risk-link-group {
+                description
+                    "List of SRLGs that apply to the adjacency with this neighbor";
+                type uint32;
+            }
+        }
+
+        leaf ipv6-te-router-id {
+            if-feature srl-feat:traffic-engineering;
+            config false;
+            description
+                "A single stable address that can always be referenced in a path that will be reachable from multiple hops away. TLV = 140.";
+            type srl_nokia-comm:ipv6-address;
         }
 
         list ipv6-reachability {
@@ -1871,22 +2333,7 @@ module srl_nokia-isis {
                   "Reads true when the IPv6 prefix was leaked down from Level2 to Level1.";
                 type boolean;
             }
-            container sub-tlvs {
-                description
-                  "SubTLVs of TLV 135";
-                leaf-list route-tag-32bit {
-                    description
-                      "List of 32-bit administrative tag values associated with the IPv6 prefix.";
-                    type uint32 {
-                      range "1..4294967295";
-                    }
-                }
-                leaf-list route-tag-64bit {
-                    description
-                      "List of 64-bit administrative tag values associated with the IPv6 prefix.";
-                    type uint64;
-                }
-            }
+            uses prefix-sub-tlvs;
         }
 
         container multi-topology {
@@ -1946,6 +2393,8 @@ module srl_nokia-isis {
                   "The default metric to reach this adjacent neighbor.";
                 type isis-wide-metric;
             }
+
+            uses neighbor-sub-tlvs;
         }
 
         list mt-ipv4-reachability {
@@ -1977,22 +2426,7 @@ module srl_nokia-isis {
                   "Reads true when the IPv4 prefix was leaked down from Level2 to Level1.";
                 type boolean;
             }
-            container sub-tlvs {
-                description
-                  "SubTLVs of TLV 135";
-                leaf-list route-tag-32bit {
-                    description
-                      "List of 32-bit administrative tag values associated with the IPv4 prefix.";
-                    type uint32 {
-                      range "1..4294967295";
-                    }
-                }
-                leaf-list route-tag-64bit {
-                    description
-                      "List of 64-bit administrative tag values associated with the IPv4 prefix.";
-                    type uint64;
-                }
-            }
+            uses prefix-sub-tlvs;
         }
 
         list mt-ipv6-reachability {
@@ -2029,20 +2463,193 @@ module srl_nokia-isis {
                   "Reads true when the IPv6 prefix was leaked down from Level2 to Level1.";
                 type boolean;
             }
+            uses prefix-sub-tlvs;
+        }
+
+        list application-specific-srlg {
+            if-feature srl-feat:traffic-engineering;
+            config false;
+            reference "RFC8919";
+            description
+                "List of application-specific SRLGs. TLV = 238.";
+            key neighbor;
+            leaf neighbor {
+                description
+                    "A neighbor, identified by its System ID and one octet to indicate the pseudonode number";
+                type isis-adjacent-neighbor;
+            }
+            leaf legacy {
+                description
+                    "When the legacy flag is set, all of the applications specified in the bit mask MUST use the legacy advertisements for the corresponding link found in TLV 138 or TLV 139.";
+                type boolean;
+            }
+            leaf rsvp-te {
+                description
+                    "R bit is set in the Standard Application Identifier Bit Mask";
+                type boolean;
+            }
+            leaf sr-policy {
+                description
+                    "S bit is set in the Standard Application Identifier Bit Mask";
+                type boolean;
+            }
+            leaf loop-free-alternate {
+                description
+                    "F bit is set in the Standard Application Identifier Bit Mask";
+                type boolean;
+            }
+            container sub-tlvs {
+                leaf link-local-identifier {
+                    description
+                        "A local identifier of the link";
+                    type uint32;
+                }
+                leaf link-remote-identifier {
+                    description
+                        "A remote identifier of the link";
+                    type uint32;
+                }
+                leaf ipv4-interface-address {
+                    description
+                        "The IPv4 address of the interface to the neighbor";
+                    type srl_nokia-comm:ipv4-address;
+                }
+                leaf ipv4-neighbor-address {
+                    description
+                        "The IPv4 address of the neighbor";
+                    type srl_nokia-comm:ipv4-address;
+                }
+                leaf ipv6-interface-address {
+                    description
+                        "The IPv6 address of the interface to the neighbor";
+                    type srl_nokia-comm:ipv6-address;
+                }
+                leaf ipv6-neighbor-address {
+                    description
+                        "The IPv6 address of the neighbor";
+                    type srl_nokia-comm:ipv6-address;
+                }
+                leaf-list shared-risk-link-group {
+                    description
+                        "List of SRLGs that apply to the adjacency with this neighbor";
+                    type uint32;
+                }
+            }
+        }
+
+        container router-capability {
+            description
+                "Allows a router to announce its capabilities within an IS-IS level or the entire routing domain. TLV = 242.";
+            leaf router-id {
+                description
+                    "Router ID indicating the source of the TLV";
+                type srl_nokia-comm:dotted-quad;
+            }
+            leaf scope-is-domain-wide {
+                description
+                    "When true, the TLV MUST be flooded across the entire routing domain. When false, the TLV MUST NOT be leaked between levels.";
+                type boolean;
+            }
+            leaf leaked-down {
+                description
+                    "When true, the TLV was leaked down from Level 2 to Level 1 and must not be leaked back up to L2";
+                type boolean;
+            }
             container sub-tlvs {
                 description
-                  "SubTLVs of TLV 135";
-                leaf-list route-tag-32bit {
+                    "Sub-TLVs of TLV 242";
+                container sr-capabilities {
+                    if-feature srl-feat:segment-routing;
                     description
-                      "List of 32-bit administrative tag values associated with the IPv6 prefix.";
-                    type uint32 {
-                      range "1..4294967295";
+                        "Used to advertise its SR data plane capability and the range of MPLS label values each router uses for Segment Routing in the case where global SIDs are allocated.";
+                    leaf ipv4-support {
+                        description
+                            "When true, the router is capable of processing SR-MPLS-encapsulated IPv4 packets on all interfaces";
+                        type boolean;
+                    }
+                    leaf ipv6-support {
+                        description
+                            "When true, the router is capable of processing SR-MPLS-encapsulated IPv6 packets on all interfaces";
+                        type boolean;
+                    }
+                    list srgb-descriptor {
+                        description
+                            "List of Segment Routing Global Block descriptors";
+                        key "sr-index-or-label range";
+                        leaf sr-index-or-label {
+                            description
+                                "An index representing the first value of the SRGB. The meaning (index or label) is determined from the length of the sub-tlv.";
+                            type uint32;
+                        }
+                        leaf range {
+                            description
+                                "The number of SRGB elements";
+                            type uint32 {
+                                range "1..16777215";
+                            }
+                        }
+
                     }
                 }
-                leaf-list route-tag-64bit {
+                container sr-algorithm {
+                    if-feature srl-feat:segment-routing;
                     description
-                      "List of 64-bit administrative tag values associated with the IPv6 prefix.";
-                    type uint64;
+                        "Advertises the IGP algorithms that the router is using";
+                    leaf-list algorithm {
+                        description
+                            "List of algorithm types supported by the router. Algorithm 0 should always be in the list";
+                        type uint8;
+                    }
+                }
+                container sr-local-block {
+                    if-feature srl-feat:segment-routing;
+                    description
+                        "Used to advertise the range of labels the node has reserved for local SIDs.";
+                    list srlb-descriptor {
+                        description
+                            "List of Segment Routing Local Block descriptors";
+                        key "sr-index-or-label range";
+                        leaf sr-index-or-label {
+                            description
+                                "An index representing the first value of the SRLB. The meaning (index or label) is determined from the length of the sub-tlv.";
+                            type uint32;
+                        }
+                        leaf range {
+                            description
+                                "The number of SRLB elements";
+                            type uint32 {
+                                range "1..16777215";
+                            }
+                        }
+                    }
+                }
+                container node-msd {
+                    if-feature srl-feat:segment-routing;
+                    description
+                        "Used to carry the provisioned SID depth of the router originating the capability TLV. Node MSD is the smallest MSD supported by the node on the set of interfaces configured for use by the advertising IGP instance";
+                    list msd-info {
+                        description
+                            "List of MSD entries";
+                        key "msd-type msd-value";
+                        leaf msd-type {
+                            description
+                                "MSD type";
+                            type union {
+                                type enumeration {
+                                    enum "base-mpls-imposition-msd" {
+                                        value 1;
+                                    }
+                                }
+                                type uint8 {
+                                    range "2..254";
+                                }
+                            }
+                        }
+                        leaf msd-value {
+                            description "A number in the range of 0-255 representing the maximum SID depth; for all MSD-Types, 0 represents the lack of ability to support a SID stack of any depth";
+                            type uint8;
+                        }
+                    }
                 }
             }
         }
@@ -2172,6 +2779,10 @@ module srl_nokia-isis {
                 error-message "ISIS routing configuration is not possible on network-instance of type host";
             }
 
+            uses isis-protocol-segment-routing {
+              if-feature srl-feat:label-management;
+            }
+
             list instance {
                 max-elements 1;
                 description
@@ -2185,6 +2796,10 @@ module srl_nokia-isis {
                 uses isis-inst-config;
                 uses isis-inst-common-state;
 
+                uses isis-inst-mpls-segment-routing {
+                  if-feature srl-feat:label-management;
+                }
+
                 list interface {
                     description "List of IS-IS interfaces";
 
@@ -2193,7 +2808,7 @@ module srl_nokia-isis {
                     uses isis-interface-key;
                     uses isis-interface-config;
                     uses isis-interface-state;
-                    uses ldp-sync-interface;
+                    uses srl_nokia-ldp:ldp-sync-interface;
                 }
 
                 list level {

@@ -16,6 +16,10 @@ module srl_nokia-qos {
         prefix srl-feat;
     }
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -269,7 +273,7 @@ module srl_nokia-qos {
 
                           The default value of 0 disables the functionality.
                            
-                           On J2 systems this parameter applies to a set of VOQs (and therefore to unicast traffic only). On TD3/TH3 systems this parameter applies to a unicast queue only; the configuration of this leaf is ignored when (on TD3) the queue-template is attached to a multicast-queue.
+                           On J2 systems this parameter applies to a set of VOQs (and therefore to unicast traffic only). On TD3/TH3 systems this parameter applies to a unicast queue only; the configuration of this leaf is ignored when the queue-template is attached to a multicast-queue.
                            
                            On TD3 the threshold is rounded up the nearest multiple of 2048 bytes. On J2 the threshold is rounded up to the nearest multiple of 4096 bytes. On TH3 the threshold is rounded up to the nearest multiple of 254 bytes.";
                     }
@@ -736,7 +740,13 @@ module srl_nokia-qos {
                         leaf last-high-threshold-time {
                             description
                               "The last time the queue depth exceeded the high-threshold in a rising direction.";
-                  type srl_nokia-comm:date-and-time-delta;
+                            type srl_nokia-comm:date-and-time;
+                        }
+                        leaf high-threshold-bytes {
+                            type uint32;
+                            units "bytes";
+                            description
+                              "The operational hardware value of the high threshold in bytes.";
                         }
                     } // queue-depth
                     container scheduling {
@@ -869,11 +879,11 @@ module srl_nokia-qos {
                          *     description
                          *         "Committed queue depth in bytes.";
                          } */
-                         leaf last-high-threshold-time {
-                             description
-                               "The last time the queue depth exceeded the high-threshold in a rising direction.";
-                             type srl_nokia-comm:date-and-time;
-                         }
+                        leaf last-high-threshold-time {
+                            description
+                              "The last time the queue depth exceeded the high-threshold in a rising direction.";
+                            type srl_nokia-comm:date-and-time;
+                        }
                     } // queue-depth
                     container scheduling {
                         description
@@ -991,6 +1001,21 @@ module srl_nokia-qos {
                         description
                           "The slot identifier for the virtual output queue.";
                     }
+                    container queue-depth {
+                        config false;
+                        srl_nokia-ext:first-released "21.6.1";
+                        leaf last-high-threshold-time {
+                            description
+                              "The last time the depth of either VOQ associated with this slot exceeded the high-threshold in a rising direction.";
+                            type srl_nokia-comm:date-and-time;
+                        }
+                        leaf high-threshold-bytes {
+                            type uint32;
+                            units "bytes";
+                            description
+                              "The operational hardware value of the high threshold in bytes.";
+                        }
+                    } // queue-depth
                     container forwarded-packets {
                         srl_nokia-ext:first-released "20.12.1";
                         leaf low-drop-probability {

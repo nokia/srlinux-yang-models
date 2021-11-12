@@ -23,6 +23,10 @@ module srl_nokia-if-ip {
 
   // typedef statements
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -128,8 +132,8 @@ module srl_nokia-if-ip {
     description
       "Top-level configuration and state for IPv4 interfaces";
     container ipv4 {
-      must "../type != 'srl_nokia-if:bridged'" {
-        error-message "ipv4 configuration not allowed on bridged subinterfaces";
+      must "(../type != 'bridged') and (../type != 'local-mirror-dest')" {
+        error-message "ipv4 configuration not allowed on bridged or local-mirror-dest subinterfaces";
       }
       presence "Enable IPv4 on the subinterface";
       description
@@ -222,8 +226,8 @@ module srl_nokia-if-ip {
     description
       "Top-level configuration and state for IPv6 interfaces";
     container ipv6 {
-      must "../type != 'srl_nokia-if:bridged'" {
-        error-message "ipv6 configuration not allowed on bridged subinterfaces";
+      must "(../type != 'bridged') and (../type != 'local-mirror-dest')" {
+        error-message "ipv6 configuration not allowed on bridged or local-mirror-dest subinterfaces";
       }
       presence "Enable IPv6 on the subinterface";
       description
@@ -344,11 +348,11 @@ module srl_nokia-if-ip {
     container statistics {
       config false;
       description
-        "Container for subinterface statistics, counting IPv4 packets, IPv6 packets and MPLS packets in aggregate";
+        "Container for subinterface statistics, counting IPv4 packets and IPv6 packets in aggregate";
       leaf in-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of input IPv4+IPv6+MPLS packets received, counting transit and terminating traffic
+          "The total number of input IPv4+IPv6 packets received, counting transit and terminating traffic
 
           This equals the sum of:
           in-error-packets
@@ -359,13 +363,13 @@ module srl_nokia-if-ip {
       leaf in-octets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of octets received in input IPv4+IPv6+MPLS packets, counting transit and terminating traffic";
+          "The total number of octets received in input IPv4+IPv6 packets, counting transit and terminating traffic";
       }
       leaf in-error-packets {
         if-feature "srl_feat:jericho2";
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of input IPv4+IPv6+MPLS packets discarded due to errors, counting transit and terminating traffic
+          "The total number of input IPv4+IPv6 packets discarded due to errors, counting transit and terminating traffic
 
           The sum of the following RFC 4293 counters:
           ipIfStatsInHdrErrors
@@ -377,7 +381,7 @@ module srl_nokia-if-ip {
       leaf in-discarded-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-            "The total number of input IPv4+IPv6+MPLS packets (transit and terminating traffic) that were dropped for any of the following reasons:
+            "The total number of input IPv4+IPv6 packets (transit and terminating traffic) that were dropped for any of the following reasons:
             - ingress interface ACL drop action
             - CPM filter drop action
             - VOQ congestion discards (7250 IXR only)
@@ -391,7 +395,7 @@ module srl_nokia-if-ip {
         if-feature "srl_feat:jericho2";
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of input IPv4+IPv6+MPLS packets that were received on this subinterface and that have a destination IP address matching a local interface address or an IPv6 multicast address to which the interface belongs. The count includes packets eventually discarded by the CPM. Such discards include:
+          "The total number of input IPv4+IPv6 packets that were received on this subinterface and that have a destination IP address matching a local interface address or an IPv6 multicast address to which the interface belongs. The count includes packets eventually discarded by the CPM. Such discards include:
           - packets with unsupported IP protocol numbers
           - packets destined to TCP/UDP ports that are not open/listening
           - IPv4 packets with any IP options
@@ -401,12 +405,12 @@ module srl_nokia-if-ip {
         if-feature "srl_feat:jericho2";
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of octets in input IPv4+IPv6+MPLS packets that were received on this subinterface and counted in in-terminated-packets";
+          "The total number of octets in input IPv4+IPv6 packets that were received on this subinterface and counted in in-terminated-packets";
       }
       leaf in-forwarded-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of input IPv4+IPv6+MPLS packets received on this subinterface for which the router was not the final destination and for which the router attempted to find a route or label entry to forward them to that final destination.
+          "The number of input IPv4+IPv6 packets received on this subinterface for which the router was not the final destination and for which the router attempted to find a route to forward them to that final destination.
 
           Note that non-terminating IPv4 packets with options and non-terminating IPv6 packets with extension headers are included in this count (and not dropped) as are packets that trigger ICMP/ICMPv6 redirect messages.
           
@@ -415,47 +419,52 @@ module srl_nokia-if-ip {
       leaf in-forwarded-octets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of octets received in input IPv4+IPv6+MPLS packets received on this subinterface and counted in in-forwarded-packets";
+          "The number of octets received in input IPv4+IPv6 packets received on this subinterface and counted in in-forwarded-packets";
+      }
+      leaf in-matched-ra-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of packets matched with applied RA-Guard policy";
       }
       leaf out-forwarded-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of transit IPv4+IPv6+MPLS packets which the router attempted to route out this subinterface";
+          "The number of transit IPv4+IPv6 packets which the router attempted to route out this subinterface";
       }
       leaf out-forwarded-octets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of octets in transit IPv4+IPv6+MPLS packets which the router attempted to route out this subinterface";
+          "The number of octets in transit IPv4+IPv6 packets which the router attempted to route out this subinterface";
       }
       leaf out-originated-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of IPv4+IPv6+MPLS packets which originated on the CPM and which the router attempted to route out this subinterface
+          "The number of IPv4+IPv6 packets which originated on the CPM and which the router attempted to route out this subinterface
 
           This includes all originated ICMP/ICMPv6 messages.";
       }
       leaf out-originated-octets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of octets in IPv4+IPv6+MPLS packets which originated on the CPM and which the router attempted to route out this subinterface";
+          "The number of octets in IPv4+IPv6 packets which originated on the CPM and which the router attempted to route out this subinterface";
       }
       leaf out-error-packets {
         if-feature "srl_feat:jericho2";
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of IPv4+IPv6+MPLS packets, originating and transit, for which this router was successful in finding a path to their final destination through this subinterface but an error prevented their transmission.
+          "The number of IPv4+IPv6 packets, originating and transit, for which this router was successful in finding a path to their final destination through this subinterface but an error prevented their transmission.
 
           On 7250 IXR systems this is incremented when the IPv4 packet size exceeds the IP MTU and fragmentation was not allowed or not supported";
       }
       leaf out-discarded-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of IPv4+IPv6+MPLS packets, originating and transit, sent towards this subinterface that were dropped.";
+          "The total number of IPv4+IPv6 packets, originating and transit, sent towards this subinterface that were dropped.";
       }
       leaf out-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of IPv4+IPv6+MPLS packets that this router supplied to the lower layers for transmission
+          "The total number of IPv4+IPv6 packets that this router supplied to the lower layers for transmission
 
           This includes packets generated locally and those forwarded by this router. If there are no queue drops it is equal to:
           <out-forwarded-packets> + <out-originated-packets> - <out-error-packets> - <out-discarded-packets>";
@@ -463,7 +472,7 @@ module srl_nokia-if-ip {
       leaf out-octets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of octets in IPv4+IPv6+MPLS packets delivered to the lower layers for transmission";
+          "The total number of octets in IPv4+IPv6 packets delivered to the lower layers for transmission";
       }
       leaf last-clear {
         type srl_nokia-comm:date-and-time-delta;

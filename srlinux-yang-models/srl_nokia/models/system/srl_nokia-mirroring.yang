@@ -15,19 +15,23 @@ module srl_nokia-mirroring {
   description
     "This module defines configuration and operational state data for mirroring (SPAN/ERSPAN).";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
   }
 
   typedef mirroring-instance-subintf-ref {
-    type srl-comm:subinterface-all;
+    type srl-comm:subinterface-eth-lag;
     description
       "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
   }
 
   typedef mirroring-instance-intf-ref {
-    type srl-comm:interface-all;
+    type srl-comm:interface-eth-lag;
     description
       "Reference type to a specific subinterface of the form <interface-name>";
   }
@@ -47,6 +51,7 @@ module srl_nokia-mirroring {
       "Top-level grouping containing a list of mirroring instances.";
 
     list mirroring-instance {
+      max-elements 4;
       key "name";
       description "Mirroring instances configured on the local system";
       leaf name {
@@ -79,6 +84,7 @@ module srl_nokia-mirroring {
         config false;
         type enumeration {
         enum "mirror-inst-admin-down";
+        enum "no-mirror-source";
         enum "local-mirror-subif-down";
         enum "remote-mirror-dst-unreachable";
         }
@@ -95,31 +101,36 @@ module srl_nokia-mirroring {
     description
       "Top-level grouping containing a list of mirror sources.";
     container mirror-source {
-      list interfaces {
-	key interface;
-        leaf interface { 
+      description "Configure mirror source(s)";
+      list interface {
+        description "List of interfaces used as mirror source";
+	key "name";
+        leaf name {
 	  type mirroring-instance-intf-ref;
-          must "(starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'ethernet') or starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'lag'))" {
-            error-message "mirror source can be either ethernet or lag interface";
+           must "/srl_nokia-if:interface[srl_nokia-if:name=.]" {
+            error-message "Must be an existing interface name";
           }
         }
         leaf direction {
 	  type direction;
+          default egress-only;
           description "The direction of traffic to be mirrored";
         }
         max-elements 128;
       }
 
-      list subinterfaces {
-	key subinterface;
-        leaf subinterface {
+      list subinterface {
+        description "List of subinterfaces used as mirror source";
+	key "name";
+        leaf name {
           type mirroring-instance-subintf-ref;
-          must "(starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'ethernet') or starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'lag'))" {
-            error-message "mirror source can be either ethernet or lag interface";
+          must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]" {
+            error-message "Must be an existing subinterface name";
           }
         }
         leaf direction {
 	  type direction;
+          default egress-only;
           description "The direction of traffic to be mirrored";
         }
         max-elements 128;
@@ -130,7 +141,9 @@ module srl_nokia-mirroring {
   grouping mirror-destination-top {      
     description "Top-level grouping containing local/remote mirror destination";
     container mirror-destination {
+      description "Configure mirror destination";
       leaf local {
+        description "subinterface of type local-mirror-dest used as local mirror destination";
         type mirroring-instance-subintf-ref;
         must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]/srl_nokia-if:type = 'local-mirror-dest'" {
           error-message "local-mirror-destination is only allowed on subinterfaces with type local-mirror-dest";
@@ -143,7 +156,7 @@ module srl_nokia-mirroring {
     container mirroring {
       presence "presence top level container for system mirroring";
       if-feature srl-feat:mirroring;
-      description "Top level container for configuration and operational state for mirroring (SPAN/ERSPAN)";
+      description "Top level container for configuration and operational state for mirroring";
       uses mirroring-instance-top;
     }
   }

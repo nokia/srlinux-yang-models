@@ -18,7 +18,7 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
     prefix srl_nokia-if; 
   }
   import srl_nokia-rib-bgp {
-      prefix srl_nokia-rib-bgp-routes;
+    prefix srl_nokia-rib-bgp-routes;
   }
   import srl_nokia-system {
     prefix srl_nokia-system;
@@ -33,6 +33,10 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
   description
     "This yang file models configuration and state of the bgp-evpn ethernet segments.";
   
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -50,7 +54,9 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
   typedef df-algorithm-type {
     type enumeration {
       enum "default";
-      enum "preference";
+      enum "preference" {
+        if-feature "srl_nokia-feat:evpn-mh-pref-alg";
+      }
     }
     description 
       "Designated Forwarder algorithm type. 
@@ -109,6 +115,7 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
         }
         units "seconds";
         default "3";
+        srl_nokia-ext:show-importance "high";
       }
       leaf boot-remaining-time {
         config false;
@@ -138,16 +145,15 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
           description "Remaining activation timer per Ethernet segment";                          
         }
       }
-      leaf interface-standby-signaling-on-non-df {
-        type boolean;
-        if-feature "srl_nokia-feat:future-21-6";
+      container interface-standby-signaling-on-non-df {
+        if-feature "srl_nokia-feat:evpn-mh-single-active";
+        presence "Enables standby signaling on a non-Designated Forwarder node";
         must "../algorithm/type = 'preference'" {
           error-message "The algorithm type must be 'preference'";
         }
         must "../../multi-homing-mode = 'single-active'" {
           error-message "The multi-homing-mode must be 'single-active'";
         }
-        // default false;
         srl_nokia-ext:show-importance "high";
       }
       container algorithm {
@@ -165,25 +171,8 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
           description 
             "Operational Designated Forwarder algorithm type for this ethernet-segment.";
         }
-        container default-alg {
-          presence "Configure default DF Election algorithm aspects.";
-          if-feature "srl_nokia-feat:future-21-6";
-          must "../type = 'default'" {
-            error-message "The algorithm type must be 'default'";
-          }
-          container capabilities  {
-            leaf ac-df {
-              type boolean;
-              default true;
-              description "Attachment Circuit influenced DF Election.";
-              srl_nokia-ext:show-importance "high";
-              reference "RFC8584";
-            }
-          }
-        }
         container preference-alg {
           presence "Configure preference DF Election algorithm aspects.";
-          if-feature "srl_nokia-feat:future-21-6";
           must "../type = 'preference'" {
             error-message "The algorithm type must be 'preference'";
           }
@@ -196,10 +185,27 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
             srl_nokia-ext:show-importance "high";
             reference "draft-ietf-bess-evpn-pref-df";
           }
+          leaf oper-preference-value {
+            config false;
+            type uint32;
+            description "Operational Preference value";
+            srl_nokia-ext:show-importance "high";
+            reference "draft-ietf-bess-evpn-pref-df";
+          }
+          leaf oper-do-not-prempt {
+            config false;
+            type boolean;
+            description "Operational do-not-preempt value";
+            srl_nokia-ext:show-importance "high";
+            reference "draft-ietf-bess-evpn-pref-df";
+          }
           container capabilities  {
             leaf ac-df {
-              type boolean;
-              default true;
+              type enumeration {
+                enum "include";
+                enum "exclude";
+              }
+              default include;
               description "Attachment Circuit influenced DF Election.";
               srl_nokia-ext:show-importance "high";
               reference "RFC8584";
@@ -292,7 +298,7 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
     description
       "Top-level grouping containing the bgp-evpn ethernet segments configuration and state.";
     container ethernet-segments {
-      srl_nokia-ext:first-released "20.10.1";
+      srl_nokia-ext:first-released "21.3.1";
       presence
         "Container for evpn ethernet segments configuration and state.";
       uses eth-segments-global;
@@ -307,7 +313,7 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
         }
         list ethernet-segment {
           key name;
-          max-elements 4095;
+          max-elements 128;
           description
             "Ethernet Segment configuration and state.";
           leaf name {
@@ -335,10 +341,9 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
             srl_nokia-ext:show-importance "high";
             description
               "The 10-byte Ethernet Segment Identifier of the ethernet segment.
+
                ESI-0 or MAX-ESI values are not allowed.
-               ESI values with bytes 1-6 all zeros are not allowed since they would produce a null ESI-import route-target.
-               
-               When the esi is configured as 'auto-type-x' the actual 10-byte esi is shown in the oper-esi leaf.";
+               ESI values with bytes 1-6 all zeros are not allowed since they would produce a null ESI-import route-target.";
           }
           leaf oper-esi {
             type srl_nokia-comm:esi; 
@@ -363,9 +368,11 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
             default "all-active";
             srl_nokia-ext:show-importance "high";
             description 
-              "Multi-homing mode of the ethernet segment. The state of this leaf can be different than the configured value in cases where 
-               the configured value is 'all-active' and the multi-homing mode advertised by the ES peers in the AD per-ES routes is 'single-active'.
-               In this case, the state of this leaf will show 'single-active'.";
+              "Multi-homing mode of the ethernet segment. 
+              
+               The state of this leaf can be different than the configured value in cases where the configured value is 'all-active' and the 
+               multi-homing mode advertised by the ES peers in the AD per-ES routes is 'single-active'. In this case, the state of this 
+               leaf will show 'single-active'.";
             reference "RFC7432";
           }
           leaf oper-multi-homing-mode {
@@ -373,9 +380,11 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
             type multi-homing-mode;
             srl_nokia-ext:show-importance "high";
             description 
-              "Operational Multi-homing mode of the ethernet segment. The state of this leaf can be different than the configured value in cases where 
-               the configured value is 'all-active' and the multi-homing mode advertised by the ES peers in the AD per-ES routes is 'single-active'.
-               In this case, the state of this leaf will show 'single-active'.";
+              "Operational Multi-homing mode of the ethernet segment. 
+              
+               The state of this leaf can be different than the configured value in cases where the configured value is 'all-active' and the 
+               multi-homing mode advertised by the ES peers in the AD per-ES routes is 'single-active'. In this case, the state of this leaf 
+               will show 'single-active'.";
             reference "RFC7432";
           }
           uses designated-forwarder-election-top;

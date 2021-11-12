@@ -12,6 +12,10 @@ module srl_nokia-ip-route-tables {
   description
     "A model describing the IP routing tables of a network instance.";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -79,13 +83,19 @@ module srl_nokia-ip-route-tables {
   }
 
   grouping ipv4-ipv6-entry-common-fields {
-    leaf owner {
+    leaf route-type {
       type identityref {
-        base srl_nokia-comm:ip-route-owner;
+        base srl_nokia-comm:ip-route-type;
       }
       srl_nokia-ext:show-importance "high";
       description
-        "The protocol or application that owns the IP route";
+        "The type of the IP route";
+    }
+    leaf route-owner {
+      type string;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The application name of the owner of the IP route";
     }
     leaf metric {
       type uint32;
@@ -104,6 +114,12 @@ module srl_nokia-ip-route-tables {
       srl_nokia-ext:show-importance "high";
       description
         "If set to true then the route is installed as the active route for the IP prefix in the FIB. A route can be inactive because there is a more preferred route for the same prefix or else its next-hops are unresolved.";
+    }
+    leaf best {
+      type boolean;
+      srl_nokia-ext:show-importance "high";
+      description
+        "If set to true the route is the most preferred route for the IP prefix amongst all route types and route owners.";
     }
     leaf last-app-update {
       type srl_nokia-comm:date-and-time-delta;
@@ -186,19 +202,19 @@ module srl_nokia-ip-route-tables {
     container route-summary {
       description
         "Route summary information";
-      list protocol {
-        key protocol-name;
-        leaf protocol-name {
+      list route-type {
+        key ip-route-type-name;
+        leaf ip-route-type-name {
           type identityref {
-            base srl_nokia-comm:ip-route-owner;
+            base srl_nokia-comm:ip-route-type;
           }
           description
-            "IP route owner";
+            "IP route type";
         }
         leaf active-routes {
           type uint32;
           description
-            "Total number of prefixes submitted by the protocol/owner to fib-mgr and that fib-mgr successfully installed as active routes";
+            "Total number of prefixes associated with this route type that were submitted to fib-mgr and that fib-mgr successfully installed as active routes";
         }
       }
     }
@@ -209,14 +225,16 @@ module srl_nokia-ip-route-tables {
       description
         "The container for the IPv4 unicast routing table of the network instance.";
       list route {
-        key "ipv4-prefix id";
+        key "ipv4-prefix route-type route-owner id";
         leaf ipv4-prefix {
           type srl_nokia-comm:ipv4-prefix;
+          description
+            "The IPv4 prefix associated with the route.";
         }
         leaf id {
-          type uint16;
+          type uint32;
           description
-            "An index value representing the relative order of preference of routes for the same prefix. If there is an active route for the prefix it will always be assigned index 0. The route with index 1 is next in order to become active if the route with index 0 is removed.";
+            "An owner-assigned index value that is unique for each of the routes for a given prefix.";
         }
         uses ipv4-ipv6-entry-common-fields;
       }
@@ -227,14 +245,16 @@ module srl_nokia-ip-route-tables {
       description
         "The container for the IPv6 unicast routing table of the network instance.";
       list route {
-        key "ipv6-prefix id";
+        key "ipv6-prefix route-type route-owner id";
         leaf ipv6-prefix {
           type srl_nokia-comm:ipv6-prefix;
+          description
+            "The IPv6 prefix associated with the route.";
         }
         leaf id {
-          type uint16;
+          type uint32;
           description
-            "An index value representing the relative order of preference of routes for the same prefix. If there is an active route for the prefix it will always be assigned index 0. The route with index 1 is next in order to become active if the route with index 0 is removed.";
+            "An owner-assigned index value that is unique for each of the routes for a given prefix.";
         }
         uses ipv4-ipv6-entry-common-fields;
       }
@@ -294,10 +314,14 @@ module srl_nokia-ip-route-tables {
             path "../../../next-hop/index";
           }
         }
-        leaf active {
-          type boolean;
+        leaf resolved {
+          type enumeration {
+            enum "true";
+            enum "false";
+            enum "not-applicable";
+          }
           description
-            "If set to true then the next-hop is active and used in the group. It can be inactive if it is not resolved";
+            "Set to true when the next-hop was resolved. This reads not-applicable for resolve=false next-hops.";
         }
         // container fib-programming {
         //   description
@@ -367,25 +391,37 @@ module srl_nokia-ip-route-tables {
           description
             "The prefix of the resolving route.";
         }
-        leaf owner {
+        leaf route-type {
           type identityref {
-            base srl_nokia-comm:ip-route-owner;
+            base srl_nokia-comm:ip-route-type;
           }
           description
-            "The owner of the resolving route.";
+            "The type of the resolving route.";
+        }
+        leaf route-owner {
+          type string;
+          description
+            "The application name of the owner of the resolving route.";
         }
       }
-      leaf tunnel-owner {
-        type string;
-        description
-          "The application owning the tunnel, if the next-hop type is tunnel.";
-      }
-      leaf tunnel-type {
-        type identityref {
-          base srl_nokia-comm:tunnel-type;
+      container resolving-tunnel {
+        leaf ip-prefix {
+          type srl_nokia-comm:ip-prefix;
+          description
+            "The prefix of the resolving tunnel.";
         }
-        description
-          "The encapsulation type of the tunnel, if the next-hop type is tunnel.";
+        leaf tunnel-type {
+          type identityref {
+            base srl_nokia-comm:tunnel-type;
+          }
+          description
+          "The type of the tunnel.";
+        }
+        leaf tunnel-owner {
+          type string;
+          description
+            "The application name of the owner of the resolving tunnel.";
+        }
       }
       container mpls {
         leaf-list pushed-mpls-label-stack {

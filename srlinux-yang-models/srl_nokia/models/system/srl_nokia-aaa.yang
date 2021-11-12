@@ -2,10 +2,12 @@ module srl_nokia-aaa {
   yang-version 1.1;
 
   // namespace
+
   namespace "urn:srl_nokia/aaa";
   prefix srl-aaa;
 
   // imports
+
   import srl_nokia-aaa-types {
     prefix srl-aaa-types;
   }
@@ -14,6 +16,9 @@ module srl_nokia-aaa {
   }
   import srl_nokia-extensions {
     prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
   }
   import srl_nokia-network-instance {
     prefix srl-netinst;
@@ -30,6 +35,10 @@ module srl_nokia-aaa {
 
      Portions of this model reuse data definitions or structure from RFC 7317 - A YANG Data Model for System Management";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -181,7 +190,7 @@ module srl_nokia-aaa {
       }
       must 'not(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:mac-vrf")' {
         error-message "AAA server cannot be in a network-instance of type 'mac-vrf'";
-      }      
+      }
       description
         "Reference to a configured network-instance used for reachability to the server
 
@@ -211,6 +220,11 @@ module srl_nokia-aaa {
         type string;
         description
           "Service name that called login for the session";
+      }
+      leaf authentication-method {
+        type string;
+        description
+          "Authentication method that authorized the user (the server-group name or local)";
       }
       leaf tty-name {
         type string;
@@ -266,13 +280,13 @@ module srl_nokia-aaa {
     leaf-list role {
       max-elements 32;
       type leafref {
-          path "../../../authorization/role/rolename";
+        path "../../../authorization/role/rolename";
       }
       description
         "List of roles to assign to this user
-       
-        The most specific rule for a particular role takes precedence.
-        Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
+
+         The most specific rule for a particular role takes precedence.
+         Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
     }
   }
 
@@ -299,27 +313,37 @@ module srl_nokia-aaa {
       description
         "Assigned rolename for this role";
     }
+    leaf-list services {
+      if-feature "srl-feat:service-authorization";
+      srl-ext:first-released "21.6.1";
+      type enumeration {
+        enum cli;
+        enum gnmi;
+        enum json-rpc;
+        enum ftp;
+      }
+      description
+        "Services that members of this role are authorized for
 
+         Services are additive, if a user is a member of multiple roles, the available services are merged.";
+    }
     // container tacacs {
     //   description
     //     "Top-level container for configuration relating to TACACS+ interworking with roles";
     //   leaf priv-lvl {
     //     description
     //       "The TACACS+ priv-lvl to map to this role
-
     //       All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
     //     type uint8 {
     //       range 0..15;
     //     }
     //   }
     // }
-
     // No interactions with sudo in the first release
     // leaf superuser {
     //   type empty;
     //   description
     //     "Allows members of this role to perform all sudo operations
-
     //     This includes sudoing to the root user account, so users with this option set can perform any and all operations in the system.";
     // }
   }
@@ -495,12 +519,12 @@ module srl_nokia-aaa {
     leaf idle-timeout {
       srl-ext:first-released "20.6.1";
       type uint32;
-      default 600;
+      default "600";
       units "seconds";
       description
         "Set the idle timeout of all CLI sessions
 
-        After the timeout is reached, the session is disconnected from the system.";
+         After the timeout is reached, the session is disconnected from the system.";
     }
   }
 

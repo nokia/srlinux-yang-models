@@ -29,6 +29,10 @@ module srl_nokia-tunnel-interfaces {
 
   // typedef statements
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -39,6 +43,7 @@ module srl_nokia-tunnel-interfaces {
       length "6..8"; // based on the pattern below. This will be modified for future tunnel-interfaces.
       pattern '(vxlan(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9]))';
     }
+    description "The type of the tunnel-interface.";
   }
   typedef vlan-id {
     type uint16 {
@@ -49,15 +54,13 @@ module srl_nokia-tunnel-interfaces {
   }
 
   // groupings 
-
   grouping tunnel-interface-top { 
     description 
       "Top-level configuration and state for tunnel interfaces.";
     list tunnel-interface {
       if-feature "srl-feat:vxlan";
       key "name";
-
-      srl_nokia-ext:first-released "20.10.1";
+      srl_nokia-ext:first-released "21.3.1";
       description
         "In the case that the interface is logical tunnel
          interface, the parameters for the tunnel are
@@ -78,10 +81,11 @@ module srl_nokia-tunnel-interfaces {
     }
   }
   grouping vxlan-interface-top {
+    description "Vxlan-interface grouping.";
     list vxlan-interface {
       max-elements 16384;
       key "index";
-      srl_nokia-ext:first-released "20.10.1";
+      srl_nokia-ext:first-released "21.3.1";
       description
         "The list of vxlan-interfaces.";
       leaf index {
@@ -129,8 +133,9 @@ module srl_nokia-tunnel-interfaces {
           }
         mandatory "true";
         description 
-          "Ingress VXLAN Network Identifier of the VXLAN subinterface. The egress VNI is
-           determined by the static egress-vni configured in the associated destination
+          "Ingress VXLAN Network Identifier of the VXLAN subinterface. 
+          
+           The egress VNI is determined by the static egress-vni configured in the associated destination
            or by the dynamic egress-vni learned from the control plane.";
         }
       }
@@ -156,7 +161,7 @@ module srl_nokia-tunnel-interfaces {
             "Parameters of the inner VXLAN ethernet payload when the VXLAN tunnel is used in an ip-vrf.";
           presence "Configure the inner-ethernet-header";
           must "../../type != 'srl_nokia-if:bridged'" {
-            error-message "innner-ethernet-header not allowed with vxlan-interface type bridged.";
+            error-message "Inner-ethernet-header not allowed with vxlan-interface type bridged.";
           }
           leaf source-mac {
             type union {
@@ -185,17 +190,17 @@ module srl_nokia-tunnel-interfaces {
       if-feature "srl-feat:vxlan-destination-groups";
       list group {
         key "name";
-        description "Specifies the next hop group.";
+        description "Specifies the destination group.";
         leaf name {
           type srl_nokia-comm:name;
           description
-            "Specifies the next hop group name";
+            "Specifies the destination group name";
         }
         leaf admin-state {
           type srl_nokia-comm:admin-state;
           default "enable";
           description
-            "Used to enable or disable a next-hop group";
+            "Used to enable or disable a destination group";
         }
         leaf esi {
           type srl_nokia-comm:esi;
@@ -219,7 +224,7 @@ module srl_nokia-tunnel-interfaces {
             type srl_nokia-comm:admin-state;
             default "enable";
             description
-              "Used to enable or disable a particular next-hop";
+              "Used to enable or disable a particular destination.";
           }
 /* TODO:
           leaf vxlan-tunnel {
@@ -235,22 +240,24 @@ module srl_nokia-tunnel-interfaces {
               range "1..16777215";
             }
             description 
-              "Egress VXLAN Network Identifier of the vxlan-interface. The egress VNI is
-               statically configured or dynamically learned from the control plane.";
+              "Egress VXLAN Network Identifier of the vxlan-interface. 
+
+               The egress VNI is statically configured or dynamically learned from the control plane.";
           }
           container inner-ethernet-header {
             description 
               "Parameters of the inner VXLAN ethernet payload when the VXLAN tunnel is used in an ip-vrf.";
             must "../../../../../type != 'srl_nokia-if:bridged'" {
-              error-message "innner-ethernet-header not allowed with vxlan-interface type bridged.";
+              error-message "inner-ethernet-header not allowed with vxlan-interface type bridged.";
             }
             leaf destination-mac {
               type srl_nokia-comm:mac-address;
               description 
-                "VXLAN inner ethernet destination mac-address. Configured when the VXLAN tunnel is associated 
-                 with a ip-vrf network-instance and the egress-vtep and egress-vni are statically configured.
-                 If not configured, the destination mac-address is obtained from one of the EVPN IP Prefix routes
-                 for the destination, out of the Router's MAC extended community.";
+                "VXLAN inner ethernet destination mac-address. 
+
+                 Configured when the VXLAN tunnel is associated with a ip-vrf network-instance and the egress-vtep 
+                 and egress-vni are statically configured. If not configured, the destination mac-address is obtained from one 
+                 of the EVPN IP Prefix routes for the destination, out of the Router's MAC extended community.";
             }
           }
         }

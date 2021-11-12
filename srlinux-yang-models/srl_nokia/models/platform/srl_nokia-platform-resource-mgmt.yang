@@ -9,6 +9,10 @@ module srl_nokia-platform-resource-mgmt {
   description
     "This module defines configuration and operational data for system-wide management of critical resources";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -44,7 +48,9 @@ module srl_nokia-platform-resource-mgmt {
             If this is set to high-scale then 8 UFT shared banks are allocated to ALPM. This mode is not supported by 7220 IXR-D1.";
           type enumeration {
             enum "disabled";
-            enum "enabled";
+            enum "enabled" {
+              if-feature "srl-feat:platform-7220-d1";
+            }
             enum "high-scale" {
               if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
             }
@@ -111,7 +117,6 @@ module srl_nokia-platform-resource-mgmt {
   }
 
   augment "/srl_nokia-platform:platform" {
-    if-feature srl-feat:future-21-6;
     uses res-mgmt;
   }
 }

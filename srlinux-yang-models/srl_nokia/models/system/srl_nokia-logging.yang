@@ -16,6 +16,10 @@ module srl_nokia-logging {
   description
     "This module describes a YANG model for system logging.";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -64,6 +68,7 @@ module srl_nokia-logging {
         enum isis;
         enum json;
         enum lag;
+        enum ldp;
         enum linux;
         enum lldp;
         enum log;
@@ -239,12 +244,12 @@ module srl_nokia-logging {
         type usage-capacity-size-type;
         description
           "Details the upperbound usage this log may occupy
-    
+
           This value is the combination of the size of each individual
           output file, and the number of files that may be kept.";
-      }    
+      }
     }
-    
+
     grouping usage-common {
       leaf in-use {
         type usage-capacity-size-type;
@@ -368,7 +373,7 @@ module srl_nokia-logging {
 /*      container orphans {
         description
           "Top-level container for orphaned files
-      
+
           Orphaned files are files that have been deleted from configuration but still have logs on the system. These are periodically cleaned based on the retention-period parameter.";
         leaf retention-period {
           type uint8;
@@ -376,7 +381,7 @@ module srl_nokia-logging {
           default 24;
           description
             "The time in hours to retain orphaned logs in the system
-      
+
             After this period has elapsed the files are automatically deleted. Setting this field to 0 will result in no cleanup taking place.";
         }
         list file {
@@ -403,7 +408,7 @@ module srl_nokia-logging {
           config false;
           description
             "Log files maintained in memory, non-persistent across system reboots
-      
+
             These files are stored at directory /var/log/srlinux/buffer.  Rotation into multiple files is available.";
           leaf buffer-name {
             type restricted-file-name-type;

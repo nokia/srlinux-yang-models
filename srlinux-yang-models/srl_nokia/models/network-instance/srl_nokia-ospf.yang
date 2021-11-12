@@ -30,6 +30,9 @@ module srl_nokia-ospf {
   import srl_nokia-features {
     prefix srl-feat;
   }
+  import srl_nokia-ldp {
+    prefix srl_nokia-ldp;
+  }
   include srl_nokia-ospf-lsdb;
   include srl_nokia-ospfv3-lsas;
 
@@ -38,6 +41,10 @@ module srl_nokia-ospf {
 
   // Groupings
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -1970,7 +1977,7 @@ module srl_nokia-ospf {
       }
     }
   }
-
+      
   grouping ospf-top {
     description
       "Top-level OSPF configuration and operational state";
@@ -2000,6 +2007,7 @@ module srl_nokia-ospf {
         uses ospf-global-state;
         uses ospf-as-lsa-totals;
         uses ospf-as-lsdb-structure;
+        uses srl_nokia-ldp:ldp-sync-global-config;
 
         must './router-id != default or (../../../router-id != default and ../../../router-id != "0.0.0.0")' {
           error-message "Must have router-id defined in network-instance or in ospf-instance andit can not be 0.0.0.0";
@@ -2027,6 +2035,7 @@ module srl_nokia-ospf {
             uses ospf-interface-packet-counts;
             uses ospf-interface-lsa-totals;
             uses ospf-link-lsdb-structure;
+            uses srl_nokia-ldp:ldp-sync-interface;
             must 'dead-interval >= (2 * hello-interval)' {
               error-message "The dead-interval must be at least twice the hello-interval";
             }

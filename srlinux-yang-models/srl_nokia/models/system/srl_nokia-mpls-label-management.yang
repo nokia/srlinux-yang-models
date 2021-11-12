@@ -7,6 +7,9 @@ module srl_nokia-mpls-label-management {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
   import srl_nokia-system {
     prefix srl_nokia-system;
   }
@@ -17,6 +20,10 @@ module srl_nokia-mpls-label-management {
   description
     "This module defines configuration and operational state data for system wide MPLS label management.";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -72,51 +79,65 @@ module srl_nokia-mpls-label-management {
   grouping common-label-block {
     leaf start-label {
       description
-        "The starting label value of the label block";
+        "The starting label value of the label block.
+
+        When the status is not-ready or updating, the state value may be different from the configured value";
       type srl_nokia-comm:mpls-label;
     }
     leaf end-label {
       description
-        "The ending label value of the label block";
+        "The ending label value of the label block.
+
+        When the status is not-ready or updating, the state value may be different from the configured value";
       type srl_nokia-comm:mpls-label;
       must ". > ../start-label";
     }
-    leaf shared {
-      description
-        "When set to true, the label block can be shared by multiple clients or users.
-        
-        When set to false, the label block is dedicated to one client or user.";
-      type boolean;
-      default "true";
-    }
     leaf allocated-labels {
+      srl_nokia-ext:delivery-node-override true;
+      srl_nokia-ext:stream-mode sample=5;
       config false;
       description
         "The number of labels that are currently used in this block";
       type uint32;
     }
     leaf free-labels {
+      srl_nokia-ext:delivery-node-override true;
+      srl_nokia-ext:stream-mode sample=5;
       config false;
       description
-        "The number of labels that are currently available and free in this block";
+        "The number of labels that are currently available and free in this block.
+
+        When the status is not-ready or updating, the state value may be different from the configured value";
       type uint32;
+    }
+    leaf status {
+      config false;
+      description
+        "The status of the MPLS label block";
+      type enumeration {
+        enum "ready" {
+          description "The label block is ready to use.";
+        }
+        enum "not-ready" {
+          description "The label block is not ready to use.";
+        }
+        enum "delete-pending" {
+          description "The label block is in the process of being deleted.";
+        }
+        enum "updating" {
+          description "The label block is available to use but the new limits do not apply yet.";
+        }
+      }
     }
     list user {
       config false;
       description
-        "The list of clients/users that are using this label block. If the block is not shared there will only be 1 user";
+        "The list of protocols that are using this label block. If the block is not shared there will only be 1 user";
       key index;
       leaf index {
         description
           "Index number used to enumerate the clients";
         type uint8;
-      }
-      leaf network-instance {
-        description
-          "The network-instance associated with the client";
-        type leafref {
-          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
-        }
       }
       leaf protocol {
         description
@@ -124,11 +145,6 @@ module srl_nokia-mpls-label-management {
         type identityref {
           base mpls-protocol;
         }
-      }
-      leaf instance {
-        description
-          "The protocol instance associated with the client";
-        type srl_nokia-comm:name;
       }
     }
   }
@@ -152,13 +168,22 @@ module srl_nokia-mpls-label-management {
               "The name of the static label block";
             type srl_nokia-comm:name;
           }
+          leaf shared {
+            // this is an immutable leaf, to be enforced by the backend
+            description
+              "When set to true, the label block can be shared by multiple protoccols. When set to false, the label block is dedicated to one protocol.";
+            type boolean;
+            default "true";
+          }
           uses common-label-block;
         }
         list dynamic {
           description
             "List of dynamic label blocks
             
-            When a client application binds its operation to a dynamic label block that client application is expected to just ask for the next available label within the dynamic label block.";
+            When a client application binds its operation to a dynamic label block that client application is expected to just ask for the next available label within the dynamic label block.
+            
+            At this time a dynamic label block cannot be shared by multiple different clients/protocols. Each protocol needing dynamic labels must have its own label block.";
           key name;
           leaf name {
             description

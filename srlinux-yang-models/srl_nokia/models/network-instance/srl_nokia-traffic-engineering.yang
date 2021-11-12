@@ -14,6 +14,10 @@ module srl_nokia-traffic-engineering {
   description
     "Configuration and state related to the use and propagation of TE information.";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -59,6 +63,38 @@ module srl_nokia-traffic-engineering {
     }
   }
 
+  grouping tedb-bgp-ls {
+    container bgp-ls {
+      presence "Install topology and TE information related to this protocol instance into the TE database in a format that supports export as BGP-LS routes.";
+      description
+        "When present, topology and TE information related to this protocol instance is installed into the TE database in a format that supports export as BGP-LS routes";
+      leaf bgp-ls-identifier {
+        description
+          "BGP-LS identifier value that is sent in the BGP-LS NLRI";
+        type uint32;
+      }
+      leaf igp-identifier {
+        description
+          "Unique identifier of the IGP instance that is sent in the BGP-LS NLRI";
+        type uint64 {
+          range "0..18446744073709551615";
+        }
+      }
+    }
+  }
+
+  grouping direct-tedb {
+    container te-database-install {
+      presence "Install local topology and TE information into the TE database.";
+      description
+        "When present, local topology and TE information is installed into the TE database";
+      must "(../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+        error-message "traffic-engineering is only allowed on network-instance of type default";
+      }
+      uses tedb-bgp-ls;
+    }
+  }
+
   grouping protocol-instance-tedb {
     container te-database-install {
       presence "Install topology and TE information related to this protocol instance into the TE database.";
@@ -67,23 +103,7 @@ module srl_nokia-traffic-engineering {
       must "(../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
         error-message "traffic-engineering is only allowed on network-instance of type default";
       }
-      container bgp-ls {
-        presence "Install topology and TE informationn related to this protocol instance into the TE database in a format that supports export as BGP-LS routes.";
-        description
-          "When present, topology and TE information related to this protocol instance is installed into the TE database in a format that supports export as BGP-LS routes";
-        leaf bgp-ls-identifier {
-          description
-            "BGP-LS identifier value that is sent in the BGP-LS NLRI";
-          type uint32;
-        }
-        leaf igp-identifier {
-          description
-            "Unique identifier of the IGP instance that is sent in the BGP-LS NLRI";
-          type uint64 {
-            range "0..18446744073709551615";
-          }
-        }
-      }
+      uses tedb-bgp-ls;
     }
   }
 
@@ -92,6 +112,7 @@ module srl_nokia-traffic-engineering {
       description
         "When set to true, topology and TE information related to this area or level should nkot be imported into the TE database in a format that supports export as BGP-LS routes";
       type boolean;
+      must ". = false() or (. = true() and ../../te-database-install/bgp-ls)";
       default false;
     }
   }
@@ -133,6 +154,7 @@ module srl_nokia-traffic-engineering {
           }
           // leaf application-name
           leaf bit-position {
+            mandatory "true";
             type uint32 {
               range "0..31";
             }
@@ -157,6 +179,7 @@ module srl_nokia-traffic-engineering {
           }
           // leaf application-name
           leaf value {
+            mandatory "true";
             type uint32;
             description
               "Group ID for the SRLG";
@@ -247,6 +270,6 @@ module srl_nokia-traffic-engineering {
   }
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-netinst:directly-connected" {
     if-feature srl-feat:traffic-engineering;
-    uses protocol-instance-tedb;
+    uses direct-tedb;
   }
 }

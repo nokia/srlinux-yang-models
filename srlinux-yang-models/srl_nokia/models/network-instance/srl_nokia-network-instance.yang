@@ -9,6 +9,7 @@ module srl_nokia-network-instance {
 
   import srl_nokia-common { prefix srl_nokia-comm; }
   import srl_nokia-icmp { prefix srl_nokia-icmp; }
+  import srl_nokia-interfaces { prefix srl_nokia-if;}
   import srl_nokia-bridge-table { prefix srl_nokia-bridge-table; }
   import srl_nokia-bridge-table-mac-learning { prefix srl_nokia-bridge-table-mac-learning; }
   import srl_nokia-bridge-table-mac-duplication { prefix srl_nokia-bridge-table-mac-duplication; }
@@ -19,6 +20,10 @@ module srl_nokia-network-instance {
   description
     "This yang file gives a description of a network-instance. This may be a Layer 3 forwarding construct such as a virtual routing and forwarding (VRF) instance, or a Layer 2 instance such as a virtual switch instance (VSI). Mixed Layer 2 and Layer 3 instances are also supported.";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -219,6 +224,9 @@ module srl_nokia-network-instance {
           }
           must "../../type != 'srl_nokia-netinst:host'" {
             error-message "Interfaces cannot be added to a network instance of type host";
+          }
+          must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]/srl_nokia-if:type != 'local-mirror-dest'" {
+            error-message "subinterface with type local-mirror-dest cannot be configured on network-instance";
           }
           description
             "Identifier of sub-interface used in this network-instance";

@@ -21,6 +21,10 @@ module srl_nokia-interfaces-router-adv {
     description
       "Model for managing ICMPv6 router advertisement on IPv6 subinterfaces.";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -35,7 +39,7 @@ module srl_nokia-interfaces-router-adv {
             description
               "Container for configuring IPv6 router discovery options";
 
-            if-feature srl_nokia-feat:future-21-6;
+            if-feature srl_nokia-feat:future-21-6-2;
 
             container router-role {
                 description
@@ -53,7 +57,9 @@ module srl_nokia-interfaces-router-adv {
                 }
                 leaf ip-mtu {
                     description
-                      "The IP MTU to advertise in the router advertisement messages and that hosts should associate with the link on which these messages are received.";
+                      "The IP MTU to advertise in the router advertisement messages and that hosts should associate with the link on which these messages are received.
+
+                      If no value is specified the option is not included.";
                     type uint16 {
                         range "1280..9486";
                     }
@@ -119,7 +125,7 @@ module srl_nokia-interfaces-router-adv {
                 list prefix {
                     description
                       "The list of IPv6 prefixes to advertise in the router advertisement messages.";
-                    max-elements 1;
+                    max-elements 16;
 
                     key ipv6-prefix;
 
@@ -127,18 +133,21 @@ module srl_nokia-interfaces-router-adv {
                         description
                           "An IPv6 global unicast address prefix.";
                         type srl_nokia-comm:ipv6-prefix;
+                        must "not(.='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
+                            error-message "Not a global unicast IPv6 address prefix";
+                        }
                     }
                     leaf autonomous-flag {
                         description
                           "When this is set in the prefix information option hosts can use the prefix for stateless address autoconfiguration (SLAAC). ";
                         type boolean;
-                        default false;
+                        default true;
                     }
                     leaf on-link-flag {
                         description
                           "When this is set in the prefix information option hosts can use the prefix for on-link determination.";
                         type boolean;
-                        default false;
+                        default true;
                     }
                     leaf preferred-lifetime {
                         description

@@ -8,10 +8,19 @@ module srl_nokia-platform-qos {
   import srl_nokia-platform-lc {prefix srl_nokia-platform-lc; }
   import srl_nokia-platform-resource-monitoring {prefix srl_nokia-platform-res-mon; }
   import srl_nokia-features {prefix srl-feat; }
+  import srl_nokia-extensions {prefix srl-ext; }
 
   description
     "This module defines configuration and operational state related to QoS resources in the system";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
   revision 2020-06-30 {
     description
       "SRLinux 20.6.1";
@@ -41,11 +50,13 @@ module srl_nokia-platform-qos {
   identity rewrite-policies {
     base qos-resources;
     description
-      "A rewrite-policy resource is used every time a different rewrite-rule policy is applied to an egress subinterface of the 7250 IXR IMM. There are 32 of these resources.";
+      "A rewrite-policy resource is used every time a different DSCP or MPLS traffic-class rewrite-rule policy is applied to an egress subinterface of the 7250 IXR IMM. There are 32 of these resources.";
   }
 
   grouping qos-resource-monitoring {
     container qos {
+      srl-ext:delivery-node-override true;
+      srl-ext:stream-mode sample=5;
       list resource {
         key name;
         leaf name {
@@ -73,6 +84,8 @@ module srl_nokia-platform-qos {
 
   grouping qos-utilization {
     container qos {
+      srl-ext:delivery-node-override true;
+      srl-ext:stream-mode sample=5;
       config false;
       list resource {
         key name;
@@ -99,6 +112,8 @@ module srl_nokia-platform-qos {
 
   grouping buffer-memory {
     container buffer-memory {
+        srl-ext:delivery-node-override true;
+        srl-ext:stream-mode sample=5;
         description
           "Container for utilization statistics of the packet buffer memory";
         leaf used {

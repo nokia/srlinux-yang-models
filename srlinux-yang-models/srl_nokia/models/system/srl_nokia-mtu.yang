@@ -14,6 +14,10 @@ module srl_nokia-mtu {
   description
     "This module defines configuration and operational state data related to the system MTU";
 
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -60,6 +64,15 @@ module srl_nokia-mtu {
         "System default IP MTU in bytes including the IP header but excluding Ethernet overhead
 
         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum IP MTU of 9398 bytes.";
+    }
+    leaf default-mpls-mtu {
+      if-feature "srl_nokia-feat:future-21-6-3";
+      type uint16 {
+        range "1284..9496";
+      }
+      default "1508";
+      description
+        "System default MPLS MTU in bytes including the size of the transmitted label stack.";
     }
     leaf min-path-mtu {
       type uint16 {
