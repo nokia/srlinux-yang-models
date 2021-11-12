@@ -3,8 +3,12 @@ module srl_nokia-tools-ldp {
   namespace "urn:srl_nokia/tools-ldp";
   prefix srl_nokia-tools-ldp;
 
-  import srl_nokia-tools-network-instance { 
-    prefix srl_nokia-tools-netinst; 
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
   }
   import srl_nokia-features {
     prefix srl_nokia-feat;
@@ -24,9 +28,67 @@ module srl_nokia-tools-ldp {
       presence "Configure the LDP protocol";
       description
         "Operational tools commands for LDP.";
+      container discovery {
+        container interfaces {
+          list interface {
+            key "name";
+            leaf name {
+              type srl_nokia-comm:subinterface-eth-lag;
+                description
+                  "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+            }
+            container ipv4 {
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Resets all the LDP instance state counters to zero";
+                }
+              }
+            }
+          }
+        }
+      }
+      container peers {
+        list peer {
+          key "lsr-id label-space-id";
+          description
+            "List of peers.";
+          leaf lsr-id {
+            type srl_nokia-comm:dotted-quad;
+            description
+              "The LSR ID of the peer, to identify the globally unique LSR. This is the first four octets of the LDP ID. This leaf is used together with the leaf 'label-space-id' to form the LDP ID.";
+          }
+          leaf label-space-id {
+            type uint16;
+            description
+              "The Label Space ID of the peer, to identify a specific label space within the LSR. This is the last two octets of the LDP ID. This leaf is used together with the leaf 'lsr-id' to form the LDP ID.";
+          }
+          leaf reset {
+            type empty;
+            description
+              "Reset the LDP session by closing the TCP connection and establishing a new one.";
+          }
+          container statistics {
+            leaf clear {
+              type empty;
+              description
+                "Resets all the LDP instance state counters to zero";
+            }
+          }
+        }
+      }
       container reset-overload {
         presence "Reset the overload state of LDP";
       }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Resets all the LDP instance state counters to zero";
+        }
+      }
+
     }
   }
   augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {

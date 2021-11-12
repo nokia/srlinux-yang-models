@@ -10,6 +10,7 @@ module srl_nokia-mpls {
     import srl_nokia-common { prefix srl_nokia-comm; }
     import srl_nokia-network-instance { prefix srl_nokia-netinst; }
     import srl_nokia-next-hop-groups { prefix srl_nokia-nhg; }
+    import srl_nokia-ip-route-tables { prefix srl_nokia-ip-table; }
     import srl_nokia-features { prefix srl-feat; }
     import srl_nokia-system { prefix srl_nokia-system; }
     import srl_nokia-mpls-label-management { prefix srl_nokia-mplslbl; }
@@ -41,14 +42,6 @@ module srl_nokia-mpls {
                 error-message "MPLS configuration only supported with network instance type default";
             }
             presence "Configure MPLS";
-            leaf admin-state {
-                type srl_nokia-comm:admin-state;
-                default "disable";
-                description
-                    "Adminstratively enable or disable MPLS.
-
-                    When MPLS is enabled, MPLS packets can be received on any subinterface of the default network-instance. When MPLS is disabled, MPLS packets are discarded if received on any subinterface of the default network-instance.";
-            }
             leaf static-label-block {
                 if-feature srl-feat:label-management;
                 type leafref {
@@ -73,10 +66,9 @@ module srl_nokia-mpls {
             list static-entry {
                 key "top-label preference";
                 leaf top-label {
-                    type srl_nokia-comm:mpls-label;
+                    type srl_nokia-comm:mpls-label-non-reserved;
                     description
                         "A received MPLS packet, received on any subinterface, matches this static entry if its top label stack entry contains the label value specified by this leaf.";
-                    // akimana todo: include IMPLICIT_NULL into label validation (maybe using int(current()) < 5))???
                     must "(current() >= /srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../static-label-block]/srl_nokia-mplslbl:start-label)"
                     + " and (current() <= /srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../static-label-block]/srl_nokia-mplslbl:end-label)" {
                         error-message "static-label-block is not configured or top-label is out of static-label-block's range";
@@ -103,6 +95,12 @@ module srl_nokia-mpls {
                     default swap;
                     description
                         "The operation to be performed with the top label.";
+                    must 'not(current() != "pop" and not(../next-hop-group))' {
+                        error-message "Swap operation needs a next-hop-group";
+                    }
+                    must 'not(current() = "pop" and ../next-hop-group)' {
+                        error-message "No next-hop-group needed for pop operation";
+                    }
                 }
                 leaf collect-stats {
                     type boolean;
@@ -119,6 +117,12 @@ module srl_nokia-mpls {
                 leaf next-hop-group {
                     type leafref {
                         path "../../../srl_nokia-nhg:next-hop-groups/srl_nokia-nhg:group/srl_nokia-nhg:name";
+                    }
+                }
+                leaf resolved-next-hop-group-id {
+                    config false;
+                    type leafref {
+                        path "../../../srl_nokia-netinst:route-table/srl_nokia-ip-table:next-hop-group/srl_nokia-ip-table:index";
                     }
                 }
             }

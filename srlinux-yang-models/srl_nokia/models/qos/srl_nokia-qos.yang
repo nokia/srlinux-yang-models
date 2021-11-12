@@ -463,6 +463,12 @@ module srl_nokia-qos {
                     description
                       "The forwarding class to which the traffic-class value is mapped";
                 }
+                leaf drop-probability {
+                    srl_nokia-ext:first-released "21.6.3";
+                    type drop-probability;
+                    description
+                      "The drop probability to which the traffic-class value is mapped";
+                }
             }
         }
     }
@@ -544,10 +550,26 @@ module srl_nokia-qos {
                     description
                       "The forwarding-class value";
                 }
+                list drop-probability {
+                    srl_nokia-ext:first-released "21.6.1";
+                    key drop-probability;
+                    leaf drop-probability {
+                        type drop-probability;
+                        description
+                            "A drop probability level within the FC for which a different remarking is desired.";
+                    }
+                    leaf traffic-class {
+                        mandatory true;
+                        type traffic-class;
+                        description
+                            "The MPLS traffic class marking to be used for this specific drop-probability";
+                    }
+                }
                 leaf traffic-class {
+                    mandatory true;
                     type traffic-class;
                     description
-                      "The MPLS traffic class value to mark the packet with";
+                        "The MPLS traffic class marking to be used for all packets associated with the FC, except those with a drop-probability-specific override.";
                 }
             }
         }

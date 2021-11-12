@@ -507,23 +507,31 @@ module srl_nokia-common {
       "General operational state";
   }
 
-  typedef mpls-label {
+  typedef mpls-label-non-reserved {
+    type uint32 {
+      range 16..1048575;
+    }
+  }
+
+  typedef mpls-label-with-explicit-null {
     type union {
-      type uint32 {
-        range 16..1048575;
-      }
-      type enumeration {
-        enum IMPLICIT_NULL {
-          value 3;
-          description
-            "assigned by local LSR but not carried in
-            packets";
-        }
+      type mpls-label-non-reserved;
+    type enumeration {
+        enum IPV4_EXPLICIT_NULL { value 0; }
+        enum IPV6_EXPLICIT_NULL { value 2; }
       }
     }
-    description
-      "type for MPLS label value encoding";
-    reference "RFC 3032 - MPLS Label Stack Encoding";
+  }
+
+  typedef mpls-label-with-implicit-and-explicit-null {
+    type union {
+      type mpls-label-non-reserved;
+      type enumeration {
+        enum IPV4_EXPLICIT_NULL { value 0; }
+        enum IPV6_EXPLICIT_NULL { value 2; }
+        enum IMPLICIT_NULL { value 3; }
+      }
+    }
   }
 
   // Counters, gauges, and date types
@@ -775,7 +783,7 @@ module srl_nokia-common {
   typedef alphanumeric {
     type string {
       // Add all accepted characters here
-      pattern "[A-Za-z0-9 !@#$%^&()|+=`~.,'/_:;?-]*";
+      pattern "[A-Za-z0-9!@#$%^&()|+=`~.,'/_:;?-][A-Za-z0-9 !@#$%^&()|+=`~.,'/_:;?-]*";        
     }
     description
       "A simple, one-line string that does not contain any control characters";

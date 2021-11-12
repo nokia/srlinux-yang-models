@@ -13,9 +13,6 @@ module srl_nokia-mpls-label-management {
   import srl_nokia-system {
     prefix srl_nokia-system;
   }
-  import srl_nokia-network-instance {
-    prefix srl_nokia-netinst;
-  }
 
   description
     "This module defines configuration and operational state data for system wide MPLS label management.";
@@ -82,15 +79,19 @@ module srl_nokia-mpls-label-management {
         "The starting label value of the label block.
 
         When the status is not-ready or updating, the state value may be different from the configured value";
-      type srl_nokia-comm:mpls-label;
+      type srl_nokia-comm:mpls-label-non-reserved;
+      mandatory "true";
     }
     leaf end-label {
       description
         "The ending label value of the label block.
 
         When the status is not-ready or updating, the state value may be different from the configured value";
-      type srl_nokia-comm:mpls-label;
-      must ". > ../start-label";
+      type srl_nokia-comm:mpls-label-non-reserved;
+      mandatory "true";
+      must ". >= ../start-label" {
+        error-message "End label must be greater than the start label.";
+      }
     }
     leaf allocated-labels {
       srl_nokia-ext:delivery-node-override true;

@@ -331,12 +331,12 @@ module srl_nokia-if-ip {
 
             If the anycast-gw MAC address is not configured, it will be auto-derived from the virtual-router-id value 
             as per draft-ietf-bess-evpn-inter-subnet-forwarding following the format 00:00:5E:00:01:VRID.";
-      } 
+      }
       leaf anycast-gw-mac-origin {
         config false;
         type anycast-gw-mac-origin;
         description
-          "Origin of the active anycast-gateway MAC address. 
+          "Origin of the active anycast-gateway MAC address.
          
            If not configured, the anycast-gateway-mac will be auto-derived out of 00:00:5E:00:01:VRID, where VRID is the 
            Virtual Router Identifier of the subinterface anycast-gw.";
@@ -348,22 +348,22 @@ module srl_nokia-if-ip {
     container statistics {
       config false;
       description
-        "Container for subinterface statistics, counting IPv4 packets and IPv6 packets in aggregate";
+        "Container for subinterface statistics, counting IPv4 packets and IPv6 packets in aggregate (and also some MPLS packets)";
       leaf in-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of input IPv4+IPv6 packets received, counting transit and terminating traffic
+          "The total number of input packets received, counting transit and terminating traffic
 
           This equals the sum of:
-          in-error-packets
-          in-discarded-packets
-          in-terminated-packets
-          in-forwarded-packets";
+          in-error-packets (IPv4 + IPv6)
+          in-discarded-packets (IPv4 + IPv6 + IP/MPLS)
+          in-terminated-packets (IPv4 + IPv6 + IP/MPLS)
+          in-forwarded-packets (IPv4 + IPv6)";
       }
       leaf in-octets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of octets received in input IPv4+IPv6 packets, counting transit and terminating traffic";
+          "The total number of octets received in input packets, counting transit and terminating traffic";
       }
       leaf in-error-packets {
         if-feature "srl_feat:jericho2";
@@ -389,7 +389,9 @@ module srl_nokia-if-ip {
             - packet matched a route with a blackhole next-hop
             - packet was non-terminating and its TTL expired
             - packet matched a route with a next-hop via another subinterface but the next-hop address was not resolvable by ARP/ND
-            - packet is a host address on another subinterface but the host address was not resolvable by ARP/ND";
+            - packet is a host address on another subinterface but the host address was not resolvable by ARP/ND
+
+            This also includes IP/MPLS packets dropped by ingress interface ACL drop action or CPM filer drop action.";
       }
       leaf in-terminated-packets {
         if-feature "srl_feat:jericho2";
@@ -399,7 +401,9 @@ module srl_nokia-if-ip {
           - packets with unsupported IP protocol numbers
           - packets destined to TCP/UDP ports that are not open/listening
           - IPv4 packets with any IP options
-          - IPv6 packets with any extension headers";
+          - IPv6 packets with any extension headers
+
+           This also includes terminating IP/MPLS packets.";
       }
       leaf in-terminated-octets {
         if-feature "srl_feat:jericho2";
@@ -413,7 +417,7 @@ module srl_nokia-if-ip {
           "The number of input IPv4+IPv6 packets received on this subinterface for which the router was not the final destination and for which the router attempted to find a route to forward them to that final destination.
 
           Note that non-terminating IPv4 packets with options and non-terminating IPv6 packets with extension headers are included in this count (and not dropped) as are packets that trigger ICMP/ICMPv6 redirect messages.
-          
+
           On 7220 IXR systems this also counts received traffic that is terminating.";
       }
       leaf in-forwarded-octets {
@@ -459,7 +463,9 @@ module srl_nokia-if-ip {
       leaf out-discarded-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The total number of IPv4+IPv6 packets, originating and transit, sent towards this subinterface that were dropped.";
+          "The total number of IPv4+IPv6 packets, originating and transit, sent towards this subinterface that were dropped.
+
+           This also includes IP/MPLS packets dropped by egress interface ACL drop action.";
       }
       leaf out-packets {
         type srl_nokia-comm:zero-based-counter64;
@@ -467,7 +473,7 @@ module srl_nokia-if-ip {
           "The total number of IPv4+IPv6 packets that this router supplied to the lower layers for transmission
 
           This includes packets generated locally and those forwarded by this router. If there are no queue drops it is equal to:
-          <out-forwarded-packets> + <out-originated-packets> - <out-error-packets> - <out-discarded-packets>";
+          <out-forwarded-packets> + <out-originated-packets>";
       }
       leaf out-octets {
         type srl_nokia-comm:zero-based-counter64;

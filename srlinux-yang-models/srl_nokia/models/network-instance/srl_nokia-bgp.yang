@@ -1772,7 +1772,7 @@ module srl_nokia-bgp {
 
     grouping next-hop-resolution {
       container next-hop-resolution {
-        if-feature srl_nokia-feat:future-21-6-3;  // supported from 21.6R3 release
+        if-feature srl_nokia-feat:mpls;
         description
           "Options for controlling next-hop resolution procedures";
         container ipv4-next-hops {
@@ -1974,9 +1974,9 @@ module srl_nokia-bgp {
                             "List of prefix and group-id combinations from which incoming TCP connections to port 179 will be accepted
 
                             An incoming TCP connection to port 179 is matched to a list entry if:
-                            (a)	the source IP does not match a configured BGP neighbor address
-                            (b)	the list entry prefix is the longest prefix match of the source IP.";
-                            /*(c)	the list entry group-id-range includes the LLDP Session Group-ID associated with the source IP.";*/
+                            (a) the source IP does not match a configured BGP neighbor address
+                            (b) the list entry prefix is the longest prefix match of the source IP.";
+                            /*(c)   the list entry group-id-range includes the LLDP Session Group-ID associated with the source IP.";*/
 
                         key "prefix";
                         //key "prefix group-id-range";
@@ -2033,8 +2033,8 @@ module srl_nokia-bgp {
                             "List of prefix and group-id combinations learned from LLDP that will trigger BGP to initiate dynamic BGP sessions
 
                             A dynamic session will be initiated according to a list entry if:
-                            (a)	the list entry prefix is the longest prefix match of the Peering Address learned from LLDP
-                            (b)	the list entry group-id-range includes the Session Group-ID learned from LLDP.";
+                            (a) the list entry prefix is the longest prefix match of the Peering Address learned from LLDP
+                            (b) the list entry group-id-range includes the Session Group-ID learned from LLDP.";
                         key "prefix group-id-range";
                         leaf prefix {
                             type srl_nokia-comm:ip-prefix;
@@ -2228,11 +2228,23 @@ module srl_nokia-bgp {
                 }
                 leaf keep-all-routes {
                     description
-                      "When this is set to true all received EVPN routes are retained in the RIB-IN, even those rejected by import policies and those not imported by any mac-vrf network-instance. When this is false, EVPN routes that are not imported by any mac-vrf network-instance are dropped and all policy changes affecting received EVPN routes will trigger the sending of ROUTE_REFRESH messages towards all EVPN family peers.
-                       
-                       The value of this leaf is implicitly true when the BGP instance is configured as a route-reflector.";
+                      "When this is set to true all received EVPN routes are retained in the RIB-IN, even those not imported by any network-instance; these routes display as 'rejected' and cannot be propagated to other peers.
+
+                      When this is false, EVPN routes that are not imported by any network-instance are dropped and not retained in the BGP RIB-IN; policy changes affecting received EVPN routes will trigger the sending of ROUTE_REFRESH messages towards all EVPN family peers.";
                     type boolean;
-                    must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                    default false;
+                    must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "EVPN is not supported in network instances other than default";
+                    }
+                }
+                leaf inter-as-vpn {
+                    description
+                        "When set to true, received EVPN routes that are not imported by any network-instance are retained in the BGP RIB and considered 'used' so that they can be propagated to any EBGP or IBGP peer.
+
+                        This command supersedes the effect of keep-all-routes.";
+                    type boolean;
+                    default false;
+                    must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
                         error-message "EVPN is not supported in network instances other than default";
                     }
                 }

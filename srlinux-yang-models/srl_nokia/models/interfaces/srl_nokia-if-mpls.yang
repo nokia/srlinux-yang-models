@@ -28,12 +28,27 @@ module srl_nokia-if-mpls {
       config false;
       description
         "Container for MPLS-specific subinterface statistics";
+      leaf in-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of input MPLS packets received, not counting MPLS packets discarded due to ACLs or IP/MPLS packets that terminated on this router.
+
+          This equals the sum of:
+          in-error-packets
+          in-discarded-packets
+          in-forwarded-packets";
+      }
+      leaf in-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of octets in input MPLS packets received, not counting MPLS packets discarded due to ACLs or IP/MPLS packets that terminated on this router.";
+      }
       leaf in-discarded-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
             "The total number of MPLS packets that were dropped because they were received with forwarded top label having an MPLS TTL value of 1";
       }
-      leaf in-error-packets {    
+      leaf in-error-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
           "The total number of MPLS packets that were dropped because they were received with errors that include:
@@ -68,6 +83,28 @@ module srl_nokia-if-mpls {
 
           For now this only counts transmission errors that result from the MPLS packet size exceeding the MPLS MTU of the subinterface.";
       }
+      leaf out-originated-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of MPLS packets that were originated by this router.";
+      }
+      leaf out-originated-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in MPLS packets that were originated by this router.";
+      }
+      leaf out-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of output MPLS packets transmitted.
+
+          This equals out-originated-packets + out-forwarded-packets";
+      }
+      leaf out-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of octets in output MPLS packets transmitted.";
+      }
       leaf last-clear {
         type srl_nokia-comm:date-and-time-delta;
         description
@@ -79,7 +116,7 @@ module srl_nokia-if-mpls {
   grouping mpls-top {
     container mpls {
       config false;
-      if-feature "srl_feat:future-21-6-3";
+      if-feature "srl_feat:mpls";
       must "(../type != 'bridged') and (../type != 'local-mirror-dest')" {
         error-message "mpls is not supported on bridged or local-mirror-dest subinterfaces";
       }
