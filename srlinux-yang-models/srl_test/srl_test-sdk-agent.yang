@@ -1,0 +1,102 @@
+module srl_test-sdk-agent {
+
+    yang-version "1";
+
+    // namespace
+    namespace "urn:srl_test/sdk-agent";
+
+    prefix "srl_test-sdk-agent";
+
+    import srl_nokia-interfaces { prefix srl_nokia-if; }
+    import srl_nokia-common { prefix srl_nokia-comm; }
+    import srl_nokia-extensions { prefix srl_nokia-ext; }
+
+    revision "2018-11-01" {
+        description "Initial revision";
+        reference "TBD";
+    }
+
+
+    grouping apple-app-top {
+        description "Top level grouping for apple demo app";
+
+        container apple-app {
+            presence "presence container";
+            description "Top level enclosing container for apple demo app config
+                         and operational state data";
+
+            leaf input-fib {
+                description "Route description file";
+                type string;
+            }
+            leaf enable-tunnel-monitor {
+                description "Enable tunnel monitoring";
+                type boolean;
+            }
+            leaf route-preference {
+                description "Network instance to add apple app routes to";
+                type uint8 {
+                    range "0..255";
+                }
+                default 150;
+            }
+
+            list tunnel {
+                key name;
+                config false;
+                srl_nokia-ext:show-importance high;
+
+                leaf name {
+                    type string;
+                }
+
+                leaf request-count {
+                    type uint32;
+                }
+
+                leaf response-count {
+                    type uint32;
+                }
+
+                leaf rtt {
+                    type uint32;
+                }
+
+                leaf state {
+                    type string;
+                }
+
+                leaf label-stack {
+                    type string;
+                }
+
+                leaf outgoing-interface {
+                    type string;
+                }
+
+            }
+        }
+    }
+
+    grouping interface-apple-app-config {
+        description "Grouping for apple demo app applied to the interface";
+
+        container apple-app {
+            presence "presence container";
+            description "Container for apple demo app applied to the interface";
+            leaf te-overload {
+                description "Overload interface to drain traffic from controller";
+                type boolean;
+                default false;
+            }
+        }
+    }
+
+    // augment statements
+    augment "/srl_nokia-if:interface" {
+        uses interface-apple-app-config;
+    }
+
+    // data definition statements
+    uses apple-app-top;
+}

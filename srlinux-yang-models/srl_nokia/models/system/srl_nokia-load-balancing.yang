@@ -1,0 +1,38 @@
+module srl_nokia-load-balancing {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/load-balancing";
+  prefix srl_nokia-lb;
+
+  import srl_nokia-system { prefix srl-system; }
+
+  description
+    "This module defines configuration and operational state data
+     related to ECMP and other load-balancing options.";
+
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping ip-load-balancing-top {
+    container ip-load-balancing {
+      presence "Adjust system-wide IP ECMP load balancing options.";
+      container hash-keys {
+        description
+          "Container for hash-keys that will be used to load-balance IP traffic across IP next-hops that form an ECMP set";
+        leaf hash-seed {
+          type uint16;
+          default 0;
+          description
+            "A configured hash seed to override the default value of 0
+
+            When different routers have a different hash-seed traffic polarization effects can be minimized.";
+        }
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses ip-load-balancing-top;
+  }
+}

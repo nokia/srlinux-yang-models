@@ -1,0 +1,113 @@
+module srl_nokia-mpls {
+
+    yang-version 1.1;
+
+    // namespace
+    namespace "urn:srl_nokia/mpls";
+
+    prefix "srl_nokia-mpls";
+
+    import srl_nokia-common { prefix srl_nokia-comm; }
+    import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+    import srl_nokia-next-hop-groups { prefix srl_nokia-nhg; }
+    import srl_nokia-features { prefix srl-feat; }
+
+    description
+        "This yang file gives a description of MPLS configuration.";
+
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+    grouping mpls-top {
+        container mpls {
+            if-feature "srl-feat:jericho2";
+            must "not(../srl_nokia-netinst:type = 'srl_nokia-netinst:host')" {
+                error-message "MPLS configuration not supported with network instance type host";
+            }
+            presence "Configure MPLS";
+            leaf admin-state {
+                type srl_nokia-comm:admin-state;
+                default "disable";
+                description
+                    "Used to adminstratively enable or disable MPLS. When MPLS 
+                     is enabled, MPLS packets can be sent and received on any
+                     subinterface assigned to the base network-instance. When 
+                     MPLS is disabled, MPLS packets are discarded if received or
+                     sent on any subinterface of the base network-instance.";
+            }                    
+            leaf ttl-propagation {
+              type boolean;
+              default false;
+              description 
+                  "Propagate TTL between IP and MPLS";
+            }
+            list static-mpls-entry {
+                key "top-label";
+                leaf top-label {
+                    type srl_nokia-comm:mpls-label;
+                    description
+                        "A received MPLS packet, received on any subinterface,
+                         matches this static entry if its top label stack 
+                         entry contains the label value specified by this leaf.";
+                }
+                leaf operation {
+                    type enumeration {
+                      enum pop  { value 1; }
+                      enum swap { value 2; }
+                    }
+                    default swap;
+                    description
+                        "Operation of MPLS labels in the label stack";
+                }
+                leaf collect-stats {
+                    type boolean;
+                    default false;
+                    description
+                        "When set to true, stats resources are used to 
+                         count the number of incoming packets matching the 
+                         top label value of this static MPLS route";
+                }
+                leaf preference {
+                    type uint8 {
+                        range "0..255";
+                    }
+                    default 5;
+                    description
+                        "MPLS route preference with lower values indicating a higher degree of preference";
+                }
+                leaf origin-protocol {
+                    type identityref {
+                        base srl_nokia-comm:mpls-route-owner;
+                    }
+                    config false;
+                    description
+                      "The protocol from which the MPLS route entry was learned.";
+                }
+                leaf installed {
+                    config false;
+                    type boolean;
+                    description
+                      "Indicates whether the MPLS route entry was programmed in the data path";
+                }
+                leaf next-hop-group {
+                    type leafref {
+                        path "../../../srl_nokia-nhg:next-hop-groups/srl_nokia-nhg:group/srl_nokia-nhg:name";
+                    }                
+                }
+            }
+        }
+    }
+    augment "/srl_nokia-netinst:network-instance" {
+        uses mpls-top;
+    }
+}

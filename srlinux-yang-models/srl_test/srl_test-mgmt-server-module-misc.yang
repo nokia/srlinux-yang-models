@@ -1,0 +1,556 @@
+module srl_test-mgmt-server-module-misc {
+    yang-version 1.1;
+    namespace "uri:srl_test/mgmt-server-module-misc";
+    prefix "srl_test-mgmt-server-module-misc";
+
+    import srl_nokia-extensions { prefix srl_nokia-ext; }
+    import ietf-inet-types {prefix inet;}
+    import srl_nokia-common {
+      prefix srl_comm;
+    }
+
+    typedef test-local-domain-name {
+        type string {
+            length "1..253";
+            pattern
+            '((([a-zA-Z0-9_]([a-zA-Z0-9\-_]){0,61})?[a-zA-Z0-9]\.)*'
+            + '([a-zA-Z0-9_]([a-zA-Z0-9\-_]){0,61})?[a-zA-Z0-9]\.?)'
+            + '|\.';
+        }
+    }
+
+    typedef test-local-ipv4-address {
+        srl_nokia-ext:generated-class-name IpAddress;
+        type string {
+            pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'        +
+            '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4]'  +
+            '[0-9]|25[0-5])';
+        }
+        description
+            "An IPv4 address in dotted quad notation.";
+    }
+
+    typedef hostv4local {
+        type union {
+            type test-local-ipv4-address;
+            type test-local-domain-name;
+        }
+        description
+            "The hostv4 type represents either an IPv4 address or a DNS domain name.";
+    }
+
+
+    // this is a union of externally defined types
+    // srl_comm:ipv4-address is hardcoded in codegen to use real IpAddress class in the Schema itself
+    // local test-local-ipv4-address won't use it and will just use IpAddress in telemetry codegened code (not if union)
+    typedef hostv4 {
+        type union {
+            type srl_comm:ipv4-address;
+            type srl_comm:domain-name;
+        }
+        description
+            "The hostv4 type represents either an IPv4 address or a DNS domain name.";
+    }
+
+    typedef test-ip-address {
+        srl_nokia-ext:generated-class-name IpAddress;
+        type union {
+            type test-ipv4-address;
+            type test-ipv6-address;
+        }
+    }
+
+    typedef test-ipv4-address {
+        type string {
+            pattern
+            '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}'
+            +  '([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+            + '(%[\p{N}\p{L}]+)?';
+        }
+    }
+
+    typedef test-ipv6-address {
+        type string {
+            pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
+            + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
+            + '(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}'
+            + '(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])))'
+            + '(%[\p{N}\p{L}]+)?';
+            pattern '(([^:]+:){6}(([^:]+:[^:]+)|(.*\..*)))|'
+            + '((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)'
+            + '(%.+)?';
+        }
+    }
+
+    typedef test-ip-prefix {
+        srl_nokia-ext:generated-class-name IpPrefix;
+        type union {
+            type test-ipv4-prefix;
+            type test-ipv6-prefix;
+        }
+
+    }
+
+    typedef test-ipv4-prefix {
+        type string {
+            pattern
+            '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}'
+            +  '([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+            + '/(([0-9])|([1-2][0-9])|(3[0-2]))';
+        }
+
+    }
+
+    typedef test-ipv6-prefix {
+        type string {
+            pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
+            + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
+            + '(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}'
+            + '(25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])))'
+            + '(/(([0-9])|([0-9]{2})|(1[0-1][0-9])|(12[0-8])))';
+            pattern '(([^:]+:){6}(([^:]+:[^:]+)|(.*\..*)))|'
+            + '((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)'
+            + '(/.+)';
+        }
+    }
+
+    typedef custom-ip-prefix-type {
+      srl_nokia-ext:generated-class-name IpPrefix;
+      type string;
+    }
+
+    typedef custom-ip-address-type {
+      srl_nokia-ext:generated-class-name IpAddress;
+      type string;
+    }
+
+    typedef myspecialuniontype {
+        type union {
+            type custom-ip-address-type;
+            type custom-ip-prefix-type;
+        }
+    }
+
+    identity identity-base-1;
+    identity identity-base-2;
+
+    identity derived-1 { base identity-base-1; }
+    identity other-derived-1 { base identity-base-1; }
+    identity derived-2 { base identity-base-2; }
+
+    list snmp-community
+    {
+        key "community-name";
+        leaf community-name {
+            type string {
+                srl_nokia-ext:generated-class-name SecretKey;
+            }
+        }
+    }
+
+    list test-interface {
+        key "name";
+        description
+            "The list of named interfaces on the device.";
+
+        leaf name {
+            type string;
+            description
+                "References the configured name of the interface";
+        }
+
+        leaf-list tags {
+            type string;
+        }
+
+        leaf-list user-tags {
+            ordered-by user;
+            type string;
+        }
+
+        leaf special {
+            type union {
+                type int32;
+                type string;
+            }
+        }
+
+        leaf-list repeated-specials {
+            type union {
+                type int32;
+                type string;
+            }
+        }
+
+        leaf ip-address {
+            type test-ip-address;
+        }
+
+        leaf-list ip-addresses {
+            type test-ip-address;
+        }
+
+        leaf ip-prefix {
+            type test-ip-prefix;
+        }
+
+        leaf-list ip-prefixes {
+            type test-ip-prefix;
+        }
+
+//      leaf flags {
+//         type bits {
+//           bit syn { position 1; }
+//           bit psh { position 3; }
+//           bit rst { position 2; }
+//           bit fin { position 0; }
+//           bit ack { position 4; }
+//           bit urg { position 5; }
+//         }
+//      }
+
+      leaf myinet {
+        config true;
+        type inet:ip-address;
+      }
+
+      leaf myenum {
+          config true;
+          type enumeration {
+              enum syn { value 1; }
+              enum psh { value 3; }
+              enum rst { value 2; }
+              enum fin { value 0; }
+              enum ack { value 4; }
+              enum urg { value 5; }
+          }
+      }
+
+      leaf myempty {
+        config true;
+        type empty;
+      }
+
+      leaf mybinary {
+        config true;
+        type binary;
+      }
+
+      leaf mydecimal {
+        config true;
+        type decimal64 { fraction-digits 2; }
+      }
+
+      leaf mybits {
+        config true;
+        type bits { bit low { position 0; } bit mid { position 4; } bit high { position 7; } }
+      }
+
+      leaf mycustomprefix {
+        config true;
+        type custom-ip-prefix-type;
+      }
+
+      leaf myunion {
+          config true;
+          type union {
+              type empty;
+              type binary;
+              type decimal64 { fraction-digits 2; }
+              type bits { bit low { position 0; } bit mid { position 4; } bit high { position 7; } }
+              type string;
+              type int32;
+              type enumeration { enum foo { value 5; } enum bar { value 7; } }
+              type custom-ip-prefix-type;
+              type identityref {
+                  base "identity-base-1";
+              }
+              type leafref {
+                  path "../mycustomprefix";
+              }
+              type myspecialuniontype;
+              // leafref to another union within union is not yet supported
+              // would need to be somehow flattened in typeinfo
+              // type leafref {
+              //     path "../myspecialunion";
+              // }
+          }
+      }
+
+      leaf myspecialunion {
+          config true;
+          type union {
+              type custom-ip-address-type;
+              type custom-ip-prefix-type;
+          }
+      }
+
+      leaf myhostlocalunion {
+          config true;
+          type hostv4local;
+      }
+
+      leaf myhostunion {
+          config true;
+          type hostv4;
+      }
+
+      leaf myidentityref {
+          type identityref {
+              base "identity-base-1";
+          }
+      }
+
+      leaf-list llinet {
+        config true;
+        type inet:ip-address;
+      }
+
+      leaf-list llenum {
+          config true;
+          type enumeration {
+              enum syn { value 1; }
+              enum psh { value 3; }
+              enum rst { value 2; }
+              enum fin { value 0; }
+              enum ack { value 4; }
+              enum urg { value 5; }
+          }
+      }
+
+      leaf-list llempty {
+        config true;
+        type empty;
+      }
+
+      leaf-list llbinary {
+        config true;
+        type binary;
+      }
+
+      leaf-list lldecimal {
+        config true;
+        type decimal64 { fraction-digits 2; }
+      }
+
+      leaf-list llbits {
+        config true;
+        type bits { bit low { position 0; } bit mid { position 4; } bit high { position 7; } }
+      }
+
+      leaf-list llmycustomprefix {
+        config true;
+        type custom-ip-prefix-type;
+      }
+
+      leaf-list llunion {
+          config true;
+          type union {
+              type empty;
+              type binary;
+              type decimal64 { fraction-digits 2; }
+              type bits { bit low { position 0; } bit mid { position 4; } bit high { position 7; } }
+              type string;
+              type int32;
+              type enumeration { enum foo { value 5; } enum bar { value 7; } }
+              type custom-ip-prefix-type;
+              type identityref {
+                  base "identity-base-1";
+              }
+              type leafref {
+                  path "../mycustomprefix";
+              }
+              type myspecialuniontype;
+              // leafref to another union within union is not yet supported
+              // would need to be somehow flattened in typeinfo
+              // type leafref {
+              //     path "../myspecialunion";
+              // }
+          }
+      }
+
+      leaf-list llmyspecialunion {
+          config true;
+          type union {
+              type custom-ip-address-type;
+              type custom-ip-prefix-type;
+          }
+      }
+
+      leaf-list llmyhostlocalunion {
+          config true;
+          type hostv4local;
+      }
+
+      leaf-list llmyhostunion {
+          config true;
+          type hostv4;
+      }
+
+      leaf-list llmyidentityref {
+          config true;
+          type identityref {
+              base "identity-base-1";
+          }
+      }
+    }
+
+    list lr-interface
+    {
+        key "name";
+        leaf name {
+            type string;
+        }
+
+        leaf lrenum {
+          type leafref {
+              path "/test-interface/myenum";
+          }
+        }
+
+        leaf lrempty {
+          type leafref {
+              path "/test-interface/myempty";
+          }
+        }
+
+        leaf lrbinary {
+          type leafref {
+              path "/test-interface/mybinary";
+          }
+        }
+
+        leaf lrdecimal {
+          type leafref {
+              path "/test-interface/mydecimal";
+          }
+        }
+
+        leaf lrbits {
+          type leafref {
+              path "/test-interface/mybits";
+          }
+        }
+
+        leaf lrcustomprefix {
+          type leafref {
+              path "/test-interface/mycustomprefix";
+          }
+        }
+
+        leaf lrunion {
+          type leafref {
+              path "/test-interface/myunion";
+          }
+        }
+
+        leaf lrspecialunion {
+          type leafref {
+              path "/test-interface/myspecialunion";
+          }
+        }
+
+        leaf lrmyhostlocalunion {
+          type leafref {
+              path "/test-interface/myhostlocalunion";
+          }
+        }
+
+        leaf lrmyhostunion {
+          type leafref {
+              path "/test-interface/myhostunion";
+          }
+        }
+
+        leaf lridentityref {
+          type leafref {
+              path "/test-interface/myidentityref";
+          }
+        }
+
+        leaf-list lllrenum {
+          type leafref {
+              path "/test-interface/myenum";
+          }
+        }
+
+        leaf-list lllrempty {
+          type leafref {
+              path "/test-interface/myempty";
+          }
+        }
+
+        leaf-list lllrbinary {
+          type leafref {
+              path "/test-interface/mybinary";
+          }
+        }
+
+        leaf-list lllrdecimal {
+          type leafref {
+              path "/test-interface/mydecimal";
+          }
+        }
+
+        leaf-list lllrbits {
+          type leafref {
+              path "/test-interface/mybits";
+          }
+        }
+
+        leaf-list lllrcustomprefix {
+          type leafref {
+              path "/test-interface/mycustomprefix";
+          }
+        }
+
+        leaf-list lllrunion {
+          type leafref {
+              path "/test-interface/myunion";
+          }
+        }
+
+        leaf-list lllrspecialunion {
+          type leafref {
+              path "/test-interface/myspecialunion";
+          }
+        }
+
+        leaf-list lllrhostlocalunion {
+          type leafref {
+              path "/test-interface/myhostlocalunion";
+          }
+        }
+
+        leaf-list lllrhostunion {
+          type leafref {
+              path "/test-interface/myhostunion";
+          }
+        }
+
+        leaf-list lllridentityref {
+          type leafref {
+              path "/test-interface/myidentityref";
+          }
+        }
+    }
+
+    // list, its key, leaf and enum typedef have the same name
+    typedef food {
+      type enumeration {
+        enum milk;
+        enum bread;
+        enum meat;
+      }
+    }
+    list food {
+        key food;
+        leaf food {
+            type food;
+        }
+        leaf amount {
+            type int32;
+        }
+    }
+}
+

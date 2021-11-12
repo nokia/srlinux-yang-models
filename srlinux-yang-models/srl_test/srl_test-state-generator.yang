@@ -1,0 +1,53 @@
+module srl_test-state-generator {
+
+    yang-version "1";
+
+    namespace "urn:srl_test/state-generator";
+
+    prefix "srl_test-state-generator";
+
+    revision "2019-03-20" {
+        description "Initial revision";
+        reference "TBD";
+    }
+
+    grouping state-generator-top {
+        description "Top level grouping for state generator app";
+
+        container state-generator {
+            presence "presence container";
+            description "Top level enclosing container for state generator app";
+
+            container generation-params {
+                leaf num-elements {
+                    description "Number of state elements to create";
+                    type uint32;
+                }
+                leaf element-data {
+                    description "The value of the data field in each state element";
+                    type string;
+                }
+                leaf rotate-items {
+                    description "When set, this will go through each element and delete and add it back using the given period";
+                    type uint32;
+                    units "milliseconds";
+                }
+            }
+
+            list data {
+                key id;
+                config false;
+
+                leaf id {
+                    type uint32;
+                }
+
+                leaf data {
+                    type string;
+                }
+            }
+        }
+    }
+
+    uses state-generator-top;
+}

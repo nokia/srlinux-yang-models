@@ -1,0 +1,61 @@
+module srl_test-mgmt-server-module-5 {
+    yang-version 1.1;
+    namespace "uri:srl_test/mgmt-server-module-5";
+    prefix "srl_test-mgmt-server-module-5";
+
+    import srl_test-mgmt-server-module-4 { prefix module-4; }
+
+    grouping employee-config
+    {
+        list employees {
+            key "name";
+            leaf name { type string; }
+
+            leaf id { type uint64; }
+            leaf ssn { type uint64; }
+
+            list extras {
+                key "idx";
+                leaf idx { type uint64; }
+            }
+
+            list groups {
+                key "name";
+                leaf name { type string; }
+
+                leaf year { type uint64; }
+
+                list tags {
+                    key "name";
+                    leaf name { type string; }
+                }
+            }
+        }
+    }
+
+    grouping hr-config
+    {
+        list hr-employees {
+            key "name";
+            leaf name { type string; }
+        }
+    }
+
+    grouping dealership-config
+    {
+        list locations {
+            key "name";
+            leaf name { type string; }
+        }
+    }
+
+    augment "/module-4:manufacturer" {
+        uses employee-config;
+    }
+    augment "/module-4:manufacturer/module-4:company-info/module-4:hr" {
+        uses hr-config;
+    }
+    augment "/module-4:manufacturer/module-4:dealerships" {
+        uses dealership-config;
+    }
+}

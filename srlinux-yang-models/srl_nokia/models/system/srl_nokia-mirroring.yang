@@ -1,0 +1,156 @@
+module srl_nokia-mirroring {
+
+  yang-version 1.1;
+
+  // namespace
+  namespace "urn:srl_nokia/system/mirroring";
+  prefix "srl_nokia-mirroring";
+
+  import srl_nokia-common { prefix srl-comm; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-system { prefix srl-system;}
+  import srl_nokia-extensions { prefix srl-ext;}
+  import srl_nokia-interfaces { prefix srl_nokia-if;}
+
+  description
+    "This module defines configuration and operational state data for mirroring (SPAN/ERSPAN).";
+
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+
+  typedef mirroring-instance-subintf-ref {
+    type srl-comm:subinterface-all;
+    description
+      "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+  }
+
+  typedef mirroring-instance-intf-ref {
+    type srl-comm:interface-all;
+    description
+      "Reference type to a specific subinterface of the form <interface-name>";
+  }
+
+  typedef direction {
+    type enumeration {
+      enum ingress-only;
+      enum egress-only;
+      enum ingress-egress;
+    }
+    description
+      "The direction of traffic to be mirrored";
+  }
+
+  grouping mirroring-instance-top {      
+    description
+      "Top-level grouping containing a list of mirroring instances.";
+
+    list mirroring-instance {
+      key "name";
+      description "Mirroring instances configured on the local system";
+      leaf name {
+        type srl-comm:name;
+        description
+          "A unique name identifying the mirroring instance";
+      }
+
+      leaf admin-state {
+        type srl-comm:admin-state;
+        default "enable";
+        description
+          "This leaf contains the configured, desired state of the mirroring instance.";
+      }
+
+      leaf oper-state {
+        config false;
+        type srl-comm:oper-state;
+        description
+          "This leaf contains the operational state of the mirroring instance.";
+      }
+
+      leaf description {
+        type srl-comm:description;
+        description
+          "A user-entered description of this mirroring instance.";
+      }
+
+      leaf oper-down-reason {
+        config false;
+        type enumeration {
+        enum "mirror-inst-admin-down";
+        enum "local-mirror-subif-down";
+        enum "remote-mirror-dst-unreachable";
+        }
+        description
+          "The reason for the mirroring instance being operational down";
+      }
+
+      uses mirror-source-top;
+      uses mirror-destination-top;
+    }
+  }
+
+  grouping mirror-source-top {
+    description
+      "Top-level grouping containing a list of mirror sources.";
+    container mirror-source {
+      list interfaces {
+	key interface;
+        leaf interface { 
+	  type mirroring-instance-intf-ref;
+          must "(starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'ethernet') or starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'lag'))" {
+            error-message "mirror source can be either ethernet or lag interface";
+          }
+        }
+        leaf direction {
+	  type direction;
+          description "The direction of traffic to be mirrored";
+        }
+        max-elements 128;
+      }
+
+      list subinterfaces {
+	key subinterface;
+        leaf subinterface {
+          type mirroring-instance-subintf-ref;
+          must "(starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'ethernet') or starts-with(/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')], 'lag'))" {
+            error-message "mirror source can be either ethernet or lag interface";
+          }
+        }
+        leaf direction {
+	  type direction;
+          description "The direction of traffic to be mirrored";
+        }
+        max-elements 128;
+      }
+    }
+  }
+
+  grouping mirror-destination-top {      
+    description "Top-level grouping containing local/remote mirror destination";
+    container mirror-destination {
+      leaf local {
+        type mirroring-instance-subintf-ref;
+        must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]/srl_nokia-if:type = 'local-mirror-dest'" {
+          error-message "local-mirror-destination is only allowed on subinterfaces with type local-mirror-dest";
+          }
+        }
+      }
+  }  
+  
+  grouping mirroring-top {
+    container mirroring {
+      presence "presence top level container for system mirroring";
+      if-feature srl-feat:mirroring;
+      description "Top level container for configuration and operational state for mirroring (SPAN/ERSPAN)";
+      uses mirroring-instance-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    srl-ext:first-released "21.6.1";
+    uses mirroring-top;
+  }
+
+}

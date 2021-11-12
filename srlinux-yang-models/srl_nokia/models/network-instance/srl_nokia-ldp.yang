@@ -1,0 +1,824 @@
+module srl_nokia-ldp {
+
+  yang-version 1.1;
+
+  namespace "urn:srl_nokia/ldp";
+
+  prefix "srl_nokia-ldp";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-system { prefix srl_nokia-system; }
+  import srl_nokia-mpls-label-management { prefix srl_nokia-mplslbl; }
+  import srl_nokia-keychains { prefix srl-keychain; }
+  import srl_nokia-features { prefix srl_nokia-feat; }
+
+  description
+    "This YANG module defines the configuration and state components for the management of the MPLS Label Distribution Protocol (LDP).";
+
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+
+  grouping ldp-subintf-ref {
+    leaf name {
+      type srl_nokia-comm:subinterface-all;
+      description
+        "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+    }
+  }
+
+  typedef label-adv-mode {
+    type enumeration {
+      enum downstream-unsolicited {
+        description "Downstream Unsolicited";
+      }
+      enum downstream-on-demand {
+        description "Downstream on Demand";
+      }
+    }
+    description
+      "Label Advertisement Mode";
+  }
+
+  grouping adjacency-state-attributes {
+    description
+      "The operational state attributes of an LDP hello adjacency";
+    container hello-holdtime {
+      description
+        "Container for hello holdtime state information.";
+      leaf neighbor-proposed {
+        type uint16;
+        units seconds;
+        description
+          "The holdtime value learned from the adjacent LSR.";
+      }
+      leaf negotiated {
+        type uint16;
+        units seconds;
+        description
+          "The holdtime negotiated between this LSR and the adjacent LSR.";
+      }
+      leaf remaining {
+        type uint16;
+        units seconds;
+        description
+          "The time remaining until the holdtime timer expires.";
+      }
+    }
+    container statistics {
+      description
+        "Statistics objects.";
+      leaf last-clear {
+        type srl_nokia-comm:date-and-time;
+        description
+          "The most recent occasion when any of the statistics in this container were cleared/reset.";
+      }
+      leaf hello-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of Hello messages received.";
+        }
+      leaf hello-dropped {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of Hello messages dropped.";
+      }
+    } // statistics
+  } // adjacency-state-attributes
+
+  grouping basic-discovery-timers {
+    description
+      "The timer attributes for basic discovery, used in the per-interface setting and in the all-interface setting.";
+    leaf hello-holdtime {
+      type uint16 {
+        range 15..3600;
+      }
+      units seconds;
+      default 15;
+      description
+        "The time interval for which a LDP link Hello adjacency is maintained in the absence of link Hello messages from the LDP neighbor";
+    }
+    leaf hello-interval {
+      type uint16 {
+        range 5..1200;
+      }
+      units seconds;
+      default 5;
+      description
+        "The interval between consecutive LDP link Hello messages used in basic LDP discovery";
+    }
+  } // basic-discovery-timers
+
+  grouping graceful-restart-config {
+    container graceful-restart {
+      description
+        "Attributes for graceful restart.";
+      leaf helper-enable {
+        type boolean;
+        default false;
+        description
+          "Enable or disable graceful restart as a helper.";
+      }
+      leaf max-reconnect-time {
+        type uint16 {
+          range 10..1800;
+        }
+        units seconds;
+        default 120;
+        description
+          "Specifies the maximum time interval, in seconds, that this router is willing to wait for the remote LDP peer to reconnect after an LDP communication failure.";
+      }
+      leaf max-recovery-time {
+        type uint16 {
+          range 30..3600;
+        }
+        units seconds;
+        default 120;
+        description
+          "Specifies the maximum time interval, in seconds, that this router is willing to preserve its MPLS forwarding state after receiving the Initialization message from the restarted LDP peer.";
+      }
+    } // graceful-restart
+  } // graceful-restart-config
+
+  grouping ldp-peer-ref {
+    description
+      "An absolute reference to an LDP peer, by the LDP ID, which consists of the LSR ID and the Label Space ID.";
+    leaf lsr-id {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-ldp:ldp/srl_nokia-ldp:peers/srl_nokia-ldp:peer/srl_nokia-ldp:lsr-id";
+      }
+      description
+        "The LSR ID of the peer, as a portion of the peer LDP ID.";
+    }
+    leaf label-space-id {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-ldp:ldp/srl_nokia-ldp:peers/srl_nokia-ldp:peer/srl_nokia-ldp:label-space-id";
+      }
+      description
+        "The Label Space ID of the peer, as a portion of the peer LDP ID.";
+    }
+  } // ldp-peer-ref
+
+  grouping session-timers {
+    description
+      "Peer configuration attributes, used in the per-peer setting can in the all-peer setting.";
+    leaf session-keepalive-holdtime {
+      type uint16 {
+        range 45..3600;
+      }
+      units seconds;
+      default 180;
+      description
+        "The time interval after which an inactive LDP session terminates and the corresponding TCP session closes. Inactivity is defined as not receiving LDP packets from the peer.";
+    }
+    leaf session-keepalive-interval {
+      type uint16 {
+        range 15..1200;
+      }
+      units seconds;
+      default 60;
+      description
+        "The interval between successive transmissions of keepalive packets. Keepalive packets are only sent in the absence of other LDP packets transmitted over the LDP session.";
+    }
+  } // session-timers
+
+  grouping tcp-transport-config {
+    container authentication {
+      description
+        "Container for TCP-level authentication options.";
+      leaf keychain {
+        type leafref {
+          path "/srl_nokia-system:system/srl-keychain:authentication/srl-keychain:keychain/srl-keychain:name";
+        }
+      }
+    } // authentication
+  } // tcp-transport-config
+
+  grouping tcp-transport-state {
+    description "TCP connection state.";
+    leaf local-address {
+      config false;
+      type srl_nokia-comm:ipv4-address;
+      description "Local address.";
+    }
+    leaf local-port {
+      config false;
+      type srl_nokia-comm:port-number;
+      description "Local port number.";
+    }
+    leaf remote-address {
+      config false;
+      type srl_nokia-comm:ipv4-address;
+      description "Remote address.";
+    }
+    leaf remote-port {
+      config false;
+      type srl_nokia-comm:port-number;
+      description "Remote port number.";
+    }
+  } // tcp-transport-state
+
+  grouping peer-state {
+    description
+      "The peer state information.";
+    container label-advertisement-mode {
+      config false;
+      description "Label advertisement mode state.";
+      leaf local {
+        type label-adv-mode;
+        description
+          "Local Label Advertisement Mode.";
+      }
+      leaf peer {
+        type label-adv-mode;
+        description
+          "Peer Label Advertisement Mode.";
+      }
+      leaf negotiated {
+        type label-adv-mode;
+        description
+          "Negotiated Label Advertisement Mode.";
+      }
+    }
+    container received-peer-state {
+      config false;
+      description
+        "Operational state information learned from the peer.";
+      container graceful-restart {
+        description
+          "Graceful restart information signalled by the peer";
+        leaf reconnect-time {
+          type uint16 {
+            range 10..1800;
+          }
+          units seconds;
+          description
+            "The requested reconnect time.";
+        }
+        leaf recovery-time {
+          type uint16 {
+            range 30..3600;
+          }
+          units seconds;
+          default 120;
+          description
+            "The requested recovery time.";
+        }
+      }
+    } // received-peer-state
+    container session-holdtime {
+      config false;
+      description "Session holdtime state.";
+      leaf peer-proposed {
+        type uint16;
+        units seconds;
+        description "Peer holdtime.";
+      }
+      leaf negotiated {
+        type uint16;
+        units seconds;
+        description "Negotiated holdtime.";
+      }
+      leaf remaining {
+        type uint16;
+        units seconds;
+        description "Remaining holdtime.";
+      }
+    } // session-holdtime
+    leaf session-state {
+      config false;
+      type enumeration {
+        enum non-existent {
+          description "NON EXISTENT state. Transport disconnected.";
+        }
+        enum initialized {
+          description "INITIALIZED state.";
+        }
+        enum openrec {
+          description "OPENREC state.";
+        }
+        enum opensent {
+          description "OPENSENT state.";
+        }
+        enum operational {
+          description "OPERATIONAL state.";
+        }
+      }
+      description
+        "Representing the operational status of the LDP session.";
+      reference
+        "RFC5036, Sec. 2.5.4.";
+    }
+    leaf up-time {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description "Up time";
+    }
+    container statistics {
+      config false;
+      description
+        "Statistics objects.";
+      leaf last-clear {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "The most recent time when any of the interface's counters was cleared or reset.";
+      }
+      container received {
+        description "Inbound statistics.";
+        uses statistics-peer-received-sent;
+      }
+      container sent {
+        description "Outbound statistics.";
+        uses statistics-peer-received-sent;
+      }
+      leaf total-addresses {
+        type uint32;
+        description
+          "The number of learned addresses.";
+      }
+      leaf total-labels {
+        type uint32;
+        description
+          "The number of learned labels.";
+      }
+      leaf total-fec-label-bindings {
+        type uint32;
+        description
+          "The number of learned label-address bindings.";
+      }
+    } // statistics
+  } // peer-state
+
+  grouping statistics-peer-received-sent {
+    description
+      "Inbound and outbound statistic counters.";
+    // leaf total-octets {
+    //   type srl_nokia-comm:zero-based-counter64;
+    //   description
+    //     "The total number of octets sent or received.";
+    // }
+    leaf total-messages {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of messages sent or received.";
+    }
+    leaf address {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of address messages sent or received.";
+    }
+    leaf address-withdraw {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of address-withdraw messages sent or received.";
+    }
+    leaf initialization {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of initialization messages sent or received.";
+    }
+    leaf keepalive {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of keepalive messages sent or received.";
+    }
+    leaf label-abort-request {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+      "The number of label-abort-request messages sent or received.";
+    }
+    leaf label-mapping {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of label-mapping messages sent or received.";
+    }
+    leaf label-release {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of label-release messages sent or received.";
+    }
+    leaf label-request {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of label-request messages sent or received.";
+    }
+    leaf label-withdraw {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of label-withdraw messages sent or received.";
+    }
+    leaf notification {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of messages sent or received.";
+    }
+  } // statistics-peer-received-sent
+
+  grouping ldp-top {
+    container ldp {
+      if-feature srl_nokia-feat:ldp;
+      presence "Configure the LDP protocol";
+      must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")';
+      description
+        "Container for LDP configuration and state.";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        description
+          "Administratively enable or disable the LDP protocol.";
+        default "disable";
+      }
+      leaf dynamic-label-block {
+        if-feature srl_nokia-feat:label-management;
+        mandatory true;
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:dynamic/srl_nokia-mplslbl:name";
+        }
+        description
+          "Reference to a dynamic label block";
+      }
+      leaf dynamic-label-block-status {
+        config false;
+        if-feature srl_nokia-feat:label-management;
+        type enumeration {
+          enum "available";
+          enum "unavailable";
+        }
+        description
+          "Status of the label block.
+          
+          The label block may show as unavailable if there is pending cleanup.";
+      }
+      leaf lsr-id {
+        config false;
+        type srl_nokia-comm:dotted-quad;
+        description
+          "Returns the value that is being used as the LDP LSR ID. Currently, this is always the router ID of the default network-instance.";
+      }
+      leaf oper-state {
+        config false;
+        description
+          "The operational state of the LDP protocol";
+        type srl_nokia-comm:oper-state;
+
+      }
+      leaf oper-down-reason {
+        config false;
+        description
+          "The reason for the LDP protocol being operationally down";
+        type enumeration {
+          enum "no-router-id";
+          enum "label-range-exhausted";
+          enum "no-label-block";
+        }
+      }
+      uses graceful-restart-config;
+      container multipath {
+        description
+          "Container with options to configure load-balancing over equal-cost paths";
+        leaf max-paths {
+          type uint8 {
+            range "1..64";
+          }
+          description
+            "Specifies the maximum number of next-hops used for load-balancing toward towards a given FEC";
+        }
+      }
+      container ipv4 {
+        description
+          "Container for configuration and state data related to the IPv4 address family.";
+        container fec-resolution {
+          description
+            "Container with options for controlling IPv4 prefix FEC resolution";
+          leaf longest-prefix {
+            type boolean;
+            default false;
+            description
+              "When this is set to true IPv4 prefix FECs can be resolved by less-specific IPv4 routes in the route table, as long as the prefix bits of the route match the prefix bits of the FEC; the IP route with the longest prefix match is the route that is used to resolve the FEC.
+
+              When this is set to false, IPv4 prefix FECs can only be resolved by routes that are an exact match of the FEC in terms of prefix length.";
+          }
+        }
+        container bindings {
+          config false;
+          description
+            "LDP address and label binding information.";
+          container received-address {
+            list peer {
+              description
+                "List of LDP peers from which IPv4 address bindings have been received.";
+              key "lsr-id label-space-id";
+              uses ldp-peer-ref;
+              leaf-list address {
+                description
+                  "The list of IPv4 address bindings received from the peer";
+                type srl_nokia-comm:ipv4-address;
+              }
+            }
+          }
+          container advertised-address {
+            list address {
+              key "ip-address";
+              description
+                "List of IPv4 address bindings advertised to all LDP peers.";
+              leaf ip-address {
+                type srl_nokia-comm:ipv4-address;
+                description
+                  "An IPv4 address binding advertised to one or more peers.";
+              }
+              list peer {
+                description
+                  "The list of LDP peers towards which the IPv4 address binding was advertised.";
+                key "lsr-id label-space-id";
+                uses ldp-peer-ref;
+              }
+            }
+          }
+          list received-fec-label {
+            description
+              "List of IPv4 FEC-label bindings received from LDP peers.";
+            key "fec lsr-id label-space-id";
+            leaf fec {
+              type srl_nokia-comm:ipv4-prefix;
+              description
+                "The prefix FEC value in the FEC-label binding, learned in a Label Mapping message received from a peer.";
+            }
+            uses ldp-peer-ref {
+              description
+                "The LDP peer from which this binding was received. The peer is identified by its LDP ID, which consists of the LSR ID and the Label Space ID.";
+            }
+            leaf label {
+              type srl_nokia-comm:mpls-label;
+              description
+                "Received label value.";
+            }
+            leaf used-in-forwarding {
+              type boolean;
+              description
+                "Reads true if the label is used in forwarding.";
+            }
+          } // received-fec-label
+          list advertised-fec-label {
+            description
+              "List of IPv4 FEC-label bindings advertised to LDP peers.";
+            key "fec lsr-id label-space-id";
+            leaf fec {
+              type srl_nokia-comm:ipv4-prefix;
+              description
+                "The prefix FEC value in the FEC-label binding, advertised in a Label Mapping message sent to a peer.";
+            }
+            uses ldp-peer-ref {
+              description
+                "The LDP peer towards which this binding was sent. The peer is identified by its LDP ID, which consists of the LSR ID and the Label Space ID.";
+            }
+            leaf label {
+              type srl_nokia-comm:mpls-label;
+              description
+                "Advertised label value.";
+            }
+          } // advertised-fec-label
+        } // bindings
+      } // ipv4
+      container discovery {
+        description
+          "Neighbor discovery configuration and operational state.";
+        container interfaces {
+          description
+            "The complete set of interfaces used for LDP Basic Discovery.";
+          uses basic-discovery-timers;
+          list interface {
+            key "name";
+            description
+              "List of LDP interfaces used for LDP Basic Discovery.";
+            uses ldp-subintf-ref;
+            leaf admin-state {
+              type srl_nokia-comm:admin-state;
+              description
+                "Administratively enable or disable LDP discovery on a particular interface.";
+            }
+            uses basic-discovery-timers;
+            container ipv4 {
+              leaf admin-state {
+                type srl_nokia-comm:admin-state;
+                default "enable";
+                description
+                  "Enable the address family on the interface.";
+              }
+              container hello-adjacencies {
+                config false;
+                description
+                  "Container with a list of hello adjacencies.";
+                list adjacency {
+                  description "List of hello adjacencies.";
+                  key "lsr-id label-space-id";
+                  uses ldp-peer-ref {
+                    description
+                      "The LDP peer with which the adjacency was formed. The peer is identified by its LDP ID, which consists of the LSR ID and the Label Space ID.";
+                  }
+                  leaf local-address {
+                    type srl_nokia-comm:ipv4-address;
+                    description
+                      "Local address of the hello adjacency.";
+                  }
+                  leaf remote-address {
+                    type srl_nokia-comm:ipv4-address;
+                    description
+                      "Remote address of the hello adjacency.";
+                  }
+                  uses adjacency-state-attributes;
+                } // adjacency
+              } // hello-adjacencies
+            } // ipv4
+          } // list interface
+        } // interfaces
+      } // discovery
+      container peers {
+        description
+          "Configuration and state related to peers";
+        container tcp-transport {
+          uses tcp-transport-config;
+        }
+        uses session-timers;
+        list peer {
+          key "lsr-id label-space-id";
+          description
+            "List of peers.";
+          leaf lsr-id {
+            type srl_nokia-comm:dotted-quad;
+            description
+              "The LSR ID of the peer, to identify the globally unique LSR. This is the first four octets of the LDP ID. This leaf is used together with the leaf 'label-space-id' to form the LDP ID.";
+          }
+          leaf label-space-id {
+            type uint16;
+            description
+              "The Label Space ID of the peer, to identify a specific label space within the LSR. This is the last two octets of the LDP ID. This leaf is used together with the leaf 'lsr-id' to form the LDP ID.";
+          }
+          container tcp-transport {
+            uses tcp-transport-config;
+            uses tcp-transport-state;
+          }
+          container ipv4 {
+            leaf fec-limit {
+              type uint32;
+              description
+                "The maximum number of IPv4 FECs that will be accepted from the peer.";
+            }
+            container hello-adjacencies {
+              config false;
+              description
+                "Container for a list of hello adjacencies.";
+              list adjacency {
+                description "List of hello adjacencies.";
+                key "interface-name";
+                leaf interface-name {
+                  type leafref {
+                    path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-ldp:ldp/srl_nokia-ldp:discovery/srl_nokia-ldp:interfaces/srl_nokia-ldp:interface/srl_nokia-ldp:name";
+                   }
+                }
+                leaf local-address {
+                  type srl_nokia-comm:ipv4-address;
+                  description
+                    "Local address of the hello adjacency.";
+                }
+                leaf remote-address {
+                  type srl_nokia-comm:ipv4-address;
+                  description
+                    "Remote address of the hello adjacency.";
+                }
+                uses adjacency-state-attributes;
+              } // adjacency
+            } // hello-adjacencies
+          } // ipv4
+          uses peer-state;
+        } // list peer
+      } // peers
+      container trace-options {
+        description "Debug trace options for LDP";
+        list interface {
+          key "name";
+          description
+            "List of LDP interfaces on which to trace LDP Basic Discovery packets and events.";
+          uses ldp-subintf-ref;
+        }
+        list peer {
+          description
+            "List of LDP peers with which to trace LDP Session packets and events.";
+          key "lsr-id label-space-id";
+          leaf lsr-id {
+            type srl_nokia-comm:dotted-quad;
+            description
+              "The LSR ID of the peer, to identify the globally unique LSR. This is the first four octets of the LDP ID. This leaf is used together with the leaf 'label-space-id' to form the LDP ID.";
+          }
+          leaf label-space-id {
+            type uint16;
+            description
+              "The Label Space ID of the peer, to identify a specific label space within the LSR. This is the last two octets of the LDP ID. This leaf is used together with the leaf 'lsr-id' to form the LDP ID.";
+          }
+        }
+      }
+      // container tunnel-table-options {}
+      container statistics {
+        config false;
+        description
+          "LDP instance level statistics";
+        leaf total-discovery-interfaces {
+          type uint16;
+          description
+            "The total number of IP subinterfaces on which basic LDP discovery is active.";
+        }
+        leaf total-hello-adjacencies {
+          type uint16;
+          description
+            "The total number of hello adjacencies that have been formed.";
+        }
+        leaf total-peers {
+          type uint16;
+          description
+            "The total number of LDP TCP sessions that are established.";
+        }
+        container protocol-errors {
+          leaf bad-ldp-identifier {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of a bad LDP identifier";
+          }
+          leaf bad-protocol-version {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of a bad protocol version";
+          }
+          leaf bad-pdu-length {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of a bad PDU length";
+          }
+          leaf unknown-message-type {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of an unknown message type";
+          }
+          leaf bad-message-length {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of a bad message length";
+          }
+          leaf unknown-tlv {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of an unknown TLV";
+          }
+          leaf bad-tlv-length {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of a bad TLV length";
+          }
+          leaf malformed-tlv-value {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of a malformed TLV value";
+          }
+          leaf missing-message-parameters {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise of missing mandatory parameters";
+          }
+          leaf session-rejected-no-hello {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise that a TCP connection was closed because there was no matching Hello adjacency";
+          }
+          leaf session-rejected-parameters-adv-mode {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise that a TCP connection was closed because the requested label advertisement mode is not acceptable";
+          }
+          leaf session-rejected-parameters-max-pdu-length {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise that a TCP connection was closed because the requested Maximum PDU Length is not acceptable";
+          }
+          leaf session-rejected-parameters-label-range {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise that a TCP connection was closed because the requested label range is not acceptable";
+          }
+          leaf session-rejected-bad-keepalive-time {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise that a TCP connection was closed because the requested keepalive time is not acceptable";
+          }
+          leaf unsupported-address-family {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The number of notification messages sent to advise that a TCP connection was closed because the FEC type is not IPv4";
+          }
+        }
+      }
+    } // container ldp
+  } // grouping ldp-top
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+     uses ldp-top;
+  }
+}

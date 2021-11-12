@@ -1,0 +1,102 @@
+module srl_nokia-mpls-route-tables {
+  yang-version 1.1;
+
+  namespace "urn:srl_nokia/mpls-route-tables";
+  prefix srl_nokia-mpls-route-tables;
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-ip-route-tables { prefix srl_nokia-ip-tables; }
+
+  description
+    "A model describing the MPLS routing tables of a network instance.";
+
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping mpls-entry-common-fields {
+    leaf owner {
+      type identityref {
+        base srl_nokia-comm:mpls-route-owner;
+      }
+      srl_nokia-ext:show-importance "high";
+      description
+        "The protocol or application that owns the MPLS label entry.";
+    }
+    leaf preference {
+      type uint8;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The MPLS route table preference. This is sometimes called the administrative distance of the route. In general, when comparing any two entries, the route with the lower preference is the one that is activated and used for forwarding.";
+    }
+    leaf active {
+      type boolean;
+      srl_nokia-ext:show-importance "high";
+      description
+        "If set to true then the route is installed as the active entry for the label value in the FIB. A route can be inactive because there is a more preferred route for the same label value or else its next-hops are unresolved.";
+    }
+    leaf last-app-update {
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "The date and time of the last update of this route by the owning application or protocol.";
+    }
+    leaf fib-change-pending {
+      type boolean;
+      description
+        "If set to true then a create, delete or update of the route by its owner application has occurred recently but not all linecards have acknowledged the change yet.";
+    }
+    leaf next-hop-group {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table/srl_nokia-ip-tables:next-hop-group/srl_nokia-ip-tables:index";
+      }
+      description "The next-hop-group indirection object used by this route.";
+    }
+  }
+
+  grouping mpls-table-statistics {
+    container statistics {
+      leaf active-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of MPLS entries that are active in the FIB.";
+      }
+      leaf active-entries-with-ecmp {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of MPLS entries that are active in the FIB and that have multiple ECMP next-hops.";
+      }
+      leaf total-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of MPLS entries that are present in the routing table.";
+      }
+    }
+  }
+
+  grouping mpls-tables-top {
+    container mpls {
+      description
+        "The container for the MPLS routing table of the network instance.";
+      list route {
+        key "label id";
+        leaf label {
+          type srl_nokia-comm:mpls-label;
+        }
+        leaf id {
+          type uint16;
+          description
+            "An index value representing the relative order of preference of entries for the same label. If there is an active entry for the label it will always be assigned index 0. The entry with index 1 is next in order to become active if the entry with index 0 is removed.";
+        }
+        uses mpls-entry-common-fields;
+      }
+      uses mpls-table-statistics;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table" {
+    uses mpls-tables-top;
+  }
+}
