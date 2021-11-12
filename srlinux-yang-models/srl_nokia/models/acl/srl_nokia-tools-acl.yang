@@ -84,6 +84,30 @@ module srl_nokia-tools-acl {
         }
     }
 
+    grouping system-common-clear-group {
+        leaf clear {
+            type empty;
+            description
+                    "Reset all statistics of all entries of the filter to zero";
+        }
+        list entry {
+            description "List of filter rules.";
+            key sequence-id;
+            leaf sequence-id {
+                type uint32;
+                description
+                        "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+            }
+            container statistics {
+                leaf clear {
+                    type empty;
+                    description
+                            "Reset all statistics associated with this particular entry to zero";
+                }
+            }
+        }
+    }
+
     grouping policer-common-clear-group {
         container statistics {
             leaf clear {
@@ -130,6 +154,20 @@ module srl_nokia-tools-acl {
             container ipv6-filter {
                 description "List of CPM IPv6 filter rules";
                 uses cpm-common-clear-group;
+            }
+        }
+
+        container system-filter {
+            description "List of System filters";
+
+            container ipv4-filter {
+                description "List of System IPv4 filter rules";
+                uses system-common-clear-group;
+            }
+
+            container ipv6-filter {
+                description "List of System IPv6 filter rules";
+                uses system-common-clear-group;
             }
         }
 
