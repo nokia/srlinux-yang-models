@@ -22,6 +22,8 @@ SRL_VER=$1
 DIR_NAME="$(pwd)/srlinux-yang-models"
 docker pull ghcr.io/nokia/srlinux:$1
 id=$(docker create ghcr.io/nokia/srlinux:$SRL_VER foo)
+# remove prev yang files
+rm -rf $DIR_NAME
 mkdir -p $DIR_NAME
 docker cp $id:/opt/srlinux/models/. $DIR_NAME
 docker rm $id
