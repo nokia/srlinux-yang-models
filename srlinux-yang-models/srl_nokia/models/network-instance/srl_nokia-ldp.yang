@@ -15,6 +15,10 @@ module srl_nokia-ldp {
   description
     "This YANG module defines the configuration and state components for the management of the MPLS Label Distribution Protocol (LDP).";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -61,6 +65,76 @@ module srl_nokia-ldp {
         value 2;
         description
           "An advertised label that is programmed with a SWAP operation.";
+      }
+    }
+  }
+
+  typedef session-trace-option-flags {
+    type enumeration {
+      enum "all" {
+        description
+          "Trace all events and packets";
+      }
+      enum "events-all" {
+        description
+          "Trace all events";
+      }
+      enum "events-session" {
+        description
+          "Trace session related events";
+      }
+      enum "events-binding" {
+        description
+          "Trace binding related events";
+      }
+      enum "messages-all" {
+        description
+          "Trace all LDP messages";
+      }
+      enum "messages-all-detail" {
+        description
+          "Trace all LDP messages with detailed output";
+      }
+      enum "messages-initialization" {
+        description
+          "Trace LDP Initialization packets";
+      }
+      enum "messages-initialization-detail" {
+        description
+          "Trace LDP Initialization packets with detailed output";
+      }
+      enum "messages-keepalive" {
+        description
+          "Trace LDP Keepalive packets";
+      }
+      enum "messages-label" {
+        description
+          "Trace LDP Label Mapping, Lanel Request, Label Abort Request, Label Withdraw and Label Release packets";
+      }
+      enum "messages-label-detail" {
+        description
+          "Trace LDP Label Mapping, Lanel Request, Label Abort Request, Label Withdraw and Label Release packets with detailed output";
+      }
+    }
+  }
+
+  typedef interface-trace-option-flags {
+    type enumeration {
+      enum "all" {
+        description
+          "Trace all events and packets";
+      }
+      enum "events-discovery" {
+        description
+          "Trace session related events";
+      }
+      enum "messages-hello" {
+        description
+          "Trace Hello packets";
+      }
+      enum "messages-hello-detail" {
+        description
+          "Trace LDP Hello packets with detailed output";
       }
     }
   }
@@ -596,7 +670,7 @@ module srl_nokia-ldp {
         }
         description
           "Status of the label block.
-
+          
           The label block may show as unavailable if there is pending cleanup.";
       }
 
@@ -776,6 +850,9 @@ module srl_nokia-ldp {
                 enum "exceeds-fec-limit" {
                   description "The FEC limit has been reached";
                 }
+                enum "fec-unresolved" {
+                  description "The IP prefix FEC is unused because there is no resolving route matching the IP prefix";
+                }
               }
             }
           } // received-prefix-fecs
@@ -827,14 +904,10 @@ module srl_nokia-ldp {
           container trace-options {
             description
               "Configure event/packet tracing for all LDP interfaces.";
-            leaf trace {
+            leaf-list trace {
               description
                 "Specifies the trace information to be captured.";
-              type enumeration {
-                enum "all";
-                // enum "events";
-                // enum "packets";
-              }
+              type interface-trace-option-flags;
             }
           }
           list interface {
@@ -948,14 +1021,10 @@ module srl_nokia-ldp {
               container trace-options {
                 description
                   "Configure event/packet tracing for one specific LDP interface.";
-                leaf trace {
+                leaf-list trace {
                   description
                     "Specifies the trace information to be captured.";
-                  type enumeration {
-                    enum "all";
-                    // enum "events";
-                    // enum "packets";
-                  }
+                  type interface-trace-option-flags;
                 }
               } // trace-options
             } // ipv4
@@ -969,14 +1038,10 @@ module srl_nokia-ldp {
         container trace-options {
           description
             "Configure event/packet tracing for all sessions (configured and dynamic).";
-          leaf trace {
+          leaf-list trace {
             description
               "Specifies the trace information to be captured.";
-            type enumeration {
-              enum "all";
-              // enum "events";
-              // enum "packets";
-            }
+            type session-trace-option-flags;
           }
         }
         list peer {
@@ -1002,14 +1067,10 @@ module srl_nokia-ldp {
           container trace-options {
             description
               "Configure event/packet tracing for one specific session.";
-            leaf trace {
+            leaf-list trace {
               description
                 "Specifies the trace information to be captured.";
-              type enumeration {
-                enum "all";
-                // enum "events";
-                // enum "packets";
-              }
+              type session-trace-option-flags;
             }
           }
           leaf fec-limit {
@@ -1019,6 +1080,12 @@ module srl_nokia-ldp {
               "The maximum number of FECs of all types combined that will be accepted from the peer.
 
               The value 0 implies no limit.";
+          }
+          leaf fec-limit-exceeded {
+            config false;
+            type boolean;
+            description
+              "Reads true when the peer has sent more FECs than the configured limit.";
           }
           uses peer-state;
         } // list peer
@@ -1227,7 +1294,6 @@ module srl_nokia-ldp {
       }
     }
   }
-
 
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
      uses ldp-top;

@@ -3,16 +3,32 @@ module srl_nokia-platform-acl {
   namespace "urn:srl_nokia/platform-acl";
   prefix srl_nokia-platform-acl;
 
-  import srl_nokia-common { prefix srl_nokia-comm; }
-  import srl_nokia-extensions { prefix srl_nokia-ext; }
-  import srl_nokia-platform {prefix srl_nokia-platform; }
-  import srl_nokia-platform-lc {prefix srl_nokia-platform-lc; }
-  import srl_nokia-platform-resource-monitoring {prefix srl_nokia-platform-res-mon; }
-  import srl_nokia-features {prefix srl_feat; }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-platform-lc {
+    prefix srl_nokia-platform-lc;
+  }
+  import srl_nokia-platform-resource-monitoring {
+    prefix srl_nokia-platform-res-mon;
+  }
+  import srl_nokia-features {
+    prefix srl_feat;
+  }
 
   description
     "This module defines configuration and operational state related to ACL and TCAM resources in the system";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -39,14 +55,14 @@ module srl_nokia-platform-acl {
   }
 
   identity input-ipv4-filter-instances-routed {
-    if-feature "srl_feat:trident3";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
     base acl-resources;
     description
       "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on routed subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every routed subinterface using the IPv4 filter.";
   }
 
   identity input-ipv4-filter-instances-bridged {
-    if-feature "srl_feat:trident3";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
     base acl-resources;
     description
       "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on bridged subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every bridged subinterface using the IPv4 filter.";
@@ -60,14 +76,14 @@ module srl_nokia-platform-acl {
   }
 
   identity input-ipv6-filter-instances-routed {
-    if-feature "srl_feat:trident3";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
     base acl-resources;
     description
       "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on routed subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every routed subinterface using the IPv6 filter.";
   }
 
   identity input-ipv6-filter-instances-bridged {
-    if-feature "srl_feat:trident3";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
     base acl-resources;
     description
       "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on bridged subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every bridged subinterface using the IPv6 filter.";
@@ -85,7 +101,7 @@ module srl_nokia-platform-acl {
   }
 
   identity if-output-ipv4 {
-    if-feature srl_feat:jericho2;
+    if-feature "srl_feat:jericho2";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 ACLs applied as subinterface-output filers";
@@ -98,63 +114,63 @@ module srl_nokia-platform-acl {
   }
 
   identity if-output-ipv6 {
-    if-feature srl_feat:jericho2;
+    if-feature "srl_feat:jericho2";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 ACLs applied as subinterface-output filers";
   }
 
   identity cpm-capture-ipv4 {
-    if-feature srl_feat:jericho2;
+    if-feature "srl_feat:jericho2";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 cpm-filter ACLs and capture-filter ACLs";
   }
 
   identity cpm-capture-ipv6 {
-    if-feature srl_feat:jericho2;
+    if-feature "srl_feat:jericho2";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 cpm-filter ACLs and capture-filter ACLs";
   }
 
   identity system-capture-ipv4 {
-    if-feature srl_feat:trident3;
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 capture-filter ACLs and IPv4 system-filter ACLs";
   }
 
   identity system-capture-ipv6 {
-    if-feature srl_feat:trident3;
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 capture-filter ACLs and IPv6 system-filter ACLs";
   }
 
   identity capture-ipv4 {
-    if-feature srl_feat:tomahawk3;
+    if-feature "srl_feat:tomahawk3";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 capture-filter ACLs";
   }
 
   identity capture-ipv6 {
-    if-feature srl_feat:tomahawk3;
+    if-feature "srl_feat:tomahawk3";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 capture-filter ACLs";
   }
 
   identity if-output-cpm-ipv4 {
-    if-feature "srl_feat:trident3 or srl_feat:tomahawk3";
+    if-feature "srl_feat:trident3 or srl_feat:tomahawk3 or srl_feat:platform-vsrl";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 egress ACLs and cpm-filter ACLs";
   }
 
   identity if-output-cpm-ipv6 {
-    if-feature "srl_feat:trident3 or srl_feat:tomahawk3";
+    if-feature "srl_feat:trident3 or srl_feat:tomahawk3 or srl_feat:platform-vsrl";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 egress ACLs and cpm-filter ACLs";
@@ -163,9 +179,9 @@ module srl_nokia-platform-acl {
   grouping acl-resource-monitoring {
     container acl {
       list resource {
-        key name;
+        key "name";
         leaf name {
-          type identityref  {
+          type identityref {
             base acl-resources;
           }
           description
@@ -190,9 +206,9 @@ module srl_nokia-platform-acl {
   grouping tcam-resource-monitoring {
     container tcam {
       list resource {
-        key name;
+        key "name";
         leaf name {
-          type identityref  {
+          type identityref {
             base tcam-resources;
           }
           description
@@ -218,11 +234,11 @@ module srl_nokia-platform-acl {
     container acl {
       config false;
       list resource {
-        srl_nokia-ext:delivery-node-override true;
-        srl_nokia-ext:stream-mode sample=5;
-        key name;
+        srl_nokia-ext:delivery-node-override "true";
+        srl_nokia-ext:stream-mode "sample=5";
+        key "name";
         leaf name {
-          type identityref  {
+          type identityref {
             base acl-resources;
           }
           description
@@ -246,11 +262,11 @@ module srl_nokia-platform-acl {
     container tcam {
       config false;
       list resource {
-        srl_nokia-ext:delivery-node-override true;
-        srl_nokia-ext:stream-mode sample=5;
-        key name;
+        srl_nokia-ext:delivery-node-override "true";
+        srl_nokia-ext:stream-mode "sample=5";
+        key "name";
         leaf name {
-          type identityref  {
+          type identityref {
             base tcam-resources;
           }
           description
@@ -278,7 +294,6 @@ module srl_nokia-platform-acl {
   augment "/srl_nokia-platform:platform/srl_nokia-platform-res-mon:resource-monitoring" {
     uses acl-resource-monitoring;
     uses tcam-resource-monitoring;
-
   }
 
   augment "/srl_nokia-platform:platform/srl_nokia-platform-lc:linecard/srl_nokia-platform-lc:forwarding-complex" {

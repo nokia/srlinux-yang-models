@@ -1,0 +1,115 @@
+module srl_nokia-system-bridge-table-proxy-arp {
+
+  yang-version "1.1";
+
+  // namespace
+  namespace "urn:srl_nokia/system/bridge-table/proxy-arp";
+
+  prefix "srl_nokia-system-bridge-table-proxy-arp";
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  import srl_nokia-system-bridge-table {
+    prefix srl_nokia-system-bridge-table;
+  }
+
+  import srl_nokia-bridge-table-proxy-arp-nd {
+    prefix srl_nokia-bridge-table-proxy-arp-nd;
+  }
+
+  import srl_nokia-features { 
+    prefix srl-feat; 
+  }
+
+  description
+    "This module defines system bridge-table proxy ARP configuration and operational 
+     state data.";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping bridge-table-proxy-arp-table-statistics-type-top {
+      leaf total-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of proxy ARP entries.";
+      }
+      leaf active-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of active proxy ARP entries.";
+      }
+      leaf in-active-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of inactive proxy ARP entries.";
+      }
+      leaf pending-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of pending proxy ARP entries.";
+      }
+  }
+
+  grouping bridge-table-proxy-arp-table-statistics-top {
+    container statistics {
+      config false;
+      uses bridge-table-proxy-arp-table-statistics-type-top;
+      list neighbor-origin {
+        config false;
+        key "origin";
+        description
+          "the origin of the proxy ARP installed in the table.";
+        leaf origin {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-origin;
+          srl_nokia-ext:show-importance "high";
+        }
+        uses bridge-table-proxy-arp-table-statistics-type-top;
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-config-top {
+    leaf table-size {
+      description "Maximum number of proxy ARP entries allowed in the system bridge-table.";
+      type int32 {
+        range "1..156000";
+      }
+      default "156000";
+    }
+  }
+
+  grouping bridge-table-proxy-arp-top {
+    container proxy-arp {
+      if-feature "srl-feat:l2-proxy-arp";
+      description
+        "system bridge-table proxy ARP information";
+      uses bridge-table-proxy-arp-config-top;
+      uses bridge-table-proxy-arp-table-statistics-top;
+    }
+  }
+
+  augment "/srl-system:system/srl_nokia-system-bridge-table:bridge-table" {
+    uses bridge-table-proxy-arp-top;
+  }
+}

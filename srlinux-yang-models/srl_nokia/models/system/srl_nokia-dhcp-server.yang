@@ -22,6 +22,10 @@ module srl_nokia-dhcp-server {
   description
     "This module defines configuration and operational state data related to the dhcp server.";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -86,6 +90,9 @@ module srl_nokia-dhcp-server {
          }
          leaf ip-address {
            type srl-comm:ipv4-prefix-with-host-bits;
+           must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
+              error-message "Not a valid IPv4 unicast address prefix";
+            }
          }
          uses dhcp-server-v4-options;
        }
@@ -102,6 +109,9 @@ module srl_nokia-dhcp-server {
          }
          leaf ip-address {
            type srl-comm:ipv6-prefix-with-host-bits;
+           must "not(.='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
+            error-message "Not a global unicast IPv6 address prefix";
+          }
          }
          uses dhcp-server-v6-options;
        }
@@ -122,10 +132,10 @@ module srl_nokia-dhcp-server {
         description
            "An Ordered List of DNS servers to return to the dhcp client";
       }
-      leaf-list domain-name {
+      leaf domain-name {
         type srl-comm:domain-name;
         description
-          "The list of domain names to return to the dhcp client that the client should use when resolving hostnames via the Domain Name System";
+          "The domain name to return to the dhcp client that the client should use when resolving hostnames via the Domain Name System";
       }
       leaf hostname {
         type string {

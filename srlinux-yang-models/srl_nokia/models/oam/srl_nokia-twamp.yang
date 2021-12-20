@@ -1,0 +1,556 @@
+module srl_nokia-twamp {
+  yang-version 1.1;
+
+  namespace "urn:srl_nokia/twamp";
+  prefix "srl_nokia-twamp";
+  
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+
+  /* 
+  description
+    "This module defines configuration and operational state data related to the twamp protocol.";
+  */
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  typedef twamp-modes {
+    description
+      "Specifies the configurable TWAMP-Modes supported during a
+       TWAMP-Control Connection setup between a Control-Client
+       and a Server. Section 7 of RFC 7717 summarizes the
+       TWAMP-Modes registry and points to their formal
+       specification.";
+    type bits {
+      bit unauthenticated {
+        position 0;
+        description
+          "Unauthenticated mode, in which no encryption or
+           authentication is applied in TWAMP-Control and
+           TWAMP-Test. KeyID, Token, and Client-IV are not used in
+           the Set-Up-Response message. See Section 3.1 of
+           RFC 4656.";
+        reference
+          "RFC 4656: A One-way Active Measurement Protocol
+           (OWAMP)";
+      }
+      bit authenticated {
+        position 1;
+        description
+          "Authenticated mode, in which the Control-Client and
+           Server possess a shared secret thus prohibiting
+           'theft of service'. As per Section 6 of RFC 4656,
+           in 'authenticated mode, the timestamp is in the clear
+           and is not protected cryptographically in any way,
+           while the rest of the message has the same protection
+           as in encrypted mode. This mode allows one to trade off
+           cryptographic protection against accuracy of
+           timestamps.'";
+        reference
+          "RFC 4656: A One-way Active Measurement Protocol
+           (OWAMP)";
+      }
+      bit encrypted {
+        position 2;
+        description
+          "Encrypted mode 'makes it impossible to alter
+           timestamps undetectably' [Section 6 of RFC 4656].
+           See also Section 4 of RFC 7717.";
+        reference
+          "RFC 4656: A One-way Active Measurement Protocol
+           (OWAMP)";
+      }
+      bit unauth-test-encrpyt-control {
+        position 3;
+        description
+          "When using the Mixed Security Mode, the TWAMP-Test
+           protocol follows the Unauthenticated mode and the
+           TWAMP-Control protocol the Encrypted mode.";
+        reference
+          "RFC 5618: Mixed Security Mode for the Two-Way Active
+           Measurement Protocol (TWAMP)";
+      }
+      bit individual-session-control {
+        position 4;
+        description
+          "This mode enables individual test sessions using
+           Session Identifiers.";
+        reference
+          "RFC 5938: Individual Session Control Feature
+           for the Two-Way Active Measurement Protocol (TWAMP)";
+      }
+      bit reflect-octets {
+        position 5;
+        description
+          "This mode indicates the reflect octets capability.";
+        reference
+          "RFC 6038: Two-Way Active Measurement Protocol (TWAMP)
+           Reflect Octets and Symmetrical Size Features";
+      }
+      bit symmetrical-size {
+        position 6;
+        description
+          "This mode indicates support for the symmetrical size
+           sender test packet format.";
+        reference
+          "RFC 6038: Two-Way Active Measurement Protocol (TWAMP)
+           Reflect Octets and Symmetrical Size Features";
+      }
+    }
+  }
+
+  typedef twamp-server-ctrl-connection-state {
+    description
+      "Indicates the Server TWAMP-Control connection state.";
+    type enumeration {
+      enum active {
+        description
+          "Indicates an active TWAMP-Control connection
+           to the Control-Client.";
+      }
+      enum servwait {
+        description
+          "Indicates that the TWAMP-Control connection to the
+           Control-Client is in SERVWAIT as per the definition of
+           Section 3.1 of RFC 5357.";
+      }
+    }
+  }
+
+  typedef dscp-val {
+    description
+      "Indicates the IP DSCP value in a IPv4/v6 packet.";
+    type uint8 {
+      range "0..63";
+    }
+  }
+
+  grouping twamp-server-common-config
+  {
+    leaf admin-state {
+      description
+        "Indicates whether the device is allowed to operate
+         as a TWAMP Server.";
+      type srl-comm:admin-state;
+      srl-ext:show-importance "high";
+      default "disable";
+    }
+
+    leaf oper-state {
+      description
+        "Details if the twamp is operationally available";
+      config false;
+      type srl-comm:oper-state;
+      srl-ext:show-importance "high";
+    }
+
+    leaf servwait {
+      description
+        "TWAMP-Control (TCP) session timeout, in seconds.
+         According to Section 3.1 of RFC 5357,
+
+         Server MAY discontinue any established control
+         connection when no packet associated with that
+         connection has been received within SERVWAIT seconds.";
+      type uint32 {
+        range "1..604800";
+      }
+      units seconds;
+      default 900;
+    }
+
+    leaf control-packet-dscp {
+      description
+        "The DSCP value to be placed in the IP header of
+         TWAMP-Control (TCP) packets generated by the Server.
+         The default behavior if this item is not set is to use
+         the DSCP value from the Control-Clients TCP SYN.";
+      reference
+        "Section 3.1 of RFC 5357.";
+      //type srl-comm:dscp;
+      type dscp-val;
+    }
+
+    leaf modes {
+      config false; 
+      description
+        "The bit mask of TWAMP Modes this Server instance
+         is willing to support.";
+      type twamp-modes;
+    }
+
+    leaf max-conn-server {
+      description
+        "The system wide maximum number of concurrent TWAMP server 
+         control connections that this Server instance is willing 
+         to support.";
+      type uint32 {
+          range "1..256";
+      }
+    }  
+
+    leaf max-sess-server {
+      description
+        "The system wide maximum number of concurrent TWAMP test 
+         sessions that this Server instance is willing to support.";
+      type uint32 {
+        range "1..1024";
+      }
+    }
+  }
+
+  grouping twamp-server-prefix-config
+  {
+    list client-connection
+    {
+      description
+          "List of TWAMP Client Prefixes that are allowed.";
+
+      key client-ip;
+
+      leaf client-ip {
+        description
+          "A client IP prefix from which the server will
+           accept twamp connections.";
+        type srl-comm:ip-prefix;
+      }
+
+      leaf max-conn-server {
+        description
+          "The system wide maximum number of concurrent TWAMP server 
+           control connections that can be supported for this
+           client ip prefix.";
+        type uint32 {
+          range "1..256";
+        }
+      }
+
+      leaf max-sess-server {
+        description
+          "The system wide maximum number of concurrent TWAMP test 
+           sessions that can be supported for this client 
+           ip prefix.";
+        type uint32 {
+          range "1..1024";
+        }
+      }
+    }
+  }
+
+  grouping twamp-control-connection-state
+  {
+    list ctrl-connection
+    {  
+      config false;
+      description
+        "List of all incoming TWAMP-Control (TCP) connections.";
+
+      key "client-ip client-tcp-port server-ip server-tcp-port";
+
+      leaf client-ip {
+        description
+          "The IP address on the remote Control-Client device,
+           which is the source IP address used in the
+           TWAMP-Control (TCP) packets belonging to this control
+           connection.";
+        type srl-comm:ip-address;
+      }
+
+      leaf client-tcp-port {
+        description
+          "The source TCP port number used in the TWAMP-Control
+           (TCP) packets belonging to this control connection.";
+        type srl-comm:port-number;
+      }
+
+      leaf server-ip {
+        description
+          "The IP address of the local Server device, which is
+           the destination IP address used in the
+           TWAMP-Control (TCP) packets belonging to this control
+           connection.";
+        type srl-comm:ip-address;
+      }
+
+      leaf server-tcp-port {
+        description
+          "The destination TCP port number used in the
+           TWAMP-Control (TCP) packets belonging to this
+           control connection. This will usually be the
+           same value as the server-tcp-port configured
+           under twamp/server. However, in the event that
+           the user re-configured server/server-tcp-port
+           after this control connection was initiated, this
+           value will indicate the server-tcp-port that is
+           actually in use for this control connection.";
+        type srl-comm:port-number;
+      }
+
+      leaf state {
+        description
+          "Indicates the Server TWAMP-Control connection state.";
+        type twamp-server-ctrl-connection-state;
+      }
+
+      leaf control-packet-dscp {
+        description
+          "The DSCP value used in the IP header of the
+           TWAMP-Control (TCP) packets sent by the Server
+           for this control connection. This will usually
+           be the same value as is configured in the
+           control-packet-dscp parameter under the twamp/server
+           container.  However, in the event that the user
+           re-configures server/dscp after this control
+           connection is already in progress, this read-only
+           value will show the actual dscp value in use by this
+           TWAMP-Control connection.";
+        //type srl-comm:dscp;
+        type dscp-val;
+      }
+
+      leaf selected-mode {
+        description
+          "The Mode that was chosen for this TWAMP-Control
+           connection as set in the Mode field of the
+           Set-Up-Response message.";
+        type twamp-modes;
+      }
+    }
+  }
+
+  grouping twamp-session-reflector-config
+  {
+    leaf admin-state {
+      description
+        "Indicates whether the device is allowed to operate
+         as a TWAMP Session-Reflector.";
+      type srl-comm:admin-state;
+      srl-ext:show-importance "high";
+      default "disable";
+    }
+
+    leaf refwait {
+      description
+        "The Session-Reflector MAY discontinue any session that
+         has been started when no packet associated with that
+         session has been received for REFWAIT seconds. As per
+         Section 3.1 of RFC 5357, this timeout allows a
+         Session-Reflector to free up resources in case of
+         failure.";
+      type uint32 {
+        range "1..604800";
+      }
+      units seconds;
+      default 900;
+    }
+  }
+
+  grouping twamp-test-session-statistics
+  {
+    leaf sent-packets {
+      config false;
+      description
+        "Indicates the number of packets sent.";
+      type uint32;
+    }
+
+    leaf rcv-packets {
+      config false;
+      description
+        "Indicates the number of packets received.";
+      type uint32;
+    }
+
+    leaf last-sent-seq {
+      config false;
+      description
+        "Indicates the last sent sequence number.";
+      type uint32;
+    }
+
+    leaf last-rcv-seq {
+      config false;
+      description
+        "Indicates the last received sequence number.";
+      type uint32;
+    }
+  }
+ 
+  grouping twamp-test-session-state
+  {
+    leaf sender-ip {
+      description
+        "The IP address on the remote device, which is the
+         source IP address used in the TWAMP-Test (UDP) packets
+         belonging to this test session.";
+      type srl-comm:ip-address;
+    }
+
+    leaf sender-udp-port {
+      description
+        "The source UDP port used in the TWAMP-Test packets
+         belonging to this test session.";
+      type srl-comm:port-number;
+    }
+
+    leaf reflector-ip {
+      description
+        "The IP address of the local Session-Reflector
+         device, which is the destination IP address used
+         in the TWAMP-Test (UDP) packets belonging to this test
+         session.";
+      type srl-comm:ip-address;
+    }
+
+    leaf reflector-udp-port {
+      description
+        "The destination UDP port number used in the
+         TWAMP-Test (UDP) test packets belonging to this
+         test session.";
+      type srl-comm:port-number {
+        range "862 | 49152..65535";
+      }
+    }
+
+    leaf sid {
+      description
+        "An auto-allocated identifier for this TWAMP-Test
+         session that is unique within the context of this
+         Server/Session-Reflector device only. This value
+         is communicated to the Control-Client that
+         requested the test session in the SID field of the
+         Accept-Session message.";
+      type string;
+    }
+
+    leaf parent-connection-client-ip {
+      description
+        "The IP address on the Control-Client device, which
+         is the source IP address used in the TWAMP-Control
+         (TCP) packets belonging to the parent control
+         connection that negotiated this test session.";
+      type srl-comm:ip-address;
+    }
+
+    leaf parent-connection-client-tcp-port {
+      description
+        "The source TCP port number used in the TWAMP-Control
+         (TCP) packets belonging to the parent control
+         connection that negotiated this test session.";
+      type srl-comm:port-number;
+    }
+
+    leaf parent-connection-server-ip {
+      description
+        "The IP address of the Server device, which is the
+         destination IP address used in the TWAMP-Control
+         (TCP) packets belonging to the parent control
+         connection that negotiated this test session.";
+      type srl-comm:ip-address;
+    }
+
+    leaf parent-connection-server-tcp-port {
+      description
+        "The destination TCP port number used in the
+         TWAMP-Control (TCP) packets belonging to the parent
+         control connection that negotiated this test
+         session.";
+      type srl-comm:port-number;
+    }
+
+    leaf test-packet-dscp {
+      description
+        "The DSCP value present in the IP header of
+         TWAMP-Test (UDP) packets belonging to this session.";
+      //type srl-comm:dscp;
+      type dscp-val;
+    }
+
+    uses twamp-test-session-statistics;
+  }
+
+  grouping twamp-session-reflector-config-state
+  {
+    container session-reflector 
+    {
+      description
+        "Configuration of the TWAMP Session-Reflector logical
+         entity";
+
+      uses twamp-session-reflector-config;
+
+      list test-session {
+          config false;
+          description
+            "TWAMP Session-Reflector test sessions.";
+
+          key "sender-ip sender-udp-port
+               reflector-ip reflector-udp-port";
+
+          uses twamp-test-session-state;
+      }
+    }
+  }
+
+  grouping twamp-top
+  {
+      container twamp 
+      {
+          if-feature srl-feat:twamp;
+
+          presence "Configure TWAMP.";
+
+          description
+            "TWAMP logical entity configuration grouping of models
+             which correspond to the TWAMP logical entities
+             Server and Session-Reflector.";
+
+          list server
+          {
+            description
+              "Configuration of the TWAMP Server logical entity.
+               In future, we may allow configuration of a twamp 
+               server for each network instance. 
+               Currently, we support this only in default 
+               network instance.";
+
+            max-elements 1;
+
+            key "server-instance-name";
+            leaf server-instance-name {
+              description
+                "The name of the TWAMP Server instance";
+              type srl-comm:name;
+            }
+
+            uses twamp-server-common-config;
+
+            uses twamp-server-prefix-config;
+
+            uses twamp-control-connection-state;
+
+            uses twamp-session-reflector-config-state;
+          }
+      }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+      uses twamp-top;
+  }
+}

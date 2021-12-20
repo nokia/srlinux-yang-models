@@ -14,12 +14,15 @@ module srl_nokia-acl {
     organization "Nokia";
 
     // import srl_nokia-extensions { prefix srl_nokia-ext; }
-
     description
             "This module defines configuration and operational state data for access control lists (ACLs) and related objects.";
 
     // grouping statements
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -57,7 +60,7 @@ module srl_nokia-acl {
                     "Time of the last clear command performed by the user at this level";
             }
             container distributed-policer {
-                if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2";
+                if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp";
                 description
                     "Distributed policer stats for traffic matching the entry.";
                 uses policer-stats;
@@ -312,7 +315,7 @@ module srl_nokia-acl {
                 }
             }
             list policer {
-                if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2";
+                if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp";
                 description
                     "List of hardware policer templates. For each policer in this list one or more policer instances are implemented in the linecards of the system.";
                 key name;
@@ -379,7 +382,7 @@ module srl_nokia-acl {
                     description
                         "Accept matching packets and forward them towards their normal destination";
                     leaf log {
-                        if-feature srl_nokia-feat:jericho2;
+                        if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
                         type boolean;
                         default false;
                         description
@@ -443,7 +446,7 @@ module srl_nokia-acl {
                     description
                         "Accept matching packets and forward them towards their normal destination";
                     leaf log {
-                        if-feature srl_nokia-feat:jericho2;
+                        if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
                         type boolean;
                         default false;
                         description
@@ -474,7 +477,7 @@ module srl_nokia-acl {
                                 "Reference to a system-cpu-policer.";
                         }
                         leaf distributed-policer {
-                            if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2";
+                            if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp";
                             type leafref {
                                 path "../../../../../../../policers/policer/name";
                             }
@@ -1228,7 +1231,7 @@ module srl_nokia-acl {
 
     grouping system-filter-top {
         container system-filter {
-            if-feature srl_nokia-feat:trident3;
+            if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl";
             description "Top level container for System filters";
             container ipv4-filter {
                 description "Top level container for System IPv4 filters";
@@ -1279,12 +1282,18 @@ module srl_nokia-acl {
             type leafref {
                 path "/srl_nokia-acl:acl/srl_nokia-acl:ipv4-filter/name";
             }
+            must "../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
+                error-message "IPv4 ACL filter cannot be assigned to subinterface of type local-mirror-dest";
+            }
         }
 
         leaf ipv6-filter {
             description "IPv6 ACL filter to be applied on this interface";
             type leafref {
                 path "/srl_nokia-acl:acl/srl_nokia-acl:ipv6-filter/name";
+            }
+            must "../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
+                error-message "IPv6 ACL filter cannot be assigned to subinterface of type local-mirror-dest";
             }
         }
     }

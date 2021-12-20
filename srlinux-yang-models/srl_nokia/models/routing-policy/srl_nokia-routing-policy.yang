@@ -18,6 +18,10 @@ module srl_nokia-routing-policy {
   description
     "YANG model for route policies. It supports widely used constructs for managing how routes are imported, exported, and modified across different routing protocols.";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -403,8 +407,8 @@ module srl_nokia-routing-policy {
         type uint32 {
           range "0..255";
         }
-        must "../../protocol = 'ospfv3'" {
-          error-message "Protocol must be OSPFv3";
+        must "((../../protocol = 'ospfv3') and ((. >= 0 and . <=31) or (. >= 64 and . <= 95)))" {
+          error-message "Protocol must be OSPFv3 and Instance-id range must either be 0..31 or 64..95";
         }
       }
     }
@@ -418,13 +422,13 @@ module srl_nokia-routing-policy {
       description
           "Match conditions of the policy statement";
 
-    leaf family {
-      type srl_nokia-pol-types:bgp-family-type;
-      description
-        "The name of an address family
+      leaf family {
+        type srl_nokia-pol-types:bgp-family-type;
+        description
+          "The name of an address family
 
-        A route meets this condition if the prefix belongs to the indicated address family.";
-    }
+          A route meets this condition if the prefix belongs to the indicated address family.";
+      }
 
       uses match-prefix-set;
       uses match-bgp-top;
@@ -448,7 +452,7 @@ module srl_nokia-routing-policy {
       //srl_nokia-ext:first-released "20.12.1";
       description
         "Container for match conditions that are specific to BGP EVPN routes.";
-        leaf-list route-type {
+      leaf-list route-type {
         type uint8 {
           range "1..5";
         }

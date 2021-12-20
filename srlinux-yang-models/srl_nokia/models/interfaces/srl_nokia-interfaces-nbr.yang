@@ -2,11 +2,12 @@ module srl_nokia-interfaces-nbr {
   yang-version 1.1;
 
   // namespace
-  namespace "urn:srl_nokia/interfaces/ip/nbr";
 
-  prefix "srl_nokia-if-ip-nbr";
+  namespace "urn:srl_nokia/interfaces/ip/nbr";
+  prefix srl_nokia-if-ip-nbr;
 
   // import some basic types
+
   import srl_nokia-interfaces {
     prefix srl_nokia-if;
   }
@@ -49,7 +50,7 @@ module srl_nokia-interfaces-nbr {
       }
       enum evpn {
         value 4;
-        if-feature "srl-feat:evpn"; 
+        if-feature "srl-feat:evpn";
       }
     }
     description
@@ -59,91 +60,99 @@ module srl_nokia-interfaces-nbr {
 
   grouping common-neighbor-discovery {
     leaf route-type {
-      description "Controls what type of ARP or ND entries generate a host route.";
+      description
+        "Controls what type of ARP or ND entries generate a host route.";
       type enumeration {
-        enum static  { value 1; }
-        enum dynamic { value 2; }
-        enum evpn    { 
+        enum static {
+          value 1;
+        }
+        enum dynamic {
+          value 2;
+        }
+        enum evpn {
           value 3;
-          if-feature "srl-feat:evpn"; 
+          if-feature "srl-feat:evpn";
         }
       }
     }
     leaf admin-tag {
-      description "Configure tag to use with the host route generated from an ARP or ND entry.";
-      type uint32 { range "1..255"; }
+      description
+        "Configure tag to use with the host route generated from an ARP or ND entry.";
+      type uint32 {
+        range "1..255";
+      }
     }
   }
+
   grouping host-route-top {
     container host-route {
-      description "Configure which types of ARP or ND entries will be populated in the route-table.";
+      description
+        "Configure which types of ARP or ND entries will be populated in the route-table.";
       list populate {
         key "route-type";
         uses common-neighbor-discovery;
       }
     }
   }
+
   grouping ipv4-nbr-top {
     container arp {
       description
         "Container for the IPv4 ARP protocol";
       leaf duplicate-address-detection {
         type boolean;
-        default true;
+        default "true";
         description
           "If set to true IPv4 Address Conflict Detection per RFC 5227 is performed on the IPv4 address assigned to the subinterface";
       }
       leaf timeout {
         type uint16 {
-            range "60..65535";
+          range "60..65535";
         }
-        units seconds;
-        default 14400;
+        units "seconds";
+        default "14400";
         description
           "Duration of time that dynamic ARP entries remain in the ARP cache before they expire
 
-          A change to this value does not affect existing entries until they are refreshed.";
+           A change to this value does not affect existing entries until they are refreshed.";
       }
       leaf learn-unsolicited {
         type boolean;
-        default false;
+        default "false";
         description
           "If set to true an ARP entry should be learned from any received ARP packets.";
       }
       list neighbor {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         key "ipv4-address";
         description
           "List of static and dynamic ARP cache entries that map an IPv4 address to a MAC address
 
-          To configure a static ARP entry a value must be written into this leaf and the link-layer-address leaf.";
+           To configure a static ARP entry a value must be written into this leaf and the link-layer-address leaf.";
         reference
           "RFC 826: An Ethernet Address Resolution Protocol";
-
         leaf ipv4-address {
           type srl_nokia-comm:ipv4-address;
-          description "IPv4 address resolved by the ARP entry
+          description
+            "IPv4 address resolved by the ARP entry
 
-          To configure a static neighbor entry a value must be written into this leaf and the link-layer-address leaf.";
+             To configure a static neighbor entry a value must be written into this leaf and the link-layer-address leaf.";
         }
-
         leaf link-layer-address {
           type srl_nokia-comm:mac-address;
-          mandatory "true";
+          mandatory true;
           description
             "The resolving MAC address of the ARP entry
 
-            To configure a static ARP entry a value must be written into this leaf and the ipv4-address leaf.";
+             To configure a static ARP entry a value must be written into this leaf and the ipv4-address leaf.";
         }
-
         leaf origin {
           config false;
           type neighbor-origin;
           description
             "The origin of the ARP entry";
-            // Refer to RFC 7277.
+          // Refer to RFC 7277.
         }
-
         leaf expiration-time {
           config false;
           type srl_nokia-comm:date-and-time-delta;
@@ -154,7 +163,7 @@ module srl_nokia-interfaces-nbr {
       uses host-route-top;
       leaf-list debug {
         type enumeration {
-          enum "messages" {
+          enum messages {
             description
               "Capture all arp-request and reply-messages sent and received by the subinterface";
           }
@@ -168,7 +177,6 @@ module srl_nokia-interfaces-nbr {
   augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv4" {
     description
       "IPv4 addr family configuration for interfaces";
-
     uses ipv4-nbr-top;
   }
 
@@ -178,80 +186,84 @@ module srl_nokia-interfaces-nbr {
         "Container for the IPv6 Neighbor Discovery protocol";
       leaf duplicate-address-detection {
         type boolean;
-        default true;
+        default "true";
         description
           "Enables Duplicate Addres Detection on all tentative addresses
 
-          This applies to link-local and global unicast addresses. Only one transmission is done; there are no retransmissions.
+           This applies to link-local and global unicast addresses. Only one transmission is done; there are no retransmissions.
 
-          Must be true on an IPv6 subinterface that has dhcp-client enabled.";
+           Must be true on an IPv6 subinterface that has dhcp-client enabled.";
       }
       leaf reachable-time {
         type uint32 {
-            range "30..3600";
+          range "30..3600";
         }
-        units seconds;
-        default 30;
+        units "seconds";
+        default "30";
         description
-         "The period of time that a dynamic IPv6 neighbor cache entry is considered reachable after a reachability confirmation event
+          "The period of time that a dynamic IPv6 neighbor cache entry is considered reachable after a reachability confirmation event
 
-         After this time expires the neighbor state moves to STALE.";
+           After this time expires the neighbor state moves to STALE.";
       }
       leaf stale-time {
         type uint32 {
-            range "60..65535";
+          range "60..65535";
         }
-        units seconds;
-        default 14400;
+        units "seconds";
+        default "14400";
         description
           "The maximum time that a dynamic IPv6 neighbor cache entry can remain in the STALE state before it is removed
 
-          This limit is reached only if no traffic is sent/queued towards the neighbor during the entire duration of the timer.";
+           This limit is reached only if no traffic is sent/queued towards the neighbor during the entire duration of the timer.";
       }
       leaf learn-unsolicited {
         type enumeration {
-          enum none {value 0;}
-          enum global {value 1;}
-          enum link-local {value 2;}
-          enum both {value 3;}
+          enum none {
+            value 0;
+          }
+          enum global {
+            value 1;
+          }
+          enum link-local {
+            value 2;
+          }
+          enum both {
+            value 3;
+          }
         }
-        default none;
+        default "none";
         description
           "Sets if neighbors should be learned from unsolicited neighbor advertisements for global or link local addresses or both.";
       }
       list neighbor {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         key "ipv6-address";
         description
           "List of static and dynamic ND cache entries that map an IPv6 address to a MAC address";
         reference
           "RFC 4861: Neighbor Discovery for IP version 6 (IPv6)";
-
         leaf ipv6-address {
           type srl_nokia-comm:ipv6-address;
           description
             "IPv6 address resolved by the ND cache entry
 
-            To configure a static neighbor entry a value must be written into this leaf and the link-layer-address leaf.";
+             To configure a static neighbor entry a value must be written into this leaf and the link-layer-address leaf.";
         }
-
         leaf link-layer-address {
           type srl_nokia-comm:mac-address;
-          mandatory "true";
+          mandatory true;
           description
             "The resolving MAC address of the ND cache entry
 
-            To configure a static neighbor entry a value must be written into this leaf and the ipv6-address leaf.";
+             To configure a static neighbor entry a value must be written into this leaf and the ipv6-address leaf.";
         }
-
         leaf origin {
           config false;
           type neighbor-origin;
           description
             "The origin of the neighbor cache entry.";
-            // Refer to RFC 7277.
+          // Refer to RFC 7277.
         }
-
         leaf is-router {
           config false;
           type boolean;
@@ -259,31 +271,39 @@ module srl_nokia-interfaces-nbr {
             "Indicates that the neighbor node claims to be a router (R bit in the Neighbor Advertisement message)";
           // Refer to RFC 7277.
         }
-
         leaf current-state {
           config false;
           description
             "The Neighbor Unreachability Detection state";
           type enumeration {
-            enum incomplete { value 0; }
-            enum reachable  { value 1; }
-            enum stale      { value 2; }
-            enum delay      { value 3; }
-            enum probe      { value 4; }
+            enum incomplete {
+              value 0;
+            }
+            enum reachable {
+              value 1;
+            }
+            enum stale {
+              value 2;
+            }
+            enum delay {
+              value 3;
+            }
+            enum probe {
+              value 4;
+            }
           }
         }
-
         leaf next-state-time {
-            config false;
-            type srl_nokia-comm:date-and-time-delta;
-            description
-              "The date and time when the neighbor state is expected to transition to the next state";
+          config false;
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "The date and time when the neighbor state is expected to transition to the next state";
         }
       }
       uses host-route-top;
       leaf-list debug {
         type enumeration {
-          enum "messages" {
+          enum messages {
             description
               "Capture all neighbor-solicitation and neighbor-advertisement messages sent and received by the subinterface";
           }
@@ -297,7 +317,6 @@ module srl_nokia-interfaces-nbr {
   augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv6" {
     description
       "IPv6 address family configuration for interfaces";
-
     uses ipv6-nbr-top;
   }
 }

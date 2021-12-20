@@ -1,0 +1,122 @@
+module srl_nokia-bridge-table-proxy-arp-entries {
+
+  yang-version "1.1";
+
+  // namespace
+  namespace "urn:srl_nokia/network-instance/bridge-table/proxy-arp/table-entries";
+
+  prefix "srl_nokia-bridge-proxy-arp-table-entries";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-bridge-table-proxy-arp-nd { prefix srl_nokia-bridge-table-proxy-arp-nd; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+
+  description
+    "This yang file gives a description of bridge table configuration.";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping bridge-table-proxy-arp-table-entries-top {
+    container table-entries {
+      config false;
+      list neighbor {
+        key "ipv4-address";
+        description
+          "List of static and dynamic proxy ARP entries that map an IPv4 address to a MAC address.
+
+           To configure a static proxy ARP entry a value must be written into this leaf, as well as the link-layer-address leaf.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "IPv4 address resolved by the proxy ARP entry.
+
+             To configure a static neighbor entry a value must be written into this leaf, as well as the link-layer-address leaf.";
+        }
+        leaf link-layer-address {
+          type srl_nokia-comm:mac-address;
+          mandatory true;
+          description
+            "The resolving MAC address of the proxy ARP entry.
+
+             To configure a static proxy ARP entry a value must be written into this leaf and the ipv4-address leaf.";
+        }
+        leaf origin {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-origin;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The origin of the proxy ARP entry";
+        }
+        leaf last-update {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time of the last update of this proxy ARP entry";
+        }
+        leaf state {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-state;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The state of the proxy ARP entry";
+        }
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-table-statistics-type-top {
+      leaf total-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of proxy ARP entries.";
+      }
+      leaf active-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of active proxy ARP entries.";
+      }
+      leaf in-active-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of inactive proxy ARP entries.";
+      }
+      leaf pending-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of pending proxy ARP entries.";
+      }
+  }
+
+  grouping bridge-table-proxy-arp-table-statistics-top {
+    container statistics {
+      config false;
+      uses bridge-table-proxy-arp-table-statistics-type-top;
+      list neighbor-origin {
+        config false;
+        key "origin";
+        description
+          "the origin of the proxy ARP installed in the table.";
+        leaf origin {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-origin;
+          srl_nokia-ext:show-importance "high";
+        }
+        uses bridge-table-proxy-arp-table-statistics-type-top;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:bridge-table/srl_nokia-bridge-table-proxy-arp-nd:proxy-arp" {
+    uses bridge-table-proxy-arp-table-entries-top;
+    uses bridge-table-proxy-arp-table-statistics-top;
+  }
+}

@@ -17,11 +17,16 @@ module srl_nokia-isis {
     import srl_nokia-traffic-engineering { prefix srl_nokia-te; }
     import srl_nokia-features { prefix srl-feat; }
     import srl_nokia-mpls-label-management { prefix srl_nokia-mplslbl; }
+    import srl_nokia-segment-routing { prefix srl_nokia-segrt; } 
     import srl_nokia-ldp { prefix srl_nokia-ldp; }
 
     description
         "This yang file models configuration and state of the IS-IS protocol";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -179,16 +184,6 @@ module srl_nokia-isis {
         }
     }
 
-    typedef isis-system-id {
-        description
-          "This type defines ISIS system id using pattern.  A system id looks like 0143.0438.AeF0";
-
-        type string {
-            pattern '[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}';
-            length 14;
-        }
-    }
-
     typedef isis-circuit-type {
         description
           "This type defines ISIS interface types ";
@@ -225,9 +220,15 @@ module srl_nokia-isis {
         description
             "This type defines the type of authentication used by ISIS PDU-s";
         type enumeration {
-            enum password;
-            enum md5;
-            enum key-chain;
+            enum cleartext {
+                description
+                  "The authentication-key is encoded in plaintext.";
+            }
+            enum hmac-md5 {
+                description
+                  "The authentication-key is used to generate a 16-byte (128 bit) MD5 digest using the HMAC algorithm (RFC 2104).";
+
+            }
         }
     }
 
@@ -368,6 +369,28 @@ module srl_nokia-isis {
         }
     }
 
+    typedef isis-auth-check-type {
+        description
+            "Type of the ISIS authentication checks for received frames.";
+        type enumeration {
+            enum strict {
+                description
+                  "Strict authentication option. 
+                   Reject all packets that do not have an authentication TLV or that do have an authentication TLV that cannot be validated.";
+            }
+            enum loose {
+                description
+                  "Loose authentication option. 
+                   Accept packets received without an authentication TLV; validate packets received with an authentication TLV and reject those packets that cannot be validated.";
+            }
+            enum disable {
+                description 
+                  "This enum disables athentication checks.
+                   Do not check authentication TLV (if any) of received PDUs; authentication TLV may still be added self-generated PDUs";
+            }
+        }
+    }
+
     grouping isis-inst-key {
         leaf name {
             description
@@ -407,7 +430,7 @@ module srl_nokia-isis {
         leaf neighbor-system-id {
             description
               "The neighbor router's system ID.";
-            type isis-system-id;
+            type srl_nokia-comm:isis-system-id;
         }
 
         leaf adjacency-level {
@@ -448,6 +471,12 @@ module srl_nokia-isis {
                    When this is enabled for a particular level, reject all LAN IIH PDUs associated with that level that have a mismatch in authentication-type or authentication-key.";
                 type boolean;
             }
+            leaf check-received {
+                if-feature srl-feat:isis-stats-auth;
+                description
+                  "Specifies the type of authentication checks done for received packets.";
+                type isis-auth-check-type;
+            }
             leaf keychain {
                 type leafref {
                     path "/srl-system:system/srl-keychain:authentication/srl-keychain:keychain/srl-keychain:name";
@@ -455,6 +484,29 @@ module srl_nokia-isis {
                 must '/srl-system:system/srl-keychain:authentication/srl-keychain:keychain[srl-keychain:name = current()]' + '/srl-keychain:type = "isis"'
                 {
                     error-message "Only keychain of type isis can be assigned";
+                }
+            }
+            leaf algorithm {
+                if-feature srl-feat:isis-stats-auth;
+                description
+                  "The cryptographic algorithm used with the keying material to secure the messages.";
+                type isis-auth-type;
+                must 'not(../keychain)' {
+                    error-message "Key/Algorithm and Keychain cannot be configured simultaneously";
+                }
+            }
+            leaf key {
+                if-feature srl-feat:isis-stats-auth;
+                description
+                  "The secret key.  
+
+                   The maximum string length is 25 characters, of which a maximum of 20 characters is the secret data and the remaining 5 characters, if provided, must be ‘ hash’ (i.e. one whitespace plus the word hash). The trailing ‘hash’ keyword indicates that the secret data was already encrypted and this is the display version of that secret data, which is a hash of the original data. If the ‘hash’ keyword is omitted the string is assumed to be the actual secret data. Whenever the value of authentication-key is read by any management interface, from any datastore (candidate, running, state) the return value is always the encrypted value – i.e. with the trailing ‘ hash’ characters included.";
+                type string {
+                    length "1..25";
+                    srl_nokia-ext:generated-class-name "SecretKey";
+                }
+                must 'not(../keychain)' {
+                    error-message "Key/Algorithm and Keychain cannot be configured simultaneously";
                 }
             }
         }
@@ -478,6 +530,29 @@ module srl_nokia-isis {
                 must '/srl-system:system/srl-keychain:authentication/srl-keychain:keychain[srl-keychain:name = current()]' + '/srl-keychain:type = "isis"'
                 {
                     error-message "Only keychain of type isis can be assigned";
+                }
+            }
+            leaf algorithm {
+                if-feature srl-feat:isis-stats-auth;
+                description
+                  "The cryptographic algorithm used with the keying material to secure the messages.";
+                type isis-auth-type;
+                must 'not(../keychain)' {
+                    error-message "Key/Algorithm and Keychain cannot be configured simultaneously";
+                }
+            }
+            leaf key {
+                if-feature srl-feat:isis-stats-auth;
+                description
+                  "The secret key.  
+
+                   The maximum string length is 25 characters, of which a maximum of 20 characters is the secret data and the remaining 5 characters, if provided, must be ‘ hash’ (i.e. one whitespace plus the word hash). The trailing ‘hash’ keyword indicates that the secret data was already encrypted and this is the display version of that secret data, which is a hash of the original data. If the ‘hash’ keyword is omitted the string is assumed to be the actual secret data. Whenever the value of authentication-key is read by any management interface, from any datastore (candidate, running, state) the return value is always the encrypted value – i.e. with the trailing ‘ hash’ characters included.";
+                type string {
+                    length "1..25";
+                    srl_nokia-ext:generated-class-name "SecretKey";
+                }
+                must 'not(../keychain)' {
+                    error-message "Key/Algorithm and Keychain cannot be configured simultaneously";
                 }
             }
         }
@@ -553,8 +628,53 @@ module srl_nokia-isis {
                     error-message "Only keychain of type isis can be assigned";
                 }
             }
+            leaf algorithm {
+                if-feature srl-feat:isis-stats-auth;
+                description
+                  "The cryptographic algorithm used with the keying material to secure the messages.";
+                type isis-auth-type;
+                must 'not(../keychain)' {
+                    error-message "Key/Algorithm and Keychain cannot be configured simultaneously";
+                }
+            }
+            leaf key {
+                if-feature srl-feat:isis-stats-auth;
+                description
+                  "The secret key.  
+
+                   The maximum string length is 25 characters, of which a maximum of 20 characters is the secret data and the remaining 5 characters, if provided, must be ‘ hash’ (i.e. one whitespace plus the word hash). The trailing ‘hash’ keyword indicates that the secret data was already encrypted and this is the display version of that secret data, which is a hash of the original data. If the ‘hash’ keyword is omitted the string is assumed to be the actual secret data. Whenever the value of authentication-key is read by any management interface, from any datastore (candidate, running, state) the return value is always the encrypted value – i.e. with the trailing ‘ hash’ characters included.";
+                type string {
+                    length "1..25";
+                    srl_nokia-ext:generated-class-name "SecretKey";
+                }
+                must 'not(../keychain)' {
+                    error-message "Key/Algorithm and Keychain cannot be configured simultaneously";
+                }
+            }
         }
         //uses isis-interface-authentication;
+    }
+
+    grouping isis-interface-level-stats {
+        container statistics {
+            if-feature srl-feat:isis-stats-auth; 
+            config false;
+            description
+                "Interface per level statistics";
+
+            list pdu {
+                config false;
+                description
+                    "List of PDUs processed by the IS-IS instance since the IS-IS manager restarted";
+                key pdu-name;
+                leaf pdu-name {
+                    type isis-pdu-type;
+                    description
+                        "The PDU type that was processed";
+                }
+                uses isis-pdu-statistics;
+            }
+        }
     }
 
     grouping isis-interface-config {
@@ -691,7 +811,7 @@ module srl_nokia-isis {
 
         container segment-routing {
             if-feature srl-feat:segment-routing;
-              presence "Enable SR-MPLS extensions in IS-IS interface";
+            presence "Enable SR-MPLS extensions in IS-IS interface";
             must "../../segment-routing/mpls" {
                 error-message "Segment routing must be configured at the instance level";
             }
@@ -701,12 +821,19 @@ module srl_nokia-isis {
                 description
                   "SR-MPLS interface options";
                 container ipv4-node-sid {
+                    presence "IPv4 Node SID Container."; 
+
                     description
                       "Configuration of IPv4 node SID.
                                     
                        The (primary) IPv4 address of this interface is advertised as a prefix SID with the node-SID flag set. The associated label is derived from the label index configured in this container.";
+
+                    must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo'))" {
+                        error-message "The node SID can only be associated with the system0.0 or loopback subinterface";
+                    }
+
                     leaf index {
-                        mandatory true;
+//                        mandatory true;
                         description
                           "Label index to add to SRGB base.
                                         
@@ -714,8 +841,182 @@ module srl_nokia-isis {
                         type uint32 {
                             range "0..1048575";
                         }
+                        must "(current() <= ((/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:end-label) - (/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:start-label)))" {
+                            error-message "Label index is out of global label block's range";
+                        }
                     }
                 }
+                container ipv6-node-sid {
+                    presence "IPv6 Node SID Container."; 
+
+                    description
+                      "Configuration of IPv6 node SID.
+                                    
+                       The (primary) IPv6 address of this interface is advertised as a prefix SID with the node-SID flag set. The associated label is derived from the label index configured in this container.";
+
+                    must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo'))" {
+                        error-message "The node SID can only be associated with the system0.0 or loopback subinterface";
+                    }
+
+                    leaf index {
+//                        mandatory true; 
+                        description
+                          "Label index to add to SRGB base.
+                                        
+                           This causes the V-flag and L-flag in the prefix SID subTLV to be set to zero.";
+                        type uint32 {
+                            range "0..1048575";
+                        }
+                        must "(current() <= ((/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:end-label) - (/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:start-label)))" {
+                            error-message "Label index is out of global label block's range";
+                        }
+                    }
+                }
+                container ipv4-adjacency-sid {
+                    if-feature srl-feat:segment-routing-adjacency-sid;
+                    description
+                      "The IPv4 adjacency SID associated with the interface";
+                    leaf label-value {
+                        description
+                          "The adjacency SID represented by the MPLS label value.
+
+                           If no value is configured, info from state displays the dynamically allocated value.";
+                        //type srl_nokia-comm:mpls-label-non-reserved;
+                        type uint32 {
+                            range "0..1048575";
+                        }
+                    }
+                    leaf allocation {
+                        config false;
+                        description
+                          "The method used to allocate the adjacency SID";
+                        type enumeration {
+                            enum "static";
+                            enum "dyanmic";
+                        }
+                    }
+                    container fib-programming {
+                        config false;
+                        container in-label-entry {
+                            description
+                              "The status of the ILM programming";
+                            leaf status {
+                                type enumeration {
+                                    enum "success" {
+                                        description
+                                          "The ILM entry was downloaded to the linecards and all of them have sent an acknowledgement.";
+                                    }
+                                    enum "failed" {
+                                        description
+                                          "The ILM entry was not programmed into the LFIB table of one or more linecards due to the LFIB table being full.";
+                                    }
+                                    enum "pending" {
+                                        description
+                                          "The ILM entry was downloaded to the linecards but some of them have not sent an acknowledgement yet.";
+                                    }
+                                }
+                            }
+                        }
+                        container tunnel-entry {
+                            leaf ipv4-prefix {
+                                description
+                                  "The IPv4 prefix associated with the endpoint of the tunnel.";
+                                type srl_nokia-comm:ipv4-prefix;
+                            }
+                            leaf status {
+                                description
+                                  "The status of the tunnel table programming";
+                                type enumeration {
+                                    enum "success" {
+                                        description
+                                          "The tunnel entry was downloaded to the linecards and all of them have sent an acknowledgement.";
+                                    }
+                                    enum "failed" {
+                                        description
+                                          "The tunnel entry was not programmed into the LFIB table of one or more linecards due to the LFIB table being full.";
+                                    }
+                                    enum "pending" {
+                                        description
+                                          "The tunnel entry was downloaded to the linecards but some of them have not sent an acknowledgement yet.";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                container ipv6-adjacency-sid {
+                    if-feature srl-feat:segment-routing-adjacency-sid;
+                    description
+                      "The IPv6 adjacency SID associated with the interface";
+                    leaf label-value {
+                        description
+                          "The adjacency SID represented by the MPLS label value.
+
+                           If no value is configured, info from state displays the dynamically allocated value.";
+                        //type srl_nokia-comm:mpls-label-non-reserved;
+                        type uint32 {
+                            range "0..1048575";
+                        }
+                    }
+                    leaf allocation {
+                        config false;
+                        description
+                          "The method used to allocate the adjacency SID";
+                        type enumeration {
+                            enum "static";
+                            enum "dyanmic";
+                        }
+                    }
+                    container fib-programming {
+                        config false;
+                        container in-label-entry {
+                            leaf status {
+                                description
+                                  "The status of the ILM programming";
+                                type enumeration {
+                                    enum "success" {
+                                        description
+                                          "The ILM entry was downloaded to the linecards and all of them have sent an acknowledgement.";
+                                    }
+                                    enum "failed" {
+                                        description
+                                          "The ILM entry was not programmed into the LFIB table of one or more linecards due to the LFIB table being full.";
+                                    }
+                                    enum "pending" {
+                                        description
+                                          "The ILM entry was downloaded to the linecards but some of them have not sent an acknowledgement yet.";
+                                    }
+                                }
+                            }
+                        }
+                        container tunnel-entry {
+                            leaf ipv6-prefix {
+                                type srl_nokia-comm:ipv6-prefix;
+                                description
+                                  "The IPv6 prefix associated with the endpoint of the tunnel.";
+                            }
+                            leaf status {
+                                description
+                                  "The status of the tunnel table programming";
+                                type enumeration {
+                                    enum "success" {
+                                        description
+                                          "The tunnel entry was downloaded to the linecards and all of them have sent an acknowledgement.";
+                                    }
+                                    enum "failed" {
+                                        description
+                                          "The tunnel entry was not programmed into the LFIB table of one or more linecards due to the LFIB table being full.";
+                                    }
+                                    enum "pending" {
+                                        description
+                                          "The tunnel entry was downloaded to the linecards but some of them have not sent an acknowledgement yet.";
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                /*
                 container static-adjacency-sid {
                     description
                       "Configuration of a static adjacency SID
@@ -731,6 +1032,7 @@ module srl_nokia-isis {
                         }
                     }
                 }
+                */
             }
         }
 
@@ -742,6 +1044,7 @@ module srl_nokia-isis {
 
             uses isis-level-key;
             uses isis-interface-level-config;
+            uses isis-interface-level-stats;
         }
 
         uses isis-interface-authentication;
@@ -1118,6 +1421,14 @@ module srl_nokia-isis {
             }
         }
 
+        leaf lsp-authentication {
+            if-feature srl-feat:isis-stats-auth;
+            description
+              "When set to true, include an authentication TLV in self-generated LSP PDUs and check the authentication TLV in received LSP PDUs as per check-received config.
+              When this is false, do not include an authentication TLV in self-generated LSP PDUs but check the authentication TLV in received LSP PDUs according to the configuration.";
+            type boolean;
+        }
+
         uses srl_nokia-te:igp-instance-te-advertisement {
           if-feature srl-feat:traffic-engineering;
         }
@@ -1179,6 +1490,93 @@ module srl_nokia-isis {
         }
     }
 
+    grouping isis-level-stats {
+        container statistics {
+            if-feature srl-feat:isis-stats-auth; 
+            config false;
+            description
+              "Per level statistics in an ISIS instance";
+
+            leaf authentication-failures {
+                description 
+                  "Number of times an IS-IS control PDU associated with this level had the correct auth type but failed to pass authentication validation";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+            
+            leaf authentication-type-failures {
+                description
+                  "Number of times an IS-IS control PDU associated with this level had an auth type field different from that for this system";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf corrupted-lsps {
+                description
+                  "Number of corrupted in-memory LSPs detected. LSPs received from the wire with a bad checksum are silently dropped and not counted. LSPs received from the wire with parse errors are counted by lsp-errors";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf database-overloads {
+                description
+                  "Number of times the database has become overloaded";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf exceeded-max-sequence-number {
+                description
+                  "Number of times the system has attempted to exceed the maximum sequence number";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf system-id-length-mismatches {
+                description
+                  "Number of times an IS-IS control PDU associated with this level was received with a system ID field length different from that for this system";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf lsp-errors {
+                description
+                  "Number of received LSPs with parse errors";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf manual-address-drop-from-area {
+                description
+                  "number of times a manual address has been dropped from area";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf max-area-address-mismatches {
+                description
+                  "Number of times an IS-IS control PDU associated with this level was received with a max area address field different from that for this system";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf own-lsp-purges {
+                description
+                  "Number of times a zero-aged copy of the system's own LSP is received from some other node";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf partition-changes {
+                description
+                  "Number of partition changes";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf sequence-number-skips {
+                description
+                  "Number of times a sequence number skip has occurred";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf spf-runs {
+                description
+                  "number of times a full SPF run has been performed on the level LSDB since the IS-IS manager restarted";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+        }
+    }
+
     grouping isis-interlevel-import-export-config {
         container inter-level-propagation-policies {
             description
@@ -1237,18 +1635,24 @@ module srl_nokia-isis {
     grouping isis-inst-mpls-segment-routing {
         container segment-routing {
             if-feature srl-feat:segment-routing;
-            must "../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
-                error-message "Segment routing is only supported in the default network instance";
-            }
-            must "../srl_nokia-isis:ipv6-unicast/srl_nokia-isis:multi-topology = false()" {
-                error-message "Segment routing is not supported in combination with IPv6 multi-topology";
-            }
             container mpls {
                 presence "Enable SR-MPLS extensions in IS-IS";
-                must "boolean(../../../dynamic-label-block)";
+                must "../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                    error-message "Segment routing is only supported in the default network instance";
+                }
+                must "../../srl_nokia-isis:ipv6-unicast/srl_nokia-isis:multi-topology = false()" {
+                    error-message "Segment routing is not supported in combination with IPv6 multi-topology";
+                }
+                must "boolean(../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block) and boolean(../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls)" {
+                    error-message "Segment routing can be supported only when network instance has segment routing enabled along with a SRGB.";
+                }
+                must "boolean(../../../dynamic-label-block)" {
+                    error-message "Segment routing can be supported only when the Dynamic SRLB is configured.";
+                }
                 description
                             "Context used to configure SR-MPLS options";
                 leaf adjacency-sid-hold-time {
+                    if-feature srl-feat:segment-routing-adjacency-sid;
                     description
                       "Adjacency SID hold time";
                     type union {
@@ -1264,6 +1668,7 @@ module srl_nokia-isis {
                 }
                 leaf static-label-block {
                     if-feature srl-feat:label-management;
+                    if-feature srl-feat:segment-routing-adjacency-sid;
                     type leafref {
                         path "/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static/srl_nokia-mplslbl:name";
                     }
@@ -1277,6 +1682,7 @@ module srl_nokia-isis {
                 leaf static-label-block-status {
                     config false;
                     if-feature srl-feat:label-management;
+                    if-feature srl-feat:segment-routing-adjacency-sid;
                     type enumeration {
                         enum "available";
                         enum "unavailable";
@@ -1469,7 +1875,7 @@ module srl_nokia-isis {
                         "The PDU type that was processed";
                 }
                 uses isis-pdu-statistics;
-            } 
+            }
         }
     }
 
@@ -1492,7 +1898,7 @@ module srl_nokia-isis {
             config false;
             description
                 "The ID for this instance of the Integrated IS-IS protocol.";
-            type isis-system-id;
+            type srl_nokia-comm:isis-system-id;
         }
 
         container restarting-neighbor-list {
@@ -1506,7 +1912,7 @@ module srl_nokia-isis {
                 leaf system-id {
                     description
                         "The neighbor router's system ID.";
-                    type isis-system-id;
+                    type srl_nokia-comm:isis-system-id;
                 }
                 leaf hostname {
                     description
@@ -1718,7 +2124,7 @@ module srl_nokia-isis {
                 leaf neighbor-system-id {
                     description
                         "IS-IS system-ID of the LAN neighbor";
-                    type isis-system-id;
+                    type srl_nokia-comm:isis-system-id;
                 }
                 leaf ipv6-family {
                     description
@@ -1875,6 +2281,20 @@ module srl_nokia-isis {
             type string;
         }
 
+        leaf-list area-address {
+            if-feature srl-feat:isis-stats-auth; 
+            description
+                "Area address of the neighbor.";
+            type isis-area-address;
+        }
+
+        leaf designated-is-system-id {
+            if-feature srl-feat:isis-stats-auth; 
+            description
+                "System id of the designated IS router.";
+            type srl_nokia-comm:isis-system-id;
+        }
+
         leaf state {
             description
               "The current state of the adjacency.";
@@ -1918,6 +2338,13 @@ module srl_nokia-isis {
             description
               "The circuit type signalled by the neighbor.";
             type isis-level;
+        }
+
+        leaf neighbor-extended-circuit-id {
+            if-feature srl-feat:isis-stats-auth; 
+            description
+              "Extended circuit ID assigned by the neighbor.";
+            type isis-extended-circuit-id;
         }
 
         leaf neighbor-snpa {
@@ -1969,6 +2396,13 @@ module srl_nokia-isis {
                 type srl_nokia-comm:date-and-time-delta;
             }
         }
+
+        leaf-list nlpid {
+            if-feature srl-feat:isis-stats-auth; 
+            description
+              "List of protocols supported by the adjacency.";
+            type isis-protocols-supported;
+        }
     }
 
     grouping isis-interface-state {
@@ -1984,6 +2418,61 @@ module srl_nokia-isis {
             description
               "The circuit ID assigned by this IS-IS router to its interface.";
             type isis-extended-circuit-id;
+        }
+
+        container statistics {
+            if-feature srl-feat:isis-stats-auth;
+            config false;
+            description
+              "Statistics associated with this IS-IS interface.";
+
+            leaf adjacency-changes {
+                description
+                  "Number of times an adjacency state change has occurred on this circuit(summed across all adjacencies).";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf adjacency-number {
+                description
+                  "Number of adjacencies on this circuit.";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf authentication-failures {
+                description
+                  "Number of times an IS-IS control PDU with the correct auth type has failed to pass authentication validation on the interface.";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf authentication-type-failures {
+                description
+                  "Number of times an IS-IS control PDU with an auth type field different from that for this system has been received on the interface.";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf system-id-length-mismatches {
+                description
+                  "Number of times an IS-IS control PDU with a system ID field length different from that for this system has been received on the interface.";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf designated-is-changes {
+                description
+                  "Number of times the Designated IS has changed on this circuit.";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf max-area-address-mismatches {
+                description
+                  "Number of times an IS-IS control PDU with a max area address field different from that for this system has been received on the interface.";
+                type srl_nokia-comm:zero-based-counter32;
+            }
+
+            leaf rejected-adjacencies {
+                description
+                  "Number of times an adjacency has been rejected on this circuit.";
+                type srl_nokia-comm:zero-based-counter32;
+            }
         }
 
         list adjacency {
@@ -2047,7 +2536,7 @@ module srl_nokia-isis {
             config false;
             description 
                "This indicates System ID that originated a purge.";
-            type isis-system-id;
+            type srl_nokia-comm:isis-system-id;
         }
  
         container authentication {
@@ -2805,6 +3294,9 @@ module srl_nokia-isis {
 
                     key "interface-name";
 
+                    unique "segment-routing/mpls/ipv4-node-sid/index";
+                    unique "segment-routing/mpls/ipv6-node-sid/index";
+
                     uses isis-interface-key;
                     uses isis-interface-config;
                     uses isis-interface-state;
@@ -2820,6 +3312,7 @@ module srl_nokia-isis {
 
                     uses isis-level-key;
                     uses isis-level-config;
+                    uses isis-level-stats;
 
                     must "(((level-number = 1) and (../level-capability != 'L2')) or
                            ((level-number = 2) and (../level-capability != 'L1')))" {
@@ -2837,7 +3330,7 @@ module srl_nokia-isis {
                         leaf host-system-id {
                             description
                                 "The system ID";
-                            type isis-system-id;
+                            type srl_nokia-comm:isis-system-id;
                         }
                         leaf hostname {
                             description
@@ -2861,8 +3354,69 @@ module srl_nokia-isis {
         }
     }
 
+    grouping isis-sid-database {
+        container isis {
+            config false;
+            description
+                "State information about prefix SIDs known to IS-IS";
+            list source-router {
+                key "system-id level-number";
+                description
+                    "The ISIS routers that provided the prefix SID. (Multiple in the case of redistribution.)";
+                leaf system-id {
+                    type srl_nokia-comm:isis-system-id;
+                    description
+                        "The system-id of an ISIS router that originated or redistributed the prefix SID";
+                }
+                leaf level-number {
+                    type isis-level-number;
+                    description
+                        "The level of the LSP that advertises the prefix SID";
+                }
+                leaf local-system {
+                    type boolean;
+                    description
+                        "True when the system ID belongs to the local system.";
+                }
+                container flags {
+                    description
+                        "Flags that characterize the prefix SID";
+                    leaf re-advertised {
+                        description
+                            "If set the prefix to which this Prefix-SID is attached was propagated from another level or from another protocol.";
+                        type boolean;
+                    }
+                    leaf node-sid {
+                        description
+                            "If set the prefix SID refers to the router identified by the prefix.";
+                        type boolean;
+                    }
+                    leaf penultimate-hop-popping {
+                        description
+                            "If set the penultimate hop MUST NOT pop the Prefix-SID before delivering the packet to the node that advertised the Prefix-SID.";
+                        type boolean;
+                    }
+                    leaf explicit-null {
+                        description
+                            "If set any upstream neighbor of the Prefix-SID originator MUST replace the Prefix-SID with a Prefix-SID that has an Explicit NULL value (0 for IPv4 and 2 for IPv6) before forwarding the packet";
+                        type boolean;
+                    }
+                    leaf local {
+                        description
+                            "If set, then the value/index carried by the Prefix-SID has local significance.";
+                        type boolean;
+                    }
+                }
+            }
+        }
+    }
+
     augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
         uses isis-top;
+    }
+
+    augment "/srl_nokia-netinst:network-instance/srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:sid-database/srl_nokia-segrt:prefix-sid" {
+        uses isis-sid-database;
     }
 }
 

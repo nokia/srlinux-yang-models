@@ -25,6 +25,10 @@ module srl_nokia-gribi-server {
   description
     "This module defines configuration and operational state data related to the gRIBI server";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -79,7 +83,7 @@ module srl_nokia-gribi-server {
     }
   }
 
-  grouping gribi-netinst {
+  grouping gribi-netinst-listener {
     list network-instance {
       description
         "List of network instances to run a gRIBI socket in";
@@ -151,7 +155,7 @@ module srl_nokia-gribi-server {
            Disabling this will disable all gRIBI sockets in all configured network-instances (including unix sockets).";
       }
       uses gribi-traceoptions;
-      uses gribi-netinst;
+      uses gribi-netinst-listener;
       uses gribi-socket;
       leaf timeout {
         type uint16 {
@@ -248,8 +252,65 @@ module srl_nokia-gribi-server {
     }
   }
 
+  grouping gribi-netinst-protocol {
+    container gribi {
+      if-feature srl-feat:gribi;
+      presence "Configure the network instance to support gRIBI programming";
+      must '(/srl-netinst:network-instance[srl-netinst:name = current()/../../srl-netinst:name]/srl-netinst:type = "srl-netinst:ip-vrf")';
+      description
+        "Container for gRIBI configuration and state.";
+
+      leaf admin-state {
+        type srl-comm:admin-state;
+        description
+          "Administratively enable or disable gRIBI.
+
+          When this is set to disable no gRIBI routes can be added to the network-instance and attempts to do so will result in failures signaled back to the gRIBI client";
+        default "disable";
+      }
+
+      leaf default-metric {
+        description
+          "Set the route table metric to use for all gRIBI-created IPv4 and IPv6 routes";
+        type uint32;
+        default 1;
+      }
+
+      leaf default-preference {
+        type uint8 {
+          range "0..255";
+        }
+        default 4;
+        description
+          "Lower values indicate a higher degree of preference when deciding the route to use from different protocols.";
+      }
+
+      leaf max-ecmp-paths {
+        type uint8 {
+          range "1..128";
+        }
+        default 64;
+        description
+          "Specifies the maximum number of next-hops per next-hop-group";
+      }
+
+      leaf maximum-routes {
+        type uint32;
+        default 0;
+        description
+          "Specifies the maximum number of gRIBI routes (sum of IPv4 and IPv6 entries).
+
+          A value of 0 signifies no limit.";
+      }
+    }
+  }
+
   augment "/srl-system:system" {
     srl-ext:first-released "21.11.1";
     uses gribi-server-top;
+  }
+
+  augment "/srl-netinst:network-instance/srl-netinst:protocols" {
+    uses gribi-netinst-protocol;
   }
 }

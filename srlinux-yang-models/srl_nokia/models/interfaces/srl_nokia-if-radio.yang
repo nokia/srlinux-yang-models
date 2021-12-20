@@ -1,0 +1,1141 @@
+module srl_nokia-if-radio {
+    yang-version 1.1;
+
+    // namespace
+
+    namespace "urn:srl_nokia/interfaces/radio";
+    prefix srl_nokia-if-ip;
+
+    // import some basic types
+
+    import srl_nokia-common {
+      prefix srl_nokia-comm;
+    }
+    import srl_nokia-features {
+      prefix srl_nokia-feat;
+    }
+    import srl_nokia-extensions {
+      prefix srl_nokia-ext;
+    }
+    import srl_nokia-interfaces {
+      prefix srl_nokia-if;
+    }
+
+    description
+      "Model for managing Radio subinterfaces";
+
+    // typedef statements
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+    typedef cpri-port-speed {
+      type enumeration {
+        enum cpri3 {
+          value 1;
+        }
+        enum cpri5 {
+          value 2;
+        }
+        enum cpri7 {
+          value 3;
+        }
+        enum cpri8 {
+          value 4;
+        }
+        enum cpri10 {
+          value 5;
+        }
+      }
+      description
+        "CPRI Port Speeds";
+    }
+
+    typedef obsia-port-speed {
+      type enumeration {
+        enum obsai4 {
+          value 1;
+        }
+        enum obsai8 {
+          value 2;
+        }
+      }
+      description
+        "obsai Port Speeds";
+    }
+
+    typedef mapper-demapper-type {
+      type enumeration {
+        enum mapper {
+          value 1;
+          description "only a mapper.";
+        }
+        enum demapper {
+          value 2;
+          description "only a demapper";
+        }
+      }
+      description
+        "mapper-demapper grouping can act as a mapper or just a demapper";
+    }
+
+  typedef mapper-type {
+    type enumeration {
+      enum STRUCTURE-AGNOSTIC-TUNNELING {
+        value 0;
+        description
+          "RoE mapper or de-mapper in structure-agnostic tunneling mode.";
+        reference
+          "8.2.a of IEEE Std 1914.3-2021";
+      }
+      enum STRUCTURE-AGNOSTIC-LINE-CODING-AWARE {
+        value 1;
+        description
+          "RoE mapper or de-mapper in structure-agnostic mode without line
+           encoding.";
+        reference
+          "8.2.b of IEEE Std 1914.3-2021";
+      }
+      enum STRUCTURE-AWARE-TIME-DOMAIN-CPRI {
+        value 2;
+        description
+          "RoE mapper or de-mapper in structure-aware mode.";
+        reference
+          "8.3 of IEEE Std 1914.3-2021";
+      }
+      enum NATIVE-TIME-DOMAIN {
+        value 3;
+        description
+          "RoE mapper or de-mapper in native time domain mode.";
+        reference
+          "8.4 of IEEE Std 1914.3-2021";
+      }
+      enum NATIVE-FREQUENCY-DOMAIN {
+        value 4;
+        description
+          "RoE mapper or de-mapper in native frequency domain mode.";
+        reference
+          "8.5 of IEEE Std 1914.3-2021";
+      }
+      enum STRUCTURE-AWARE-FREQUENCY-DOMAIN-CPRI {
+        value 5;
+        description
+          "RoE mapper or de-mapper in structure-aware frequency domain mode.";
+        reference
+          "8.6 of IEEE Std 1914.3-2021";
+      }
+    }
+    description
+      "Operating mode of a (de)mapper.
+       0 indicates structure-agnostic tunneling mode.
+       1 indicates structure-agnostic line-coding aware mode.
+       2 indicates structure-aware time domain mode.
+       3 indicates native time domain mode.
+       4 indicates native frequency domain mode.
+       5 indicates structure-aware frequency domain mode.";
+    reference
+      "Table 12 and Table 13 of IEEE Std 1914.3-2021";
+  } // mapperType
+
+  typedef structure-aware-mapper-type {
+    type enumeration {
+      enum DATA {
+        value 0;
+        description
+          "RoE mapper or de-mapper in structure-aware mode handling CPRI I/Q
+          I/Q data.";
+        reference
+          "Table 34 of IEEE Std 1914.3-2021";
+      }
+      enum SLOW {
+        value 1;
+        description
+          "RoE mapper or de-mapper in structure-aware mode handling slow C&M
+          C&M data.";
+        reference
+          "8.3.8 and Table 1416 in 8.3.5 of IEEE Std 1914.3-2021";
+      }
+      enum FAST {
+        value 2;
+        description
+          "RoE mapper or de-mapper in structure-aware mode handling fast C&M
+          C&M channel.";
+        reference
+          "8.3.7 and Table 1416 in 8.3.5 of IEEE Std 1914.3-2021";
+      }
+      enum VSD {
+        value 3;
+        description
+          "RoE mapper or de-mapper in structure-aware mode handling
+          vendor-specific data (VSD).";
+        reference
+          "8.3.9 and Table 1416 in 8.3.5 of IEEE Std 1914.3-2021";
+      }
+      enum AXC {
+        value 4;
+        description
+          "RoE mapper or de-mapper in structure-aware mode handling Ctrl_AxC channels.";
+        reference
+          "8.3.9 and Table 1416 in 8.3.5 of IEEE Std 1914.3-2021";
+      }
+    }
+    description
+      "Type of data handled by a structure-aware (de)mapper.
+      0 indicates it handles data other than the following.
+      1 indicates it handles the slow C&M channel.
+      2 indicates it handles the fast C&M channel.
+      3 indicates it handles vendor-specific data (VSD).
+      4 indicates it handles Ctrl_AxC channels.";
+    reference
+      "Table 1416 of IEEE Std 1914.3-2021";
+  } // structure-aware-mapper-type
+
+  grouping time-stamp {
+    description
+      "A timestamp comprised of integer and fractional nanosecond portions.";
+   leaf integer-nanosecond {
+      type uint32 {
+        range "5000..16777216";
+      }
+      units "nanoseconds";
+      default "100000";
+      description
+        "The integer nanosecond portion of the timestamp.";
+    }
+    leaf fractional-nanosecond {
+      type uint8 {
+        range "0..31";
+      }
+      default "0";
+      description
+        "The fractional nanosecond portion of the timestamp.";
+    }
+  }
+
+  typedef cpri-speed{
+    type enumeration {
+      enum cpri-3 {
+        value 0;
+      }
+      enum cpri-5 {
+        value 1;
+      }
+      enum cpri-7 {
+        value 2;
+      }
+      enum cpri-8 {
+        value 3;
+      }
+      enum cpri-10 {
+        value 4;
+      }
+    }
+    description
+      "CPRI Port Speeds;";
+  }
+
+  typedef obsai-speed{
+    type enumeration {
+      enum obsai-4 {
+        value 0;
+      }
+      enum obsai-8 {
+        value 1;
+      }
+    }
+    description
+      "OBSAI Port Speeds";
+  }
+
+  grouping roe-top {
+    leaf port-role {
+      type enumeration {
+        enum leader {
+          value 1;
+        }
+        enum follower {
+          value 2;
+        }
+      }
+      default follower;
+      description
+        "Specifies the role of the CPRI interface. Master role should be specified when the CPRI interface
+         is facing a CPRI slave port. Slave role should be specified when the CPRI interface is facing a
+         CPRI master port.";
+    }
+
+    container pres-time-offset {
+      when "../mapper-demapper/mapper-demapper-type = 'mapper'";
+      description
+        "Presentation Time Offset: Value that is added to the data arrival
+         time to generate the presentation time, which is represented by the
+         timeStamp field, described in 5.5.5.3 of IEEE Std 1914.3-2021.";
+      reference
+        "5.5.5.3, enParam 12 in Table 10 and Table 12, 6.3, and C.3 of IEEE Std
+         1914.3-2021";
+      uses time-stamp;
+    }
+
+   container target-offset {
+      when "../mapper-demapper/mapper-demapper-type = 'mapper'";
+      description
+        "The parameter is available only when CPRI port is set to structure-aware mode.
+        Represent the provisioned target delay between a SAS pair:
+        - In DL path : hub SAS CPRI ingress to remote SAS CPRI egress
+        - In UL path : remote SAS CPRI ingress to hub SAS CPRI egress
+        This parameter is used to calculate the SAS CPRI egress presentation time setting (ie CPRI 10ms
+        frame boundary is egress at specific presentation time based on SAS timebase traceable to global
+        time reference). All demapper buffers are egress based on this alignment.
+        The offset time should be designed considering all factors introducing latency, i.e.network
+        transmission latency, Ethernet switch forwarding latency, RoE encap/decap latency, jitter buffer
+        depth, timebase difference between mapper and demapper
+        This parameter can be modified at run time, but the corresponding RoE demapper should be shutdown and no shutdown so that the decapsulated CPRI signals are played out at the presentation
+        time.
+        To support overall CPRI delay management concept, it is expected DL path and UL path should be
+        provisioned with the same target-offset value to mimic symmetric delay. That means target-offset on
+        the SAS pair client CPRI ports should be provisioned with the same value..";
+      reference
+        "5.5.5.3, enParam 12 in Table 10 and Table 12, 6.3, and C.3 of IEEE Std
+         1914.3-2021";
+      uses time-stamp;
+    }
+  }
+
+    typedef cpri-lpt-cons-action {
+      type enumeration {
+        enum disable {
+          value 1;
+          description "default, Transmission of all zero bits at CPRI Tx direction (aAllZeroBits),
+            i.e. line coding is not generated and all sigals are zeros. There will not be any K characters. ";
+        }
+        enum lasershut {
+          value 2;
+          description "Force this client port's Transmitter/Laser shutdown.";
+        }
+        enum cpritxdis {
+          value 3;
+          description "Disable CPRI Tx over this client port (not applicable to tunneling mode),
+            this leads to the same defect i.e. Loss of frame defect at the peer CPRI Tx, as aAllZeroBits.
+            But this consequent action can be controlled via delay timer or extension timer.";
+        }
+      }
+      description
+        "LPT Consequent Action on port basis at local client port, when CSF/SSF is detected
+         on network side.";
+    }
+
+   typedef obsai-lpt-cons-action {
+      type enumeration {
+        enum disable {
+          value 1;
+          description "default, no action ";
+        }
+        enum lasershut {
+          value 2;
+          description "Force this client port's Transmitter/Laser shutdown.";
+        }
+        enum obsaitxdis {
+          value 3;
+          description "Disable OBSAI Tx over this client port .";
+        }
+      }
+      description
+        "LPT Consequent Action on port basis at local client port, when CSF/SSF is detected
+         on network side.";
+    }
+
+   grouping lpt-timing{
+      description "Sets the LPT parameters for CPRI-n port.";
+      leaf tx-dis-delay-time {
+         type uint32{
+            range "0..300000";
+         }
+         units "milliseconds";
+         default "0";
+         description
+           "The LPT CA CPRITxDis delay time on port basis at local client port. Delay time on
+            LAN port is used to postpone the consequent actions on client port to take effect, in order to
+            avoid the conflicts with server protection.";
+      }
+
+      leaf extension-time {
+         type uint32{
+            range "0..300000";
+         }
+          units "milliseconds";
+         default "0";
+         description
+           "The LPT CA extension time on port basis at local client port. The consequent action is
+            extended to be at least extension time long enough to trigger the reset or restart calibration at
+            BBU/RU.";
+      }
+
+      leaf laser-shut-delay-time {
+         type uint32{
+            range "0..300000";
+         }
+         units "milliseconds";
+         default "0";
+         description
+           "The LPT CA FLS delay time on port basis at local client port. Delay time on LAN port
+            is used to postpone the consequent actions on client port to take effect, in order to avoid the
+            conflicts with server protection.";
+      }
+  }
+
+  grouping lpt-cpri {
+    container lpt {
+      leaf cons-action {
+        type cpri-lpt-cons-action;
+        description
+             "LPT Consequent Action on port basis at local client port, when CSF/SSF is detected
+              on network side.";
+        }
+      uses lpt-timing;
+    }
+  }
+
+  grouping lpt-obsai {
+    container lpt{
+      leaf cons-action{
+        type obsai-lpt-cons-action;
+        description
+             "LPT Consequent Action on port basis at local client port, when CSF/SSF is detected
+              on network side.";
+      }
+      uses lpt-timing;
+    }
+  }
+
+  grouping cpri-port {
+    container cpri-port{
+      leaf port-speed{
+        type cpri-speed;
+        description
+          "Set the port speed for this CPRI Port. A Radio interface can either be CPRI or OBSAI.";
+      }
+      leaf port-param-auto {
+        type boolean;
+        default true;
+        description
+          "When enabled:
+            - RoE entity disregards slowcm-rate, p-pointer, protocol-version parameter provision.
+            - CPRI ingress L1inband information (Z.2.0, Z.66.0, Z.130.0, Z.194.0) is extracted and used by
+            - mappers within RoE entity. Information is also sent to the other end RoE entity.
+            - CPRI egress L1inband information is based on information from the other end RoE entity (traced
+            - to CPRI ingress L1inband information).
+          When disabled:
+            - RoE entity follows slowcm-rate, p-pointer, protocol-version parameter provision.
+          Note : For structure-aware mode to work properly, RoE entities in both ends of RoE transport
+          should be set to mapper-status-enable or no mapper-status-enable together.  ";
+      }
+      //valid config only when port-param-auto is set to false, ends.
+     leaf cpri-ver {
+        must "../port-param-auto = false()";
+        type uint8;
+        description
+          "CPRI protocol version at location Z.2.0, i.e., control word 2 as
+          extracted by the control process. This parameter is for the RoE mapper.";
+        reference
+            "enParam 2 in Table 89 and 8.3.6(.c) of IEEE Std 1914.3-2021";
+      }
+      leaf cpri-hdlc {
+        must "../port-param-auto = false()";
+        type uint8 {
+          range "0..7";
+        }
+
+        description
+          "HDLC bit rate at location Z.66.0, i.e., control word 66 Slow C&M.
+          0 = HDLC disable
+          1 = 240kbps
+          2 = 480kbps
+          3 = 960kbps
+          4 = 1920kbps
+          5 = 2400kbps
+          6 = 3840/4800/7680kbps based on CPRI-5/6/7 and higher rates
+          7 = follow CPRI slow C&M negotiation
+          structure aware mode:This command indicates rate of slow C&M channel in CPRI link. When slow C&M is not supported
+          by setting cpriHDLC = 0, no slow C&M RoE flow is needed. RoE entity has 1 mapper and demapper
+          reserved for RoE slow C&M flow.
+          range definition corresponds to CPRI standard Z.66.0 definition. This value is used to set Z.66.0   in CPRI egress.";
+        reference
+          "enParam 3 in Table 9 and 8.3.6(.d) of IEEE Std 1914.3-2021";
+      }
+      leaf cpri-l1 {
+        type uint8 {
+          range "0..31";
+        }
+        config false;
+        description
+          "L1 signaling at location Z.130.0, i.e., control word 130 as
+          extracted by the control process. This parameter is for the RoE mapper.";
+        reference
+           "enParam 4 in Table 89 and 8.3.6(.e) of IEEE Std 1914.3-2021";
+      }
+      leaf cpri-eth {
+        must "../port-param-auto = false()";
+        type uint8 {
+          range "0|20..63";
+        }
+        description
+          "Ethernet pointer at location Z.194.0, i.e., control word 194 as
+          extracted by the control process This parameter is for the RoE mapper.
+          Specifies p-pointer value for the fast C&M channel in CPRI link associated with the RoE entity.
+            p-pointer defines the fast C&M channel region (starting subchannel) inside the CPRI control word.
+            Based on CPRI rate and p-pointer value, the fast C&M Ethernet rate is also defined.
+            Value = 0 means fast C&M channel is not used in CPRI link.";
+        reference
+          "enParam 5 in Table 89 and 8.3.6(.f) of IEEE Std 1914.3-2021";
+      }
+      uses lpt-cpri;
+    }
+  }
+
+  grouping obsai-port {
+    container obsai-port{
+      leaf port-speed{
+        type obsai-speed;
+        description
+          "Set the port speed for this OBSAI Port. A Radio interface can either be CPRI or OBSAI.";
+      }
+      leaf obsai-ver {
+        type uint8;
+        config false;
+        description
+          "OBSI protocol version at location Z.2.0, i.e., control word 2 as
+          extracted by the control process. This parameter is for the RoE mapper.";
+        reference
+            "enParam 2 in Table 89 and 8.3.6(.c) of IEEE Std 1914.3-2021";
+      }
+      leaf obsai-l1 {
+        type uint8 {
+          range "0..31";
+        }
+        config false;
+        description
+          "L1 signaling at location Z.130.0, i.e., control word 130 as
+          extracted by the control process. This parameter is for the RoE mapper.";
+        reference
+           "enParam 4 in Table 89 and 8.3.6(.e) of IEEE Std 1914.3-2021";
+      }
+      leaf obsai-eth {
+        type uint8 {
+          range "0|20..63";
+        }
+        config false;
+        description
+          "Ethernet pointer at location Z.194.0, i.e., control word 194 as
+          extracted by the control process This parameter is for the RoE mapper.
+          Specifies p-pointer value for the fast C&M channel in CPRI link associated with the RoE entity.
+            p-pointer defines the fast C&M channel region (starting subchannel) inside the CPRI control word.
+            Based on CPRI rate and p-pointer value, the fast C&M Ethernet rate is also defined.
+            Value = 0 means fast C&M channel is not used in CPRI link.";
+        reference
+          "enParam 5 in Table 89 and 8.3.6(.f) of IEEE Std 1914.3-2021";
+      }
+      uses lpt-obsai;
+    }
+  }
+
+  grouping structure-aware-config {
+    leaf structure-aware-mapper-type {
+      when "../mapper-type = '2' or ../mapper-type = '5'";
+      type structure-aware-mapper-type;
+      default "DATA";
+      description
+        "Allows selecting the type of data that this structure-aware
+        (de)mapper handles.
+        0 indicates it handles data other than the following.
+        1 indicates it handles the slow C&M channel.
+        2 indicates it handles the fast C&M channel.
+        3 indicates it handles vendor-specific data (VSD).
+        4 indicates it handles Ctrl_AxC channels.";
+      reference
+        "Table 1416 in 8.3.5 of IEEE Std 1914.3-2021";
+    }
+    leaf sample-width {
+      when "../mapper-type = '2' and "
+               + "../structure-aware-mapper-type = '4' and "
+               + "../mapper-demapper-type = 'demapper' or 'mapper-demapper'";
+      type uint16 {
+        range "4..16";
+      }
+      default "15";
+      description
+        "The parameter is available only when CPRI port is set to structure-aware mode.
+         This command configures the IQ sample width in the CPRI link as a parameter
+         for all data mappers (sa-type = 1). This parameter is needed to determine payload size.
+          - For hub SAS provision : mapper-sample-width = DL IQ sample width
+          - For cell SAS provision : mapper-sample-width = UL IQ sample width";
+      reference
+        "enParam 3 in Table 22 of IEEE Std 1914.3-2021";
+    }
+    leaf bandwidth {
+         when "../mapper-type = '2' and "
+               + "../structure-aware-mapper-type = '4' and "
+               + "../mapper-demapper-type = 'demapper'";
+           type uint8 {
+            range "1..6";
+           }
+           description
+            "Specifies the bw configuration for demapper.";
+      }
+    leaf axc-position {
+        when "../mapper-type = '2' and "
+               + "../structure-aware-mapper-type = '4' and "
+               + "../mapper-demapper-type = 'demapper'";
+         type uint16;
+         description
+            "Specifies the starting bit position of the AxC inside the CPRI basic frame.";
+      }
+    list ctrl-word-conts {
+      when "(../mapper-type = '2' or ../mapper-type = '5')";
+      key "ctrl-word-id";
+      max-elements 1;
+      description
+        "CPRI control word RoE (de)mapper container parameters. For now it is only VSD in SAS";
+      reference
+        "Table 17 in 8.3.9 of IEEE Std 1914.3-2021";
+      leaf ctrl-word-id {
+        type uint8;
+        description
+          "Each control word has a unique identifier.";
+        reference
+          "enParam 0 in Table 17 of IEEE Std 1914.3-2021";
+      }
+      leaf cw-start {
+        type uint8 {
+          range "0..63";
+        }
+        description
+          "The first subchannel (Ns) allocated for parser.";
+        reference
+          "enParam 3 in Table 17 of IEEE Std 1914.3-2021";
+      }
+      leaf cw-size {
+        type uint8 {
+          range "0..63";
+        }
+        description
+          "Number of consecutive subchannels allocated for the control data.";
+        reference
+          "enParam 4 in Table 17 of IEEE Std 1914.3-2021";
+      }
+    } // list ctrlWordConts
+  }
+
+  grouping mapper-demapper-config {
+    description
+      "Parameters for RoE mappers and de-mappers, or mapper alone and demapper alone";
+    leaf mapper-demapper-type {
+      type mapper-demapper-type;
+    }
+    leaf flow-id {
+      when "../mapper-type = 'mapper'";
+      type uint8 {
+        range "0..254";
+      }
+      default "0";
+      description
+        "For an RoE mapper: allows setting the flowID. The flowID can be
+         assigned by the main controller to map to the receiver's
+         deMapperID.";
+      reference
+        "Table 4 and enParam 1 in Table 10, Table 11, Table 12, Table 13 of
+         IEEE Std 1914.3-2021";
+    }
+    leaf payload-len{
+         type uint16;
+         description
+           "Specifies the length of the payload in RoE packets in bytes after the RoE common header and
+        before FCS. When the payload-len is specified for a demapper, Jitter-buffer-depth is set to the max
+        value corresponding to the specified payload-len.
+        default:
+        For tunneling mode,
+        792 bytes for CPRI-10;
+        660 bytes for CPRI-8;
+        640 bytes for CPRI-7, CPRI-5, CPRI-3.
+        800 bytes for OBSAI-8, OBSAI-4
+        For linecoding-aware mode,
+        768 bytes for CPRI-10;
+        640 bytes for CPRI-8;
+        512 bytes for CPRI-7.";
+      }
+
+    leaf mapper-type {
+      type mapper-type;
+    }
+
+    uses structure-aware-config;
+
+    leaf ethlink-id {
+      type uint32;
+      description
+        " it is the unique ID with in the ethernet list, Specifies the ethlink id, used to configure the ethernet frame header of the roe packets generated
+            by roe mapper, or to configure the ethernet frame header that the received roe packets should
+            match at roe demapper. One roe mapper/demapper can associate with one ethlink.";
+      }
+  }
+
+  grouping mapper-demapper-counters {
+    container counters {
+      config false;
+      description
+        "RoE performance monitoring counters.";
+      reference
+        "Some counters can be refrenced via Clause 11 of IEEE Std 1914.3-2021";
+      leaf data-pkt-count {
+        type uint32;
+        description
+          "Contains an integer count of the number of RoE data packets:
+            - Transmitted, if this is an RoE mapper; or
+            - Received, if this is an RoE de-mapper.
+          The counter increments by one for each RoE data packet that is:
+            - Sent on the RoE flow by the RoE mapper; or
+            - Received by the RoE de-mapper.";
+        reference
+          "enParam 0 in Table 28 and Table 29 of IEEE Std 1914.3-2021";
+      }
+      leaf ctrl-pkt-count {
+        type uint16;
+        description
+          "Contains an integer count of the number of RoE timing control
+          packets:
+            - Transmitted, if this is an RoE mapper; or
+            - Received, if this is an RoE de-mapper.
+            The counter increments by one for each RoE timing control packet that
+          is:
+            - Sent by the RoE mapper; or
+            - Received by the RoE de-mapper.";
+        reference
+          "enParam 1 in Table 28 or enParam 3 in Table 29 of IEEE Std
+          1914.3-2021";
+      }
+      leaf gsm_timeslot_mismatch_cnt {
+        type uint32;
+        description
+          "Represents GSMTimeSlotMismatch - For OBSAI interface and Structure-Aware mapping,
+              the number of times of GSM Time Slot Mis-match.";
+      }
+      leaf tx-data-pkt-count {
+        when "../../../mapper-demapper/mapper-demapper-type = 'MAPPER'";
+        type uint32;
+        description
+          "The number of transmitted RoE Packets.";
+      }
+      leaf tx-data-byte-count{
+        when "../../../mapper-demapper/mapper-demapper-type = 'MAPPER'";
+        type uint32;
+        description
+          "The number of transmitted RoE Bytes.";
+      }
+      leaf rx-data-pck-count {
+        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+        type uint32;
+        description
+          "The number of received RoE Packets.";
+      }
+      leaf rx-data-byte-count{
+        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+        type uint32;
+        description
+          "The number of received RoE Bytes.";
+      }
+      leaf rx-early-data-pkt-count{
+        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+        type uint16;
+        description
+          "Contains an integer count of the number of early received RoE data
+          packets.
+          The counter increments by one for each RoE data packet that is
+          received early by the RoE de-mapper.";
+        reference
+          "enParam 1 in Table 29, and Table 31 (for definition of
+          early_data_pkt) of IEEE Std 1914.3-2021.";
+      }
+      leaf rx-late-data-pkt-count{
+        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+        type uint16;
+        description
+          "Contains an integer count of the number of late received RoE data
+          packets.
+          The counter increments by one for each RoE data packet that is
+          received late by the RoE de-mapper.
+          Late means that the packet did not arrive in time for the RoE
+          de-mapper to present the packet's contents at its output buffer at
+          the desired time.";
+        reference
+          "enParam 2 in Table 29, and Table 31 (for definition of late_data_pkt)
+          of IEEE Std 1914.3-2021.";
+      }
+      leaf rx-invalid-pkt-count{
+        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+        type uint16;
+        description
+          "Contains an integer count of the number of received invalid RoE
+          packets (e.g. unrecognized subType or opCode).
+          The counter increments by one for each occurrence of the
+          rx_invalid_pkt defect.";
+        reference
+          "enParam 6 in Table 29, and Table 31 (for definition of
+          rx_invalid_pkt) of IEEE Std 1914.3-2021.";
+      }
+      container mapper-deffect-indication-and-status {
+        when "../../../mapper-demapper/mapper-demapper-type = 'MAPPER'";
+        description
+          "Contains the change indications and current status of the defects
+          related to an RoE mapper.";
+        leaf tx-data-drop-count {
+          type uint32;
+          description
+            "The number of Dropped RoE Packets for various reasons";
+        }
+        leaf tx-data-queue-over-run-count{
+          type uint32;
+          description
+            "The number of times data Queue overrun.";
+        }
+        leaf tx-control-queue-over-run-count{
+          type uint32;
+          description
+            "The number of times control Queue overrun.";
+        }
+        leaf los_dfct_v {
+          type uint8 {
+            range "0..1";
+          }
+          default "1";
+          description
+            "Contains the current state of los_dfct defect for the incoming CPRI
+            stream.
+            0 los_dfct is not asserted for the incoming CPRI stream.
+            1 los_dfct is asserted for the incoming CPRI stream.
+            The defect is the assertion of LOS state at the receive CPRI port
+            that is connected to this RoE mapper.
+            Note: in CPRIv7 2015-10-09 it has mention
+            For 8B/10B line coding:
+              The CPRI definition of LOS is when at least 16 8B/10B violations occur among a whole hyperframe.
+            For 64B/66B line coding without RS-FEC:
+              1st option for LOS:
+                The CPRI definition of LOS is when at least 4 64B/66B sync header code violations occur
+                among a whole hyperframe.
+              2nd option for LOS:
+                The CPRI definition of LOS is when the 10GBASE-R PCS hi_ber variable (as defined in clause
+                49.2.13.2.2 of [22]) is set to 'true'.
+              For 64B/66B line coding with RS-FEC:
+                The CPRI definition of LOS is when the codeword_sync (as defined in clause 6.6.1 of [34]) is set to
+                'false'.
+              Optional addition for LOS:
+                The CPRI definition of LOS is when at least 10 uncorrected RS-FEC codewords occur among a
+                whole hyperframe.
+                For optical mode of CPRI, detection of LOS may also be achieved by detecting light power below a
+                dedicated threshold. Detection speed shall be within one hyperframe duration";
+          reference
+            "los_dfct defect in Table K.2 and enParam 3 in Table 32 of IEEE Std
+            1914.3-2021";
+        }
+        leaf los_dfct_i {
+          type uint8 {
+            range "0..1";
+          }
+          default "0";
+          description
+            "Indicates whether a change in the status of .los_dfct_v has occurred
+            since the last time this parameter was read.
+            0 .los_dfct_v has not changed state since .los_dfct_i was last read.
+            1 .los_dfct_v has changed state since .los_dfct_i was last read.";
+          reference
+            "los_dfct defect in Table K.2 and enParam 4 in Table 32 of IEEE Std
+            1914.3-2021";
+        }
+        leaf cpri_lof_dfct_v {
+          type uint8 {
+            range "0..1";
+          }
+          default "1";
+          description
+            "Contains the current local state of the cpri_lof_dfct defect for the
+            incoming CPRI stream.
+            0 cpri_lof_dfct is not asserted for the incoming CPRI stream.
+            1 cpri_lof_dfct is asserted for the incoming CPRI stream.
+            The defect is the assertion of CPRI LOF state at the receive CPRI
+            port that is connected to this RoE mapper.
+            Note: in CPRIv7 2015-10-09 it has mention
+            This alarm is detected if the hyperframe alignment cannot be achieved";
+          reference
+            "cpri_lof_dfct defect in Table K.2 and enParam 7 in Table 32 of IEEE
+            Std 1914.3-2021";
+        }
+        leaf cpri_lof_dfct_i {
+          type uint8 {
+          range "0..1";
+          }
+          default "0";
+          description
+            "Indicates whether a change in the status of .cpri_lof_dfct_v has
+            occurred since the last time this parameter was read.
+            0 .cpri_lof_dfct_v has not changed state since .cpri_lof_dfct_i was
+            last read.
+            1 .cpri_lof_dfct_v has changed state since .cpri_lof_dfct_i was last
+            read.";
+          reference
+            "cpri_lof_dfct defect in Table K.2 and enParam 8 in Table 32 of IEEE
+            Std 1914.3-2021";
+        }
+        leaf cpri_los_alrm_v {
+          type uint8 {
+            range "0..1";
+          }
+          default "1";
+          description
+            "Contains the current status of the cpri_los_alrm defect and should be
+            consistent with the LOS alarm bit in the .cpriL1 parameter.
+            0 cpri_los_alrm is not asserted.
+            1 cpri_los_alrm is asserted.
+            The defect is the assertion of the LOS alarm within the CPRI signal
+            at the receive CPRI port that is connected to this RoE
+            structure-aware mapper.";
+          reference
+            "cpri_los_alrm defect in Table K.2 and enParam 9 in Table 32 of IEEE
+            Std 1914.3-2021";
+        }
+        leaf cpri_los_alrm_i {
+            type uint8 {
+          range "0..1";
+          }
+          default "0";
+          description
+            "Indicates whether a change in the status of .cpri_los_v has occurred
+            since the last time this parameter was read.
+            0 .cpri_los_alrm_v has not changed state since .cpri_los_alrm_i was
+            last read.
+            1 .cpri_los_alrm_v has changed state since .cpri_los_alrm_i was last
+            read.";
+          reference
+            "cpri_los_alrm defect in Table K.2 and enParam 10 in Table 32 of
+            IEEE Std 1914.3-2021";
+        }
+        leaf cpri_lof_alrm_v {
+          type uint8 {
+            range "0..1";
+          }
+          default "1";
+          description
+            "Contains the current status of the cpri_lof_alrm defect and should be
+            consistent with the LOF alarm bit in the .cpriL1 parameter.
+            0 cpri_lof_alrm is not asserted.
+            1 cpri_lof_alrm is asserted.
+            The defect is the assertion of the LOF alarm within the CPRI signal
+            at the receive CPRI port that is connected to this RoE
+            structure-aware mapper.";
+          reference
+            "cpri_lof_alrm defect in Table K.2 and enParam 11 in Table 32 of
+            IEEE Std 1914.3-2021";
+        }
+        leaf cpri_lof_alrm_i {
+          type uint8 {
+            range "0..1";
+          }
+          default "0";
+          description
+            "Indicates whether a change in the status of .cpri_lof_alrm_v has
+            occurred since the last time this parameter was read.
+            0 .cpri_lof_alrm_v has not changed state since . cpri_lof_alrm_i was
+            last read.
+            1 .cpri_lof_alrm_v has changed state since .cpri_lof_alrm i was last
+            read.";
+          reference
+            "cpri_lof_alrm defect in Table K.2 and enParam 12 in Table 32 of
+            IEEE Std 1914.3-2021";
+        }
+        leaf cpri_rai_alrm_v {
+          type uint8 {
+            range "0..1";
+          }
+          default "1";
+          description
+            "Contains the current status of the cpri_rai_alrm defect and should be
+            consistent with the RAI alarm bit in the .cpriL1 parameter.
+            0 cpri_rai_alrm is not asserted.
+            1 cpri_rai_alarm is asserted.
+            The defect is the assertion of the remote alarm indication (RAI)
+            alarm within the CPRI signal at the receive CPRI port that is
+            connected to this RoE structure-aware mapper. ";
+          reference
+            "cpri_rai_alrm defect in Table K.2 and enParam 13 in Table 32 of
+            IEEE Std 1914.3-2021";
+        }
+        leaf cpri_rai_alrm_i {
+          type uint8 {
+            range "0..1";
+          }
+          default "0";
+          description
+            "Indicates whether a change in the status of .cpri_rai_alrm_v has
+            occurred since the last time this parameter was read.
+            0 .cpri_rai_alrm_v has not changed state since .cpri_rai_alrm_i was
+            last read.
+            1 .cpri_rai_alrm v has changed state since . cpri_rai_alrm_i was last
+            read.";
+          reference
+            "cpri_rai_alrm defect in Table K.2 and enParam 14 in Table 32 of
+            IEEE Std 1914.3-2021";
+        }
+        leaf cpri_hiber_alrm_v {
+          type uint8 {
+            range "0..1";
+          }
+          default "1";
+          description
+            "High Bit Error Ratio ";
+        }
+        leaf cpri_hiber_alrm_i {
+          type uint8 {
+            range "0..1";
+          }
+          default "0";
+          description
+            "High Bit Error Ratio";
+        }
+      }
+      container demapper-deffect-indication-and-status {
+        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+        leaf rx-data-queue-over-run-count{
+          type uint32;
+          description
+            "The number of time data queue was overrun.";
+        }
+        leaf rx-data-queue-under-run-count{
+          type uint32;
+          description
+            "The Number of times the data queue was underrun.";
+        }
+        leaf rx-control-queue-over-run-count{
+          type uint32;
+          description
+            "The number of time control queue was overrun.";
+        }
+        leaf rx-control-queue-under-run-count{
+          type uint32;
+          description
+            "The Number of times the control queue was underrun.";
+        }
+        leaf rx-data-missing-pkt-count {
+          type uint32;
+          description
+            "the number of time recived packet size is not equal to expected packet size";
+        }
+        leaf rx-data-pkt-size-missmatch-count {
+          type uint32;
+          description
+            "Missing packet count";
+        }
+      }
+    }
+  }
+
+  typedef network-instance-subintf-ref {
+    type srl_nokia-comm:subinterface-all;
+    description
+      "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+  }
+
+  grouping ethernet-link-config {
+    leaf remote-mac-address {
+      type srl_nokia-comm:mac-address;
+        description
+          "The peer RoE MAC address";
+    }
+    leaf local-mac-address {
+      type srl_nokia-comm:mac-address;
+        description
+          "The local RoE MAC address";
+    }
+    leaf vlan-id {
+      type uint16 {
+        range 1..4094;
+      }
+      description
+        "VLAN associated with this ethernet-link";
+    }
+    leaf dot1p {
+      type uint8 {
+        range 1..7;
+      }
+      default 7;
+      description
+        "dot1p used with this ethernet-link";
+    }
+    leaf subinterface {
+      //type network-instance-subintf-ref;
+      type leafref {
+          path "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:index";
+      }
+      description
+        "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+    }
+  }
+
+  grouping roe {
+    container roe{
+      uses roe-top;
+      uses cpri-port;
+      uses obsai-port;
+      list mapper-demapper {
+        key "mapper-demapper-id";
+        leaf mapper-demapper-id {
+          type uint32 {
+            range 1..128;
+          }
+        }
+        leaf description {
+          type srl_nokia-comm:description;
+          description
+          "A user-entered description of this mapper-demapper.";
+        }
+        uses mapper-demapper-config;
+        uses mapper-demapper-counters;
+      }
+      list ethernet-link {
+        key "ethernet-id";
+        leaf ethernet-id {
+          type uint32 {
+            range 1..48;
+          }
+        }
+        leaf description {
+          type srl_nokia-comm:description;
+          description
+          "A user-entered description of this ethernet-link.";
+        }
+        uses ethernet-link-config;
+      }
+    }
+  }
+
+  grouping radio-interface-top {
+    description
+      "Top-level configuration and state for radio parameters per port";
+    container radio {
+      presence "Configures the radio parameters";
+      must "starts-with(../srl_nokia-if:name, 'ethernet')" {
+        error-message "radio not supported on this interface";
+      }
+      leaf admin-state {
+        description
+          "Used to administratively enable or disable the radio, when radio is disable there is no CPRI or OBSAI transmited.";
+          type srl_nokia-comm:admin-state;
+          default "disable";
+      }
+      uses roe;
+    }
+  }
+
+  augment "/srl_nokia-if:interface" {
+    if-feature "srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
+    uses radio-interface-top;
+  }
+}

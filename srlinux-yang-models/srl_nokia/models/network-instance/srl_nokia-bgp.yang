@@ -34,6 +34,10 @@ module srl_nokia-bgp {
     description
         "This yang file models configuration and state of the BGP protocol";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -317,6 +321,29 @@ module srl_nokia-bgp {
                         "The true setting causes EBGP and IBGP sessions in the peer group to drop immediately (and not wait for hold timer expiry) when the local interface that they depend upon for neighbor reachability goes down";
                 }
             }
+            container multihop {
+                description
+                    "Configuration parameters specifying the multihop behaviour for EBGP peers in the peer group.";
+                leaf admin-state {
+                    type srl_nokia-comm:admin-state;
+                    description
+                         "When enabled, IBGP and EBGP peers in the group are allowed to be indirectly connected by up to N hops, where N is controlled by the maximum-hops parameter. When disabled, only IBGP peers within the peer group support multihop.
+
+                        This can be overriden on a per neighbor basis. It is inherited by neighbors in the peer-group only if maximum-hops is also specified.
+
+                        By default this is disabled.";
+                }
+                leaf maximum-hops {
+                    type uint8 {
+                        range "1..255";
+                    }
+                    description
+                        "This sets the maximum number of routing hops towards each peer. It determines the IP TTL value in originated BGP TCP/IP packets. By default the TTL is set to 1 towards EBGP peers and 64 towards IBGP peers. This leaf sets a new IP TTL to use towards both EBGP and IBGP peers in the peer group.
+
+                        This can be overriden on a per neighbor basis. It is inherited by neighbors in the peer-group only if admin-state is also specified.";
+                }
+            }
+            
             container graceful-restart {
                 description
                     "Options related to router behavior as a graceful restart helper";
@@ -598,14 +625,10 @@ module srl_nokia-bgp {
                         The false setting causes BGP to initiate a TCP connection whenever the BGP session is started or restarted.";
                 }
                 leaf local-address {
-                    type srl_nokia-comm:ip-address;
-                    /* revisit later once telemetry supports union of IpAddress and String
                     type union {
                         type srl_nokia-comm:ip-address;
-                        //type string;
-
-                        // to-do: change this to a leaf-ref
-                        }*/
+                        type string;
+                   }
                     description
                         "The local TCP endpoint of used for all BGP sessions in the group
 
@@ -1151,6 +1174,27 @@ module srl_nokia-bgp {
                     type boolean;
                 }
             }
+            container multihop {
+                description
+                    "Configuration parameters specifying the multihop behaviour for an EBGP peer. This is not applicable to an IBGP peer.";
+                leaf admin-state {
+                    type srl_nokia-comm:admin-state;
+                    description
+                        "When enabled, the peer is allowed to be indirectly connected by up to N hops, where N is controlled by the maximum-hops parameter. When disabled, multihop is allowed only if the peer type is IBGP.
+
+                        This overrides the group setting for admin-state.";
+                }
+                leaf maximum-hops {
+                    type uint8 {
+                        range "1..255";
+                    }
+                    description
+                        "This sets the maximum number of routing hops towards the peer. It determines the IP TTL value in originated BGP TCP/IP packets. By default the TTL is set to 1 towards an EBGP peer and 64 towards an IBGP peer.
+
+                        This overrides the group setting for maximum-hops.";
+                }
+            }
+
             container authentication {
                 description
                   "Container with authentication options that apply to this specific peer";
@@ -1623,14 +1667,10 @@ module srl_nokia-bgp {
                         The false setting causes BGP to initiate a TCP connection whenever the BGP session is started or restarted.";
                 }
                 leaf local-address {
-                    type srl_nokia-comm:ip-address;
-                    /* revisit later once telemetry supports union of IpAddress and String
                     type union {
-                        //type srl_nokia-comm:ip-address;
-                        // type string;
-
-                        // to-do: change this to a leaf-ref
-                        }*/
+                        type srl_nokia-comm:ip-address;
+                        type string;
+                        }
                     description
                         "The local TCP endpoint of used for the BGP session
 

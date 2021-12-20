@@ -1,0 +1,72 @@
+module srl_nokia-tools-bridge-table-proxy-arp-nd {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/network-instance/tools-bridge-table/tools-proxy-arp-nd";
+  prefix srl_nokia-tools-bridge-table-proxy-arp-nd;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+
+  import srl_nokia-features { 
+    prefix srl-feat; 
+  }
+
+  import srl_nokia-tools-network-instance { 
+    prefix srl_nokia-tools-netinst; 
+  }
+
+  description
+    "Model for network-instance bridge-table proxy arp nd operational commands";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping tools-bridge-table-proxy-arp-type-top {
+    leaf delete-all {
+      type empty;
+      description
+        "Delete all entries.";
+    }
+    list entry {
+      key "address";
+      description "proxy-arp entry to delete";
+      leaf address {
+        type srl_nokia-comm:ipv4-address;
+      }
+      leaf delete-ip {
+        type empty;
+        description
+          "delete the proxy-arp entry.";
+      }
+    }
+  }
+
+  grouping tools-bridge-table-proxy-arp-duplicate-top {
+    container duplicate {
+      presence "bridge table proxy arp duplicate";
+      uses tools-bridge-table-proxy-arp-type-top;
+    }
+  }
+
+  grouping tools-bridge-table-proxy-arp-dynamic-top {
+    container dynamic {
+      presence "bridge table proxy arp dynamic";
+      uses tools-bridge-table-proxy-arp-type-top;
+    }
+  }
+
+  grouping tools-bridge-table-proxy-arp-top {
+    container proxy-arp {
+      if-feature "srl-feat:l2-proxy-arp";
+      presence "bridge table proxy arp";
+      uses tools-bridge-table-proxy-arp-duplicate-top;
+      uses tools-bridge-table-proxy-arp-dynamic-top;
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:bridge-table" {
+    uses tools-bridge-table-proxy-arp-top;
+  }
+}

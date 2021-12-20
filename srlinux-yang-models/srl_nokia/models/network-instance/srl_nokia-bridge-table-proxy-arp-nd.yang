@@ -1,0 +1,221 @@
+module srl_nokia-bridge-table-proxy-arp-nd {
+
+  yang-version 1.1;
+
+  // namespace
+  namespace "urn:srl_nokia/network-instance/bridge-table/proxy-arp-nd";
+  prefix "srl_nokia-bridge-table-proxy-arp-nd";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  
+  description
+    "This yang file gives a description of bridge table proxy arp and nd configuration.";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  typedef neighbor-origin {
+    type enumeration {
+      enum static {
+        value 1;
+      }
+      enum dynamic {
+        value 2;
+      }
+      enum evpn {
+        value 3;
+      }
+      enum duplicate {
+        value 4;
+      }
+    }
+    description
+      "The origin of the neighbor entry.";
+  }
+
+  typedef neighbor-state {
+    type enumeration {
+      enum active {
+        value 1;
+      }
+      enum in-active {
+        value 2;
+      }
+      enum pending {
+        value 3;
+      }
+    }
+    description
+      "The programming state of the neighbor entry.";
+  }
+
+  grouping bridge-table-proxy-arp-nd-evpn-route-tag-config {
+    leaf route-tag {
+      description 
+        "Route tag to be added when the proxy entries are advertised to EVPN";
+      type uint32 {
+        range "0|1..255";
+      }
+      default 0;
+    }
+  } // bridge-table-proxy-arp-nd-evpn-route-tag-config
+
+  grouping bridge-table-proxy-arp-evpn-flood-config {
+    container flood {
+      description 
+        "How ARP frames received on a proxy service are flooded into the evpn network";
+      leaf unknown-arp-req {
+        description 
+          "Whether to flood ARP requests (with source squelching) when there is no hit in the bridge-table-proxy-arp table";
+        type boolean;
+        default true;
+      }
+
+      leaf gratuitous-arp {
+        description 
+          "Whether to flood GARP requests or replies into EVPN";
+        type boolean;
+        default true;
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-evpn-config {
+    container evpn {
+      description 
+        "How proxy arp interacts with evpn";
+      uses bridge-table-proxy-arp-nd-evpn-route-tag-config;
+      uses bridge-table-proxy-arp-evpn-flood-config;
+    }
+  } // bridge-table-proxy-arp-evpn-config
+
+  grouping bridge-table-proxy-arp-nd-common-dupdetect-config {
+    container duplicate-detect {
+      description "Proxy arp/nd dup detect information";
+      leaf window {
+        description 
+          "Time to monitor the MAC address in the anti-spoofing mechanism";
+        type uint32 {
+          range "1..15";
+        }
+        default 3;
+        units "minutes";
+      }
+
+      leaf num-moves {
+        description 
+          "Override count associated with anti-spoofing mechanism for proxy Arp/ND entry";
+        type uint32 {
+          range "3..10";
+        }
+        default 5;
+      }
+
+      leaf hold-down-time {
+        description 
+          "Time to hold down the MAC address in the anti-spoofing mechanism";
+        type union {
+          type uint32 {
+            range "2..60";
+          }
+          type enumeration {
+            enum max { 
+              value -1; 
+            }
+          }
+        }
+        default 9;
+        units "minutes";
+      }
+      leaf anti-spoof-mac {
+        description "MAC address associated with the optional anti-spoofing mechanism";
+        type srl_nokia-comm:mac-address;
+      }
+      leaf static-blackhole {
+        description "If the anti-spoof MAC is programmed as a black hole static-mac in the fdb";
+        type boolean;
+        default false;
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-nd-common-cfg {
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "enable";
+      description
+        "Configurable state of the layer-2 bridge-table-proxy-arp.";
+    }
+
+    leaf dynamic-populate {
+      description 
+        "Whether system will populate proxy ARP entries from snooped GARP/ARP/ND messages on sub-interfaces in addition to the entries coming from EVPN (when EVPN is enabled). These entries will be shown as dynamic as opposed to evpn entries or static entries";
+        type boolean;
+      default false;
+    }
+
+    leaf age-time {
+      description 
+         "Aging timer value for the proxy entries. When the aging expires, the entry is flushed";
+      type union {
+        type enumeration {
+          enum "never" {
+            value 0;
+          }
+        }
+        type uint32 {
+          range "60..86400";
+        }
+      }     
+      default never;
+      units "seconds";
+    }
+
+    leaf send-refresh {
+      description 
+        "Whether system will attempt to send 3 ARP/ND-NA requests (with senders IP address as zeros) within the aging-timer window, trying to refresh the proxy entry";
+      type union {
+        type uint32 {
+          range "120..86400";
+        }
+        type enumeration {
+          enum never { 
+            value 0; 
+          }
+        }
+      }
+      default never;
+    }
+
+    leaf table-size {
+      description 
+        "Maximum number of learned and static entries allowed in the proxy table of this service";
+      type uint32 {
+        range "1..16383";
+      }
+      default 250;
+    }
+    uses bridge-table-proxy-arp-nd-common-dupdetect-config;
+  }
+
+    grouping bridge-table-proxy-arp-cfg {
+        uses bridge-table-proxy-arp-nd-common-cfg;
+        uses bridge-table-proxy-arp-evpn-config;
+    } //proxy-arp-cfg
+
+  grouping bridge-table-proxy-arp-top {
+    container proxy-arp {
+      presence "Configure bridge-table";
+      if-feature "srl-feat:l2-proxy-arp";
+      uses bridge-table-proxy-arp-cfg;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:bridge-table" {
+    uses bridge-table-proxy-arp-top;
+  }
+}

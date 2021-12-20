@@ -1,0 +1,830 @@
+module srl_nokia-pim {
+    yang-version "1.1";
+
+    namespace "urn:srl_nokia/pim";
+
+    prefix srl_nokia-pim;
+
+    import ietf-yang-types {
+        prefix yang;
+    }
+    import srl_nokia-common {
+        prefix srl_nokia-comm;
+    }
+    import srl_nokia-extensions {
+        prefix srl_nokia-ext;
+    }
+    import srl_nokia-system {
+        prefix srl_nokia-system;
+    }
+    import srl_nokia-keychains {
+        prefix srl_nokia-keychains;
+    }
+    import srl_nokia-network-instance {
+        prefix srl_nokia-netinst;
+    }
+    import srl_nokia-routing-policy {
+        prefix srl-rpol;
+    }
+    import srl_nokia-features {
+        prefix srl_nokia-feat;
+    }
+
+    description
+        "This yang file models configuration and state of the PIM protocol";
+
+    // instance
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+    grouping pim-global-config {
+        description
+            "PIM specific configuration.";
+
+        leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            description
+                "Administratively enable or disable PIM.";
+            default "enable";
+        }
+
+        uses pim-policy;
+        uses pim-ecmp;
+    }
+
+    grouping pim-global-state {
+        container state {
+            config false;
+            description
+                "Details about a specific PIM instanace.";      
+            leaf oper-state {
+                config false;
+                srl_nokia-ext:show-importance "high";
+                description
+                    "The operational state of the PIM instance.";
+                type srl_nokia-comm:oper-state;
+            }
+            uses pim-global-config;
+        }
+    }
+
+    grouping pim-policy {
+        leaf import-policy {
+            description
+                "Apply an import policy PIM";
+            type leafref {
+                path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+            }
+        }
+    }
+
+    grouping pim-ecmp {
+        description
+            "PIM ECMP Config.";
+
+        leaf ecmp-hashing {
+            srl_nokia-ext:show-importance "high";
+            description
+                "This command enables hash-based multicast balancing of traffic over ECMP links and
+                causes PIM joins to be distributed over the multiple ECMP paths based on a hash of S and
+                G (and possibly next-hop IP address). When a link in the ECMP set is removed, the multicast
+                flows that were using that link are redistributed over the remaining ECMP links using the
+                same hash algorithm. When a link is added to the ECMP set new joins may be allocated to
+                the new link based on the hash algorithm, but existing";
+            type boolean;
+            default false;
+        }
+
+        leaf ecmp-balance {
+            srl_nokia-ext:show-importance "high";
+            description
+                "This command enables multicast balancing of traffic over ECMP links based on the number
+                of (S, G) distributed over each link. When enabled, each new multicast stream that needs to
+                be forwarded over an ECMP link is compared to the count of (S, G) already using each link,
+                   so that the link with the fewest (S, G) is chosen.";
+            type boolean;
+            default false;
+        }
+
+        leaf ecmp-balance-hold {
+            srl_nokia-ext:show-importance "high";
+            description
+                "This command defines a hold period that applies after an interface has been added to the
+                ECMP link. It is also used periodically to rebalance if channels have been removed from the
+                ECMP link.
+                If the ECMP interface has not changed in the hold period and if no multicast streams have
+                been removed, then no action is taken when the timer triggers.
+                This parameter should be used to avoid excessive changes to the multicast distribution.";
+            type uint32{
+                range 1..600;
+            }
+            default 1;
+            units minutes;
+        }
+    }
+
+    grouping pim-global-ssm-config {
+        description
+            "Source specific multicast (SSM) configuration.";
+
+        container ssm {
+            container ssm-ranges {
+                list group-range {
+                    key ip-prefix;
+                    leaf ip-prefix {
+                        description
+                            "An IP prefix for SSM group range";
+                        type srl_nokia-comm:ip-prefix;
+                    }
+                }
+                description
+                    "List of accepted source specific multicast (SSM) address
+                    ranges.";
+            }
+        }
+    }   
+
+    // address-family
+    grouping pim-af-counters-state {
+        leaf tx-registers {
+            config false;
+            description
+                "The number of PIM Register messages transmitted by this instance.";
+            type yang:counter32;
+        }
+
+        leaf tx-register-errors {
+            config false;
+            description
+                "The number of the times there was an error while transmitting PIM
+                Register messages by this instance.";
+            type yang:counter32;
+        }
+
+        leaf tx-null-registers {
+            config false;
+            description
+                "The number of PIM Null Register messages transmitted by this instance.";
+            type yang:counter32;
+        }
+
+        leaf rx-candidate-rp-advertisements {
+            config false;
+            description
+                "The number of PIM Candidate-RP Advertisements (C-RP-Adv) received by this instance.";
+            type yang:counter32;
+        }
+
+        leaf tx-candidate-rp-advertisements {
+            config false;
+            description
+                "The number of PIM Candidate-RP Advertisements (C-RP-Adv) transmitted by this router
+                instance.";
+            type yang:counter32;
+        }
+
+        leaf rx-candidate-rp-advertisement-drops {
+            config false;
+            description
+                "The number of PIM Candidate-RP Advertisements (C-RP-Adv) received by this instance,
+                but were dropped.";
+            type yang:counter32;
+        }
+
+        leaf tx-candidate-rp-advertisement-errors {
+            config false;
+            description
+                "The number of errors while transmitting PIM Candidate-RP Advertisements (C-RP-Adv).";
+            type yang:counter32;
+        }
+
+        leaf forwarded-candidate-rp-advertisements {
+            config false;
+            description
+                "The number of Candidate-RP Advertisements(C-RP-Adv) that were forwarded by the
+                router. C-RP-Adv's are forwarded when the received advertisement
+                has a router alert set and the destination address is not the
+                router's local address.";
+            type yang:counter32;
+        }
+
+        leaf forwarded-candidate-rp-advertisement-drops {
+            config false;
+            description
+                "The number of times the Candidate-RP Advertisements(C-RP-Adv) could not be forwarded
+                by the router.";
+            type yang:counter32;
+        }
+
+        leaf sg-count {
+            config false;
+            description
+                "The number of entries in 'display router/(service vprn) pim ipv4/6 sg'
+                for which 'type' is 'sg'.";
+            type yang:counter32;
+        }
+
+        leaf star-g-count {
+            config false;
+            description
+                "The number of entries in 'display router/(service vprn) pim ipv4/6 sg'
+                for which 'type' is 'starG'.";
+            type yang:counter32;
+        }
+
+        leaf star-star-rp-count {
+            config false;
+            description
+                "The number of entries in 'display router/(service vprn) pim ipv4/6 sg'
+                for which 'type' is 'starStarRP'.";
+            type yang:counter32;
+        }
+
+        leaf tx-register-ttl-drops {
+            config false;
+            description
+                "The number of multicast data packets which could not be encapsulated in Register
+                messages because the Time To Live (TTL) was zero.";
+            type yang:counter32;
+        }
+    }
+
+    grouping pim-af-config {
+        leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            srl_nokia-ext:show-importance "high";
+            description
+                "Administratively enable or disable PIM address family.";
+            default "enable";
+        }
+    }
+
+    grouping pim-af-state {
+        container state {
+            config false;
+            description
+                "Details about a specific PIM address family.";
+            leaf oper-state {
+                config false;
+                srl_nokia-ext:show-importance "high";
+                description
+                    "The operational state of the PIM instance.";
+                type srl_nokia-comm:oper-state;
+            }
+            uses pim-af-config;
+            container counters {
+                config false;
+                description
+                    "Global PIM counters.";
+
+                uses pim-af-counters-state;
+            }
+        }
+    }
+
+    // interface
+
+    grouping pim-interface-counters-state {
+        description
+            "Counters related to PIM messages.";
+        leaf rx-hellos {
+            config false;
+            description
+                "The number of PIM hello messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf tx-hellos {
+            config false;
+            description
+                "The number of PIM Hello messages transmitted on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-hellos-dropped {
+            config false;
+            description
+                "The number of PIM Hello messages which were received on this interface but were
+                dropped.";
+            type yang:counter32;
+        }
+
+        leaf rx-join-prunes {
+            config false;
+            description
+                "The number of PIM
+                Join Prune messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf tx-join-prunes {
+            config false;
+            description
+                "The number of PIM
+                Join Prune messages transmitted on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-join-prune-errors {
+            config false;
+            description
+                "The number of errors while processing Join-Prune messages received on this
+                interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-asserts {
+            config false;
+            description
+                "The number of PIM Assert messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf tx-asserts {
+            config false;
+            description
+                "The number of PIM Assert messages transmitted on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-assert-errors {
+            config false;
+            description
+                "The number of errors while processing Assert messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-registers {
+            config false;
+            description
+                "The number of PIM Register messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-register-errors {
+            config false;
+            description
+                "The number of errors while processing Register messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-null-registers {
+            config false;
+            description
+                "The number of PIM Null Register messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-register-stops {
+            config false;
+            description
+                "The number of PIM Register Stop messages received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf tx-register-stops {
+            config false;
+            description
+                "The number of PIM Register Stop messages transmitted on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-register-stop-errors {
+            config false;
+            description
+                "The number of errors while processing Register Stop messages received on this
+                interface.";
+            type yang:counter32;
+        }
+
+        leaf tx-register-stop-errors {
+            config false;
+            description
+                "The number of PIM errors while trasmitting PIM Register Stop messages
+                on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-packets {
+            config false;
+            description
+                "The number of multicast data packets received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf tx-packets {
+            config false;
+            description
+                "The number of multicast data packets transmitted on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-invalid-registers {
+            config false;
+            description
+                "The number of invalid PIM Register messages received on this interface
+
+                A Register message is invalid when the RP address in the message
+                is not the RP for the group specified in the message. If such a message
+                arrives, a Invalid Register notification is sent.";
+            type yang:counter32;
+        }
+
+        leaf rx-neighbor-unknown {
+            config false;
+            description
+                "The number of PIM messages (other than Hello messages) which were received on this
+                interface and were rejected because the adjacency with the neighbor
+                router was not already established.";
+            type yang:counter32;
+        }
+
+        leaf rx-bad-checksum-discard {
+            config false;
+            description
+                "The number of PIM messages received on this interface which were discarded because
+                of bad checksum.";
+            type yang:counter32;
+        }
+
+        leaf rx-bad-encodings {
+            config false;
+            description
+                "The number of PIM messages with bad encodings received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-bad-version-discard {
+            config false;
+            description
+                "The number of PIM messages with bad versions received on this interface.";
+            type yang:counter32;
+        }
+
+        leaf rx-candidate-rp-adv-no-router-alert {
+            config false;
+            description
+                "The number of Candidate-RP Advertisements(C-RP-Adv) received on this interface
+                which had no router alert option set.";
+            type yang:counter32;
+        }
+        leaf rx-invalid-join-prunes {
+            config false;
+            description
+                "The number of invalid PIM Join Prune messages received on this interface
+
+                A Join Prune message is invalid when the RP address in the message
+                is not the RP for the group specified in the message. If such a message
+                arrives, a Invalid Join Prune notification is sent.";
+            type yang:counter32;
+        }
+
+        leaf rx-unknown-pdu-type {
+            config false;
+            description
+                "The number of packets received with an unsupported PIM type.";
+            type yang:counter32;
+        }
+
+        leaf join-policy-drops {
+            config false;
+            description
+                "The number of times the join policy match resulted in dropping PIM Join-Prune
+                Message or one of the source group contained in the message.";
+            type yang:counter32;
+        }
+
+        leaf register-policy-drops {
+            config false;
+            description
+                "The number of times the register policy match resulted in dropping PIM Register
+                Message.";
+            type yang:counter32;
+        }
+
+        leaf sg-count {
+            config false;
+            description
+                "The number of entries in 'display router/(service vprn) pim interface ipv4/6 sg'
+                for which type is 'sg'.";
+            type yang:counter32;
+        }
+
+        leaf star-g-count {
+            config false;
+            description
+                "The number of entries in 'display router/(service vprn) pim interface ipv4/6 sg'
+                for which type is 'starG'.";
+            type yang:counter32;
+        }
+
+        leaf star-star-rp-count {
+            config false;
+            description
+                "The number of entries in 'display router/(service vprn) pim interface ipv4/6 sg'
+                for which type is 'starStarRP'.";
+            type yang:counter32;
+        }
+    }
+
+    grouping pim-interface-bfd-liveness {
+        leaf bfd-ipv4 {
+            description
+                "The value of this object specifies whether Bi-directional
+                Forwarding Detection is enabled for IPv4 on this PIM interface.";
+            type boolean;
+            default false;
+        }
+
+        leaf bfd-ipv6 {
+            description
+                "The value of this object specifies whether Bi-directional
+                Forwarding Detection is enabled for IPv6 on this PIM interface.";
+            type boolean;
+            default false;
+        }
+    }
+
+    grouping pim-interface-key {
+        leaf interface-name {
+            srl_nokia-ext:show-importance "high";
+            description
+                "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+
+            type leafref {
+                path "../../../../srl_nokia-netinst:interface/srl_nokia-netinst:name";
+            }
+        }
+    }
+
+    grouping pim-interface-config {
+        leaf admin-state {
+            srl_nokia-ext:show-importance "high";
+            description
+                "Used to administratively enable or disable the PIM protocol on a
+                routed subinterface";
+            type srl_nokia-comm:admin-state;
+            default "enable";
+        }
+
+        leaf assert-interval {
+            srl_nokia-ext:show-importance "high";
+            description
+                "Interval at which the router sends the PIM a assert messages.";
+            type uint32{
+                range 1..300;
+            }
+            default 60;
+        }
+
+        leaf hello-interval {
+            srl_nokia-ext:show-importance "high";
+            description
+                "Interval at which the router sends the PIM hello messages.";
+            type uint32{
+                range 0..255;
+            }
+            default 30;
+        }
+
+        leaf hello-multiplier {
+            srl_nokia-ext:show-importance "high";
+            description
+                "This command configures the multiplier to determine the holdtime for a PIM neighbor on this
+                interface.
+                The hello-multiplier in conjunction with the hello-interval determines the holdtime for a PIM
+                neighbor.";
+            type uint32 {
+                range 20..100;
+            }
+            default 35;
+        }
+
+        leaf priority {
+            srl_nokia-ext:show-importance "high";
+            description
+                "The value of this object specifies the value sent in PIM
+                Hello messages and used by routers to elect the Designated
+                Router(DR).";
+            type uint32 {
+                range 0..4294967295;
+            }
+            default 1;
+            reference
+                "RFC7761 4.3.1 page 33";
+        }
+
+        uses pim-interface-bfd-liveness;
+    }   
+    grouping pim-interface-state {
+
+        container state {
+            config false;
+            description
+                "Details about a specific PIM neighbor.";
+
+            leaf oper-state {
+                config false;
+                description
+                    "The operational state of the PIM interface. This simply tracks the operational state of the subinterface.";
+                type srl_nokia-comm:oper-state;
+            }
+
+            uses pim-interface-config;
+
+            container ipv4 {
+                description
+                  "IPv4 specific interface parameters";
+                container counters {
+                    config false;
+                    description
+                        "PIM Interface counters";
+
+                    uses pim-interface-counters-state;
+                }
+            }
+
+            container ipv6 {
+                description
+                    "IPv6 specific interface parameters";
+                container counters {
+                    config false;
+                    description
+                      "PIM Interface counters";
+
+                    uses pim-interface-counters-state;
+                }
+            }
+            
+            uses pim-neighbors;
+        }
+    }
+
+    // neighbor
+
+    grouping pim-neighbor-state {
+        description
+            "PIM neighbor state.";
+
+        leaf ipv4-neighbor-address {
+            config false;
+            type srl_nokia-comm:ipv4-address;
+            description
+                "IPv4 address of neighbor router.";
+        }
+
+        leaf ipv4-dr-address {
+            config false;
+            type srl_nokia-comm:ipv4-address;
+            description
+                "IPv4 address of designated router.";
+        }
+
+        leaf ipv6-neighbor-address {
+            config false;
+            type srl_nokia-comm:ipv6-address;
+            description
+                "IPv4 address of neighbor router.";
+        }
+
+        leaf ipv6-dr-address {
+            config false;
+            type srl_nokia-comm:ipv6-address;
+            description
+                "IPv4 address of designated router.";
+        }
+
+        leaf neighbor-established {
+            config false;
+            type srl_nokia-comm:date-and-time;
+            description
+                "This timestamp indicates the time that the
+                PIM neighbor adjacency established. It is expressed
+                relative to the Unix Epoch (Jan 1, 1970 00:00:00 UTC).
+                The PIM session uptime can be computed by clients
+                as the difference between this value and the
+                current time in UTC.";
+        }
+
+        leaf neighbor-expires {
+            config false;
+            type union {
+                type enumeration {
+                    enum "never";
+                }
+                type srl_nokia-comm:date-and-time-delta;
+            }
+            description
+                "This timestamp indicates the time that the
+                PIM neighbor adjacency will expire should hello
+                messages fail to arrive from the neighbor. The value
+                is expressed relative to the Unix Epoch (Jan 1, 1970
+                        00:00:00 UTC).";
+        }
+
+        leaf neighbor-hold-time {
+            config false;
+            description
+                "The time remaining until the hold timer will expire.";
+            type uint16;
+            units "seconds";
+        }
+    }
+
+    grouping pim-neighbors {
+        description
+            "Details about PIM neighbors.";
+
+        container neighbors {
+            config false;
+            description
+                "Details about PIM neighbors.";
+
+            list ipv4-neighbor {
+                key "address";
+                leaf address {
+                    description
+                      "the value of address indicates the IP address of the neighbor associated with the local link.";
+                    type srl_nokia-comm:ip-address-with-zone;
+                }
+                container state {
+                    config false;
+                    description
+                      "Details about a specific PIM neighbor.";
+
+                    uses pim-neighbor-state;
+                }
+            }
+
+            list ipv6-neighbor {
+                key "address";
+                description
+                    "Details about a specific IPv6 PIM neighbor.";
+
+                leaf address {
+                    description
+                        "IPv6 address of neighbor router.";
+                    type srl_nokia-comm:ipv6-address;
+                }
+                container state {
+                    config false;
+                    description
+                        "Details about a specific PIM neighbor.";
+
+                    uses pim-neighbor-state;
+                }
+            }
+        }
+    }
+
+    grouping pim-top {
+        container pim {
+            if-feature srl_nokia-feat:pim;
+            presence "Configure PIM";
+            must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
+                error-message "PIM routing configuration is not possible on network-instance of type mac-vrf";
+            }
+            must "../../srl_nokia-netinst:type != 'srl_nokia-netinst:host'" {
+                error-message "PIM routing configuration is not possible on network-instance of type host";
+            }
+
+            uses pim-global-config;
+            uses pim-global-state;
+            uses pim-global-ssm-config;
+
+            container ipv4 {
+                description
+                    "IPV4 specific PIM parameters.";
+
+                uses pim-af-config;
+                uses pim-af-state;
+            }
+
+            container ipv6 {
+                description
+                    "IPV6 specific PIM parameters.";
+
+                uses pim-af-config;
+                uses pim-af-state;
+            }
+
+            list interface {
+                description "List of PIM interfaces";
+
+                key "interface-name";
+
+                uses pim-interface-key;
+                uses pim-interface-config;
+                uses pim-interface-state;               
+            }
+        }
+    }
+
+    augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+        uses pim-top;
+    }
+}
+

@@ -16,6 +16,10 @@ module srl_nokia-tools-configuration {
   description
     "This module defines operational commands related to the system configuration.";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2020-06-30 {
     description
       "SRLinux 20.6.1";
@@ -130,6 +134,42 @@ module srl_nokia-tools-configuration {
     }
   }
 
+  grouping configuration-tools-upgrade-top {
+    container upgrade {
+      presence "Upgrade configuration";
+      description
+          "Operational commands related to configuration upgrade";
+      list checkpoint {
+        description
+          "List of configuration checkpoints";
+        key "id";
+        leaf id {
+          type union {
+            type uint8;
+            type srl-comm:checkpoint-name;
+          }
+          description
+            "System generated ID, or operator defined name for the checkpoint";
+        }
+      }
+      leaf file {
+        type string;
+        description
+          "System file path to a json configuration file";
+      }
+      leaf startup {
+        type empty;
+        description
+          "Startup (initial) configuration";
+      }
+      leaf rescue {
+        type empty;
+        description
+          "Rescue configuration";
+      }
+    }
+  }
+
   grouping configuration-top {
     container configuration {
       presence "Configure tools system configuration";
@@ -153,6 +193,7 @@ module srl_nokia-tools-configuration {
       uses configuration-tools-checkpoints-top;
       uses configuration-tools-sessions-top;
       uses configuration-tools-candidates-top;
+      uses configuration-tools-upgrade-top;
     }
   }
 

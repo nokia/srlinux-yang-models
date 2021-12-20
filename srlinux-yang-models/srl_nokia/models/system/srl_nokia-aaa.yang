@@ -17,11 +17,11 @@ module srl_nokia-aaa {
   import srl_nokia-extensions {
     prefix srl-ext;
   }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
   import srl_nokia-network-instance {
     prefix srl-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
   }
   import srl_nokia-common {
     prefix srl-comm;
@@ -35,6 +35,10 @@ module srl_nokia-aaa {
 
      Portions of this model reuse data definitions or structure from RFC 7317 - A YANG Data Model for System Management";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -70,11 +74,15 @@ module srl_nokia-aaa {
       type srl-comm:name;
       description
         "User defined name for the server group";
+      must '(. = "local") = (../type = "srl-aaa-types:local")' {
+        error-message "Server group name must be 'local' if and only if local server type is 'local'";
+      }
     }
     leaf type {
       type identityref {
         base srl-aaa-types:aaa_server_type;
       }
+      mandatory true;
       description
         "AAA server type -- all servers in the group must be of this type";
     }
@@ -87,6 +95,19 @@ module srl_nokia-aaa {
       description
         "Set the timeout in seconds on responses from servers in this group";
     }
+    leaf priv-lvl-authorization {
+      if-feature "srl-feat:tacacs-authorization";
+      srl-ext:first-released "21.11.1";
+      type boolean;
+      default "false";
+      must '. = false() or ../type = "srl-aaa-types:tacacs"' {
+        error-message "TACACS+ priv-lvl authorization is supported for 'tacacs' server type only";
+      }
+      description
+        "Use TACACS+ priv-lvl based authorization
+
+         If false, then authorization is skipped for TACACS+ users granting full admin access for those users.";
+    }
   }
 
   grouping aaa-server-top {
@@ -95,6 +116,9 @@ module srl_nokia-aaa {
     list server {
       key "address";
       max-elements 5;
+      must '../type = "srl-aaa-types:tacacs"' {
+          error-message "Server configuration is allowed only for 'tacacs' server type";
+      }
       description
         "List of AAA servers to use within this server-group
 
@@ -132,6 +156,8 @@ module srl_nokia-aaa {
          A server is defined as being down if it fails to respond before the timeout period, or if a path towards the server is not available.";
     }
     container statistics {
+      srl-ext:delivery-node-override "true";
+      srl-ext:stream-mode "sample=5";
       description
         "Enclosing container for server statistics";
       config false;
@@ -164,6 +190,27 @@ module srl_nokia-aaa {
         type srl-comm:zero-based-counter32;
         description
           "Number of accounting connection failures";
+      }
+      leaf authorization-success {
+        if-feature "srl-feat:tacacs-authorization";
+        srl-ext:first-released "21.11.1";
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of authorization successes";
+      }
+      leaf authorization-rejects {
+        if-feature "srl-feat:tacacs-authorization";
+        srl-ext:first-released "21.11.1";
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of authorization rejections";
+      }
+      leaf authorization-connection-failures {
+        if-feature "srl-feat:tacacs-authorization";
+        srl-ext:first-released "21.11.1";
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of authorization connection failures";
       }
     }
   }
@@ -226,6 +273,13 @@ module srl_nokia-aaa {
         description
           "Authentication method that authorized the user (the server-group name or local)";
       }
+      leaf priv-lvl {
+        if-feature "srl-feat:tacacs-authorization";
+        srl-ext:first-released "21.11.1";
+        type uint8;
+        description
+          "TACACS+ authorization priv-lvl (if TACACS+ authorization is enabled)";
+      }
       leaf tty-name {
         type string;
         description
@@ -251,8 +305,8 @@ module srl_nokia-aaa {
       type srl-comm:name {
         length "1..32";
       }
-      must "not(.='root' or .='admin'or .='linuxadmin' or .='srlinux')" {
-        error-message "System reserved users unable to be configured as local user";
+      must "not(. = 'root' or . = 'admin' or . = 'linuxadmin' or . = 'srlinux')" {
+        error-message "Reserved system usernames cannot used for configured local users";
       }
       description
         "Assigned username for this user";
@@ -319,6 +373,12 @@ module srl_nokia-aaa {
       type enumeration {
         enum cli;
         enum gnmi;
+        enum gribi {
+            if-feature "srl-feat:gribi";
+        }
+        enum p4rt {
+            if-feature "srl-feat:p4rt";
+        }
         enum json-rpc;
         enum ftp;
       }
@@ -327,25 +387,21 @@ module srl_nokia-aaa {
 
          Services are additive, if a user is a member of multiple roles, the available services are merged.";
     }
-    // container tacacs {
-    //   description
-    //     "Top-level container for configuration relating to TACACS+ interworking with roles";
-    //   leaf priv-lvl {
-    //     description
-    //       "The TACACS+ priv-lvl to map to this role
-    //       All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
-    //     type uint8 {
-    //       range 0..15;
-    //     }
-    //   }
-    // }
-    // No interactions with sudo in the first release
-    // leaf superuser {
-    //   type empty;
-    //   description
-    //     "Allows members of this role to perform all sudo operations
-    //     This includes sudoing to the root user account, so users with this option set can perform any and all operations in the system.";
-    // }
+    container tacacs {
+      if-feature "srl-feat:tacacs-authorization";
+      srl-ext:first-released "21.11.1";
+      description
+        "Top-level container for configuration relating to TACACS+ interworking with roles";
+      leaf priv-lvl {
+        description
+          "The TACACS+ priv-lvl to map to this role
+
+          All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
+        type uint8 {
+          range "0..15";
+        }
+      }
+    }
   }
 
   grouping aaa-authorization-role-top {

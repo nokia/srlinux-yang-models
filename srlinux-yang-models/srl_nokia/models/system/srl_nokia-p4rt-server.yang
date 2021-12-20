@@ -1,0 +1,260 @@
+module srl_nokia-p4rt-server {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/p4rt-server";
+  prefix srl-p4rt-server;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-tls {
+    prefix srl-tls;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  description
+    "This module defines configuration and operational state data related to the P4Runtime server";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping p4rt-common {
+    leaf admin-state {
+      type srl-comm:admin-state;
+      srl-ext:show-importance "high";
+      default "disable";
+      description
+        "Administratively enable or disable the P4Runtime service";
+    }
+    leaf oper-state {
+      config false;
+      type srl-comm:oper-state;
+      srl-ext:show-importance "high";
+      description
+        "Details if the P4Runtime service is operationally available";
+    }
+    leaf use-authentication {
+      type boolean;
+      srl-ext:show-importance "high";
+      default "true";
+      description
+        "Enable or disable the use of username/password authentication for every P4Runtime RPC request";
+    }
+  }
+
+  grouping p4rt-socket {
+    container unix-socket {
+      description
+        "Top-level container for configuration and state related to unix sockets";
+      uses p4rt-common;
+      leaf socket-path {
+        srl-ext:show-importance "high";
+        config false;
+        type string;
+        description
+          "Path to the unix socket used by P4Runtime";
+      }
+      leaf tls-profile {
+        type leafref {
+          path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
+        }
+        srl-ext:show-importance "high";
+        description
+          "Reference to the TLS profile to use on the P4Runtime unix socket server
+
+           If none is specified, then TLS is not used.";
+      }
+    }
+  }
+
+  grouping p4rt-netinst {
+    list network-instance {
+      description
+        "List of network instances to run a P4Runtime socket in";
+      key "name";
+      uses p4rt-common;
+      leaf name {
+        type leafref {
+          path "/srl-netinst:network-instance/srl-netinst:name";
+        }
+        must 'not(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:mac-vrf")' {
+          error-message "P4Runtime socket cannot be created in a network-instance of type 'mac-vrf'";
+        }
+        description
+          "Reference to a configured network instance";
+      }
+      leaf-list source-address {
+        type srl-comm:ip-address;
+        description
+          "List of IP addresses the P4Runtime server will listen on within the network instance
+          
+          By default the P4Runtime server will listen on all addresses in the network-instance.";
+      }
+      leaf port {
+        type srl-comm:port-number;
+        srl-ext:show-importance "high";
+        default "9559";
+        description
+          "TCP port the P4Runtime server will listen on for incoming connections";
+      }
+      leaf tls-profile {
+        mandatory true;
+        type leafref {
+          path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
+        }
+        srl-ext:show-importance "high";
+        description
+          "Reference to the TLS profile to use on the P4Runtime server";
+      }
+    }
+  }
+
+  grouping p4rt-traceoptions {
+    description
+      "Top-level grouping for P4Runtime trace options";
+    leaf-list trace-options {
+      description
+        "P4Runtime trace options";
+      type enumeration {
+        enum request;
+        enum response;
+        enum common;
+      }
+    }
+  }
+
+  grouping p4rt-server-top {
+    container p4rt-server {
+      if-feature srl-feat:p4rt;
+      description
+        "Configures the P4Runtime service";
+      presence "Configures the P4Runtime service";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        default "disable";
+        srl-ext:show-importance "high";
+        description
+          "Globally enable or disable the P4Runtime service
+
+           Disabling this will disable all P4Runtime sockets in all configured network-instances (including unix sockets).";
+      }
+      uses p4rt-traceoptions;
+      uses p4rt-netinst;
+      uses p4rt-socket;
+      leaf timeout {
+        type uint16 {
+          range "0..65535";
+        }
+        default "7200";
+        srl-ext:show-importance "low";
+        units "seconds";
+        description
+          "Set the idle timeout in seconds on P4Runtime clients";
+      }
+      leaf rate-limit {
+        type uint16 {
+          range "0..65535";
+        }
+        srl-ext:show-importance "low";
+        default "60";
+        description
+          "Set a limit on the number of connection attempts per minute";
+      }
+      leaf session-limit {
+        type uint16 {
+          range "0..65535";
+        }
+        srl-ext:show-importance "low";
+        default "20";
+        description
+          "Set a limit on the number of simultaneous active P4Runtime sessions";
+      }
+      list client {
+        config false;
+        description
+          "List of active P4Runtime client sessions";
+        key "id";
+        leaf id {
+          type uint32 {
+            range "0..4294967295";
+          }
+          description
+            "System generated ID for for the client";
+        }
+        leaf election-id {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "Election ID of this client";
+        }
+        leaf primary {
+          type boolean;
+          srl-ext:show-importance "high";
+          description
+            "Indicates if this client is the primary for the specified forwarding complex
+
+            Only a single primary per forwarding complex is supported";
+        }
+        container forwarding-complex {
+          leaf id {
+            type uint64;
+            description
+              "The ID of the forwarding complex for which this client has established itself";
+          }
+          leaf slot {
+            type uint8;
+            description
+              "The linecard slot for which this forwarding complex resides on";
+          }
+        }
+        leaf user {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "Authenticated username for the client";
+        }
+        leaf user-agent {
+          type string;
+          srl-ext:show-importance "low";
+          description
+            "User agent used for by the client";
+        }
+        leaf remote-host {
+          type srl-comm:ip-address;
+          srl-ext:show-importance "high";
+          description
+            "Remote host of the client";
+        }
+        leaf remote-port {
+          type srl-comm:port-number;
+          srl-ext:show-importance "high";
+          description
+            "Remote port of the client";
+        }
+        leaf start-time {
+          type srl-comm:date-and-time-delta;
+          srl-ext:show-importance "high";
+          description
+            "Time the client first connected";
+        }
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    srl-ext:first-released "22.3.1";
+    uses p4rt-server-top;
+  }
+}

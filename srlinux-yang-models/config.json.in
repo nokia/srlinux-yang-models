@@ -527,6 +527,36 @@
           },
           {
             "sequence-id": 350,
+            "description": "Accept incoming gRIBI packets with destination-port 57401",
+            "match": {
+              "protocol": "tcp",
+              "destination-port": {
+                "value": 57401,
+                "operator": "eq"
+              }
+            },
+            "action": {
+              "accept": {
+              }
+            }
+          },
+          {
+            "sequence-id": 360,
+            "description": "Accept incoming p4rt packets with destination-port 9559",
+            "match": {
+              "protocol": "tcp",
+              "destination-port": {
+                "value": 9559,
+                "operator": "eq"
+              }
+            },
+            "action": {
+              "accept": {
+              }
+            }
+          },
+          {
+            "sequence-id": 370,
             "description": "Drop all else",
             "action": {
               "drop": {
@@ -1075,6 +1105,36 @@
           },
           {
             "sequence-id": 360,
+            "description": "Accept incoming gRIBI packets with destination-port 57401",
+            "match": {
+              "next-header": "tcp",
+              "destination-port": {
+                "value": 57401,
+                "operator": "eq"
+              }
+            },
+            "action": {
+              "accept": {
+              }
+            }
+          },
+          {
+            "sequence-id": 370,
+            "description": "Accept incoming p4rt packets with destination-port 9559",
+            "match": {
+              "next-header": "tcp",
+              "destination-port": {
+                "value": 9559,
+                "operator": "eq"
+              }
+            },
+            "action": {
+              "accept": {
+              }
+            }
+          },
+          {
+            "sequence-id": 380,
             "description": "Drop all else",
             "action": {
               "drop": {
@@ -1125,7 +1185,8 @@
       },
       "server-group": [
         {
-          "name": "local"
+          "name": "local",
+          "type": "srl_nokia-aaa-types:local"
         }
       ]
     },
@@ -1290,9 +1351,7 @@
       "admin-state": "enable",
       "description": "Management network instance",
       "interface": [
-        {
-          "name": "mgmt0.0"
-        }
+        @CONFIG_NET_INST@
       ],
       "protocols": {
         "srl_nokia-linux:linux": {

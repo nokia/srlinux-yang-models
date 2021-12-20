@@ -20,6 +20,10 @@ module srl_nokia-network-instance {
   description
     "This yang file gives a description of a network-instance. This may be a Layer 3 forwarding construct such as a virtual routing and forwarding (VRF) instance, or a Layer 2 instance such as a virtual switch instance (VSI). Mixed Layer 2 and Layer 3 instances are also supported.";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -155,6 +159,21 @@ module srl_nokia-network-instance {
            routing information in another network instance";
       }
 
+      container mpls-forwarding {
+        leaf forward-received-packets {
+          type boolean;
+          must "(../../type = 'srl_nokia-netinst:default')" {
+            error-message "MPLS forwarding is not supported in network-instances of types other than default";
+          }
+          description
+            "When set to true, MPLS packets received on any subinterface of the network-instance will be forwarded according to the matching ILM entries.
+
+            When set to false, MPLS packets are discarded if received on any subinterface of the network-instance.
+
+            In the default network-instance the default is 'true'.";
+        }
+      }
+
       container ip-forwarding {
         must "(../type = 'srl_nokia-netinst:ip-vrf' or ../type = 'srl_nokia-netinst:default')" {
           error-message "Ip-forwarding configuration is not possible on network-instance of types other than ip-vrf or default";
@@ -227,6 +246,9 @@ module srl_nokia-network-instance {
           }
           must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]/srl_nokia-if:type != 'local-mirror-dest'" {
             error-message "subinterface with type local-mirror-dest cannot be configured on network-instance";
+          }
+          must "not(starts-with(.,'irb') and ../../bridge-table/proxy-arp)" { 
+            error-message "IRB interfaces cannot be configured with proxy-arp"; 
           }
           description
             "Identifier of sub-interface used in this network-instance";
@@ -398,7 +420,7 @@ module srl_nokia-network-instance {
         }
 
         container directly-connected {
-          if-feature srl-feat:traffic-engineering;
+          if-feature srl-feat:traffic-engineering-bgpls-directly-connected;
           description
             "Container for handling directly connected routes as a pseudo-protocol";
         }

@@ -1,0 +1,625 @@
+module srl_nokia-sr-policies {
+
+  yang-version 1.1;
+
+  // namespace
+  namespace "urn:srl_nokia/sr-policies";
+
+  prefix "srl_nokia-sr-policies";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-segment-routing { prefix srl_nokia-sr; }
+  import srl_nokia-features { prefix srl_nokia-feat; }
+
+  description
+    "Configuration and state related to segment routing policies.";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  identity policy-inactive-reason {
+    description
+      "Base identity for reasons that describe why a policy is currently inactive but could later become active without operator intervention.";
+  }
+  identity preference {
+    base policy-inactive-reason;
+    description
+      "Higher preference policy exists";
+  }
+  identity no-valid-segment-list {
+    base policy-inactive-reason;
+    description
+      "Policy has no valid segment lists.";
+  }
+  identity up-segment-lists-below-threshold {
+    base policy-inactive-reason;
+    description
+      "Policy has a protection-policy and the number of segment lists that are operationally up is below the minimum threshold.";
+  }
+  identity revert-pending {
+    base policy-inactive-reason;
+    description
+      "Policy is viable but it is being kept inactive until the revert timer expires.";
+  }
+  identity invalid-binding-sid {
+    base policy-inactive-reason;
+    description
+      "Policy has a binding SID that could not be programmed";
+  }
+
+  typedef policy-inactive-reason-type {
+    type identityref {
+      base policy-inactive-reason;
+    }
+  }
+
+  identity policy-down-reason {
+   description
+      "Base identity for reasons that describe why a policy is down and will remain down until there is operator intervention";
+  }
+  identity policy-admin-down {
+    base policy-down-reason;
+    description
+      "Policy is administrately down";
+  }
+  identity no-segment-lists {
+    base policy-down-reason;
+    description
+      "Policy has no segment lists defined";
+  }
+
+  typedef policy-down-reason-type {
+    type identityref {
+      base policy-down-reason;
+    }
+  }
+
+  identity segment-list-inactive-reason {
+    description
+      "Base identity for reasons that describe why a segment list is currently inactive but could later become active without operator intervention.";
+  }
+  identity unresolved-first-segment {
+    base segment-list-inactive-reason;
+    description
+      "The first segment in the segment list is unknown or unreachable.";
+  }
+  identity sbfd-session-down {
+    base segment-list-inactive-reason;
+    description
+      "Policy has a protection-policy with seamless BFD enabled and the SBFD session that is associated with the segment list is down (or in hold-down).";
+  }
+
+  typedef segment-list-inactive-reason-type {
+    type identityref {
+      base segment-list-inactive-reason;
+    }
+  }
+
+  identity segment-list-down-reason {
+   description
+      "Base identity for reasons that describe why a segment list is down and will remain down until there is operator intervention";
+  }
+  identity segment-list-admin-down {
+    base segment-list-down-reason;
+    description
+      "Segment list is administrately down";
+  }
+
+  typedef segment-list-down-reason-type {
+    type identityref {
+      base segment-list-down-reason;
+    }
+  }
+
+  typedef protocol-origin-type {
+    type enumeration {
+      enum pcep {
+        value 10;
+        description "PCEP used as signalling mechanism for the candidate path";
+      }
+      enum bgp {
+        value 20;
+        description "BGP used as signalling mechanism for the candidate path";
+      }
+      enum local {
+        value 30;
+        description "Management interface used for candidate path instantiation";
+      }
+    }
+    description "Originating protocol type";
+  }
+
+  typedef policy-oper-state {
+    type enumeration {
+      enum "primary" {
+        description
+          "The policy is up and operational as a primary policy.";
+      }
+      enum "standby" {
+        description
+          "The policy is up and operational as a standby policy.";
+      }
+      enum "inactive" {
+        description
+          "The policy is currently inactive but it could become active without operator intervention.";
+      }
+      enum "down" {
+        description
+          "The policy is down and it cannot become active without operator intervention.";
+      }
+    }
+  }
+
+  typedef segment-list-oper-state {
+    type enumeration {
+      enum "up" {
+        description
+          "The segment-list is up and operational.";
+      }
+      enum "inactive" {
+        description
+          "The segment-list is currently inactive but it could become active without operator intervention.";
+      }
+      enum "down" {
+        description
+          "The segment-list is down and it cannot become active without operator intervention.";
+      }
+    }
+  }
+
+  grouping policy-state {
+    leaf oper-state {
+      config false;
+      type policy-oper-state;
+      description
+        "SR policy operational state";
+    }
+    leaf policy-inactive-reason {
+      config false;
+      type policy-inactive-reason-type;
+    }
+    leaf policy-down-reason {
+      config false;
+      type policy-down-reason-type;
+    }
+    leaf last-oper-change {
+      config false;
+      type srl_nokia-comm:date-and-time;
+    }
+    leaf oper-state-transitions {
+      config false;
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf standby-available {
+      config false;
+      type boolean;
+      description
+        "Set to true when this (primary) SR policy is protected by a pre-programmed standby SR policy. This is only possible if a protection-policy of type active-standby is bound to this policy";
+    }
+    container statistics {
+      config false;
+      leaf in-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        description
+          "Number of unlabeled packets matching the policy that were subsequently forwarded";
+      }
+      leaf in-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        units "byte";
+        description
+          "Number of octets in unlabeled packets matching the policy";
+      }
+      leaf in-labeled-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        description
+          "Number of labeled packets matching the policy";
+      }
+      leaf in-labeled-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        units "byte";
+        description
+          "Number of octets in labeled packets matching the policy";
+      }
+      leaf out-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        description
+          "Number of packets forwarded by the policy";
+      }
+      leaf out-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        units "byte";
+        description
+          "Number of octets forwarded by the policy";
+      }
+    }
+  }
+
+  grouping segment-list-state {
+    leaf oper-state {
+      config false;
+      type segment-list-oper-state;
+      description
+        "Segment list operational state";
+    }
+    leaf segment-list-inactive-reason {
+      config false;
+      type segment-list-inactive-reason-type;
+    }
+    leaf segment-list-down-reason {
+      config false;
+      type segment-list-down-reason-type;
+    }
+    leaf last-oper-change {
+      config false;
+      type srl_nokia-comm:date-and-time;
+    }
+    leaf oper-state-transitions {
+      config false;
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    container seamless-bfd {
+      config false;
+      leaf session-state {
+        type enumeration {
+          enum "up";
+          enum "down";
+        }
+      }
+      leaf hold-down-timer-active {
+        type boolean;
+        description
+          "Reads true when the hold-down timer is active for this segment-list";
+      }
+      leaf hold-down-time-remaining {
+        type srl_nokia-comm:timeticks64;
+        description
+          "The time remaining until the hold-down timer expires for this segment-list";
+      }
+    }
+    container statistics {
+      config false;
+      leaf out-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        description
+          "Number of packets forwarded by the segment-list";
+      }
+      leaf out-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        config false;
+        units "byte";
+        description
+          "Number of octets forwarded by the segment-list";
+      }
+    }
+  }
+
+  grouping sr-policies-top {
+    description "Traffic engineering policies grouping";
+    container segment-routing-policies {
+      description "Container with segment routing policies";
+      uses named-paths;
+      uses protection-policies;
+      uses static-policies;
+      uses policy-database;
+    }
+  }
+
+  grouping named-paths {
+    container named-paths {
+      description
+        "Named paths used to specify SR policy segment lists";
+      list path {
+        key named-path-name;
+        leaf named-path-name {
+          type srl_nokia-comm:name;
+          description
+            "A unique name to identify the named path";
+        }
+        list hop {
+          key index;
+          leaf index {
+            type uint8 {
+              range "1..15";
+            }
+            description
+              "The index number of the hop. Hops are processed in ascending sequence.";
+          }
+          leaf ip-address {
+            type srl_nokia-comm:ip-address;
+            description
+              "An IPv4 or IPv6 address that is a hop to be visited on the way to the destination";
+          }
+          leaf hop-type {
+            type enumeration {
+              enum "strict" {
+                description
+                  "A strict hop is always one hop away from the previous hop (or from the head-end in the case of the first hop). TE DB translates each strict hop into an adjacency-SID label. To be resolved to an adjacency SID, a strict hop must be a non-local IP address on a connected subnet (representing the neighbor's interface address on this subnet) or it must be a loopback or system address of the directly-connected neighbor.
+
+                  Note that the endpoint of a policy is implicitly considered to be a final loose hop. If the final configured hop (previous hop of this implicit loose hop) is unnecessary TEDB indicates this to SR policy manager and the adjacency SID or node SID of the final confgired hop is omitted from the datapath programming.";
+              }
+              enum "loose" {
+                description
+                  "A loose hop can be any number of hops away from the previous hop (or from the head-end in the case of the first hop). TE DB translates each loose hop into a node-SID label. A loose hop can be any IP address of the remote router associated with the node SID, not just the IP address associated with the node SID itself.
+
+                  Note that the endpoint of the policy is implicitly considered to be a final loose hop. If the final configured hop (previous hop of this implicit loose hop) is unnecessary TEDB indicates this to SR policy manager and the adjacency SID or node SID of the final confgired hop is omitted from the datapath programming.";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping protection-policies {
+    container protection-policies {
+      description
+        "Container with protection policies";
+      list policy {
+        key protection-policy-name;
+        leaf protection-policy-name {
+          type srl_nokia-comm:name;
+          description
+            "A unique identifying name for the protection policy";
+        }
+        leaf mode {
+          description
+            "The mode of the protection policy";
+          type enumeration {
+            enum "ecmp" {
+              description
+                "All of the segment lists of the the best policy for the endpoint or (color, endpoint) are programmed into the datapath as active ECMP paths. If one of these ECMP paths experiences failure then fast failover is available by re-spraying the affected traffic flows to the remaining ECMP paths. There is no fast failover to a pre-programmed standby policy when the last of the ECMP paths fails.";
+            }
+            enum "active-standby" {
+              description
+                "The first segment list of the the best policy for the endpoint (or color+endpoint) is programmed into the datapath as a primary path and the first segment list of the next best policy for the endpoint (or color+endpoint) is programmed into the datapath as a standby path. If the primary path experiences failure then fast failover is available by diverting the affected traffic flows to the standby path.";
+            }
+          }
+          default "ecmp";
+        }
+        leaf seamless-bfd {
+          type boolean;
+          default true;
+          description
+            "When set to true, this node attempts to setup a seamless BFD session on every segment-list of every SR policy that uses this protection-policy and that is a primary or standby for the endpoint or color+endpoint. The transition of any such SBFD session from up to down is a fast trigger for diverting traffic away from the associated segment-list.
+
+            When set to false traffic is diverted away from a segment list only when the segment list becomes inactive or down due to an unresolved first segment or an administrative disable (of the policy or a segment list).";
+        }
+        leaf hold-down-timer {
+          type uint16;
+          units "seconds";
+          default 3;
+          description
+            "Sets the value of a per-SBFD session timer that is started whenever the session transitions from up to down. If the SBFD session comes back up again while the timer is still running the SBFD session is held down and the segment list remains invalid until the timer expires.";
+        }
+        leaf revert-timer {
+          type uint16;
+          units "seconds";
+          default 10;
+          description
+            "Sets the value of a per-policy timer that is started whenever a policy transitions to up state and because of its preference it should take over as the primary path for the endpoint or color+endpoint, replacing the current primary path. While the timer is running the primary designate policy stays inactive for reason revert-pending; when the timer expires the policy becomes the acutal primary policy and traffic reverts to using the operational segment lists of the new primary policy.";
+        }
+        leaf min-segment-list-threshold {
+          type uint8 {
+            range "1..32";
+          }
+          default 1;
+          description
+            "Sets a value for the minimum number of segment lists that must be operational in order for a policy to be operational. A value of 1 means that the policy will remain operational until the last segment list goes down or inactive.";
+        }
+      }
+    }
+  }
+
+  grouping static-segment-lists {
+    list segment-list {
+      key "segment-list-index";
+      leaf segment-list-index {
+        type uint8 {
+          range "1..32";
+        }
+        description
+          "Index to enumerate the different segment lists for a static policy.";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default 'enable';
+        description
+          "Used to administratively enable or disable a segment list";
+      }
+      choice type {
+        description
+          "Type of path";
+        case explicit {
+          description
+            "Segment-list with explicitly defined segments that are possibly translated from IP addresses.";
+          leaf named-path {
+            type leafref {
+              path "../../../../named-paths/path/named-path-name";
+            }
+          }
+          list segment {
+            key "segment-index";
+            leaf segment-index {
+              type uint8;
+              description
+                "Index to enumerate the different segments in a segment-list";
+            }
+            container segment-type-a {
+              description
+                "Segment identified by MPLS label";
+              leaf sid-value {
+                type srl_nokia-comm:mpls-label-non-reserved;
+                description "MPLS label value";
+              }
+            }
+          }
+        }
+        case dynamic {
+          description
+            "Segment-list with dynamically computed segments that satisfy specified constraints";
+        }
+      }
+      uses segment-list-state;
+    }
+  }
+
+  grouping static-policies {
+    container static-policies {
+      list policy {
+        key "static-policy-name";
+        leaf static-policy-name {
+          type srl_nokia-comm:name;
+          description "policy name";
+        }
+        leaf endpoint {
+          mandatory "true";
+          type srl_nokia-comm:ip-address;
+          description "Policy endpoint IP address";
+        }
+        leaf color {
+          type uint32 {
+            range "1..4294967295";
+          }
+          description "Color associated with the policy.";
+          //must "not (../class-based-forwarding)";
+        }
+        //cbf
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default 'enable';
+          description
+            "SR policy administrative state";
+        }
+        leaf description {
+          type srl_nokia-comm:description;
+          description "Description of the policy";
+        }
+        leaf preference {
+          type uint32 {
+            range "1..65535";
+          }
+          default 100;
+          description
+            "When there are multiple policies (static or otherwise) for the same endpoint or (color, endpoint) the one with the lowest numerical preference value is selected to be the primary policy. The policy with the next lowest numerical preference is selected to be the secondary policy.";
+        }
+        leaf protection-policy {
+          type leafref {
+            path "../../../protection-policies/policy/protection-policy-name";
+          }
+        }
+        leaf re-optimization-timer {
+          type uint16;
+          default 0;
+          description
+            "An optional timer that is started when the policy becomes active and fires periodically at the specified interval. When the timer expires, the system determines whether there is a better path for any of the policy's segment lists, and if there is a better path the datapath is immediately updated with the new stack of pushed labels. This is only applicable to segment lists that have been specified using named paths that consist of IP hops
+
+            The default value of 0 disables the timer. In this situation topology changes do not affect the stack of MPLS labels (list of SIDs) used for segment lists that correspond to named paths; the stack of labels will remain the same until the next time the policy transitions from down to up (and then it will be based on the topology that is current at that time)";
+        }
+        //bsid
+        uses policy-state;
+        uses static-segment-lists;
+      }
+    }
+  }
+
+  grouping candidate-paths {
+    description "SR policy candidate path grouping";
+    list candidate-path {
+      description
+        "SR policy candidate paths. This list includes local static policies, but only those that have both a color and endpoint.";
+      key "candidate-path-index";
+      leaf candidate-path-index {
+        type uint8;
+        description
+          "Index to enumerate the different candidate paths for a (color, endpoint).";
+      }
+      leaf protocol-origin {
+        type protocol-origin-type;
+        description
+          "Instantiation mechanism used to create the candidate path";
+      }
+      leaf originator {
+        type string;
+        description
+          "Identifier (concatenation of ASN and node-address) of the node that signalled/instantiated the candidate path on headend";
+      }
+      leaf discriminator {
+        type uint32;
+        description "Candidate path distinguisher";
+      }
+      leaf preference {
+        type uint32 {
+          range "1..65535";
+        }
+        description "Candidate path preference";
+      }
+      uses policy-state;
+      uses dynamic-segment-lists;
+    }
+  }
+
+  grouping dynamic-segment-lists {
+    list segment-list {
+      key "segment-list-index";
+      leaf segment-list-index {
+        type uint8 {
+          range "1..32";
+        }
+        description
+          "Index to enumerate the different segment lists.";
+      }
+      list segment {
+        key "segment-index";
+        leaf segment-index {
+          type uint8;
+          description
+            "Index to enumerate the different segments in a segment-list";
+        }
+        container segment-type-a {
+          description
+            "Segment identified by MPLS label";
+          leaf sid-value {
+            type srl_nokia-comm:mpls-label-non-reserved;
+            description "MPLS label value";
+          }
+        }
+      }
+      uses segment-list-state;
+    }
+  }
+
+  grouping policy-database {
+    container policy-database {
+      config false;
+      list policy {
+        key "color endpoint";
+        leaf color {
+          type uint32 {
+            range "0..4294967295";
+          }
+          description
+            "Color associated with the SR policy";
+        }
+        leaf endpoint {
+          type srl_nokia-comm:ip-address;
+          description "Policy endpoint IP address";
+        }
+        uses candidate-paths;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-sr:segment-routing" {
+    uses sr-policies-top;
+  }
+}

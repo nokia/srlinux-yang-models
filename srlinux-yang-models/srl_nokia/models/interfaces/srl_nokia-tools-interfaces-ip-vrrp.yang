@@ -6,15 +6,14 @@ module srl_nokia-tools-interfaces-ip-vrrp {
   import srl_nokia-tools-interfaces {
     prefix srl_nokia_tools-if;
   }
-
-  import srl_nokia-features { 
-    prefix srl_nokia-feat; 
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
   }
 
   description
     "Model for interface ip VRRP operational commands";
 
-//tools interface <if/subif>  vrrp <id> statistics clear
+  //tools interface <if/subif>  vrrp <id> statistics clear
 
   revision 2021-06-30 {
     description
@@ -30,28 +29,29 @@ module srl_nokia-tools-interfaces-ip-vrrp {
   }
 
   grouping tools-interface-ip-vrrp-top {
-      list vrrp-group {
-          if-feature srl_nokia-feat:vrrp;
-          key "virtual-router-id";
-          description 
-              "VRRP Group Specific Configuration under IPv4 context"; 
-          leaf virtual-router-id {
-              description 
-                  "VRRP Group Index";
-              type uint8;
-          }
-          container statistics {
-              leaf clear {
-                  type empty;
-              }
-          }
+    list vrrp-group {
+      if-feature "srl_nokia-feat:vrrp";
+      key "virtual-router-id";
+      description
+        "VRRP Group Specific Configuration under IPv4 context";
+      leaf virtual-router-id {
+        description
+          "VRRP Group Index";
+        type uint8;
       }
+      container statistics {
+        leaf clear {
+          type empty;
+        }
+      }
+    }
   }
 
   augment "/srl_nokia_tools-if:interface/srl_nokia_tools-if:subinterface/srl_nokia_tools-if:ipv4" {
-    uses  tools-interface-ip-vrrp-top;
+    uses tools-interface-ip-vrrp-top;
   }
+
   augment "/srl_nokia_tools-if:interface/srl_nokia_tools-if:subinterface/srl_nokia_tools-if:ipv6" {
-    uses  tools-interface-ip-vrrp-top;
+    uses tools-interface-ip-vrrp-top;
   }
 }

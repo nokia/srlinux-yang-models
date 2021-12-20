@@ -16,6 +16,10 @@ module srl_nokia-qos {
         prefix srl-feat;
     }
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -36,19 +40,6 @@ module srl_nokia-qos {
     typedef traffic-class {
         type uint8 {
             range "0..7";
-        }
-    }
-
-    typedef forwarding-class {
-        type enumeration {
-            enum "fc0";
-            enum "fc1";
-            enum "fc2";
-            enum "fc3";
-            enum "fc4";
-            enum "fc5";
-            enum "fc6";
-            enum "fc7";
         }
     }
 
@@ -149,22 +140,22 @@ module srl_nokia-qos {
           "The various drop probability classifications that can apply to an ECN slope";
         type enumeration {
             enum "low" {
-                if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3";
+                if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
                 description
                   "Traffic that should be dropped last when there is congestion. Internally this is traffic that is colored green.";
             }
             enum "medium" {
-                if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3";
+                if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
                 description
                   "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
             }
             enum "high" {
-                if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3";
+                if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
                 description
                   "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
             }
             enum "all" {
-                if-feature "srl-feat:jericho2";
+                if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                 description
                   "All traffic, consisting of traffic marked low, medium and high drop-probability.";
             }
@@ -193,7 +184,7 @@ module srl_nokia-qos {
 
         container qos {
             srl_nokia-ext:first-released "19.11.1";
-            if-feature "srl-feat:jericho2 or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3";
+            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
             description
               "Top-level container for QoS data";
             uses ecn-top;
@@ -210,7 +201,7 @@ module srl_nokia-qos {
               "When present ECN marking is enabled globally (on all interfaces)";
         // leaf-list supported-protocols
             leaf ecn-dscp-policy {
-                if-feature srl-feat:jericho2;
+                if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                 mandatory true;
                 description
                     "Reference to the DSCP rewrite policy to use when DSCP rewrite is required as a side effect of ECN remarking.
@@ -298,17 +289,17 @@ module srl_nokia-qos {
                               "The traffic type to which the WRED slope applies.";
                             type enumeration {
                                 enum "tcp" {
-                                    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3";
+                                    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
                                     description
                                       "Refers to IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
                                 }
                                 enum "non-tcp" {
-                                    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3";
+                                    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
                                     description
                                       "Refers to all packets that are not IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
                                 }
                                 enum "all" {
-                                    if-feature "srl-feat:jericho2";
+                                    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                                     description
                                       "Refers to all traffic, whether it is TCP or non-TCP.";
                                 }
@@ -399,7 +390,7 @@ module srl_nokia-qos {
 
     grouping dscp-classifier {
         leaf vxlan-default {
-            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
+            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-vsrl";
             type leafref {
                 path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/name";
             }
@@ -426,7 +417,7 @@ module srl_nokia-qos {
                       "DSCP codepoint value, expressed as a number in the range 0-63";
                 }
                 leaf forwarding-class {
-                    type forwarding-class;
+                    type srl_nokia-comm:forwarding-class;
                     description
                       "The forwarding class to which the DSCP value is mapped";
                 }
@@ -459,7 +450,7 @@ module srl_nokia-qos {
                       "A single traffic-class value";
                 }
                 leaf forwarding-class {
-                    type forwarding-class;
+                    type srl_nokia-comm:forwarding-class;
                     description
                       "The forwarding class to which the traffic-class value is mapped";
                 }
@@ -495,7 +486,7 @@ module srl_nokia-qos {
             list map {
                 key "forwarding-class";
                 leaf forwarding-class {
-                    type forwarding-class;
+                    type srl_nokia-comm:forwarding-class;
                     description
                       "The forwarding-class value";
                 }
@@ -546,7 +537,7 @@ module srl_nokia-qos {
             list map {
                 key "forwarding-class";
                 leaf forwarding-class {
-                    type forwarding-class;
+                    type srl_nokia-comm:forwarding-class;
                     description
                       "The forwarding-class value";
                 }
@@ -577,7 +568,7 @@ module srl_nokia-qos {
 
     grouping interface-qos {
         container qos {
-            if-feature "srl-feat:jericho2 or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3";
+            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
             srl_nokia-ext:first-released "19.11.1";
             presence
               "Enables configuration of QoS parameters for the interface";
@@ -646,7 +637,7 @@ module srl_nokia-qos {
                     }
                     leaf-list forwarding-class {
                         config false;
-                        type forwarding-class;
+                        type srl_nokia-comm:forwarding-class;
                         description
                             "The list of forwarding classes that map to this queue.";
                     }
@@ -791,7 +782,7 @@ module srl_nokia-qos {
                               "The actual/operational peak rate in bits per second.";
                         }
                         leaf strict-priority {
-                            if-feature "srl-feat:jericho2";
+                            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                             type boolean;
                             default true;
                             description
@@ -799,7 +790,7 @@ module srl_nokia-qos {
                         }
                         leaf weight {
                             srl_nokia-ext:first-released "20.6.1";
-                            if-feature "srl-feat:jericho2";
+                            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                             type uint8 {
                                 range "1..255";
                             }
@@ -842,7 +833,7 @@ module srl_nokia-qos {
                     } // scheduling
                     leaf template {
                         srl_nokia-ext:first-released "20.12.1";
-                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3";
+                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:queue-templates/srl_nokia-qos:queue-template/srl_nokia-qos:name";
                         }
@@ -853,7 +844,7 @@ module srl_nokia-qos {
                     }
                     leaf voq-template {
                         srl_nokia-ext:first-released "20.12.1";
-                        if-feature "srl-feat:jericho2";
+                        if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:queue-templates/srl_nokia-qos:queue-template/srl_nokia-qos:name";
                         }
@@ -883,7 +874,7 @@ module srl_nokia-qos {
                     }
                     leaf-list forwarding-class {
                         config false;
-                        type forwarding-class;
+                        type srl_nokia-comm:forwarding-class;
                         description
                             "The list of forwarding classes that map to this queue.";
                     }
@@ -911,7 +902,7 @@ module srl_nokia-qos {
                         description
                             "Container for queue scheduling parameters";
                         leaf peak-rate-percent {
-                            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3";
+                            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
                             type uint8 {
                                 range "1..100";
                             }
@@ -954,7 +945,7 @@ module srl_nokia-qos {
                         }
                     } // scheduling
                     leaf template {
-                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
+                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:queue-templates/srl_nokia-qos:queue-template/srl_nokia-qos:name";
                         }
@@ -969,7 +960,7 @@ module srl_nokia-qos {
     grouping queue-stats {
         container queue-statistics {
             srl_nokia-ext:first-released "19.11.1";
-          if-feature "srl-feat:jericho2 or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3";
+          if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
             config false;
             list unicast-queue {
                 description
@@ -1012,7 +1003,7 @@ module srl_nokia-qos {
                       On 7250-IXR (Jericho2-based) systems unicast packet drops related to egress port congestion should show up in the VOQ stats and not in this statistic.";
                 }
                 list virtual-output-queue {
-                    if-feature "srl-feat:jericho2";
+                    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                     description
                       "List of virtual output queues that can send traffic to this egress queue. The list always has one entry for each IMM slot in the chassis, even if one or more slots are empty.";
                     key slot;
@@ -1161,11 +1152,11 @@ module srl_nokia-qos {
     grouping subinterface-qos {
         container qos {
             srl_nokia-ext:first-released "19.11.1";
-            if-feature "srl-feat:jericho2 or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3";
+            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
             container input {
                 container classifiers {
                     leaf ipv4-dscp {
-                        if-feature "srl-feat:jericho2";
+                        if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
                         }
@@ -1173,7 +1164,7 @@ module srl_nokia-qos {
                           "Reference to the name of a DSCP classifier policy that applies only to IPv4 traffic.";
                     }
                     leaf ipv6-dscp {
-                        if-feature "srl-feat:jericho2";
+                        if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
                         }
@@ -1182,7 +1173,7 @@ module srl_nokia-qos {
                     }
                     leaf dscp {
                         srl_nokia-ext:first-released "20.6.1";
-                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3";
+                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
                         }
@@ -1204,7 +1195,7 @@ module srl_nokia-qos {
                 srl_nokia-ext:first-released "19.11.1";
                 container rewrite-rules {
                     leaf ipv4-dscp {
-                        if-feature "srl-feat:jericho2";
+                        if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
                         }
@@ -1212,7 +1203,7 @@ module srl_nokia-qos {
                           "Reference to the name of a DSCP rewrite-rule policy that applies only to IPv4 traffic.";
                     }
                     leaf ipv6-dscp {
-                        if-feature "srl-feat:jericho2";
+                        if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
                         }
@@ -1221,7 +1212,7 @@ module srl_nokia-qos {
                     }
                     leaf dscp {
                         srl_nokia-ext:first-released "20.6.1";
-                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3";
+                        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7210-sas24g";
                         type leafref {
                             path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
                         }

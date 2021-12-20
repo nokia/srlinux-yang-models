@@ -1,0 +1,59 @@
+module srl_nokia-sync {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/sync";
+  prefix srl_nokia-sync;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-sync-ptp {
+    prefix srl_nokia-sync-ptp;
+  }
+  import srl_nokia-sync-freq {
+    prefix srl_nokia-sync-freq;
+  }
+  import srl_nokia-sync-interfaces {
+    prefix srl_nokia-sync-interfaces;
+  }  
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping sync-top {
+    container sync {
+      description
+        "Context to configure sync parameters and report sessions state";
+      container ptp {
+        uses srl_nokia-sync-ptp:ptp-instance-top;
+      }
+      container freq-references {
+        uses srl_nokia-sync-freq:freq-references-top;
+      }
+      container freq-clock {
+        uses srl_nokia-sync-freq:freq-clock-top;
+      }  
+/*      container freq-sync-out {
+        uses srl_nokia-sync-freq:freq-sync-bits-out-top;
+      }*/
+      container bits {
+        uses srl_nokia-sync-interfaces:bits-interface-top;
+      }
+      container tod {
+        uses srl_nokia-sync-interfaces:tod-interface-top;
+      } 
+      container ppstest {
+        uses srl_nokia-sync-interfaces:ppstest-interface-top;
+      } 
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl-feat:sync";
+    uses sync-top;
+  }
+}

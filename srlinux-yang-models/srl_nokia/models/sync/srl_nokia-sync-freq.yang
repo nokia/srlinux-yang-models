@@ -1,0 +1,325 @@
+module srl_nokia-sync-freq {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/sync-freq";
+  prefix srl_nokia-sync-freq;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-sync-types {
+    prefix srl_nokia-sync-types;
+  }
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping freq-references-top {
+    description
+      "This struct containing all attributes for freq synchronization.";
+    list instance-list {
+      key "instance-number";
+      description
+        "List of line reference configured for frequency.";      
+    
+      leaf instance-number {
+        type uint8 {
+            range "0..6"; 
+        }
+        description
+          "The instance number of the each line reference.";
+      }
+
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Configure the administrative state of this line reference.";
+      }
+      leaf oper-state {
+        type srl_nokia-comm:oper-state;
+        config false;
+        description
+          "Indicates the operational state of this line reference.";
+      }      
+      leaf alarm-profile {
+        type string {
+          length "1..40";
+        }
+      description
+        "Configured the Alarm Severity Assignment profile (ASAP) name.";
+      } 
+
+      leaf switch-ref-request {
+        type enumeration {
+          enum none {
+            value 0;
+          description
+            "No force switch being requested to this reference.";
+          }
+          enum force {
+            value 1;
+          description
+            "Request to perform a force switch to this reference.
+             It can be granted only if the reference must be enabled and not locked-out.";
+          }
+          enum manual {
+            value 2;
+          description
+            "Request to perform a manual switch to this reference.
+             It can be granted only if the reference must be enabled, not locked-out, not in
+             failed signal status or unassigned, and has a QL better than DNU in QL-enabled mode.";
+          }
+        }
+        default none;     
+      }
+      leaf lockout-ref {
+        type boolean;
+        description
+          "Request to lock out this reference from the available list of references."; 
+        default false;
+      }
+
+      leaf switch-ref-request-bits-out {
+        type enumeration {
+          enum none {
+            value 0;
+          description
+            "No force switch being requested to this reference.";
+          }          
+          enum force {
+            value 1;
+          description
+            "Request to perform a force switch to this reference for the output.
+             It can be granted only if the reference must be enabled and not locked-out.";
+          }
+          enum manual {
+            value 2;
+          description
+            "Request to perform a manual switch to this reference for the output.
+             It can be granted only if the reference must be enabled, not locked-out, not in
+             failed signal status or unassigned, and has a QL better than DNU in QL-enabled mode.";
+          }
+        }
+        default none;       
+      }
+      leaf lockout-ref-bits-out {
+        type boolean;
+        description
+          "Request to lock out this reference from the available list of references for output.";    
+        default false;
+      }
+
+      leaf underlying-interface {
+        type srl_nokia-sync-types:interface-freq;
+        description
+        "Reference to the configured underlying interface that is used by this frequency recovery.
+          Options include line/client ports, OTC ports and BITS port.";
+      }
+      leaf ref-ql-enable {
+      type boolean;
+      default true;
+      description
+        "Enables or disables this line reference incoming QL processing";
+      }
+      leaf priority {
+        type uint8 {
+          range "0..7";
+        }
+        default 0; // 0 = disabled
+        description
+          "Sets the priority of this line timing reference for the system timing selection process.";
+      }
+      leaf priority-output {
+        type uint8 {
+          range "0..7";
+        }
+        default 0; // 0 = disabled
+        description
+          "Sets the priority of this line timing reference for the output timing selection process.";
+      }
+      leaf ql-override {
+        type srl_nokia-sync-types:ql-set-enumeration;
+        default auto;
+        description
+          "Override the incoming QL/SSM value for this line reference.";
+      }
+      leaf frequency-offset {
+        type decimal64 {
+          fraction-digits 3;
+        }
+        config false;
+        description
+          "the current frequency offset of this line reference in ppm.";        
+      }
+      leaf ql-status {
+        type srl_nokia-sync-types:ql-status-enumeration;
+        config false;
+        description
+          "The incoming QL/SSM value from this line reference is valid or not.";
+      }
+      leaf ql-value {
+        type srl_nokia-sync-types:ql-rx-enumeration;
+        config false;
+        description
+          "The incoming QL/SSM value from this line reference.";
+      }
+      leaf ref-status {
+        type srl_nokia-sync-types:ref-status-enumeration;
+        config false;
+        description
+          "The current status this line reference.";
+      }
+/*      leaf ref-lockout {
+        type boolean;
+        config false;
+        description
+          "Lockout this line reference for input.";
+      }  
+      leaf ref-lockout-output {
+        type boolean;
+        config false;
+        description
+          "Lockout this line reference for output.";
+      }  */
+    }
+  }
+
+  grouping freq-clock-top {
+    description
+      "This struct containing all attributes for frequency clock.";
+    leaf alarm-profile {
+      type string {
+        length "1..40";
+      }
+      description
+        "Configured the Alarm Severity Assignment profile (ASAP) name.";
+    } 
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Configure the administrative state of synce";
+      }
+    leaf ql-input-threshold {
+      type srl_nokia-sync-types:ql-rx-enumeration;
+      default st3;
+      description
+          "Configures the SSM quality level degradation threshold value for system timing reference";
+    }
+
+    leaf synce-mode {
+      type srl_nokia-sync-types:synce-mode-enumeration;
+      default ansi;
+      description
+          "Configures SyncE as ANSI or ETSI mode";
+    }
+   // uses ref-switch-top;
+
+    leaf system-ql-enable {
+      type boolean;
+      default true;
+      description
+        "System timing reference selection is done by SSM using quality levels as the
+         first criteria and by priorities as the second criteria. Otherwise, timing 
+         reference selection is done only by priorities.";
+    }
+    leaf wait-to-restore {
+      type int8 {
+        range "0..12";
+      }
+      default 5;
+      units minutes;
+      description
+        "Specifies the value of wait to restore time in minutes for all line references. Value of 0 
+         to disable WTR.";
+    }
+    leaf active-ref {
+      type enumeration {
+        enum "0" { value 0;}
+        enum "1" { value 1;}
+        enum "2" { value 2;}
+        enum "3" { value 3;}
+        enum "4" { value 4;}
+        enum "5" { value 5;}
+        enum "6" { value 6;}
+        enum "internal" { value -1; }
+      }
+      config false;
+      description
+        "Displays information about the current selected (active) line timing reference.";
+    }
+    leaf freq-offset {
+      type decimal64 {
+        fraction-digits 3;
+      }
+      config false;
+      description
+        "The frequency offset of the selected reference in ppm.";    
+    }
+    leaf freq-clock-state {
+      type srl_nokia-sync-types:freq-clock-state-enumeration;
+      config false;
+      description
+        "Shows the clock mode status.";
+    }
+    leaf ref-switch-state {
+      type srl_nokia-sync-types:ref-switch-state-enumeration;
+      config false;
+      description
+        "Shows the current state of switch command.";
+    }  
+    leaf system-ql-value {
+      type srl_nokia-sync-types:ql-rx-enumeration;
+      config false;
+      description
+        "System QL value based on the reference selected.";
+    }        
+  }
+
+  grouping freq-sync-bits-out-top {
+    description
+      "This struct containing all attributes for BIS frequency output clock.";
+
+    leaf freq-output-select {
+      type enumeration {
+        enum output-selection {
+          value 0;
+        description
+          "Output is selected from output timing selection process.";
+        }
+        enum setg {
+          value 1;
+        description
+          "Output frequency clock based on input reference selection.";
+        }      
+      }
+      default setg;
+      description
+        "Output frequency clock configuration.";
+    }
+
+    leaf active-ref-output {
+      type enumeration {
+        enum "0" { value 0;}
+        enum "1" { value 1;}
+        enum "2" { value 2;}
+        enum "3" { value 3;}
+        enum "4" { value 4;}
+        enum "5" { value 5;}
+        enum "6" { value 6;}
+        enum "internal" { value -1; }
+      }
+      config false;
+      description
+        "Displays information about the current selected (active) line timing reference for output.";
+    }
+    leaf ref-switch-state {
+      type srl_nokia-sync-types:ref-switch-state-enumeration;
+      config false;
+      description
+        "Shows the current state of switch command.";
+    }      
+  }
+}

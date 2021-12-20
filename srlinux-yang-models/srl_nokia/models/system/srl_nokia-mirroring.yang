@@ -11,10 +11,16 @@ module srl_nokia-mirroring {
   import srl_nokia-system { prefix srl-system;}
   import srl_nokia-extensions { prefix srl-ext;}
   import srl_nokia-interfaces { prefix srl_nokia-if;}
+  import srl_nokia-network-instance { prefix srl-netinst; }
+  import srl_nokia-acl { prefix srl-acl;}
 
   description
     "This module defines configuration and operational state data for mirroring (SPAN/ERSPAN).";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -104,15 +110,15 @@ module srl_nokia-mirroring {
       description "Configure mirror source(s)";
       list interface {
         description "List of interfaces used as mirror source";
-	key "name";
+        key "name";
         leaf name {
-	  type mirroring-instance-intf-ref;
-           must "/srl_nokia-if:interface[srl_nokia-if:name=.]" {
+          type mirroring-instance-intf-ref;
+          must "/srl_nokia-if:interface[srl_nokia-if:name=.]" {
             error-message "Must be an existing interface name";
           }
         }
         leaf direction {
-	  type direction;
+          type direction;
           default egress-only;
           description "The direction of traffic to be mirrored";
         }
@@ -121,7 +127,7 @@ module srl_nokia-mirroring {
 
       list subinterface {
         description "List of subinterfaces used as mirror source";
-	key "name";
+        key "name";
         leaf name {
           type mirroring-instance-subintf-ref;
           must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]" {
@@ -129,11 +135,46 @@ module srl_nokia-mirroring {
           }
         }
         leaf direction {
-	  type direction;
+          type direction;
           default egress-only;
           description "The direction of traffic to be mirrored";
         }
         max-elements 128;
+      }
+      container acl {
+        if-feature srl-feat:future-21-11-2;
+        list ipv4-filter {
+          key name;
+          leaf name {
+            type leafref {
+                path "/srl-acl:acl/srl-acl:ipv4-filter/srl-acl:name";
+            }
+          }
+          list entry {
+            key sequence-id;
+            leaf sequence-id {
+              type leafref {
+                path "/srl-acl:acl/srl-acl:ipv4-filter[srl-acl:name=current()/../../srl_nokia-mirroring:name]/srl-acl:entry/srl-acl:sequence-id";
+              }
+            }
+          }
+        }
+        list ipv6-filter {
+          key name;
+          leaf name {
+            type leafref {
+                path "/srl-acl:acl/srl-acl:ipv6-filter/srl-acl:name";
+            }
+          }
+          list entry {
+              key sequence-id;
+              leaf sequence-id {
+                  type leafref {
+                      path "/srl-acl:acl/srl-acl:ipv6-filter[srl-acl:name=current()/../../srl_nokia-mirroring:name]/srl-acl:entry/srl-acl:sequence-id";
+                  }
+              }
+          }
+        }
       }
     }
   }
@@ -142,14 +183,72 @@ module srl_nokia-mirroring {
     description "Top-level grouping containing local/remote mirror destination";
     container mirror-destination {
       description "Configure mirror destination";
+      // mirror destination can be either local or remote within the same mirror-instance
       leaf local {
         description "subinterface of type local-mirror-dest used as local mirror destination";
         type mirroring-instance-subintf-ref;
         must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]/srl_nokia-if:type = 'local-mirror-dest'" {
           error-message "local-mirror-destination is only allowed on subinterfaces with type local-mirror-dest";
           }
+      }
+      container remote {
+        if-feature srl-feat:future-21-11-2;
+        presence "configure remote mirror destination";
+        must "current() and not(../local)" {
+          error-message "mirror destination can be either local or remote within the same mirror-instance";
+        }
+        leaf encap {
+          type enumeration {
+            enum "l2ogre";
+          }
+          mandatory true;
+          srl-ext:show-importance "high";
+        }
+        leaf network-instance {
+          description
+            "network instance to intitiate remote mirror tunnel";
+          type leafref {
+            path "/srl-netinst:network-instance/srl-netinst:name";
+          }
+          must '(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:ip-vrf" or "srl-netinst:default")' {
+            error-message "remote mirror tunnel can only be initiated in a network-instance of type 'ip-vrf' or 'default'";
+          }
+          srl-ext:show-importance "high";
+          mandatory true;
+        }
+        container tunnel-end-points {
+          leaf src-ipv4 {
+            type srl-comm:ipv4-address;
+            srl-ext:show-importance "high";
+            mandatory true;
+            description
+              "remote mirror tunnel source endpoint IPv4 adress";
+            // must be an exiting sub-interface or loopback address within the referenced network instance
+          }
+          leaf dst-ipv4 {
+            type srl-comm:ipv4-address;
+            srl-ext:show-importance "high";
+            mandatory true;
+            description
+              "remote mirror tunnel destination endpoint IPv4 adress";
+          }
+          leaf admin-state {
+            type srl-comm:admin-state;
+            default "enable";
+            srl-ext:show-importance "high";
+            description
+              "This leaf contains the configured, desired state of the remote mirror tunnel";
+          }
+          leaf oper-state {
+            config false;
+            type srl-comm:oper-state;
+            srl-ext:show-importance "high";
+            description
+              "This leaf contains the operational state of the remote mirror tunnel";
+          }
         }
       }
+    }
   }  
   
   grouping mirroring-top {

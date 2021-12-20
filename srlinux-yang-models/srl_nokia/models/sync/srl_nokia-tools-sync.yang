@@ -1,0 +1,39 @@
+module srl_nokia-tools-sync {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-sync";
+  prefix srl_nokia-tools-sync;
+
+  // import some basic types
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-sync-types {
+    prefix srl_nokia-sync-types;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  description
+    "Model for operational commands on time protocols and statstics";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping tools-sync-top {
+    description
+      "Tools grouping for sync";
+    container sync {
+      description
+        "Top-level grouping for sync operational commands";
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    if-feature "srl-feat:sync";
+    uses tools-sync-top;
+  }
+}

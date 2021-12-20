@@ -16,6 +16,10 @@ module srl_nokia-bgp-evpn {
     description
       "This yang file models configuration and state of the bgp-evpn protocol";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -26,6 +30,14 @@ module srl_nokia-bgp-evpn {
       "The supported range of EVPN Instances.";
     type uint32 {
       range "1..65535";
+    }
+  }
+
+  typedef ethernet-tag-id {
+    description
+      "The Ethernet Tag ID encoded in the NLRI. The Ethernet Tag ID identifies a broadcast domain.";
+    type uint32 {
+      range "0..16777215";
     }
   }
 
@@ -71,6 +83,23 @@ module srl_nokia-bgp-evpn {
           description
             "The ip-address that will be used as the bgp next-hop for all routes advertised in this evpn instance.";
         } 
+        leaf vlan-aware-bundle-eth-tag {
+          if-feature "srl-feat:bt-evpn-vlan-aware-bundle-interop";
+          type ethernet-tag-id;
+          default 0;
+          description
+            "Configures the Ethernet Tag ID to be encoded in the EVPN routes for control-plane interoperability mode 
+             with VLAN-aware bundle services.
+        
+             When set to a non-zero value, all the EVPN routes advertised for the MAC-VRF will be advertised with this value
+             into the ethernet-tag-id field of the routes.
+
+             On reception of EVPN routes with non-zero ethernet-tag-id, BGP will import the routes based on the import 
+             route-target as usual. However, the system checks the received ethernet-tag-id field and will process only 
+             those routes whose ethernet-tag-id match the local vlan-aware-bundle-eth-tag value.";
+          reference 
+            "RFC7432";
+        }
       }
       container route-table {
         presence "Configure evpn routes advertised for the route-table";
@@ -129,11 +158,14 @@ module srl_nokia-bgp-evpn {
       leaf evi {
         type evi;
         description 
-          "EVPN Instance identifier associated to the bgp-evpn instance. Used for auto-derivation of: 
+          "EVPN Instance identifier associated to the bgp-evpn instance. 
+           
+           Used for auto-derivation of: 
            - the bgp-instance route distinguisher in the format <ip-address>:evi (where 'ip-address' is the ipv4 address 
              associated to the subinterface lo0.1.
            - the bgp-instance route target in the format <asn>:<evi>, where 'asn' is the autonomous-system configured in 
              the network-instance default (under /protocols/bgp/autonomous-system).
+
            In addition, the evi value is used for the EVPN Multi-Homing Designated Forwarder (DF) Election.";
         mandatory "true";
       }

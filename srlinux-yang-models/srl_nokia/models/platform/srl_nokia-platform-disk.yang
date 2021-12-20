@@ -30,11 +30,11 @@ module srl_nokia-platform-disk {
     list partition {
       description
         "List of partitions available on this disk";
-      key name;
+      key "name";
       leaf name {
         type string;
         description
-          "Name of the partition";        
+          "Name of the partition";
       }
       leaf uuid {
         type string;
@@ -64,19 +64,19 @@ module srl_nokia-platform-disk {
         type uint64;
         description
           "Size of the partition";
-        units bytes;
+        units "bytes";
       }
       leaf used {
         type uint64;
         description
           "Space used on the partition";
-        units bytes;
+        units "bytes";
       }
       leaf free {
         type uint64;
         description
           "Space free on the partition";
-        units bytes;
+        units "bytes";
       }
       leaf percent-used {
         type srl-comm:percentage;
@@ -103,7 +103,7 @@ module srl_nokia-platform-disk {
         }
         description
           "Indicates the number of transfers per second that were issued to the device
-          A transfer is an I/O request to the device. Multiple logical requests can be combined into a single I/O request to the device. A transfer is of indeterminate size.";
+           A transfer is an I/O request to the device. Multiple logical requests can be combined into a single I/O request to the device. A transfer is of indeterminate size.";
       }
       leaf read-per-second {
         type decimal64 {
@@ -121,44 +121,44 @@ module srl_nokia-platform-disk {
           "Indicates the amount of data written to the device per second";
         units "bytes";
       }
-    }      
+    }
   }
 
   grouping disk-state-top {
     description
       "Grouping for disk state";
-      leaf name {
-        type string;
-        description
-          "Name of the disk, as defined by its physical location in the system";
+    leaf name {
+      type string;
+      description
+        "Name of the disk, as defined by its physical location in the system";
+    }
+    leaf model-number {
+      type string;
+      description
+        "Model name of the disk";
+    }
+    leaf serial-number {
+      type string;
+      description
+        "Serial number of the disk";
+    }
+    leaf size {
+      type uint64;
+      description
+        "Total size of the disk";
+    }
+    leaf type {
+      description
+        "Type of disk";
+      type enumeration {
+        enum compactflash;
+        enum ssd;
+        enum hdd;
+        enum usb;
       }
-      leaf model-number {
-        type string;
-        description
-          "Model name of the disk";
-      }
-      leaf serial-number {
-        type string;
-        description
-          "Serial number of the disk";
-      }
-      leaf size {
-        type uint64;
-        description
-          "Total size of the disk";
-      }
-      leaf type {
-        description
-          "Type of disk";
-        type enumeration {
-          enum compactflash;
-          enum ssd;
-          enum hdd;
-          enum usb;
-        }
-      }
-      uses partition-state-top;
-      uses disk-statistics-top;
+    }
+    uses partition-state-top;
+    uses disk-statistics-top;
   }
 
   grouping disk-top {
@@ -167,7 +167,7 @@ module srl_nokia-platform-disk {
     list disk {
       description
         "List of disks present in the system";
-      key name;
+      key "name";
       config false;
       uses disk-state-top;
     }

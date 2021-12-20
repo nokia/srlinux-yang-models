@@ -22,6 +22,10 @@ module srl_nokia-platform-lc {
   description
     "This module defines configuration and operational state data related to line cards.";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -36,7 +40,7 @@ module srl_nokia-platform-lc {
   }
 
   grouping fabric-state {
-    srl-ext:stream-mode sample=5;
+    srl-ext:stream-mode "sample=5";
     description
       "Grouping for linecard/forwarding-complex fabric availability and utilization state";
     leaf availability {
@@ -91,23 +95,26 @@ module srl_nokia-platform-lc {
         leaf name {
           type enumeration {
             enum 0;
+            enum 1 {
+              if-feature "srl-feat:platform-7250-ixr-e or srl-feat:platform-7210-sas24g";
+            }
           }
           description
             "The identifier of the forwarding complex";
         }
         container fabric {
-            srl-ext:first-released "20.6.1";
-            srl-ext:delivery-node-override true;
-            description
-              "Top-level container for fabric configuration and state";
-            if-feature "srl-feat:chassis";
-            uses fabric-state;
+          srl-ext:first-released "20.6.1";
+          srl-ext:delivery-node-override "true";
+          description
+            "Top-level container for fabric configuration and state";
+          if-feature "srl-feat:chassis";
+          uses fabric-state;
         }
         list pipeline {
-          if-feature srl-feat:tomahawk3;
+          if-feature "srl-feat:tomahawk3";
           description
             "List of pipelines that make up one forwarding complex.";
-          key index;
+          key "index";
           leaf index {
             type uint8 {
               range "0..7";

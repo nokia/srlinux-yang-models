@@ -9,6 +9,9 @@ module srl_nokia-ospf {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
   import srl_nokia-system {
     prefix srl_nokia-system;
   }
@@ -41,6 +44,10 @@ module srl_nokia-ospf {
 
   // Groupings
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -1036,7 +1043,7 @@ module srl_nokia-ospf {
       }
     } // area-range list
     uses srl_nokia-te:igp-area-level-tedb {
-      if-feature srl-feat:traffic-engineering;
+      if-feature srl-feat:traffic-engineering-ospf;
     }
   }
 
@@ -1435,10 +1442,10 @@ module srl_nokia-ospf {
     uses ospf-global-timers;
     uses ospf-global-trace-options;
     uses srl_nokia-te:igp-instance-te-advertisement {
-      if-feature srl-feat:traffic-engineering;
+      if-feature srl-feat:traffic-engineering-ospf;
     }
     uses srl_nokia-te:protocol-instance-tedb {
-      if-feature srl-feat:traffic-engineering;
+      if-feature srl-feat:traffic-engineering-ospf;
     }
   } //ospf-global-top
 
@@ -2010,7 +2017,11 @@ module srl_nokia-ospf {
         uses srl_nokia-ldp:ldp-sync-global-config;
 
         must './router-id != default or (../../../router-id != default and ../../../router-id != "0.0.0.0")' {
-          error-message "Must have router-id defined in network-instance or in ospf-instance andit can not be 0.0.0.0";
+          error-message "Must have router-id defined in network-instance or in ospf-instance and it can not be 0.0.0.0";
+        }
+        must "(./version = 'srl_nokia-ospf-types:ospf-v2') or (./traffic-engineering/advertisement = false())" {
+          srl_nokia-ext:if-feature srl-feat:traffic-engineering-ospf;
+          error-message "No traffic-engineering support for OSPFv3";
         }
 
         list area {

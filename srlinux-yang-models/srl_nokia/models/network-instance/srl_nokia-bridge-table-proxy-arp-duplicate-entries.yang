@@ -1,0 +1,75 @@
+module srl_nokia-bridge-table-proxy-arp-duplicate-entries {
+
+  yang-version "1.1";
+
+  // namespace
+  namespace "urn:srl_nokia/network-instance/bridge-table/proxy-arp/duplicate-entries";
+
+  prefix "srl_nokia-bridge-proxy-arp-duplicate-entries";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-bridge-table-proxy-arp-nd { prefix srl_nokia-bridge-table-proxy-arp-nd; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+
+  description
+    "This yang file gives a description of bridge table proxy arp duplicate entries.";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping bridge-table-proxy-arp-duplicate-entries-top {
+    container duplicate-entries {
+      config false;
+      list neighbor {
+        key "ipv4-address";
+        description
+          "List of duplicate proxy ARP entries.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "IPv4 address of the proxy ARP entry.";
+        }
+        leaf link-layer-address {
+          type srl_nokia-comm:mac-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The resolving MAC address of the proxy ARP entry.";
+        }
+        leaf detect-time {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time when the proxy ARP entry was declared duplicate.";
+        }
+        leaf hold-down-time-remaining {
+          type union {
+            type enumeration {
+              enum "indefinite" {
+                value 1;
+              }
+            }
+            type uint64;
+          }     
+          units "seconds";
+          srl_nokia-ext:show-importance "high";
+          description 
+            "Remaining hold down time for duplicate proxy entry.";
+        }  
+        leaf state {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-state;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The state of the proxy ARP entry";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:bridge-table/srl_nokia-bridge-table-proxy-arp-nd:proxy-arp" {
+    uses bridge-table-proxy-arp-duplicate-entries-top;
+  }
+}

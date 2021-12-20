@@ -14,10 +14,17 @@ module srl_nokia-interfaces-ip-dhcp-relay {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
 
   description
     "Model for managing DHCP relay and DHCPv6 relay on IP and IRB subinterfaces";
 
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -120,13 +127,24 @@ module srl_nokia-interfaces-ip-dhcp-relay {
         type srl_nokia-comm:ipv4-address;
         description
           "IPv4 address to be used as giaddr of the relayed packets towards DHCPv4 servers.
-            This address must be a local IPv4 address configured on sub-interface where DHCPv4 relay is enabled and must be used as gi-address";
+            This address can be any IPv4 address configured within the network-instance towards the DHCPv4 server";
       }
       leaf use-gi-addr-as-src-ip-addr {
         type boolean;
-        default false;
+        default "false";
         description
           "When this is set, the configured giaddress will be used as source ip address.";
+      }
+      leaf network-instance {
+        description
+          "network instance to relay dhcp packets to";
+        // if not configured then the default is to relay within the same network-instance
+        type leafref {
+          path "/srl-netinst:network-instance/srl-netinst:name";
+        }
+        must '(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:ip-vrf" or "srl-netinst:default")' {
+          error-message "dhcp relay is only supported in an existing network-instance of type 'ip-vrf' or 'default'";
+        }
       }
       container trace-options {
         description
@@ -229,7 +247,18 @@ module srl_nokia-interfaces-ip-dhcp-relay {
         type srl_nokia-comm:ipv6-address;
         description
           "Source IPv6 address of the relayed packets towards DHCPv6 servers
-            this address must be a local IPv6 address configured on sub-interface where DHCPv6 relay is enabled";
+            this address can be any IPv6 address configured within the network-instance towards the DHCPv6 server";
+      }
+      leaf network-instance {
+        description
+          "network instance to relay dhcp packets to";
+        // if not configured then the default is to relay within the same network-instance
+        type leafref {
+          path "/srl-netinst:network-instance/srl-netinst:name";
+        }
+        must '(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:ip-vrf" or "srl-netinst:default")' {
+          error-message "dhcp relay is only supported in an existing network-instance of type 'ip-vrf' or 'default'";
+        }
       }
       container trace-options {
         description
