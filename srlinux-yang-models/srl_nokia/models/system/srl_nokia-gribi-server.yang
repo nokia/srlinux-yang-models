@@ -103,8 +103,8 @@ module srl_nokia-gribi-server {
         type srl-comm:ip-address;
         description
           "List of IP addresses the gRIBI server will listen on within the network instance
-          
-          By default the gRIBI server will listen on all addresses in the network-instance.";
+
+           By default the gRIBI server will listen on all addresses in the network-instance.";
       }
       leaf port {
         type srl-comm:port-number;
@@ -141,7 +141,7 @@ module srl_nokia-gribi-server {
 
   grouping gribi-server-top {
     container gribi-server {
-      if-feature srl-feat:gribi;
+      if-feature "srl-feat:gribi";
       description
         "Configures the gRPC Routing Information Base Interface (gRIBI) service";
       presence "Configures the gRPC Routing Information Base Interface (gRIBI) service";
@@ -205,13 +205,15 @@ module srl_nokia-gribi-server {
         }
         leaf persistence-mode {
           type enumeration {
-            enum "preserve" {
-              description "Entries populated by the client will be persisted during a client disconnect, or control module switchover";
+            enum preserve {
+              description
+                "Entries populated by the client will be persisted during a client disconnect, or control module switchover";
             }
-            enum "delete" {
-              description "Entries populated by the client will be purged on the client disconnecting, or a control module switchover
-              
-              If no persistence mode is signaled, the default is to delete entries.";
+            enum delete {
+              description
+                "Entries populated by the client will be purged on the client disconnecting, or a control module switchover
+
+                 If no persistence mode is signaled, the default is to delete entries.";
             }
           }
           srl-ext:show-importance "high";
@@ -254,53 +256,48 @@ module srl_nokia-gribi-server {
 
   grouping gribi-netinst-protocol {
     container gribi {
-      if-feature srl-feat:gribi;
+      if-feature "srl-feat:gribi";
       presence "Configure the network instance to support gRIBI programming";
       must '(/srl-netinst:network-instance[srl-netinst:name = current()/../../srl-netinst:name]/srl-netinst:type = "srl-netinst:ip-vrf")';
       description
         "Container for gRIBI configuration and state.";
-
       leaf admin-state {
         type srl-comm:admin-state;
         description
           "Administratively enable or disable gRIBI.
 
-          When this is set to disable no gRIBI routes can be added to the network-instance and attempts to do so will result in failures signaled back to the gRIBI client";
+           When this is set to disable no gRIBI routes can be added to the network-instance and attempts to do so will result in failures signaled back to the gRIBI client";
         default "disable";
       }
-
       leaf default-metric {
         description
           "Set the route table metric to use for all gRIBI-created IPv4 and IPv6 routes";
         type uint32;
-        default 1;
+        default "1";
       }
-
       leaf default-preference {
         type uint8 {
           range "0..255";
         }
-        default 4;
+        default "4";
         description
           "Lower values indicate a higher degree of preference when deciding the route to use from different protocols.";
       }
-
       leaf max-ecmp-paths {
         type uint8 {
           range "1..128";
         }
-        default 64;
+        default "64";
         description
           "Specifies the maximum number of next-hops per next-hop-group";
       }
-
       leaf maximum-routes {
         type uint32;
-        default 0;
+        default "0";
         description
           "Specifies the maximum number of gRIBI routes (sum of IPv4 and IPv6 entries).
 
-          A value of 0 signifies no limit.";
+           A value of 0 signifies no limit.";
       }
     }
   }

@@ -1,13 +1,20 @@
 module srl_nokia-ip-route-tables {
   yang-version 1.1;
-
   namespace "urn:srl_nokia/ip-route-tables";
   prefix srl_nokia-ip-route-tables;
 
-  import srl_nokia-common { prefix srl_nokia-comm; }
-  import srl_nokia-extensions { prefix srl_nokia-ext; }
-  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
-  import srl_nokia-interfaces { prefix srl_nokia-if; }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
 
   description
     "A model describing the IP routing tables of a network instance.";
@@ -128,7 +135,8 @@ module srl_nokia-ip-route-tables {
       type leafref {
         path "../../../next-hop-group/index";
       }
-      description "The next-hop-group indirection object used by this route.";
+      description
+        "The next-hop-group indirection object used by this route.";
     }
     leaf resilient-hash {
       type boolean;
@@ -140,15 +148,15 @@ module srl_nokia-ip-route-tables {
         "Container for state related to the FIB programming of the route";
       leaf status {
         type enumeration {
-          enum "success" {
+          enum success {
             description
               "The route was downloaded to the linecards and all of them have sent an acknowledgement that covers the route.";
           }
-          enum "failed" {
+          enum failed {
             description
               "The route was not programmed into the FIB table of one or more linecards due to the FIB table being full.";
           }
-          enum "pending" {
+          enum pending {
             description
               "The route was downloaded to the linecards but some of them have not sent an acknowledgement yet.";
           }
@@ -201,7 +209,7 @@ module srl_nokia-ip-route-tables {
       description
         "Route summary information";
       list route-type {
-        key ip-route-type-name;
+        key "ip-route-type-name";
         leaf ip-route-type-name {
           type identityref {
             base srl_nokia-comm:ip-route-type;
@@ -263,7 +271,7 @@ module srl_nokia-ip-route-tables {
 
   grouping next-hops-top {
     list next-hop-group {
-      key index;
+      key "index";
       leaf index {
         type uint64;
         description
@@ -276,13 +284,12 @@ module srl_nokia-ip-route-tables {
         description
           "The backup next-hop-group for the current group. When all entries within the next-hop group become unusable, the backup next-hop group is used if specified.";
       }
-      container fib-programming {
-      }
+      container fib-programming;
       list next-hop {
-        key id;
+        key "id";
         leaf id {
           type uint16 {
-            range 0..1023;
+            range "0..1023";
           }
           description
             "A unique identifier of a next-hop member (system allocated).";
@@ -301,19 +308,18 @@ module srl_nokia-ip-route-tables {
         }
         leaf resolved {
           type enumeration {
-            enum "true";
-            enum "false";
-            enum "not-applicable";
+            enum true;
+            enum false;
+            enum not-applicable;
           }
           description
             "Set to true when the next-hop was resolved. This reads not-applicable for resolve=false next-hops.";
         }
-        container fib-programming {
-        }
+        container fib-programming;
       }
     }
     list next-hop {
-      key index;
+      key "index";
       leaf index {
         type uint64;
         description
@@ -332,8 +338,8 @@ module srl_nokia-ip-route-tables {
         srl_nokia-ext:show-importance "high";
         description
           "The next-hop IP address. Only populated when the next-hop type is indirect or tunnel or static-mpls.
-          
-          For a VXLAN tunnel this is the destination VTEP address.";
+
+           For a VXLAN tunnel this is the destination VTEP address.";
       }
       leaf subinterface {
         type leafref {
@@ -373,7 +379,7 @@ module srl_nokia-ip-route-tables {
             base srl_nokia-comm:tunnel-type;
           }
           description
-          "The type of the tunnel.";
+            "The type of the tunnel.";
         }
         leaf tunnel-owner {
           type string;
@@ -394,22 +400,23 @@ module srl_nokia-ip-route-tables {
           type uint32 {
             range "1..16777215";
           }
-          description 
+          description
             "VXLAN Network Identifier of the destination.";
         }
         leaf source-mac {
           type srl_nokia-comm:mac-address;
-          description 
+          description
             "VXLAN inner ethernet source mac-address.";
         }
         leaf destination-mac {
           type srl_nokia-comm:mac-address;
-          description 
+          description
             "VXLAN inner ethernet destination mac-address.";
         }
-      }     
+      }
     }
   }
+
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table" {
     uses ip-tables-top;
     uses next-hops-top;

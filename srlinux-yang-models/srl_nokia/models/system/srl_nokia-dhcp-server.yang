@@ -51,7 +51,7 @@ module srl_nokia-dhcp-server {
         "Container for tracing DHCP server operations instance";
       leaf-list trace {
         type enumeration {
-          enum "messages" {
+          enum messages {
             description
               "Capture all DHCP server messages sent and received";
           }
@@ -82,47 +82,50 @@ module srl_nokia-dhcp-server {
 
   grouping static-allocation-v4 {
     container static-allocation {
-       list host {
-         key mac;
-         description "host name for static ip allocations";
-         leaf mac {
-           type srl-comm:mac-address;
-         }
-         leaf ip-address {
-           type srl-comm:ipv4-prefix-with-host-bits;
-           must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
-              error-message "Not a valid IPv4 unicast address prefix";
-            }
-         }
-         uses dhcp-server-v4-options;
-       }
+      list host {
+        key "mac";
+        description
+          "host name for static ip allocations";
+        leaf mac {
+          type srl-comm:mac-address;
+        }
+        leaf ip-address {
+          type srl-comm:ipv4-prefix-with-host-bits;
+          must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
+            error-message "Not a valid IPv4 unicast address prefix";
+          }
+        }
+        uses dhcp-server-v4-options;
+      }
     }
-   }   
+  }
 
   grouping static-allocation-v6 {
     container static-allocation {
-       list host {
-         key mac;
-         description "host name for static ip allocations";
-         leaf mac {
-           type srl-comm:mac-address;
-         }
-         leaf ip-address {
-           type srl-comm:ipv6-prefix-with-host-bits;
-           must "not(.='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
+      list host {
+        key "mac";
+        description
+          "host name for static ip allocations";
+        leaf mac {
+          type srl-comm:mac-address;
+        }
+        leaf ip-address {
+          type srl-comm:ipv6-prefix-with-host-bits;
+          must "not(.='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
             error-message "Not a global unicast IPv6 address prefix";
           }
-         }
-         uses dhcp-server-v6-options;
-       }
+        }
+        uses dhcp-server-v6-options;
+      }
     }
-   }
+  }
 
   grouping dhcp-server-v4-options {
     container options {
       leaf bootfile-name {
         type string {
-          length "1..128"; }
+          length "1..128";
+        }
         description
           "The URL to the provisioning script the client will use during booting";
       }
@@ -130,7 +133,7 @@ module srl_nokia-dhcp-server {
         type srl-comm:ipv4-address;
         max-elements 4;
         description
-           "An Ordered List of DNS servers to return to the dhcp client";
+          "An Ordered List of DNS servers to return to the dhcp client";
       }
       leaf domain-name {
         type srl-comm:domain-name;
@@ -140,21 +143,21 @@ module srl_nokia-dhcp-server {
       leaf hostname {
         type string {
           length "1..63";
-          pattern "(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9]))*([A-Za-z]|[A-Za-z][A-Za-z0-9._-]*[A-Za-z0-9])";
+          pattern '(([a-zA-Z]|[a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9]))*([A-Za-z]|[A-Za-z][A-Za-z0-9._-]*[A-Za-z0-9])';
         }
         description
-           "Host Name option of the dhcp client";
+          "Host Name option of the dhcp client";
       }
       leaf-list ntp-server {
         type srl-comm:ipv4-address;
         max-elements 4;
         description
-           "List of NTP Servers to return to the dhcp client";
+          "List of NTP Servers to return to the dhcp client";
       }
       leaf router {
         type srl-comm:ipv4-address;
         description
-           "IPv4 address of the gateway for the dhcp client";
+          "IPv4 address of the gateway for the dhcp client";
       }
       leaf server-id {
         type srl-comm:ipv4-address;
@@ -171,13 +174,13 @@ module srl_nokia-dhcp-server {
         type srl-comm:ipv6-address;
         max-elements 4;
         description
-           "An Ordered List of DNS servers to return to the dhcp client";
+          "An Ordered List of DNS servers to return to the dhcp client";
       }
     }
-  } 
+  }
 
   grouping dhcp-server-v4 {
-    container dhcpv4 {  
+    container dhcpv4 {
       uses dhcp-common;
       uses dhcp-server-v4-options;
       uses static-allocation-v4;
@@ -207,8 +210,8 @@ module srl_nokia-dhcp-server {
         description
           "Reference to a configured network instance";
       }
-    uses dhcp-server-v4;
-    uses dhcp-server-v6;
+      uses dhcp-server-v4;
+      uses dhcp-server-v6;
     }
   }
 

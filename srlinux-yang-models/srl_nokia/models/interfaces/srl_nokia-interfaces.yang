@@ -3,8 +3,6 @@ module srl_nokia-interfaces {
   namespace "urn:srl_nokia/interfaces";
   prefix srl_nokia-if;
 
-  // import some basic types
-
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
@@ -76,8 +74,6 @@ module srl_nokia-interfaces {
       "indicates subinterface is used in a mirroring destination SPAN context";
   }
 
-  // typedef statements
-
   typedef port-oper-down-reason {
     type enumeration {
       enum port-admin-disabled;
@@ -110,7 +106,7 @@ module srl_nokia-interfaces {
     type enumeration {
       enum admin-disabled;
       enum port-down;
-      enum ip-mtu-resource-exceeded; // currently can't happen for l2-mtu 
+      enum ip-mtu-resource-exceeded;
       enum mpls-mtu-resource-exceeded;
       enum ip-mtu-too-large;
       enum mpls-mtu-too-large;
@@ -149,8 +145,6 @@ module srl_nokia-interfaces {
     description
       "User-defined identifier for an interface, generally used to name a interface reference. The id can be arbitrary but a useful convention is to use a combination of base interface name and subinterface index.";
   }
-
-  // grouping statements
 
   grouping interface-common-config {
     description
@@ -204,16 +198,13 @@ module srl_nokia-interfaces {
             if-feature "srl_nokia-feat:platform-7220-d3";
           }
           enum 25G;
-          // enum 50G;
-          // enum 100G;
         }
         mandatory true;
       }
-    } //breakout-mode
+    }
     leaf mtu {
       type uint16 {
         range "1500..9500";
-        // srl_nokia-ext:output-flavor with-units;
       }
       units "bytes";
       description
@@ -235,7 +226,6 @@ module srl_nokia-interfaces {
       type boolean;
       description
         "When loopback-mode is set to true the port loops back packets that come in via the port";
-      // TO-DO: must not be a mgmt0, mgmt0-standby, loN, or system0 interface
       must '(. = false())' {
         error-message "loopback-mode not supported";
       }
@@ -551,7 +541,6 @@ module srl_nokia-interfaces {
         type identityref {
           base si-type;
         }
-        // default "routed";
         description
           "The value of this leaf indicates the context in which the
            ethernet subinterface will be used in";
@@ -581,7 +570,6 @@ module srl_nokia-interfaces {
         }
         description
           "The operational state of the subinterface";
-        // Corresponds to ifOperStatus from the IFMIB.
       }
       leaf oper-down-reason {
         config false;
@@ -595,7 +583,6 @@ module srl_nokia-interfaces {
         type srl_nokia-comm:date-and-time-delta;
         description
           "The date and time of the most recent change to the subinterface state";
-        // Corresponds to ifLastChange from the IF-MIB.
       }
       uses srl_nokia-if-ip:ipv4-top;
       uses srl_nokia-if-ip:ipv6-top;
@@ -663,7 +650,6 @@ module srl_nokia-interfaces {
         type srl_nokia-comm:date-and-time-delta;
         description
           "The date and time of the most recent change to the interface state";
-        // Corresponds to ifLastChange from the IF-MIB.
       }
       container statistics {
         srl_nokia-ext:delivery-node-override "true";
@@ -702,11 +688,6 @@ module srl_nokia-interfaces {
           description
             "Corresponds to ifInErrors from the IF-MIB.";
         }
-        /* leaf in-unknown-protos {
-          type srl_nokia-comm:zero-based-counter64;
-          description
-            "Corresponds to ifInUnknownProtos from the IF-MIB.";
-        } */
         leaf in-fcs-error-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
@@ -835,7 +816,6 @@ module srl_nokia-interfaces {
                 "Reed Solomon FEC algorithm for 25GbE interfaces.";
             }
           }
-          // default "none";
           description
             "The forward error correction algorithm to use on the optical channel. The same FEC algorithm must be used at both ends of a link.
 
@@ -890,7 +870,6 @@ module srl_nokia-interfaces {
           }
           description
             "Specifies the transceiver form factor associated with the port.";
-          // (NOTE - may not be complete)
         }
         leaf ethernet-pmd {
           config false;
@@ -1156,9 +1135,6 @@ module srl_nokia-interfaces {
           type leafref {
             path "/srl_nokia-if:interface/srl_nokia-if:name";
           }
-          // NOTE: the reason why must "../../field" can't be used when field is type bool, is because 0 or false, even
-          // when explicitly configured, will satisfy the condition. Instead an explicit test of true/false or 0 is
-          // needed which will only pass if the field is unset.
           must 'not(../../qos)' {
             error-message "qos configuration is not supported on LAG member ports";
           }
@@ -1193,7 +1169,6 @@ module srl_nokia-interfaces {
         leaf forwarding-viable {
           if-feature "srl_nokia-feat:lag-forwarding-viable";
           type boolean;
-          // default true;
           must '(../aggregate-id)' {
             error-message "aggregate-id must be configured";
           }
@@ -1239,7 +1214,6 @@ module srl_nokia-interfaces {
         container flow-control {
           leaf receive {
             type boolean;
-            // default false;
             must "starts-with(../../../srl_nokia-if:name, 'mgmt') or starts-with(../../../srl_nokia-if:name, 'ethernet') or starts-with(../../../srl_nokia-if:name, 'lag')" {
               error-message "flow-control receive not supported on this interface";
             }
@@ -1254,7 +1228,6 @@ module srl_nokia-interfaces {
           leaf transmit {
             if-feature "srl_nokia-feat:tx-flow-control";
             type boolean;
-            // default false;
             must "starts-with(../../../srl_nokia-if:name, 'ethernet') or starts-with(../../../srl_nokia-if:name, 'lag')" {
               error-message "flow-control transmit not supported on this interface";
             }
@@ -1270,7 +1243,6 @@ module srl_nokia-interfaces {
         leaf lacp-port-priority {
           if-feature "srl_nokia-feat:lacp-fallback";
           type uint16;
-          // default 32768;
           must "starts-with(../../srl_nokia-if:name, 'ethernet')" {
             error-message "lacp-port-priority not supported on this interface";
           }
@@ -1283,8 +1255,6 @@ module srl_nokia-interfaces {
         leaf port-speed {
           srl_nokia-ext:show-importance "high";
           type enumeration {
-            // speed 100M is supported by all SAS platforms for their OTC ports
-            // speed 1G is common to all platforms as the mgmt port supports it
             enum 10M {
               if-feature "srl_nokia-feat:platform-7220-d1";
             }
@@ -1577,21 +1547,16 @@ module srl_nokia-interfaces {
             "This struct containing all attributes for SyncE in OTC/line/client ports.";
           leaf admin-state {
             type srl_nokia-comm:admin-state;
-            default "disable";        
+            default "disable";
             description
               "Configure the administrative state for SyncE in OTC/line/client ports.
                When enabled, the assoicated transmit and receiver ports are set to
-               synchronous mode and ESMC/SSM processing is enabled. 
+               synchronous mode and ESMC/SSM processing is enabled.
                Otherwise, all syncE functions are disabled in the port.";
-          } 
+          }
         }
         container statistics {
           config false;
-          /* leaf in-mac-control-frames {
-            type srl_nokia-comm:zero-based-counter64;
-            description
-              "Number of MAC layer control frames received on the interface.";
-          } */
           leaf in-mac-pause-frames {
             type srl_nokia-comm:zero-based-counter64;
             description
@@ -1617,11 +1582,6 @@ module srl_nokia-interfaces {
             description
               "Number of receive error events due to FCS/CRC check failure.";
           }
-          /* leaf out-mac-control-frames {
-            type srl_nokia-comm:zero-based-counter64;
-            description
-              "Number of MAC layer control frames sent on the interface.";
-          } */
           leaf out-mac-pause-frames {
             type srl_nokia-comm:zero-based-counter64;
             description

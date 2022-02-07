@@ -20,9 +20,6 @@ module srl_nokia-sync-types {
     description
       "Specifies the PTP profile mode for the PTP clock.";
     type enumeration {
-  /*    enum ieee1588 {
-        value 0;
-      } */
       enum itug8275dot1 {
         value 1;
       }
@@ -34,36 +31,12 @@ module srl_nokia-sync-types {
       enum ptpdisabled {
         value 0;
       }
-  /*    enum ocmaster {
-        value 1;
-        description
-          "Ordinary Clock Master";
-      }
-      enum ocslave {
-        value 2;
-        description
-          "Ordinary Clock Slave";
-      }
-      enum bc {
-        value 3;
-        description
-          "Boundary Clock";
-      } */
       enum ttsc {
         value 4;
       }
       enum tbc {
         value 5;
       }
-  /*    enum carriertc {
-        value 6;
-      }
-      enum combinedtc {
-        value 7;
-      }
-      enum clienttc {
-        value 8;
-      } */
     }
   }
 
@@ -110,21 +83,8 @@ module srl_nokia-sync-types {
       "Time interval, expressed in nanoseconds, multiplied by 2^16.";
   }
 
-/*
-  typedef clock-aid-type {
-     type string {
-      length "6..8";
-      pattern 'clock(1?[0-9]{1,2}|2[0-4][0-9]|25[0-5])';
-    }
-  } */
-
   typedef time-reference-type {
     type enumeration {
-  /*    enum extPps {
-        value 0;
-        description
-          "the PTP clock uses the local free-running time but align to the external 1pps signal";
-      } */
       enum extTod {
         value 1;
         description
@@ -135,12 +95,6 @@ module srl_nokia-sync-types {
         description
           "the ptp clock aligns the time to the grandmaster";
       }
-  /*    enum extTod-ptp {
-        value 3;
-        description
-          "the ptp clock aligns the time the external ToD signal or to the grandmaster
-           depending on the status of the ToD signal";
-      }*/
     }
   }
 
@@ -170,95 +124,86 @@ module srl_nokia-sync-types {
     reference
       "IEEE Std 1588-2019: 5.3.4, 7.5.2.2";
   }
+
   typedef time-seconds-type {
     type binary {
       length "48";
     }
-    units seconds;
+    units "seconds";
     description
       "Identifies seconds number of the time";
-  // The format is as below: "S.N", where "S" stands for the second part of time (48 octets) and "N" stands for the nanosecond part of time (32 octets).
   }
+
   typedef time-nanoseconds-type {
     type binary {
       length "32";
     }
-    units nanaseconds;
+    units "nanaseconds";
     description
       "Identifies nanoseconds number of the time";
-  // The format is as below: "S.N", where "S" stands for the second part of time (48 octets) and "N" stands for the nanosecond part of time (32 octets).
   }
+
   typedef delay-mechanism-enumeration {
     type enumeration {
       enum e2e {
         value 1;
         description
-            "The port uses the delay request-response mechanism.";
+          "The port uses the delay request-response mechanism.";
       }
-  /*  peer-to-peer not supported  
-      enum p2p {
-        value 2;
-        description
-            "The port uses the peer delay mechanism.";
-      }
-      enum disabled {
-        value 254;
-        description
-            "The port does not implement any delay mechanism."; 
-      } */
     }
     description
-        "The propagation-delay measuring option used by the
-         port.  Values for this enumeration are specified
-         by the IEEE Std 1588 standard exclusively.";
+      "The propagation-delay measuring option used by the
+       port.  Values for this enumeration are specified
+       by the IEEE Std 1588 standard exclusively.";
     reference
-        "IEEE Std 1588-2008: 8.2.5.4.4";
+      "IEEE Std 1588-2008: 8.2.5.4.4";
   }
+
   typedef port-state-enumeration {
     type enumeration {
       enum initializing {
         value 1;
         description
-            "The port is initializing its data sets, hardware, and
-             communication facilities.";
+          "The port is initializing its data sets, hardware, and
+           communication facilities.";
       }
       enum faulty {
         value 2;
         description
-            "The port is in the fault state.";
+          "The port is in the fault state.";
       }
       enum disabled {
         value 3;
         description
-            "The port is disabled and is not communicating PTP
-             messages (other than possibly PTP management
-             messages).";
+          "The port is disabled and is not communicating PTP
+           messages (other than possibly PTP management
+           messages).";
       }
       enum listening {
         value 4;
         description
-            "The port is listening for an Announce message.";
+          "The port is listening for an Announce message.";
       }
       enum pre-master {
         value 5;
         description
-            "The port is in the pre-master state.";
+          "The port is in the pre-master state.";
       }
       enum master {
         value 6;
         description
-            "The port is behaving as a master port.";
+          "The port is behaving as a master port.";
       }
       enum passive {
         value 7;
         description
-            "The port is in the passive state.";
+          "The port is in the passive state.";
       }
       enum uncalibrated {
         value 8;
         description
-            "A master port has been selected, but the port is still
-             in the uncalibrated state.";
+          "A master port has been selected, but the port is still
+           in the uncalibrated state.";
       }
       enum slave {
         value 9;
@@ -267,28 +212,29 @@ module srl_nokia-sync-types {
       }
     }
     description
-        "The current state of the protocol engine associated
-         with the port.  Values for this enumeration are specified
-         by the IEEE Std 1588 standard exclusively.";
+      "The current state of the protocol engine associated
+       with the port.  Values for this enumeration are specified
+       by the IEEE Std 1588 standard exclusively.";
     reference
-        "IEEE Std 1588-2008: 8.2.5.3.1, 9.2.5";
+      "IEEE Std 1588-2008: 8.2.5.3.1, 9.2.5";
   }
+
   typedef interface-ptp {
     type srl_nokia-comm:interface-name {
-      length "3..20";  // based on the pattern below
+      length "3..20";
       pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
-             + 'otc-1/([1-8])|' 
-             + 'ethernet-1/x([1-4]))';
-//            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))';
+            + 'otc-1/([1-8])|'
+            + 'ethernet-1/x([1-4]))';
     }
   }
+
   typedef interface-freq {
     type srl_nokia-comm:interface-name {
-      length "3..20";  // based on the pattern below
+      length "3..20";
       pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
-             + 'otc-1/([1-8])|' 
-             + 'BITS|'
-             + 'ethernet-1/x([1-4]))';
+            + 'otc-1/([1-8])|'
+            + 'BITS|'
+            + 'ethernet-1/x([1-4]))';
     }
   }
 
@@ -296,28 +242,28 @@ module srl_nokia-sync-types {
     type enumeration {
       enum auto {
         value 255;
-      description
-        "No overide. Automatic use of recovered QL for current reference.";
+        description
+          "No overide. Automatic use of recovered QL for current reference.";
       }
       enum prc {
         value 2;
-      description
-      "QL of PRC.";
+        description
+          "QL of PRC.";
       }
       enum ssu-a {
         value 4;
-      description
-        "QL of SSU-A.";
+        description
+          "QL of SSU-A.";
       }
       enum ssu-b {
         value 8;
-      description
-        "QL of SSU-B.";
+        description
+          "QL of SSU-B.";
       }
       enum sec {
         value 11;
-      description
-        "QL of SEC.";
+        description
+          "QL of SEC.";
       }
       enum prs {
         value 1;
@@ -327,13 +273,13 @@ module srl_nokia-sync-types {
       enum stu {
         value 0;
         description
-        "QL of STU.";
+          "QL of STU.";
       }
       enum st2 {
         value 7;
         description
           "QL of Stratum 2.";
-      }         
+      }
       enum tnc {
         value 5;
         description
@@ -351,42 +297,43 @@ module srl_nokia-sync-types {
       }
     }
   }
-    typedef ql-rx-enumeration {
+
+  typedef ql-rx-enumeration {
     type enumeration {
       enum not-applicable {
         value 253;
-      description
-        "Not applicable QL.";
+        description
+          "Not applicable QL.";
       }
       enum unknown {
         value 254;
-      description
-      "QL of unknown.";
+        description
+          "QL of unknown.";
       }
       enum prc {
         value 2;
-      description
-      "QL of PRC.";
+        description
+          "QL of PRC.";
       }
       enum ssu-a {
         value 4;
-      description
-        "QL of SSU-A.";
+        description
+          "QL of SSU-A.";
       }
       enum ssu-b {
         value 8;
-      description
-        "QL of SSU-B.";
+        description
+          "QL of SSU-B.";
       }
       enum sec {
         value 11;
-      description
-        "QL of SEC.";
+        description
+          "QL of SEC.";
       }
       enum dnu {
         value 15;
-      description
-        "QL of Do Not Use.";
+        description
+          "QL of Do Not Use.";
       }
       enum prs {
         value 1;
@@ -396,13 +343,13 @@ module srl_nokia-sync-types {
       enum stu {
         value 0;
         description
-        "QL of STU.";
+          "QL of STU.";
       }
       enum st2 {
         value 7;
         description
           "QL of Stratum 2.";
-      }         
+      }
       enum tnc {
         value 5;
         description
@@ -435,51 +382,53 @@ module srl_nokia-sync-types {
       }
     }
   }
+
   typedef ql-status-enumeration {
     type enumeration {
       enum valid {
         value 0;
-      description
-        "QL is valid.";
+        description
+          "QL is valid.";
       }
       enum invalid {
         value 2;
-      description
-      "QL is invalid.";
+        description
+          "QL is invalid.";
       }
       enum not-supported {
         value 3;
-      description
-        "QL is not supported.";
+        description
+          "QL is not supported.";
       }
       enum not-applicable {
         value 4;
-      description
-        "QL is not applicable.";
+        description
+          "QL is not applicable.";
       }
     }
   }
+
   typedef ref-status-enumeration {
     type enumeration {
       enum not-assigned {
         value 0;
-      description
-        "Reference has not been assigned.";
+        description
+          "Reference has not been assigned.";
       }
       enum normal {
         value 1;
-      description
-      "Reference is in normal state.";
+        description
+          "Reference is in normal state.";
       }
       enum signal-fail {
         value 2;
-      description
-        "Reference is experiencing signal failure.";
+        description
+          "Reference is experiencing signal failure.";
       }
       enum wtr {
         value 3;
-      description
-        "Reference is recovered and the WTR timer is running.";
+        description
+          "Reference is recovered and the WTR timer is running.";
       }
     }
   }
@@ -488,23 +437,23 @@ module srl_nokia-sync-types {
     type enumeration {
       enum no-request {
         value 0;
-      description
-        "No request (no switch command is active).";
+        description
+          "No request (no switch command is active).";
       }
       enum force {
         value 1;
-      description
-        "Currently, forced switch to line timing reference or internal clock.";
+        description
+          "Currently, forced switch to line timing reference or internal clock.";
       }
       enum manual {
         value 2;
-      description
-        "Currently, manual switch to line timing reference.";
+        description
+          "Currently, manual switch to line timing reference.";
       }
       enum auto {
         value 3;
-      description
-        "Currently, automatic system synchronization switch of line timing reference is taking place.";
+        description
+          "Currently, automatic system synchronization switch of line timing reference is taking place.";
       }
     }
   }
@@ -513,57 +462,58 @@ module srl_nokia-sync-types {
     type enumeration {
       enum locked {
         value 0;
-      description
-        "Frequency clock is locked to a line timing reference signal.";
+        description
+          "Frequency clock is locked to a line timing reference signal.";
       }
       enum holdover {
         value 1;
-      description
-        "Auto holdover mode for the frequency clock.";
+        description
+          "Auto holdover mode for the frequency clock.";
       }
       enum free-run {
         value 2;
-      description
-        "Auto free-running mode for the frequency clock.";
+        description
+          "Auto free-running mode for the frequency clock.";
       }
       enum forced-free-run {
         value 3;
-      description
-        "Forced free-running mode for the frequency clock.";
+        description
+          "Forced free-running mode for the frequency clock.";
       }
     }
   }
+
   typedef bits-signal-type-enumeration {
     type enumeration {
       enum 2mhz {
         value 0;
-      description
-        "2 MHz reference signal.";
+        description
+          "2 MHz reference signal.";
       }
       enum unframed-e1 {
         value 1;
-      description
-        "E1 unframed.";
+        description
+          "E1 unframed.";
       }
       enum framed-e1 {
         value 2;
-      description
-        "E1 framed.";
+        description
+          "E1 framed.";
       }
       enum framed-e1-ssm {
         value 3;
-      description
-        "E1 framed with SSM.";
+        description
+          "E1 framed with SSM.";
       }
       enum ds1-sf {
         value 4;
-      description
-        "DS1 Extended Superframe.";
+        description
+          "DS1 Extended Superframe.";
       }
       enum ds1-esf {
         value 5;
-      description
-        "DS1 Extended Superframe.";
+        description
+          "DS1 Extended Superframe.";
       }
     }
   }
@@ -572,15 +522,14 @@ module srl_nokia-sync-types {
     type enumeration {
       enum ansi {
         value 0;
-      description
-        "ANSI / SONET mode for SyncE.";
+        description
+          "ANSI / SONET mode for SyncE.";
       }
       enum etsi {
         value 1;
-      description
-        "ETSI / SDH mode for SyncE.";
+        description
+          "ETSI / SDH mode for SyncE.";
       }
-
     }
   }
 }

@@ -42,8 +42,6 @@ module srl_nokia-ospf {
   description
     "This yang file models configuration and state of the OSPF protocol";
 
-  // Groupings
-
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -66,10 +64,7 @@ module srl_nokia-ospf {
       description
         "Router logical interface name.";
       type leafref {
-        // ref to names of net-instance interfaces
         path "../../../../../../srl_nokia-netinst:interface/srl_nokia-netinst:name";
-        // path:
-        // net-inst/protocols/ospf/instance/area/interface/interface-name
       }
     }
   }
@@ -275,55 +270,55 @@ module srl_nokia-ospf {
       presence "Enable the tracing of OSPF LSDB Events";
       description
         "Trace OSPF LSDB events
-        Only one type can be enabled at a time";
-      leaf type{
+         Only one type can be enabled at a time";
+      leaf type {
         type enumeration {
-          enum "all" {
+          enum all {
             value 0;
             description
               "Enable tracing of all LSDB events";
           }
-          enum "router" {
+          enum router {
             value 1;
             description
               "Enable tracing of LSDB router LSA events";
           }
-          enum "network" {
+          enum network {
             value 2;
             description
               "Enable tracing of OSPF LSDB network LSA events";
           }
-          enum "summary" {
+          enum summary {
             value 3;
             description
               "Enable tracing of OSPF LSDB summary LSA events";
           }
-          enum "nssa" {
+          enum nssa {
             value 4;
             description
               "Enable tracing of OSPF LSDB NSSA LSA events";
           }
-          enum "external" {
+          enum external {
             value 5;
             description
               "Enable tracing of OSPF LSDB events for External LSA";
           }
-          enum "opaque" {
+          enum opaque {
             value 6;
             description
               "Enable tracing of OSPF LSDB events involving opaque LSA";
           }
-          enum "inter-area-prefix" {
+          enum inter-area-prefix {
             value 7;
             description
               "Enable tracing of OSPF LSDB events for inter-area prefixes";
           }
-          enum "inter-area-router" {
+          enum inter-area-router {
             value 8;
             description
               "Enable tracing of OSPF LSDB events for inter-area routers";
           }
-          enum "intra-area-prefix" {
+          enum intra-area-prefix {
             value 9;
             description
               "Enable tracing of OSPF LSDB events for intra-area prefixes";
@@ -339,73 +334,73 @@ module srl_nokia-ospf {
       leaf link-state-id {
         type srl_nokia-comm:ipv4-address;
       }
-    } // end lsdb
+    }
   }
 
   grouping ospf-packet-tracing-config {
-    container packet{
+    container packet {
       presence "Enable the tracing of OSPF packets";
       description
         "Trace OSPF Packet types
-        Only one type can be enabled at a time";
-      leaf type{
+         Only one type can be enabled at a time";
+      leaf type {
         type enumeration {
-          enum "all" {
+          enum all {
             value 0;
             description
               "Enable tracing of all OSPF packets";
           }
-          enum "hello" {
+          enum hello {
             value 1;
             description
               "Enable tracing of OSPF Hello packets";
           }
-          enum "dbdescr" {
+          enum dbdescr {
             value 2;
             description
               "Enable tracing of OSPF database Descriptor packets";
           }
-          enum "ls-request" {
+          enum ls-request {
             value 3;
             description
               "Enable tracing of OSPF link-state request packets";
           }
-          enum "ls-update" {
+          enum ls-update {
             value 4;
             description
               "Enable tracing of OSPF link-state update packets";
           }
-          enum "ls-ack" {
+          enum ls-ack {
             value 5;
             description
               "Enable tracing of OSPF link-state Ack packets";
           }
         }
-      }  // end type
+      }
       leaf modifier {
         type enumeration {
-          enum "ingress" {
+          enum ingress {
             value 0;
             description
               "To enable tracing for the packets which are received.";
           }
-          enum "egress" {
+          enum egress {
             value 1;
             description
               "To enable tracing for the sent packets.";
           }
-          enum "in-and-egress" {
+          enum in-and-egress {
             value 2;
             description
               "To enable tracing for both sent and received packets";
           }
-          enum "drop" {
+          enum drop {
             value 3;
             description
               "To enable tracing for the sent packets.";
           }
         }
-      } // end modifier
+      }
       leaf detail {
         type empty;
         description
@@ -453,13 +448,12 @@ module srl_nokia-ospf {
       container trace {
         description
           "Tracing parameter flags";
-
         uses ospf-adjacencies-tracing-config;
         uses ospf-interfaces-tracing-config;
         uses ospf-packet-tracing-config;
       }
     }
-  } // grouping ospf-interface-trace-options
+  }
 
   grouping ospf-interface-config {
     leaf advertise-router-capability {
@@ -480,12 +474,11 @@ module srl_nokia-ospf {
       description
         "Advertise point-to-point interfaces as subnet routes";
       must "((../../../version = 'srl_nokia-ospf-types:ospf-v2') or (. = true()))" {
-          error-message "For OSPFv3 the advertise-subnet must be true";
+        error-message "For OSPFv3 the advertise-subnet must be true";
       }
     }
     leaf interface-type {
       type srl_nokia-ospf-types:interface-type;
-      //sros-ext:immutable;
       description
         "Interface type to broadcast or point-to-point";
     }
@@ -509,8 +502,8 @@ module srl_nokia-ospf {
          If the MTU defined here exceeds the actual IP-MTU of the interface, then the
          IP-MTU of the interface is used.";
       must "((../../../version = 'srl_nokia-ospf-types:ospf-v2') or (current() >= 1280))" {
-          error-message "For OSPFv3 the MTU must be at least 1280";
-        }
+        error-message "For OSPFv3 the MTU must be at least 1280";
+      }
     }
     leaf passive {
       description
@@ -590,9 +583,8 @@ module srl_nokia-ospf {
       }
     }
     uses ospf-interface-trace-options;
-
     uses ospf-neighbor-state;
-  } // ospf-interface-config
+  }
 
   grouping ospf-interface-state {
     leaf type {
@@ -671,7 +663,7 @@ module srl_nokia-ospf {
         "the value of link-lsa-count indicates the total number of link-scope link-state advertisements in this link's link-state database.";
       type yang:gauge32;
     }
-  } // ospf-interface-state
+  }
 
   grouping ospf-interface-statistics {
     leaf events {
@@ -686,26 +678,26 @@ module srl_nokia-ospf {
         "the value of last-event-time indicates the value of sys-up-time when an event was last associated with this OSPF interface.";
       type srl_nokia-comm:date-and-time;
     }
-  } // ospf-interface-statistics
+  }
 
   grouping ospf-interface-lsa-totals {
     container lsa-totals {
       config false;
       description
-          "The number of LSAs of each type in this interface's database";
+        "The number of LSAs of each type in this interface's database";
       leaf link-opaque-lsa {
         description
-        "The number of link opaque LSAs in this interface's database.";
+          "The number of link opaque LSAs in this interface's database.";
         type yang:gauge32;
       }
       leaf link-lsa {
         description
-        "The number of link LSAs in this interface's database.";
+          "The number of link LSAs in this interface's database.";
         type yang:gauge32;
       }
       leaf e-link-lsa {
         description
-        "The number of extended link LSAs in this interface's database.";
+          "The number of extended link LSAs in this interface's database.";
         type yang:gauge32;
       }
       leaf router-info-lsa {
@@ -714,7 +706,7 @@ module srl_nokia-ospf {
         type yang:gauge32;
       }
     }
-  } // ospf-interface-lsa-totals
+  }
 
   grouping ospf-interface-packet-counts {
     container packets {
@@ -895,7 +887,7 @@ module srl_nokia-ospf {
         type yang:counter32;
       }
     }
-  } // ospf-interface-packet-counts
+  }
 
   grouping ospf-area-structure {
     leaf advertise-router-capability {
@@ -908,15 +900,15 @@ module srl_nokia-ospf {
       description
         "Enables the creation of a blackhole for generated aggregates";
       type boolean;
-      default true;
+      default "true";
     }
     leaf export-policy {
       must "(../area-id != '0.0.0.0')" {
         error-message "Export-policy is not allowed in area 0.0.0.0";
       }
       description
-        "Apply an export policy when summarizing from this area to other areas.. 
-         Summary LSAs for prefixes matching the policy will still be in the linkstate 
+        "Apply an export policy when summarizing from this area to other areas..
+         Summary LSAs for prefixes matching the policy will still be in the linkstate
          database but are not flooded.";
       type leafref {
         path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
@@ -936,14 +928,14 @@ module srl_nokia-ospf {
         type uint16 {
           range "1..max";
         }
-        default 1;
+        default "1";
       }
       leaf summaries {
         description
           "Enables sending summary (type 3) advertisements into a stub area or Not
            So Stubby Area (NSSA) on an Area Border Router (ABR)";
         type boolean;
-        default true;
+        default "true";
       }
     }
     container nssa {
@@ -998,7 +990,7 @@ module srl_nokia-ospf {
           description
             "Advertise summarized range of addresses to other areas";
         }
-      } // area-range list
+      }
       container originate-default-route {
         presence "Enable/disable generation of default route and its LSA type (3 or 7) into the NSSA";
         description
@@ -1015,8 +1007,8 @@ module srl_nokia-ospf {
           description
             "Default route to remove if there is no adjacency";
         }
-      } // container originate-default-route  
-    } // container nssa
+      }
+    }
     list area-range {
       key "ip-prefix-mask";
       description
@@ -1041,9 +1033,9 @@ module srl_nokia-ospf {
         description
           "Advertise summarized range of addresses to other areas";
       }
-    } // area-range list
+    }
     uses srl_nokia-te:igp-area-level-tedb {
-      if-feature srl-feat:traffic-engineering-ospf;
+      if-feature "srl-feat:traffic-engineering-ospf";
     }
   }
 
@@ -1113,7 +1105,7 @@ module srl_nokia-ospf {
           description
             "Hold time between the first and second LSA generation";
         }
-      } // container lsa-generate}
+      }
       container spf-wait {
         description
           "Enter the spf-wait context";
@@ -1144,14 +1136,13 @@ module srl_nokia-ospf {
           description
             "Hold time between the first and second SPF calculation";
         }
-      } // container spf-wait
-    } // container timers
+      }
+    }
   }
 
   grouping ospf-spf-tracing-config {
     container spf {
-      presence
-        "Enable tracing all SPF events.";
+      presence "Enable tracing all SPF events.";
       leaf dest-address {
         type srl_nokia-comm:ip-address;
       }
@@ -1160,8 +1151,7 @@ module srl_nokia-ospf {
 
   grouping ospf-routes-tracing-config {
     container routes {
-      presence
-        "Enable tracing all route events.";
+      presence "Enable tracing all route events.";
       leaf dest-address {
         type srl_nokia-comm:ip-address;
       }
@@ -1185,7 +1175,7 @@ module srl_nokia-ospf {
         uses ospf-lsdb-tracing-config;
       }
     }
-  } // grouping ospf-global-trace-options
+  }
 
   grouping ospf-global-top {
     description
@@ -1221,8 +1211,8 @@ module srl_nokia-ospf {
       }
     }
     leaf instance-id {
-      description 
-        "The OSPF multi instance identity as defined in RFC6549 or RFC5838. 
+      description
+        "The OSPF multi instance identity as defined in RFC6549 or RFC5838.
          Supported values are:
            For OSPFv2 it is between 0 and 31, default is 0.
            For OSPFv3 address-family ipv6-unicast it is between 0 and 31,
@@ -1230,7 +1220,7 @@ module srl_nokia-ospf {
            For OSPFv3 address-family ipv4-unicast it is between 64 and 95,
            default is 64.";
       type uint32 {
-        range 0..255;
+        range "0..255";
       }
       must "not(../version = 'srl_nokia-ospf-types:ospf-v2' and . > 31)" {
         error-message "ospf-v2 instance-id must be 0..31";
@@ -1245,8 +1235,8 @@ module srl_nokia-ospf {
     leaf router-id {
       type yang:dotted-quad;
       must 'current() != "0.0.0.0"' {
-          error-message "Router-id 0.0.0.0 not allowed";
-        }
+        error-message "Router-id 0.0.0.0 not allowed";
+      }
     }
     leaf max-ecmp-paths {
       description
@@ -1413,7 +1403,7 @@ module srl_nokia-ospf {
         presence "Configure Overload-on-boot";
         leaf timeout {
           type uint32 {
-            range "60..1800"; 
+            range "60..1800";
           }
           default "60";
           units "seconds";
@@ -1442,12 +1432,12 @@ module srl_nokia-ospf {
     uses ospf-global-timers;
     uses ospf-global-trace-options;
     uses srl_nokia-te:igp-instance-te-advertisement {
-      if-feature srl-feat:traffic-engineering-ospf;
+      if-feature "srl-feat:traffic-engineering-ospf";
     }
     uses srl_nokia-te:protocol-instance-tedb {
-      if-feature srl-feat:traffic-engineering-ospf;
+      if-feature "srl-feat:traffic-engineering-ospf";
     }
-  } //ospf-global-top
+  }
 
   grouping ospf-as-lsa-totals {
     container lsa-totals {
@@ -1475,7 +1465,7 @@ module srl_nokia-ospf {
         type yang:gauge32;
       }
     }
-  } // ospf-as-lsa-totals
+  }
 
   grouping ospf-global-state {
     leaf oper-state {
@@ -1814,7 +1804,7 @@ module srl_nokia-ospf {
         }
       }
     }
-  } //ospf-global-state
+  }
 
   grouping ospf-area-state {
     leaf full-spf-runs {
@@ -1984,7 +1974,7 @@ module srl_nokia-ospf {
       }
     }
   }
-      
+
   grouping ospf-top {
     description
       "Top-level OSPF configuration and operational state";
@@ -2015,15 +2005,13 @@ module srl_nokia-ospf {
         uses ospf-as-lsa-totals;
         uses ospf-as-lsdb-structure;
         uses srl_nokia-ldp:ldp-sync-global-config;
-
         must './router-id != default or (../../../router-id != default and ../../../router-id != "0.0.0.0")' {
           error-message "Must have router-id defined in network-instance or in ospf-instance and it can not be 0.0.0.0";
         }
         must "(./version = 'srl_nokia-ospf-types:ospf-v2') or (./traffic-engineering/advertisement = false())" {
-          srl_nokia-ext:if-feature srl-feat:traffic-engineering-ospf;
+          srl_nokia-ext:if-feature "srl-feat:traffic-engineering-ospf";
           error-message "No traffic-engineering support for OSPFv3";
         }
-
         list area {
           key "area-id";
           description

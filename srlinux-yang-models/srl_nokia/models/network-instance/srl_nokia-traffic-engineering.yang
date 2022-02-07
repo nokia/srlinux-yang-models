@@ -1,15 +1,17 @@
 module srl_nokia-traffic-engineering {
-
   yang-version 1.1;
-
-  // namespace
   namespace "urn:srl_nokia/te";
+  prefix srl_nokia-te;
 
-  prefix "srl_nokia-te";
-
-  import srl_nokia-common { prefix srl_nokia-comm; }
-  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
-  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
 
   description
     "Configuration and state related to the use and propagation of TE information.";
@@ -49,7 +51,7 @@ module srl_nokia-traffic-engineering {
       leaf advertisement {
         description
           "A setting of false means that no TE-related TLVs and subTLVs should be added to LSAs or LSPs originated by this IGP instance.
-          A setting of true means that TE-related TLVs and subTLVs should be added to LSAs or LSPs originated by this IGP instance.";
+           A setting of true means that TE-related TLVs and subTLVs should be added to LSAs or LSPs originated by this IGP instance.";
         type boolean;
         default "false";
       }
@@ -60,7 +62,7 @@ module srl_nokia-traffic-engineering {
         description
           "The advertisement mode for TE link attributes.
 
-          A setting of true means that TE properties should be advertised in legacy mode as defined in RFC 8919 and RFC 8920.";
+           A setting of true means that TE properties should be advertised in legacy mode as defined in RFC 8919 and RFC 8920.";
         type boolean;
         default "true";
       }
@@ -116,8 +118,8 @@ module srl_nokia-traffic-engineering {
       description
         "When set to true, topology and TE information related to this area or level should nkot be imported into the TE database in a format that supports export as BGP-LS routes";
       type boolean;
-      must ". = false() or (. = true() and ../../te-database-install/bgp-ls)";
-      default false;
+      must '. = false() or (. = true() and ../../te-database-install/bgp-ls)';
+      default "false";
     }
   }
 
@@ -136,13 +138,11 @@ module srl_nokia-traffic-engineering {
         description
           "A routable IPv4 address to identify the router uniquely in a TE domain.";
         type srl_nokia-comm:ipv4-address;
-        //TODO: need a new type that restricts input to a routable IPv4 address
       }
       leaf ipv6-te-router-id {
         description
           "A routable IPv6 address to identify the router uniquely in a TE domain.";
         type srl_nokia-comm:ipv6-address;
-        //TODO: need a new type that restricts input to a routable IPv6 address
       }
       container admin-groups {
         description
@@ -150,22 +150,21 @@ module srl_nokia-traffic-engineering {
         list group {
           description
             "List of admin groups defined for this network instance.";
-          key name;
+          key "name";
           leaf name {
             description
               "The name of the admin group";
             type srl_nokia-comm:name;
           }
-          // leaf application-name
           leaf bit-position {
-            mandatory "true";
+            mandatory true;
             type uint32 {
               range "0..31";
             }
             description
               "The bit-position value for the admin-group.
 
-              The value for the admin group is an integer that represents one of the bit positions in the admin-group bitmask.";
+               The value for the admin group is an integer that represents one of the bit positions in the admin-group bitmask.";
           }
         }
       }
@@ -175,15 +174,14 @@ module srl_nokia-traffic-engineering {
         list group {
           description
             "List of shared risk link groups defined for this network instance.";
-          key name;
+          key "name";
           leaf name {
             description
               "The name of the shared risk link group";
             type srl_nokia-comm:name;
           }
-          // leaf application-name
           leaf value {
-            mandatory "true";
+            mandatory true;
             type uint32;
             description
               "Group ID for the SRLG";
@@ -193,18 +191,10 @@ module srl_nokia-traffic-engineering {
             description
               "The cost of the SRLG to the computation algorithm";
           }
-          /*
-          leaf flooding-type {
-            type srlg-flooding-type;
-            default flooded;
-            description
-              "The type of SRLG, either flooded in the IGP or statically configured";
-          }
-          */
           list static-member {
             description
               "Static SRLG members";
-            key from-address;
+            key "from-address";
             leaf from-address {
               type srl_nokia-comm:ip-address;
               description
@@ -229,10 +219,6 @@ module srl_nokia-traffic-engineering {
           description
             "Name of a subinterface that is already bound to this network-instance that should have TE information associated with it";
         }
-        // leaf ipv4-interface-address
-        // leaf ipv4-neighbor-address
-        // leaf ipv6-interface-address
-        // leaf ipv6-neighbor-address
         leaf-list admin-group {
           description
             "The list of admin-groups generically associated with the interface (not application specific)";
@@ -264,16 +250,17 @@ module srl_nokia-traffic-engineering {
             range "1..16777215";
           }
         }
-        // application-specific
       }
     }
   }
+
   augment "/srl_nokia-netinst:network-instance" {
-    if-feature srl-feat:traffic-engineering;
+    if-feature "srl-feat:traffic-engineering";
     uses net-instance-te;
   }
+
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-netinst:directly-connected" {
-    if-feature srl-feat:traffic-engineering-bgpls-directly-connected;
+    if-feature "srl-feat:traffic-engineering-bgpls-directly-connected";
     uses direct-tedb;
   }
 }

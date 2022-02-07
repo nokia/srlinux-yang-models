@@ -1,18 +1,26 @@
 module srl_nokia-policy-forwarding {
   yang-version 1.1;
-
   namespace "urn:srl_nokia/policy-forwarding";
+  prefix srl_nokia-pol-fwd;
 
-  prefix "srl_nokia-pol-fwd";
+  import srl_nokia-packet-match-types {
+    prefix srl_nokia-pkt-match-types;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
 
-  import srl_nokia-packet-match-types { prefix srl_nokia-pkt-match-types; }
-  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
-  import srl_nokia-common { prefix srl_nokia-comm; }
-  import srl_nokia-extensions { prefix srl_nokia-ext; }
-  import srl_nokia-features { prefix srl_nokia-feat; }
-
-  organization "Nokia";
-
+  organization
+    "Nokia";
   description
     "This module defines configuration and operational state data for policy-forwarding related objects.";
 
@@ -23,27 +31,28 @@ module srl_nokia-policy-forwarding {
 
   grouping pf-rule-statistics {
     container statistics {
-      description "Container for per-rule statistics";
+      description
+        "Container for per-rule statistics";
       config false;
       leaf last-clear {
-          type srl_nokia-comm:date-and-time-delta;
-          description
-              "Time of the last clear command performed by the user at this level or a higher level";
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time of the last clear command performed by the user at this level or a higher level";
       }
       leaf matched-packets {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         description
           "The number of ingress packets matching the entry since it was programmed or since the last clear, considering all subinterfaces that use the policy (sum across all linecards)";
         type srl_nokia-comm:zero-based-counter64;
       }
       leaf matched-octets {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         description
           "The number of octets in ingress packets matching the entry since it was programmed or since the last clear, considering all subinterfaces that use the policy (sum across all linecards)";
         type srl_nokia-comm:zero-based-counter64;
       }
       leaf last-match {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         description
           "The elapsed time since an ingress packet last matched the entry, considering all subinterfaces that use the policy (across all linecards)";
         type srl_nokia-comm:date-and-time-delta;
@@ -75,7 +84,7 @@ module srl_nokia-policy-forwarding {
         description
           "Container for match conditions associated with IPv4 header fields
 
-          If no match conditions are provided then all IPv4 packets are matched.";
+           If no match conditions are provided then all IPv4 packets are matched.";
         leaf protocol {
           description
             "An IPv4 packet matches this condition if its IP protocol type field matches the specified value";
@@ -94,10 +103,8 @@ module srl_nokia-policy-forwarding {
     list policy {
       max-elements 4;
       key "policy-id";
-      
       description
         "A forwarding policy is defined to have a set of match criteria, allowing particular fields of a packet's header to be matched, and a set of forwarding actions which determines how the local system should forward the packet.";
-
       leaf policy-id {
         type srl_nokia-comm:name;
         description
@@ -105,17 +112,19 @@ module srl_nokia-policy-forwarding {
       }
       leaf description {
         type srl_nokia-comm:description;
-        description "Description string for the policy";
-      }        
+        description
+          "Description string for the policy";
+      }
       leaf last-clear {
-          config false;
-          type srl_nokia-comm:date-and-time-delta;
-          description
-              "Time of the last clear command performed by the user at this level";
+        config false;
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time of the last clear command performed by the user at this level";
       }
       list rule {
-        description "List of policy forwarding rules.";
-        key sequence-id;
+        description
+          "List of policy forwarding rules.";
+        key "sequence-id";
         leaf sequence-id {
           type uint32 {
             range "1..128";
@@ -134,7 +143,6 @@ module srl_nokia-policy-forwarding {
           description
             "The number of TCAM entries required to implement this rule.";
         }
-
         uses pf-action-config;
         uses pf-match-config;
       }
@@ -144,27 +152,22 @@ module srl_nokia-policy-forwarding {
   grouping pf-interfaces {
     list interface {
       key "subinterface";
-
       description
         "List of subinterfaces that use the policy forwarding policy.";
-
       leaf subinterface {
         type leafref {
-          // We are at: $NIroot/policy-forwarding/interface/subinterface
           path "../../../srl_nokia-netinst:interface/srl_nokia-netinst:name";
         }
         description
           "A subinterface of the network-instance";
       }
-
       leaf apply-forwarding-policy {
         type leafref {
-        // We are at /network-instance/policy-forwarding/interface/apply-forwarding-policy
           path "../../policy/policy-id";
         }
         mandatory true;
         description
-        "The policy to be applied on the interface. Packets ingress on the referenced interface should be compared to the match criteria within the specified policy, and in the case that these criteria are met, the forwarding actions specified applied.";
+          "The policy to be applied on the interface. Packets ingress on the referenced interface should be compared to the match criteria within the specified policy, and in the case that these criteria are met, the forwarding actions specified applied.";
       }
     }
   }
@@ -180,8 +183,6 @@ module srl_nokia-policy-forwarding {
 
   augment "/srl_nokia-netinst:network-instance" {
     if-feature "srl_nokia-feat:disabled";
-
     uses policy-forwarding-top;
   }
-
 }
