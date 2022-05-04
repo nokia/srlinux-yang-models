@@ -9,7 +9,7 @@ Nokia SR Linux makes extensive use of structured data models. Each application r
 With this design, the YANG data model is defined first, then the CLI, APIs, and show output formats are derived from it.
 
 ## Yang browser
-This repository contains only the source YANG files that one can use to build code bindings or explore the way the modules are built. To browse the modules we recommend using [yang.srlinux.dev](https://yang.srlinux.dev) portal which provides human-friendly tools to browse and search through the models.
+This repository contains only the source YANG files that one can use to build code bindings or explore the way the modules are built. To browse the modules, we recommend using [yang.srlinux.dev](https://yang.srlinux.dev) portal, which provides human-friendly tools to browse and search through the models.
 
 ## Repository structure
 The main branch of this repository contains only the documentation. To reveal the yang files for a given release select the tag that matches the SR Linux release version.
@@ -26,7 +26,7 @@ git clone -b v21.6.2 --depth 1 https://github.com/nokia/srlinux-yang-models
 ```
 
 ### Download archives
-To download the proto files for a specific release in the `zip` or `tgz` containers navigate to the github `tag`(https://github.com/nokia/srlinux-yang-models/tags) page which contains the links to the archives.
+To download the proto files for a specific release in the `zip` or `tgz` archive, navigate to the GitHub [`tag`](https://github.com/nokia/srlinux-yang-models/tags) page, which contains the links to the archives.
 
 If needed, the download link can be programmatically derived using the following rule:
 
