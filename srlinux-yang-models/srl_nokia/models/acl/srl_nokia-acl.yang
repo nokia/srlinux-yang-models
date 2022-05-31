@@ -24,6 +24,10 @@ module srl_nokia-acl {
   description
     "This module defines configuration and operational state data for access control lists (ACLs) and related objects.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -65,7 +69,7 @@ module srl_nokia-acl {
           "Time of the last clear command performed by the user at this level";
       }
       container distributed-policer {
-        if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp";
+        if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp or srl_nokia-feat:trident4 or srl_nokia-feat:monterey";
         description
           "Distributed policer stats for traffic matching the entry.";
         uses policer-stats;
@@ -193,44 +197,36 @@ module srl_nokia-acl {
   }
 
   grouping interface-filter-entry-tcam {
-    container tcam-entries {
-      description
-        "Information about the TCAM entries used to implement the ACL entry";
-      config false;
-      list linecard {
-        description
-          "List of linecards in the system";
-        key "slot";
-        leaf slot {
-          type uint8 {
-            range "1..10";
+      container tcam-entries {
+          description "Information about the TCAM entries used to implement the ACL entry";
+          config false;
+          list forwarding-complex {
+              description "List of forwarding complexes in the system";
+              key complex-identifier;
+              leaf complex-identifier {
+                  description "A forwarding complex in the format (slot-number,complex-number).";
+                  type string {
+                      pattern '(\([0-2][1-4]?,[0-1]\))+';
+                  }
+              }
+              leaf single-instance {
+                  type uint16;
+                  description
+                          "The number of TCAM entries required to implement this entry if it is applied to only one subinterface and one traffic direction specific to this slot.
+                        This is non-zero even if the filter is not applied to any subinterfaces of this complex. It captures the effect of TCAM entry expansion to deal with L4 port or VLAN ranges, for example.";
+              }
+              leaf input-total {
+                  type uint16;
+                  description
+                          "The number of TCAM entries required to implement this entry on all subinterfaces of this complex where the filter is applied to ingress traffic. For example, if a single-instance of the entry takes 2 TCAM entries and the filter is an output-only subinterface-specific filter and the filter is applied to 5 subinterfaces on output and to 5 subinterfaces on input then input-total=2. If the entry is not applied to ingress traffic on any subinterfaces of this complex then input-total=0.";
+              }
+              leaf output-total {
+                  type uint16;
+                  description
+                          "The number of TCAM entries required to implement this entry on all subinterfaces of this complex where the filter is applied to egress traffic. For example, if a single-instance of the entry takes 2 TCAM entries and the filter is an output-only subinterface-specific filter and the filter is applied to 5 subinterfaces on output and to 5 subinterfaces on input then output-total=10. If the entry is not applied to egress traffic on any subinterfaces of this complex then output-total=0.";
+              }
           }
-          description
-            "Slot identifier";
-        }
-        leaf single-instance {
-          type uint16;
-          description
-            "The number of TCAM entries required to implement this entry if it is applied to only one subinterface and one traffic direction specific to this slot.
-
-             This is non-zero even if the filter is not applied to any subinterfaces of this slot. It captures the effect of TCAM entry expansion to deal with port ranges, for example.";
-        }
-        leaf input-total {
-          type uint16;
-          description
-            "The number of TCAM entries required to implement this entry on all subinterfaces of this slot where the filter is applied to ingress traffic.
-
-             For example, if a single-instance of the entry takes 2 TCAM entries and the filter is an output-only subinterface-specific filter and the filter is applied to 5 subinterfaces on output and to 5 subinterfaces on input then input-total=2. If the entry is not applied to ingress traffic on any subinterfaces of this slot then input-total=0.";
-        }
-        leaf output-total {
-          type uint16;
-          description
-            "The number of TCAM entries required to implement this entry on all subinterfaces of this slot where the filter is applied to egress traffic.
-
-             For example, if a single-instance of the entry takes 2 TCAM entries and the filter is an output-only subinterface-specific filter and the filter is applied to 5 subinterfaces on output and to 5 subinterfaces on input then output-total=10. If the entry is not applied to egress traffic on any subinterfaces of this slot then output-total=0.";
-        }
       }
-    }
   }
 
   grouping policer-stats {
@@ -309,7 +305,7 @@ module srl_nokia-acl {
         }
       }
       list policer {
-        if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp";
+        if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp or srl_nokia-feat:trident4 or srl_nokia-feat:monterey";
         description
           "List of hardware policer templates. For each policer in this list one or more policer instances are implemented in the linecards of the system.";
         key "name";
@@ -465,7 +461,7 @@ module srl_nokia-acl {
                 "Reference to a system-cpu-policer.";
             }
             leaf distributed-policer {
-              if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp";
+              if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:jericho2 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2cp or srl_nokia-feat:trident4 or srl_nokia-feat:monterey";
               type leafref {
                 path "../../../../../../../policers/policer/name";
               }
@@ -591,6 +587,11 @@ module srl_nokia-acl {
           }
         }
       }
+      leaf-list dscp-set {
+        type srl_nokia-comm:dscp;
+        description
+          "A list of DSCP values to be matched for incoming packets. An OR match should be performed, such that a packet must match one of the values defined in this list. If the field is left empty then any DSCP value matches.";
+      }
       leaf fragment {
         type boolean;
         description
@@ -685,6 +686,11 @@ module srl_nokia-acl {
             error-message "An address must be configured to use with the mask";
           }
         }
+      }
+      leaf-list dscp-set {
+        type srl_nokia-comm:dscp;
+        description
+          "A list of DSCP values to be matched for incoming packets. An OR match should be performed, such that a packet must match one of the values defined in this list. If the field is left empty then any DSCP value matches.";
       }
       container icmp6 {
         description
@@ -818,6 +824,109 @@ module srl_nokia-acl {
     }
   }
 
+  grouping common-mac-filter-entry-match-config {
+    container match {
+      description
+        "Container for the conditions that determine whether an Ethernet frame matches this entry";
+      container destination-mac {
+        description
+          "Ethernet frame matching criteria based on destination MAC address";
+        leaf address {
+          description
+            "Match an Ethernet frame if its destination MAC address logically anded with the mask equals this MAC address.";
+          type srl_nokia-comm:mac-address;
+          must "../mask >= ''" {
+            error-message "A mask must be configured to use with the address";
+          }
+        }
+        leaf mask {
+          description
+            "Match an Ethernet frame if its destination MAC address logically anded with the mask equals the configured MAC address.";
+          type srl_nokia-comm:mac-address;
+          must "../address >= ''" {
+            error-message "An address must be configured to use with the mask";
+          }
+        }
+      }
+      leaf ethertype {
+        description
+          "An Ethernet frame matches this condition if its ethertype value (after 802.1Q VLAN tags) matches the specified value";
+        type srl_nokia-pkt-match-types:ethertype;
+      }
+      container source-mac {
+        description
+          "Ethernet frame matching criteria based on source MAC address";
+        leaf address {
+          description
+            "Match an Ethernet frame if its source MAC address logically anded with the mask equals this MAC address.";
+          type srl_nokia-comm:mac-address;
+          must "../mask >= ''" {
+            error-message "A mask must be configured to use with the address";
+          }
+        }
+        leaf mask {
+          description
+            "Match an Ethernet frame if its source MAC address logically anded with the mask equals the configured MAC address.";
+          type srl_nokia-comm:mac-address;
+          must "../address >= ''" {
+            error-message "An address must be configured to use with the mask";
+          }
+        }
+      }
+      container vlan {
+        description
+          "Ethernet frame matching criteria based on VLAN tags";
+        container outermost-vlan-id {
+          description
+            "Ethernet frame matching criteria based on the outermost VLAN ID found before the subinterface-defining VLAN tag (if any) is removed.";
+          choice vlan-matching-type {
+            case range-with-one-value {
+              leaf operator {
+                description
+                  "Comparison operator
+
+                   eq = equal
+                   ge = greater than or equal to
+                   le = less than or equal to";
+                type srl_nokia-pkt-match-types:operator;
+              }
+              leaf value {
+                description
+                  "A VLAN ID number
+
+                   A value of zero is used to match priority-tagged 802.1Q frames.";
+                type srl_nokia-pkt-match-types:vlan-id-type;
+              }
+            }
+            case range-with-two-values {
+              container range {
+                description
+                  "Container used to specify a contiguous range of VLAN IDs. Matched values include the start and end values.";
+                leaf start {
+                  type srl_nokia-pkt-match-types:vlan-id-type;
+                  description
+                    "The starting VLAN ID to include in the range";
+                }
+                leaf end {
+                  type srl_nokia-pkt-match-types:vlan-id-type;
+                  description
+                    "The ending VLAN ID to include in the range";
+                }
+              }
+            }
+            case special-value-none-to-match-untagged {
+              leaf none {
+                type empty;
+                description
+                  "When configured, only untagged frames are matched.";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   grouping interface-ipv4-filter-top {
     leaf statistics-per-entry {
       type boolean;
@@ -831,9 +940,6 @@ module srl_nokia-acl {
       type srl_nokia-comm:date-and-time-delta;
       description
         "Time of the last clear command performed by the user at this level";
-    }
-    container statistics {
-      config false;
     }
     list entry {
       description
@@ -1013,9 +1119,6 @@ module srl_nokia-acl {
       description
         "Time of the last clear command performed by the user at this level";
     }
-    container statistics {
-      config false;
-    }
     list entry {
       description
         "List of filter rules.";
@@ -1180,6 +1283,122 @@ module srl_nokia-acl {
     }
   }
 
+  grouping interface-mac-filter-top {
+    leaf statistics-per-entry {
+      type boolean;
+      description
+        "Collect statistics for each entry of the ACL
+
+         The exact set of statistics depend on the subinterface-specific mode";
+    }
+    leaf last-clear {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time of the last clear command performed by the user at this level";
+    }
+    list entry {
+      description
+        "List of filter rules.";
+      key "sequence-id";
+      leaf sequence-id {
+        type uint32 {
+          range "1..65535";
+        }
+        description
+          "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the filter entry";
+      }
+      uses interface-filter-entry-tcam;
+      uses interface-filter-entry-action-config;
+      uses common-mac-filter-entry-match-config;
+      uses interface-filter-entry-statistics;
+    }
+  }
+
+  grouping cpm-mac-filter-top {
+    leaf statistics-per-entry {
+      type boolean;
+      description
+        "Collect the following statistics per entry: the number of packets matching each entry, and the elapsed time since a packet last matched each entry";
+    }
+    leaf last-clear {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time of the last clear command performed by the user at this level";
+    }
+    list entry {
+      description
+        "List of filter rules.";
+      key "sequence-id";
+      leaf sequence-id {
+        type uint32 {
+          range "1..65535";
+        }
+        description
+          "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the filter entry";
+      }
+      leaf tcam-entries {
+        config false;
+        type uint16;
+        description
+          "The number of TCAM entries required to implement a single instance of this filter rule.";
+      }
+      uses cpm-filter-entry-action-config;
+      uses common-mac-filter-entry-match-config;
+      uses cpm-filter-entry-statistics;
+    }
+  }
+
+  grouping mac-filter-top {
+    list mac-filter {
+      if-feature "srl_nokia-feat:disabled";
+      description
+        "List of MAC ACL policies";
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Name of the MAC ACL policy.";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the MAC ACL policy";
+      }
+      leaf subinterface-specific {
+        type enumeration {
+          enum disabled;
+          enum input-only;
+          enum output-only;
+          enum input-and-output;
+        }
+        default "disabled";
+        description
+          "Controls the instantiation of the filter when it is applied as an input or output ACL
+
+           disabled: all subinterfaces on a single linecard that reference the ACL as an input ACL use a shared filter instance, and all subinterfaces on a single linecard that reference the ACL as an output ACL use a shared filter instance
+
+           input-only: all subinterfaces on a single linecard that reference the ACL as an output ACL use a shared filter instance, but each subinterface that references the ACL as an input ACL uses its own separate instance of the filter
+
+           output-only: all subinterfaces on a single linecard that reference the ACL as an input ACL use a shared filter instance, but each subinterface that references the ACL as an output ACL uses its own separate instance of the filter
+
+           input-and-output: each subinterface that references the ACL as either an input ACL or an output ACL uses its own separate instance of the filter";
+      }
+      uses interface-mac-filter-top;
+    }
+  }
+
   grouping cpm-filter-top {
     container cpm-filter {
       description
@@ -1193,6 +1412,12 @@ module srl_nokia-acl {
         description
           "Top level container for CPM IPv6 filters";
         uses cpm-ipv6-filter-top;
+      }
+      container mac-filter {
+        if-feature "srl_nokia-feat:disabled";
+        description
+          "Top level container for CPM MAC filter";
+        uses cpm-mac-filter-top;
       }
     }
   }
@@ -1238,6 +1463,7 @@ module srl_nokia-acl {
         "Top level container for configuration and operational state related to access control lists (ACLs)";
       uses ipv4-filter-top;
       uses ipv6-filter-top;
+      uses mac-filter-top;
       uses cpm-filter-top;
       uses capture-filter-top;
       uses acl-policers-top;
@@ -1254,30 +1480,27 @@ module srl_nokia-acl {
             description
               "Alternate allocation that provides more resources to IPv4 egress ACLs than any other application";
           }
+          enum ipv4-pbf-scaled {
+            description
+              "Alternate allocation that provides more resources for IPv4 policy-forwarding rules";
+          }
         }
       }
-    }
-  }
+      leaf egress-mac-filtering {
+        if-feature "srl_nokia-feat:disabled";
+        type boolean;
+        default "false";
+        description
+          "Must be set to true in order to apply any MAC ACLs to any subinterface in the egress traffic direction.
 
-  grouping subinterface-acl-filters {
-    leaf ipv4-filter {
-      description
-        "IPv4 ACL filter to be applied on this interface";
-      type leafref {
-        path "/srl_nokia-acl:acl/srl_nokia-acl:ipv4-filter/name";
-      }
-      must "../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
-        error-message "IPv4 ACL filter cannot be assigned to subinterface of type local-mirror-dest";
-      }
-    }
-    leaf ipv6-filter {
-      description
-        "IPv6 ACL filter to be applied on this interface";
-      type leafref {
-        path "/srl_nokia-acl:acl/srl_nokia-acl:ipv6-filter/name";
-      }
-      must "../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
-        error-message "IPv6 ACL filter cannot be assigned to subinterface of type local-mirror-dest";
+           Internally this sets the following limits:
+           - maximum number of IPv4 ACL instances that can be created to process egress traffic = 32
+           - maximum number of IPv6 ACL instances that can be created to process egress traffic = 32
+           - maximum number of MAC ACL instances that can be created to process egress traffic = 32
+
+           Remember that the number of ACL instances per ACL policy is greater than one if subinterface-specific is set to input-and-output or output-only.
+
+           A setting of true is blocked if the number of IPv4 ACL instances applied to egress traffic is already greater than 32, or if the number of IPv6 ACL instances applied to egress traffic is already greater than 32.";
       }
     }
   }
@@ -1289,12 +1512,66 @@ module srl_nokia-acl {
       container input {
         description
           "Container for ACL options that apply to ingress traffic on the subinterface";
-        uses subinterface-acl-filters;
+        choice ip-or-mac {
+          case ip {
+            leaf ipv4-filter {
+              description
+                "IPv4 ACL filter to be applied on this interface";
+              type leafref {
+                path "/srl_nokia-acl:acl/srl_nokia-acl:ipv4-filter/name";
+              }
+            }
+            leaf ipv6-filter {
+              description
+                "IPv6 ACL filter to be applied on this interface";
+              type leafref {
+                path "/srl_nokia-acl:acl/srl_nokia-acl:ipv6-filter/name";
+              }
+            }
+          }
+          case mac {
+            leaf mac-filter {
+              if-feature "srl_nokia-feat:disabled";
+              description
+                "MAC filter to be applied on this interface";
+              type leafref {
+                path "/srl_nokia-acl:acl/srl_nokia-acl:mac-filter/name";
+              }
+            }
+          }
+        }
       }
       container output {
         description
           "Container for ACL options that apply to egress traffic on the subinterface";
-        uses subinterface-acl-filters;
+        choice ip-or-mac {
+          case ip {
+            leaf ipv4-filter {
+              description
+                "IPv4 ACL filter to be applied on this interface";
+              type leafref {
+                path "/srl_nokia-acl:acl/srl_nokia-acl:ipv4-filter/name";
+              }
+            }
+            leaf ipv6-filter {
+              description
+                "IPv6 ACL filter to be applied on this interface";
+              type leafref {
+                path "/srl_nokia-acl:acl/srl_nokia-acl:ipv6-filter/name";
+              }
+            }
+          }
+          case mac {
+            leaf mac-filter {
+              if-feature "srl_nokia-feat:disabled";
+              description
+                "MAC filter to be applied on this interface";
+              type leafref {
+                path "/srl_nokia-acl:acl/srl_nokia-acl:mac-filter/name";
+              }
+            }
+          }
+        }
       }
     }
   }

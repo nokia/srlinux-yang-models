@@ -19,6 +19,10 @@ module srl_nokia-if-radio {
   description
     "Model for managing Radio subinterfaces";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -261,7 +265,6 @@ module srl_nokia-if-radio {
          CPRI master port.";
     }
     container pres-time-offset {
-      when "../mapper-demapper/mapper-demapper-type = 'mapper'";
       description
         "Presentation Time Offset: Value that is added to the data arrival
          time to generate the presentation time, which is represented by the
@@ -272,7 +275,6 @@ module srl_nokia-if-radio {
       uses time-stamp;
     }
     container target-offset {
-      when "../mapper-demapper/mapper-demapper-type = 'mapper'";
       description
         "The parameter is available only when CPRI port is set to structure-aware mode.
          Represent the provisioned target delay between a SAS pair:
@@ -293,6 +295,136 @@ module srl_nokia-if-radio {
         "5.5.5.3, enParam 12 in Table 10 and Table 12, 6.3, and C.3 of IEEE Std
          1914.3-2021";
       uses time-stamp;
+    }
+  }
+
+  grouping port-type {
+    description
+      "Specifies the tyhpe of the port, cpri vs obsai.  Based on this port type the port can be configured accordingly";
+    choice port-type {
+      container cpri-port {
+        leaf port-speed {
+          type cpri-speed;
+          description
+            "Set the port speed for this CPRI Port. A Radio interface can either be CPRI or OBSAI.";
+        }
+        leaf port-param-auto {
+          type boolean;
+          default "true";
+          description
+            "When enabled:
+              - RoE entity disregards slowcm-rate, p-pointer, protocol-version parameter provision.
+              - CPRI ingress L1inband information (Z.2.0, Z.66.0, Z.130.0, Z.194.0) is extracted and used by
+              - mappers within RoE entity. Information is also sent to the other end RoE entity.
+              - CPRI egress L1inband information is based on information from the other end RoE entity (traced
+              - to CPRI ingress L1inband information).
+             When disabled:
+              - RoE entity follows slowcm-rate, p-pointer, protocol-version parameter provision.
+             Note : For structure-aware mode to work properly, RoE entities in both ends of RoE transport
+             should be set to mapper-status-enable or no mapper-status-enable together.  ";
+        }
+        leaf cpri-ver {
+          must '../port-param-auto = false()';
+          type uint8;
+          description
+            "CPRI protocol version at location Z.2.0, i.e., control word 2 as
+             extracted by the control process. This parameter is for the RoE mapper.";
+          reference
+            "enParam 2 in Table 89 and 8.3.6(.c) of IEEE Std 1914.3-2021";
+        }
+        leaf cpri-hdlc {
+          must '../port-param-auto = false()';
+          type uint8 {
+            range "0..7";
+          }
+          description
+            "HDLC bit rate at location Z.66.0, i.e., control word 66 Slow C&M.
+             0 = HDLC disable
+             1 = 240kbps
+             2 = 480kbps
+             3 = 960kbps
+             4 = 1920kbps
+             5 = 2400kbps
+             6 = 3840/4800/7680kbps based on CPRI-5/6/7 and higher rates
+             7 = follow CPRI slow C&M negotiation
+             structure aware mode:This command indicates rate of slow C&M channel in CPRI link. When slow C&M is not supported
+             by setting cpriHDLC = 0, no slow C&M RoE flow is needed. RoE entity has 1 mapper and demapper
+             reserved for RoE slow C&M flow.
+             range definition corresponds to CPRI standard Z.66.0 definition. This value is used to set Z.66.0   in CPRI egress.";
+          reference
+            "enParam 3 in Table 9 and 8.3.6(.d) of IEEE Std 1914.3-2021";
+        }
+        leaf cpri-l1 {
+          type uint8 {
+            range "0..31";
+          }
+          config false;
+          description
+            "L1 signaling at location Z.130.0, i.e., control word 130 as
+             extracted by the control process. This parameter is for the RoE mapper.";
+          reference
+            "enParam 4 in Table 89 and 8.3.6(.e) of IEEE Std 1914.3-2021";
+        }
+        leaf cpri-eth {
+          must '../port-param-auto = false()';
+          type uint8 {
+            range "0|20..63";
+          }
+          description
+            "Ethernet pointer at location Z.194.0, i.e., control word 194 as
+             extracted by the control process This parameter is for the RoE mapper.
+             Specifies p-pointer value for the fast C&M channel in CPRI link associated with the RoE entity.
+              p-pointer defines the fast C&M channel region (starting subchannel) inside the CPRI control word.
+              Based on CPRI rate and p-pointer value, the fast C&M Ethernet rate is also defined.
+              Value = 0 means fast C&M channel is not used in CPRI link.";
+          reference
+            "enParam 5 in Table 89 and 8.3.6(.f) of IEEE Std 1914.3-2021";
+        }
+        uses lpt-cpri;
+      }
+      container obsai-port {
+        leaf port-speed {
+          type obsai-speed;
+          description
+            "Set the port speed for this OBSAI Port. A Radio interface can either be CPRI or OBSAI.";
+        }
+        leaf obsai-ver {
+          type uint8;
+          config false;
+          description
+            "OBSI protocol version at location Z.2.0, i.e., control word 2 as
+             extracted by the control process. This parameter is for the RoE mapper.";
+          reference
+            "enParam 2 in Table 89 and 8.3.6(.c) of IEEE Std 1914.3-2021";
+        }
+        leaf obsai-l1 {
+          type uint8 {
+            range "0..31";
+          }
+          config false;
+          description
+            "L1 signaling at location Z.130.0, i.e., control word 130 as
+             extracted by the control process. This parameter is for the RoE mapper.";
+          reference
+            "enParam 4 in Table 89 and 8.3.6(.e) of IEEE Std 1914.3-2021";
+        }
+        leaf obsai-eth {
+          type uint8 {
+            range "0|20..63";
+          }
+          config false;
+          description
+            "Ethernet pointer at location Z.194.0, i.e., control word 194 as
+             extracted by the control process This parameter is for the RoE mapper.
+             Specifies p-pointer value for the fast C&M channel in CPRI link associated with the RoE entity.
+              p-pointer defines the fast C&M channel region (starting subchannel) inside the CPRI control word.
+              Based on CPRI rate and p-pointer value, the fast C&M Ethernet rate is also defined.
+              Value = 0 means fast C&M channel is not used in CPRI link.";
+          reference
+            "enParam 5 in Table 89 and 8.3.6(.f) of IEEE Std 1914.3-2021";
+        }
+        uses lpt-obsai;
+      }
     }
   }
 
@@ -407,140 +539,12 @@ module srl_nokia-if-radio {
     }
   }
 
-  grouping cpri-port {
-    container cpri-port {
-      leaf port-speed {
-        type cpri-speed;
-        description
-          "Set the port speed for this CPRI Port. A Radio interface can either be CPRI or OBSAI.";
-      }
-      leaf port-param-auto {
-        type boolean;
-        default "true";
-        description
-          "When enabled:
-            - RoE entity disregards slowcm-rate, p-pointer, protocol-version parameter provision.
-            - CPRI ingress L1inband information (Z.2.0, Z.66.0, Z.130.0, Z.194.0) is extracted and used by
-            - mappers within RoE entity. Information is also sent to the other end RoE entity.
-            - CPRI egress L1inband information is based on information from the other end RoE entity (traced
-            - to CPRI ingress L1inband information).
-           When disabled:
-            - RoE entity follows slowcm-rate, p-pointer, protocol-version parameter provision.
-           Note : For structure-aware mode to work properly, RoE entities in both ends of RoE transport
-           should be set to mapper-status-enable or no mapper-status-enable together.  ";
-      }
-      leaf cpri-ver {
-        must '../port-param-auto = false()';
-        type uint8;
-        description
-          "CPRI protocol version at location Z.2.0, i.e., control word 2 as
-           extracted by the control process. This parameter is for the RoE mapper.";
-        reference
-          "enParam 2 in Table 89 and 8.3.6(.c) of IEEE Std 1914.3-2021";
-      }
-      leaf cpri-hdlc {
-        must '../port-param-auto = false()';
-        type uint8 {
-          range "0..7";
-        }
-        description
-          "HDLC bit rate at location Z.66.0, i.e., control word 66 Slow C&M.
-           0 = HDLC disable
-           1 = 240kbps
-           2 = 480kbps
-           3 = 960kbps
-           4 = 1920kbps
-           5 = 2400kbps
-           6 = 3840/4800/7680kbps based on CPRI-5/6/7 and higher rates
-           7 = follow CPRI slow C&M negotiation
-           structure aware mode:This command indicates rate of slow C&M channel in CPRI link. When slow C&M is not supported
-           by setting cpriHDLC = 0, no slow C&M RoE flow is needed. RoE entity has 1 mapper and demapper
-           reserved for RoE slow C&M flow.
-           range definition corresponds to CPRI standard Z.66.0 definition. This value is used to set Z.66.0   in CPRI egress.";
-        reference
-          "enParam 3 in Table 9 and 8.3.6(.d) of IEEE Std 1914.3-2021";
-      }
-      leaf cpri-l1 {
-        type uint8 {
-          range "0..31";
-        }
-        config false;
-        description
-          "L1 signaling at location Z.130.0, i.e., control word 130 as
-           extracted by the control process. This parameter is for the RoE mapper.";
-        reference
-          "enParam 4 in Table 89 and 8.3.6(.e) of IEEE Std 1914.3-2021";
-      }
-      leaf cpri-eth {
-        must '../port-param-auto = false()';
-        type uint8 {
-          range "0|20..63";
-        }
-        description
-          "Ethernet pointer at location Z.194.0, i.e., control word 194 as
-           extracted by the control process This parameter is for the RoE mapper.
-           Specifies p-pointer value for the fast C&M channel in CPRI link associated with the RoE entity.
-            p-pointer defines the fast C&M channel region (starting subchannel) inside the CPRI control word.
-            Based on CPRI rate and p-pointer value, the fast C&M Ethernet rate is also defined.
-            Value = 0 means fast C&M channel is not used in CPRI link.";
-        reference
-          "enParam 5 in Table 89 and 8.3.6(.f) of IEEE Std 1914.3-2021";
-      }
-      uses lpt-cpri;
-    }
-  }
-
-  grouping obsai-port {
-    container obsai-port {
-      leaf port-speed {
-        type obsai-speed;
-        description
-          "Set the port speed for this OBSAI Port. A Radio interface can either be CPRI or OBSAI.";
-      }
-      leaf obsai-ver {
-        type uint8;
-        config false;
-        description
-          "OBSI protocol version at location Z.2.0, i.e., control word 2 as
-           extracted by the control process. This parameter is for the RoE mapper.";
-        reference
-          "enParam 2 in Table 89 and 8.3.6(.c) of IEEE Std 1914.3-2021";
-      }
-      leaf obsai-l1 {
-        type uint8 {
-          range "0..31";
-        }
-        config false;
-        description
-          "L1 signaling at location Z.130.0, i.e., control word 130 as
-           extracted by the control process. This parameter is for the RoE mapper.";
-        reference
-          "enParam 4 in Table 89 and 8.3.6(.e) of IEEE Std 1914.3-2021";
-      }
-      leaf obsai-eth {
-        type uint8 {
-          range "0|20..63";
-        }
-        config false;
-        description
-          "Ethernet pointer at location Z.194.0, i.e., control word 194 as
-           extracted by the control process This parameter is for the RoE mapper.
-           Specifies p-pointer value for the fast C&M channel in CPRI link associated with the RoE entity.
-            p-pointer defines the fast C&M channel region (starting subchannel) inside the CPRI control word.
-            Based on CPRI rate and p-pointer value, the fast C&M Ethernet rate is also defined.
-            Value = 0 means fast C&M channel is not used in CPRI link.";
-        reference
-          "enParam 5 in Table 89 and 8.3.6(.f) of IEEE Std 1914.3-2021";
-      }
-      uses lpt-obsai;
-    }
-  }
-
   grouping structure-aware-config {
     leaf structure-aware-mapper-type {
-      when "../mapper-type = '2' or ../mapper-type = '5'";
+      must "../mapper-type = 'STRUCTURE-AWARE-TIME-DOMAIN-CPRI' or ../mapper-type = 'STRUCTURE-AWARE-FREQUENCY-DOMAIN-CPRI'" {
+        error-message "this configuration is only valid for structure-aware";
+      }
       type structure-aware-mapper-type;
-      default "DATA";
       description
         "Allows selecting the type of data that this structure-aware
          (de)mapper handles.
@@ -553,13 +557,14 @@ module srl_nokia-if-radio {
         "Table 1416 in 8.3.5 of IEEE Std 1914.3-2021";
     }
     leaf sample-width {
-      when "../mapper-type = '2' and "
-         + "../structure-aware-mapper-type = '4' and "
-         + "../mapper-demapper-type = 'demapper' or 'mapper-demapper'";
+      must "../mapper-type = 'STRUCTURE-AWARE-TIME-DOMAIN-CPRI' and "
+         + "../structure-aware-mapper-type = 'NATIVE-FREQUENCY-DOMAIN' and "
+         + "../mapper-demapper-type = 'demapper' or 'mapper-demapper'" {
+        error-message "this configuration is only valid for structure-aware";
+      }
       type uint16 {
         range "4..16";
       }
-      default "15";
       description
         "The parameter is available only when CPRI port is set to structure-aware mode.
          This command configures the IQ sample width in the CPRI link as a parameter
@@ -570,9 +575,11 @@ module srl_nokia-if-radio {
         "enParam 3 in Table 22 of IEEE Std 1914.3-2021";
     }
     leaf bandwidth {
-      when "../mapper-type = '2' and "
-         + "../structure-aware-mapper-type = '4' and "
-         + "../mapper-demapper-type = 'demapper'";
+      must "../mapper-type = 'STRUCTURE-AWARE-TIME-DOMAIN-CPRI' and "
+         + "../structure-aware-mapper-type = 'AXC' and "
+         + "../mapper-demapper-type = 'demapper'" {
+        error-message "this configuration is only valid for structure-aware demapper";
+      }
       type uint8 {
         range "1..6";
       }
@@ -580,15 +587,19 @@ module srl_nokia-if-radio {
         "Specifies the bw configuration for demapper.";
     }
     leaf axc-position {
-      when "../mapper-type = '2' and "
-         + "../structure-aware-mapper-type = '4' and "
-         + "../mapper-demapper-type = 'demapper'";
+      must "../mapper-type = 'STRUCTURE-AWARE-TIME-DOMAIN-CPRI' and "
+         + "../structure-aware-mapper-type = 'AXC' and "
+         + "../mapper-demapper-type = 'demapper'" {
+        error-message "this configuration is only valid for structure-aware demapper";
+      }
       type uint16;
       description
         "Specifies the starting bit position of the AxC inside the CPRI basic frame.";
     }
     list ctrl-word-conts {
-      when "(../mapper-type = '2' or ../mapper-type = '5')";
+      must "(../mapper-type = 'STRUCTURE-AWARE-TIME-DOMAIN-CPRI' or ../mapper-type = 'STRUCTURE-AWARE-FREQUENCY-DOMAIN-CPRI')" {
+        error-message "this configuration is only valid for structure-ware";
+      }
       key "ctrl-word-id";
       max-elements 1;
       description
@@ -630,11 +641,12 @@ module srl_nokia-if-radio {
       type mapper-demapper-type;
     }
     leaf flow-id {
-      when "../mapper-type = 'mapper'";
+      must "../mapper-demapper-type = 'mapper'" {
+        error-message "this configuration is only valid for mapper";
+      }
       type uint8 {
         range "0..254";
       }
-      default "0";
       description
         "For an RoE mapper: allows setting the flowID. The flowID can be
          assigned by the main controller to map to the receiver's
@@ -714,31 +726,26 @@ module srl_nokia-if-radio {
               the number of times of GSM Time Slot Mis-match.";
       }
       leaf tx-data-pkt-count {
-        when "../../../mapper-demapper/mapper-demapper-type = 'MAPPER'";
         type uint32;
         description
           "The number of transmitted RoE Packets.";
       }
       leaf tx-data-byte-count {
-        when "../../../mapper-demapper/mapper-demapper-type = 'MAPPER'";
         type uint32;
         description
           "The number of transmitted RoE Bytes.";
       }
-      leaf rx-data-pck-count {
-        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+      leaf rx-data-pkt-count {
         type uint32;
         description
           "The number of received RoE Packets.";
       }
       leaf rx-data-byte-count {
-        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
         type uint32;
         description
           "The number of received RoE Bytes.";
       }
       leaf rx-early-data-pkt-count {
-        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
         type uint16;
         description
           "Contains an integer count of the number of early received RoE data
@@ -750,7 +757,6 @@ module srl_nokia-if-radio {
            early_data_pkt) of IEEE Std 1914.3-2021.";
       }
       leaf rx-late-data-pkt-count {
-        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
         type uint16;
         description
           "Contains an integer count of the number of late received RoE data
@@ -765,7 +771,6 @@ module srl_nokia-if-radio {
            of IEEE Std 1914.3-2021.";
       }
       leaf rx-invalid-pkt-count {
-        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
         type uint16;
         description
           "Contains an integer count of the number of received invalid RoE
@@ -776,8 +781,7 @@ module srl_nokia-if-radio {
           "enParam 6 in Table 29, and Table 31 (for definition of
            rx_invalid_pkt) of IEEE Std 1914.3-2021.";
       }
-      container mapper-deffect-indication-and-status {
-        when "../../../mapper-demapper/mapper-demapper-type = 'MAPPER'";
+      container mapper-defect-indication-and-status {
         description
           "Contains the change indications and current status of the defects
            related to an RoE mapper.";
@@ -994,8 +998,7 @@ module srl_nokia-if-radio {
             "High Bit Error Ratio";
         }
       }
-      container demapper-deffect-indication-and-status {
-        when "../../../mapper-demapper/mapper-demapper-type = 'DEMAPPER'";
+      container demapper-defect-indication-and-status {
         leaf rx-data-queue-over-run-count {
           type uint32;
           description
@@ -1021,19 +1024,13 @@ module srl_nokia-if-radio {
           description
             "the number of time recived packet size is not equal to expected packet size";
         }
-        leaf rx-data-pkt-size-missmatch-count {
+        leaf rx-data-pkt-size-mismatch-count {
           type uint32;
           description
             "Missing packet count";
         }
       }
     }
-  }
-
-  typedef network-instance-subintf-ref {
-    type srl_nokia-comm:subinterface-all;
-    description
-      "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
   }
 
   grouping ethernet-link-config {
@@ -1064,18 +1061,17 @@ module srl_nokia-if-radio {
     }
     leaf subinterface {
       type leafref {
-        path "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:index";
+        path "../../../../srl_nokia-if:subinterface/srl_nokia-if:index";
       }
       description
-        "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+        "Reference type to a specific subinterface of the interface";
     }
   }
 
   grouping roe {
     container roe {
       uses roe-top;
-      uses cpri-port;
-      uses obsai-port;
+      uses port-type;
       list mapper-demapper {
         key "mapper-demapper-id";
         leaf mapper-demapper-id {
@@ -1127,7 +1123,7 @@ module srl_nokia-if-radio {
   }
 
   augment "/srl_nokia-if:interface" {
-    if-feature "srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
+    if-feature "srl_nokia-feat:monterey";
     uses radio-interface-top;
   }
 }

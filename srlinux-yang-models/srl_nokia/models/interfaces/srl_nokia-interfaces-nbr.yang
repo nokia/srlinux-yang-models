@@ -19,6 +19,10 @@ module srl_nokia-interfaces-nbr {
   description
     "Model for managing ARP and IPv6 neighbor discovery on IP subinterfaces.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -50,6 +54,39 @@ module srl_nokia-interfaces-nbr {
     }
     description
       "The origin of the neighbor entry.";
+  }
+
+  grouping datapath-programming-status {
+    container datapath-programming {
+      description
+        "Container for state related to the datapath programming of the ARP or neighbor entry";
+      config false;
+      leaf status {
+        description
+          "The status of the ARP or neighbor entry with respect to datapath programming";
+        type enumeration {
+          enum success {
+            description
+              "All linecard complexes have reported that the entry was programmed successfully";
+          }
+          enum failed {
+            description
+              "At least one linecard complex reported that the entry was not programmed successfully or else this entry was not even provided to the datapath for programming because the system limit on the number of IPv4 ARP and IPv6 neighbor entries was exceeded";
+          }
+          enum pending {
+            description
+              "The ARP or neighbor entry was provided to the datapath for programming but at least one linecard complex has not provided a status yet.";
+          }
+        }
+      }
+      leaf-list last-failed-complexes {
+        description
+          "List of forwarding complexes that reported a failure for the last operation. They appear in the format (slot-number,complex-number).";
+        type string {
+          pattern '(\([0-2][1-4]?,[0-1]\))+';
+        }
+      }
+    }
   }
 
   grouping common-neighbor-discovery {
@@ -152,8 +189,16 @@ module srl_nokia-interfaces-nbr {
           description
             "The date and time when the dynamic ARP entry is set to expire";
         }
+        uses datapath-programming-status;
       }
       uses host-route-top;
+      leaf proxy-arp {
+        if-feature "srl-feat:l3-proxy-arp";
+        type boolean;
+        default "false";
+        description
+          "When set to true, the router replies with its own MAC to ARP Request destined to any host.";
+      }
       leaf-list debug {
         type enumeration {
           enum messages {
@@ -290,8 +335,16 @@ module srl_nokia-interfaces-nbr {
           description
             "The date and time when the neighbor state is expected to transition to the next state";
         }
+        uses datapath-programming-status;
       }
       uses host-route-top;
+      leaf proxy-nd {
+        if-feature "srl-feat:l3-proxy-nd";
+        type boolean;
+        default "false";
+        description
+          "When set to true, the router replies with its own MAC to Neighbor Solicitations destined to any host.";
+      }
       leaf-list debug {
         type enumeration {
           enum messages {

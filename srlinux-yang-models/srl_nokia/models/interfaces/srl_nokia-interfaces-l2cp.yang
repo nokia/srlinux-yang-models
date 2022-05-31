@@ -1,0 +1,391 @@
+module srl_nokia-interfaces-l2cp {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/interfaces/l2cp";
+  prefix srl_nokia-interfaces-l2cp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-interfaces-lag {
+    prefix srl_nokia-if-lag;
+  }
+  import srl_nokia-lacp {
+    prefix srl_nokia-lacp;
+  }
+  import srl_nokia-lldp {
+    prefix srl_nokia-lldp;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+
+  description
+    "This module defines configuration and operational state related to the Layer-2 Control Protocols";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  typedef oper-rule-state {
+    type enumeration {
+      enum trap-to-cpu-untagged;
+      enum drop-tagged-and-untagged;
+      enum tunnel-tagged-and-untagged;
+    }
+  }
+
+  grouping l2cp-statistics {
+    description
+      "Grouping containing statistics for Layer-2 Control Plane protocols.";
+    container l2cp-statistics {
+      config false;
+      description
+        "Container for Layer-2 Control Plane protocol statistics.";
+      leaf total-in-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "System level total incoming L2CP frames.
+
+           Cumulative of all Ethernet interfaces including the tunneled, discarded and copy-to-cpu
+           L2CP frames. L2CP frames are identified by a destination MAC value of 01:80:c2:00:00:0X
+           or 01:80:c2:00:00:2X, being X any value in the 0..F range.";
+      }
+      leaf total-in-discarded-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "System level incoming L2CP discarded frames.
+
+           Cumulative of all Ethernet interfaces including all the discarded L2CP frames. L2CP
+           frames are identified by a destination MAC value of 01:80:c2:00:00:0X or
+           01:80:c2:00:00:2X, being X any value in the 0..F range.";
+      }
+      leaf total-in-tunneled-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "System level incoming L2CP tunneled frames.
+
+           Cumulative of all Ethernet interfaces including all the tunneled L2CP frames. L2CP
+           frames are identified by a destination MAC value of 01:80:c2:00:00:0X or
+           01:80:c2:00:00:2X, being X any value in the 0..F range.";
+      }
+      leaf total-in-trap-to-cpu-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "System level incoming L2CP copy-to-cpu frames.
+
+           Cumulative of all Ethernet interfaces including all the L2CP frames that are copied
+           to CPU. L2CP frames are identified by a destination MAC value of 01:80:c2:00:00:0X or
+           01:80:c2:00:00:2X, being X any value in the 0..F range.";
+      }
+      leaf last-clear {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Timestamp of the last time the L2CP counters were cleared.";
+      }
+      container lldp {
+        description
+          "Container for LLDP.";
+        leaf in-tunneled-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Link Layer Discovery Protocol tunneled frames.
+
+             Cumulative of all Ethernet interfaces including all the tunneled LLDP frames. LLDP
+             frames are identified by a destination MAC value of 01:80:c2:00:00:0e and EtherType value
+             of 0x88cc.";
+        }
+        leaf in-trap-to-cpu-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Link Layer Discovery Protocol frames copied to CPU.
+
+             Cumulative of all Ethernet interfaces including all the copy-to-cpu LLDP frames. LLDP
+             frames are identified by a destination MAC value of 01:80:c2:00:00:0e and EtherType value
+             of 0x88cc.";
+        }
+        leaf last-clear {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Timestamp of the last time the LACP counters were cleared.";
+        }
+      }
+      container lacp {
+        description
+          "Container for LACP.";
+        leaf in-tunneled-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Link Aggregation Control Protocol tunneled frames.
+
+             Cumulative of all Ethernet interfaces including all the tunneled LACP frames. LACP
+             frames are identified by a destination MAC value of 01:80:c2:00:00:02, EtherType value
+             of 0x8809 and slow protocol subtype 0x1.";
+        }
+        leaf in-trap-to-cpu-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Link Aggregation Control Protocol frames copied to CPU.
+
+             Cumulative of all Ethernet interfaces including all the copy-to-cpu LACP frames. LACP
+             frames are identified by a destination MAC value of 01:80:c2:00:00:02, EtherType value
+             of 0x8809 and slow protocol subtype 0x1.";
+        }
+        leaf last-clear {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Timestamp of the last time the LACP counters were cleared.";
+        }
+      }
+      container xstp {
+        description
+          "Container for Spanning Tree Protocols.";
+        leaf in-tunneled-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Spanning Tree tunneled frames.
+
+             Cumulative of all Ethernet interfaces including all the tunneled Spanning Tree frames.
+             xSTP frames are identified by a destination MAC value of 01:80:c2:00:00:00 and LLC value
+             0x42.";
+        }
+        leaf in-trap-to-cpu-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Spanning Tree Protocol frames copied to CPU.
+
+             Cumulative of all Ethernet interfaces including all the copy-to-cpu Spanning Tree frames.
+             Spanning Tree frames are identified by a destination MAC value of 01:80:c2:00:00:00 and
+             LLC value 0x42.";
+        }
+        leaf last-clear {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Timestamp of the last time the xSTP counters were cleared.";
+        }
+      }
+      container dot1x {
+        description
+          "Container for 802.1x protocols.";
+        leaf in-tunneled-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming 802.1x tunneled frames.
+
+             Cumulative of all Ethernet interfaces including all the tunneled 802.1x frames. 802.1x
+             frames are identified by a destination MAC value of 01:80:c2:00:00:03 and EtherType value
+             of 0x888e.";
+        }
+        leaf in-trap-to-cpu-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming 802.1x frames copied to CPU.
+
+             Cumulative of all Ethernet interfaces including all the copy-to-cpu 802.1x frames. 802.1x
+             frames are identified by a destination MAC value of 01:80:c2:00:00:03 and EtherType value
+             of 0x888e.";
+        }
+        leaf last-clear {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Timestamp of the last time the LACP counters were cleared.";
+        }
+      }
+      container ptp {
+        description
+          "Container for Precision Time Protocol Peer-Delay protocol.";
+        leaf in-tunneled-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Precision Time Protocol Peer-Delay tunneled frames.
+
+             Cumulative of all Ethernet interfaces including all the tunneled PTP frames. PTP
+             frames are identified by a destination MAC value of 01:80:c2:00:00:0e and Ethertype
+             value of 0x88F7.";
+        }
+        leaf in-trap-to-cpu-packets {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "System level incoming Precision Time Protocol Peer-Delay frames copied to CPU.
+
+             Cumulative of all Ethernet interfaces including all the copy-to-cpu PTP frames. PTP
+             frames are identified by a destination MAC value of 01:80:c2:00:00:0e and Ethertype
+             value of 0x88F7.";
+        }
+        leaf last-clear {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Timestamp of the last time the PTP counters were cleared.";
+        }
+      }
+    }
+  }
+
+  grouping system-l2cp-transparency-top {
+    description
+      "Top level grouping for system level L2CP transparency.";
+    container l2cp-transparency {
+      config false;
+      description
+        "Enclosing container for system level Layer-2 Control Protocol transparency.";
+      uses l2cp-statistics;
+    }
+  }
+
+  grouping l2cp-transparency-top {
+    description
+      "Top level grouping for L2CP transparency.";
+    container l2cp-transparency {
+      presence "Configures the l2cp transparency parameters";
+      must "starts-with(../../srl_nokia-if:name, 'ethernet')" {
+        error-message "l2cp-transparency not supported on this interface";
+      }
+      must 'not(../../breakout-mode)' {
+        error-message "l2cp-transparency not configurable when breakout-mode is enabled";
+      }
+      description
+        "Configuration and state of the Layer-2 Control Protocol transparency";
+      leaf tunnel-all-l2cp {
+        must ". = false() or (/srl_nokia-lldp:system/lldp/interface[srl_nokia-lldp:name=current()/../../../srl_nokia-if:name]/admin-state = 'disable') or (not(/srl_nokia-lldp:system/lldp/interface[srl_nokia-lldp:name=current()/../../../srl_nokia-if:name]/admin-state = 'enable') and not(/srl_nokia-lldp:system/lldp/admin-state = 'enable'))" {
+          error-message "this interface must not have lldp enabled";
+        }
+        must '. = false() or not (../../srl_nokia-if:aggregate-id) or not (/srl_nokia-if:interface[srl_nokia-if:name=current()/../../srl_nokia-if:aggregate-id]/srl_nokia-if-lag:lag/srl_nokia-lacp:lacp)' {
+          error-message "this interface must not be part of an lacp enabled lag";
+        }
+        type boolean;
+        default "false";
+        description
+          "Configures the tunneling of all the L2CP protocols.
+
+           When set to true this command triggers the installation of an ingress TCAM rule with the highest
+           priority (above all the individual L2CP tunnel rules) which allows the forwarding of any
+           Layer-2 Control Protocol coming into the interface. All the L2CP frames identified by
+           MAC DA = 01:80:c2:00:00:0x or MAC DA = 01:80:c2:00:00:2x, with 'x' being any hex value, are
+           tunneled. When set to false, all L2CP frames without a specific L2CP tunnel rule are discarded.";
+      }
+      container lldp {
+        description
+          "Container for L2CP transparency of the Link Layer Discovery Protocol";
+        leaf tunnel {
+          must ". = false() or (/srl_nokia-lldp:system/lldp/interface[srl_nokia-lldp:name=current()/../../../../name]/admin-state = 'disable') or (not(/srl_nokia-lldp:system/lldp/interface[srl_nokia-lldp:name=current()/../../../../name]/admin-state = 'enable') and not(/srl_nokia-lldp:system/lldp/admin-state = 'enable'))" {
+            error-message "this interface must not have lldp enabled";
+          }
+          type boolean;
+          default "false";
+          description
+            "Configures if incoming LLDP frames are tunneled.
+
+             LLDP frames are identified by MAC DA 01-80-c2-00-00-00 and Ethertype 0x88cc.";
+        }
+        leaf oper-rule {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          type oper-rule-state;
+          description
+            "The operational state of the TCAM rule applied to ingress LLDP frames.";
+        }
+      }
+      container lacp {
+        description
+          "Container for L2CP transparency of the Link Aggregation Control Protocol";
+        leaf tunnel {
+          must '. = false() or not (../../../srl_nokia-if:aggregate-id) or not (/srl_nokia-if:interface[srl_nokia-if:name=current()/../../../srl_nokia-if:aggregate-id]/srl_nokia-if-lag:lag/srl_nokia-lacp:lacp)' {
+            error-message "this interface must not be part of an lacp enabled lag";
+          }
+          type boolean;
+          default "false";
+          description
+            "Configures if incoming LACP frames are tunneled.
+
+             LACP frames are identified by MAC DA 01-80-c2-00-00-02, Ethertype 0x8809 and slow-protocol
+             sub-type 0x01.";
+        }
+        leaf oper-rule {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          type oper-rule-state;
+          description
+            "The operational state of the TCAM rule applied to ingress LACP frames.";
+        }
+      }
+      container xstp {
+        description
+          "Container for the configuration of all the Spanning Tree Protocols.
+
+           It includes Spanning Tree Protocol (STP), Rapid RSTP (RSTP) and Multiple STP (MSTP)";
+        leaf tunnel {
+          type boolean;
+          default "false";
+          description
+            "Configures if incoming xSTP frames are tunneled.
+
+             xSTP frames are identified by MAC DA 01-80-c2-00-00-00 and any Ethertype.";
+        }
+        leaf oper-rule {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          type oper-rule-state;
+          description
+            "The operational state of the TCAM rule applied to ingress xSTP frames.";
+        }
+      }
+      container dot1x {
+        description
+          "Container for the configuration of 802.1x Port based Network Access Control.";
+        leaf tunnel {
+          type boolean;
+          default "false";
+          description
+            "Configures if incoming dot1x frames are tunneled.
+
+             Dot1x frames are identified by MAC DA 01-80-c2-00-00-03 and Ethertype 0x888e.";
+        }
+        leaf oper-rule {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          type oper-rule-state;
+          description
+            "The operational state of the TCAM rule applied to ingress dot1x frames.";
+        }
+      }
+      container ptp {
+        description
+          "Container for the configuration of Precision Time Protocol Peer-Delay frames.";
+        leaf tunnel {
+          type boolean;
+          default "false";
+          description
+            "Configures if incoming ptp frames are tunneled.
+
+             ptp frames are identified by MAC DA 01-80-c2-00-00-0e and Ethertype 0x88f7.";
+        }
+        leaf oper-rule {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          type oper-rule-state;
+          description
+            "The operational state of the TCAM rule applied to ingress ptp frames.";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:ethernet" {
+    if-feature "srl_nokia-feat:l2cp-transparency";
+    uses l2cp-transparency-top;
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl_nokia-feat:l2cp-transparency";
+    uses system-l2cp-transparency-top;
+  }
+}

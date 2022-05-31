@@ -1,0 +1,61 @@
+module srl_nokia-tools-event-handler {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-event-handler";
+  prefix srl-tools-event-handler;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  description
+    "This module defines operational commands for the event handler";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  grouping eh-tools-top {
+    container event-handler {
+      presence "Configure tools event-handler";
+      description
+        "Top-level container for operational commands on event handler and event handling instances";
+      list instance {
+        max-elements 20;
+        description
+          "List of all event handler instances";
+        key "name";
+        leaf name {
+          type srl-comm:name;
+          description
+            "A user-defined name for this event handler instance";
+        }
+        leaf reload {
+          type empty;
+          description
+            "Reload the Python script for this event handler instance";
+        }
+        container statistics {
+          description
+            "Top-level container for operational commands on event handler statistics";
+          leaf clear {
+            type empty;
+            description
+              "Clear statistics for this event handler instance";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    srl-ext:first-released "22.6.1";
+    uses eh-tools-top;
+  }
+}

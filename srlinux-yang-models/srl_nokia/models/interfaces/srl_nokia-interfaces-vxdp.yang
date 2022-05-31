@@ -16,6 +16,10 @@ module srl_nokia-interfaces-vxdp {
   description
     "This model describes configuration and state related to vXDP managed interfaces";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -120,7 +124,7 @@ module srl_nokia-interfaces-vxdp {
       "Configuration and state for vhost-user interfaces";
     container vhost {
       presence "Configure vhost-user interface parameters";
-      must "starts-with(../srl-if:name,'vhn')" {
+      must "starts-with(../srl-if:name,'VHN')" {
         error-message "Configuration valid only for vhn interfaces";
       }
       description
@@ -173,28 +177,6 @@ module srl_nokia-interfaces-vxdp {
       type srl-comm:uuid;
       description
         "The system-generated or user-configured UUID for the sub interface";
-    }
-  }
-
-  augment "/srl-if:interface/srl-if:ethernet" {
-    if-feature "srl-feat:platform-vsrl";
-    leaf mac-address {
-      type srl-comm:mac-address;
-      must "not (starts-with(../../srl-if:name, 'lo') or starts-with(../../srl-if:name, 'system'))" {
-        error-message "mac-address not configurable on this interface";
-      }
-      must 'not(../../breakout-mode)' {
-        error-message "mac-address not configurable when breakout-mode is enabled";
-      }
-      description
-        "MAC address of the interface
-
-         If not configured, this is set to the hw-mac-address, which is populated depending on interface type:
-
-         - For interfaces with a discoverable MAC address (either populated by an external system or present in hardware) the discovered value is populated.
-         - For interfaces without a discoverable MAC address, the address is generated from a hash of the interface name and the chassis MAC address.
-
-         When deleted, will revert back to the value of hw-mac-address.";
     }
   }
 }

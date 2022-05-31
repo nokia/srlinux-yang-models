@@ -31,6 +31,10 @@ module srl_nokia-bgp {
   description
     "This yang file models configuration and state of the BGP protocol";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -379,6 +383,37 @@ module srl_nokia-bgp {
           description
             "Administratively enable or disable the IPv4 unicast address family on all sessions belonging to the group";
         }
+        container add-paths {
+          if-feature "srl_nokia-feat:bgp-add-paths";
+          description
+            "Configure support for the advertisement and receipt of multiple paths for a single IPv4-unicast prefix with any single peer in the peer-group";
+          leaf receive {
+            type boolean;
+            description
+              "Enable capability negotiation to receive multiple path advertisements for a single IPv4-unicast prefix from any single peer in the peer-group";
+          }
+          leaf send {
+            type boolean;
+            description
+              "Enable capability negotiation to send multiple path advertisements for a single IPv4-unicast prefix towards any single peer in the peer-group";
+          }
+          choice selection-algorithm {
+            leaf send-max {
+              type uint8 {
+                range "1..16";
+              }
+              description
+                "Send the N best paths for a single IPv4-unicast prefix, or as many as possible until there are no more valid paths to send.
+
+                 This ensures the best path is advertised but does not limit the additional paths to being 'used' paths.";
+            }
+            leaf send-multipath {
+              type empty;
+              description
+                "Send the used paths for a single IPv4-unicast prefix, including all paths that are multipaths.";
+            }
+          }
+        }
         leaf advertise-ipv6-next-hops {
           type boolean;
           description
@@ -410,6 +445,22 @@ module srl_nokia-bgp {
             description
               "When the number of IPv4 routes received from any group peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
           }
+          leaf prevent-teardown {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type boolean;
+            default "true";
+            description
+              "When false the session is immediately torn down when the number of received IPv4 routes exceeds the configured limit.";
+          }
+          leaf restart-timer {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type uint16;
+            units "seconds";
+            default "0";
+            description
+              "Time interval in seconds after which the BGP session is re-established after being torn down due to exceeding the IPv4 prefix limit.
+               This only applies if prevent-teardown is false.";
+          }
         }
       }
       container ipv6-unicast {
@@ -419,6 +470,37 @@ module srl_nokia-bgp {
           type srl_nokia-comm:admin-state;
           description
             "Administratively enable or disable the IPv6 unicast address family on all sessions belonging to the group";
+        }
+        container add-paths {
+          if-feature "srl_nokia-feat:bgp-add-paths";
+          description
+            "Configure support for the advertisement and receipt of multiple paths for a single IPv6-unicast prefix with any single peer in the peer-group";
+          leaf receive {
+            type boolean;
+            description
+              "Enable capability negotiation to receive multiple path advertisements for a single IPv6-unicast prefix from any single peer in the peer-group";
+          }
+          leaf send {
+            type boolean;
+            description
+              "Enable capability negotiation to send multiple path advertisements for a single IPv6-unicast prefix towards any single peer in the peer-group";
+          }
+          choice selection-algorithm {
+            leaf send-max {
+              type uint8 {
+                range "1..16";
+              }
+              description
+                "Send the N best paths for a single IPv6-unicast prefix, or as many as possible until there are no more valid paths to send.
+
+                 This ensures the best path is advertised but does not limit the additional paths to being 'used' paths.";
+            }
+            leaf send-multipath {
+              type empty;
+              description
+                "Send the used paths for a single IPv6-unicast prefix, including all paths that are multipaths.";
+            }
+          }
         }
         container prefix-limit {
           description
@@ -436,6 +518,23 @@ module srl_nokia-bgp {
             default "90";
             description
               "When the number of IPv6 routes received from any group peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+          }
+          leaf prevent-teardown {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type boolean;
+            default "true";
+            description
+              "When false the session is immediately torn down when the number of received IPv6 routes exceeds the configured limit.";
+          }
+          leaf restart-timer {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type uint16;
+            units "seconds";
+            default "0";
+            description
+              "Time interval in seconds after which the BGP session is re-established after being torn down due to exceeding the IPv6 prefix limit.
+
+               This only applies if prevent-teardown is false.";
           }
         }
       }
@@ -886,77 +985,6 @@ module srl_nokia-bgp {
       description
         "Set to true if the peer IP address is known through LLDP (irrespective of whether the final TCP connection was originated by this router or not)";
     }
-    leaf last-notification-error-code {
-      config false;
-      type enumeration {
-        enum "Message Header Error" {
-          value 0;
-        }
-        enum "Open Message Error" {
-          value 1;
-        }
-        enum "Update Message Error" {
-          value 2;
-        }
-        enum "Hold Timer Error" {
-          value 3;
-        }
-        enum "Finite State Machine Error" {
-          value 4;
-        }
-        enum Cease {
-          value 5;
-        }
-      }
-      description
-        "The error code in the last NOTIFICATION sent to this peer.";
-    }
-    leaf last-notification-error-subcode {
-      config false;
-      type enumeration {
-        enum "Connection Not Synchronized" {
-          value 0;
-        }
-        enum "Bad Message Length" {
-          value 1;
-        }
-        enum "Bad Message Type" {
-          value 2;
-        }
-        enum "Unsupported Version Number" {
-          value 3;
-        }
-        enum "Bad Peer As" {
-          value 4;
-        }
-        enum "Bad BGP Identifier" {
-          value 5;
-        }
-        enum "Unsupported Optional Parameter";
-        enum "Unacceptable Hold Time";
-        enum "UPDATE Message Error subcodes";
-        enum "Malformed Attribute List";
-        enum "Unrecognized Well-known Attribute";
-        enum "Missing Well-known Attribute";
-        enum "Attribute Flags Error";
-        enum "Attribute Length Error";
-        enum "Invalid ORIGIN Attribute";
-        enum "Invalid NEXT_HOP Attribute";
-        enum "Optional Attribute Error";
-        enum "Invalid Network Field";
-        enum "Malformed AS_PATH";
-        enum "Maximum Number of Prefixes Reached";
-        enum "Administrative Shutdown";
-        enum "Peer De-configured";
-        enum "Administrative Reset";
-        enum "Connection Rejected";
-        enum "Other Configuration Change";
-        enum "Connection Collision Resolution";
-        enum "Out of Resources";
-      }
-      description
-        "The error subcode in the last NOTIFICATION sent to this peer.";
-    }
     container sent-messages {
       config false;
       description
@@ -985,6 +1013,87 @@ module srl_nokia-bgp {
         type srl_nokia-comm:zero-based-counter64;
         description
           "Total number of BGP messages sent to the peer over the lifetime of its configuration or since the last clear.";
+      }
+      leaf last-notification-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Timestamp representing the time of the last Notification message sent to the peer.";
+      }
+      leaf last-notification-error-code {
+        config false;
+        type enumeration {
+          enum "Message Header Error" {
+            value 0;
+          }
+          enum "Open Message Error" {
+            value 1;
+          }
+          enum "Update Message Error" {
+            value 2;
+          }
+          enum "Hold Timer Error" {
+            value 3;
+          }
+          enum "Finite State Machine Error" {
+            value 4;
+          }
+          enum Cease {
+            value 5;
+          }
+        }
+        description
+          "The error code in the last NOTIFICATION sent to this peer.";
+      }
+      leaf last-notification-error-subcode {
+        config false;
+        type enumeration {
+          enum "Connection Not Synchronized" {
+            value 0;
+          }
+          enum "Bad Message Length" {
+            value 1;
+          }
+          enum "Bad Message Type" {
+            value 2;
+          }
+          enum "Unsupported Version Number" {
+            value 3;
+          }
+          enum "Bad Peer As" {
+            value 4;
+          }
+          enum "Bad BGP Identifier" {
+            value 5;
+          }
+          enum "Unsupported Optional Parameter";
+          enum "Unacceptable Hold Time";
+          enum "UPDATE Message Error subcodes";
+          enum "Malformed Attribute List";
+          enum "Unrecognized Well-known Attribute";
+          enum "Missing Well-known Attribute";
+          enum "Attribute Flags Error";
+          enum "Attribute Length Error";
+          enum "Invalid ORIGIN Attribute";
+          enum "Invalid NEXT_HOP Attribute";
+          enum "Optional Attribute Error";
+          enum "Invalid Network Field";
+          enum "Malformed AS_PATH";
+          enum "Maximum Number of Prefixes Reached";
+          enum "Administrative Shutdown";
+          enum "Peer De-configured";
+          enum "Administrative Reset";
+          enum "Connection Rejected";
+          enum "Other Configuration Change";
+          enum "Connection Collision Resolution";
+          enum "Out of Resources";
+        }
+        description
+          "The error subcode in the last NOTIFICATION sent to this peer.";
+      }
+      leaf total-notifications {
+        type uint32;
+        description
+          "Number of BGP Notification messages sent to the peer over the lifetime of its configuration or since the last clear.";
       }
     }
     container received-messages {
@@ -1025,6 +1134,87 @@ module srl_nokia-bgp {
         type srl_nokia-comm:date-and-time-delta;
         description
           "The timestamp when the last UPDATE was received from this peer.";
+      }
+      leaf last-notification-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Timestamp representing the time of the last Notification message received from the peer.";
+      }
+      leaf last-notification-error-code {
+        config false;
+        type enumeration {
+          enum "Message Header Error" {
+            value 0;
+          }
+          enum "Open Message Error" {
+            value 1;
+          }
+          enum "Update Message Error" {
+            value 2;
+          }
+          enum "Hold Timer Error" {
+            value 3;
+          }
+          enum "Finite State Machine Error" {
+            value 4;
+          }
+          enum Cease {
+            value 5;
+          }
+        }
+        description
+          "The error code in the last NOTIFICATION received from this peer.";
+      }
+      leaf last-notification-error-subcode {
+        config false;
+        type enumeration {
+          enum "Connection Not Synchronized" {
+            value 0;
+          }
+          enum "Bad Message Length" {
+            value 1;
+          }
+          enum "Bad Message Type" {
+            value 2;
+          }
+          enum "Unsupported Version Number" {
+            value 3;
+          }
+          enum "Bad Peer As" {
+            value 4;
+          }
+          enum "Bad BGP Identifier" {
+            value 5;
+          }
+          enum "Unsupported Optional Parameter";
+          enum "Unacceptable Hold Time";
+          enum "UPDATE Message Error subcodes";
+          enum "Malformed Attribute List";
+          enum "Unrecognized Well-known Attribute";
+          enum "Missing Well-known Attribute";
+          enum "Attribute Flags Error";
+          enum "Attribute Length Error";
+          enum "Invalid ORIGIN Attribute";
+          enum "Invalid NEXT_HOP Attribute";
+          enum "Optional Attribute Error";
+          enum "Invalid Network Field";
+          enum "Malformed AS_PATH";
+          enum "Maximum Number of Prefixes Reached";
+          enum "Administrative Shutdown";
+          enum "Peer De-configured";
+          enum "Administrative Reset";
+          enum "Connection Rejected";
+          enum "Other Configuration Change";
+          enum "Connection Collision Resolution";
+          enum "Out of Resources";
+        }
+        description
+          "The error subcode in the last NOTIFICATION received from the peer.";
+      }
+      leaf total-notifications {
+        type uint32;
+        description
+          "Number of BGP Notification messages received from the peer over the lifetime of its configuration or since the last clear.";
       }
     }
   }
@@ -1071,6 +1261,19 @@ module srl_nokia-bgp {
         type string;
         description
           "State field to display the maintenance group to which this neighbor belongs to.";
+      }
+      leaf peer-type {
+        config false;
+        type enumeration {
+          enum ibgp {
+            description
+              "Indicates that the peer is IBGP (local-as == peer-as).";
+          }
+          enum ebgp {
+            description
+              "Indicates that the peer is EBGP (local-as != peer-as).";
+          }
+        }
       }
       uses bgp-policy;
       leaf local-preference {
@@ -1287,6 +1490,37 @@ module srl_nokia-bgp {
           description
             "Administratively enable or disable the IPv4 unicast address family on the BGP session";
         }
+        container add-paths {
+          if-feature "srl_nokia-feat:bgp-add-paths";
+          description
+            "Configure support for the advertisement and receipt of multiple paths for a single IPv4-unicast prefix with the peer";
+          leaf receive {
+            type boolean;
+            description
+              "Enable capability negotiation to receive multiple path advertisements for a single IPv4-unicast prefix from the peer";
+          }
+          leaf send {
+            type boolean;
+            description
+              "Enable capability negotiation to send multiple path advertisements for a single IPv4-unicast prefix towards the peer";
+          }
+          choice selection-algorithm {
+            leaf send-max {
+              type uint8 {
+                range "1..16";
+              }
+              description
+                "Send the N best paths for a single IPv4-unicast prefix, or as many as possible until there are no more valid paths to send.
+
+                 This ensures the best path is advertised but does not limit the additional paths to being 'used' paths.";
+            }
+            leaf send-multipath {
+              type empty;
+              description
+                "Send the used paths for a single IPv4-unicast prefix, including all paths that are multipaths.";
+            }
+          }
+        }
         leaf oper-state {
           config false;
           type enumeration {
@@ -1329,6 +1563,28 @@ module srl_nokia-bgp {
             description
               "When the number of IPv4 routes received from the peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
           }
+          leaf prevent-teardown {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type boolean;
+            description
+              "When false the session is immediately torn down when the number of received IPv4 routes exceeds the configured limit.";
+          }
+          leaf restart-timer {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type uint16;
+            units "seconds";
+            description
+              "Time interval in seconds after which the BGP session is re-established after being torn down due to exceeding the IPv4 prefix limit.
+
+               This only applies if prevent-teardown is false.";
+          }
+          leaf prefix-limit-exceeded {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            config false;
+            type boolean;
+            description
+              "Changes from false to true when the number of received IPv4 routes increases to max-received-routes + 1 and remains true until the number of received IPv4 routes decreases back to max-received-routes      (applicable if prevent-teardown = true) or until the session is re-established (applicable if prevent-teardown = false)";
+          }
         }
         leaf received-routes {
           config false;
@@ -1363,6 +1619,37 @@ module srl_nokia-bgp {
           description
             "Administratively enable or disable the IPv6 unicast address family on the BGP session";
         }
+        container add-paths {
+          if-feature "srl_nokia-feat:bgp-add-paths";
+          description
+            "Configure support for the advertisement and receipt of multiple paths for a single IPv6-unicast prefix with any single peer in the peer-group";
+          leaf receive {
+            type boolean;
+            description
+              "Enable capability negotiation to receive multiple path advertisements for a single IPv6-unicast prefix from any single peer in the peer-group";
+          }
+          leaf send {
+            type boolean;
+            description
+              "Enable capability negotiation to send multiple path advertisements for a single IPv6-unicast prefix towards any single peer in the peer-group";
+          }
+          choice selection-algorithm {
+            leaf send-max {
+              type uint8 {
+                range "1..16";
+              }
+              description
+                "Send the N best paths for a single IPv6-unicast prefix, or as many as possible until there are no more valid paths to send.
+
+                 This ensures the best path is advertised but does not limit the additional paths to being 'used' paths.";
+            }
+            leaf send-multipath {
+              type empty;
+              description
+                "Send the used paths for a single IPv6-unicast prefix, including all paths that are multipaths.";
+            }
+          }
+        }
         leaf oper-state {
           config false;
           type enumeration {
@@ -1390,6 +1677,28 @@ module srl_nokia-bgp {
             type percentage;
             description
               "When the number of IPv6 routes received from the peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+          }
+          leaf prevent-teardown {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type boolean;
+            description
+              "When false the session is immediately torn down when the number of received IPv6 routes exceeds the configured limit.";
+          }
+          leaf restart-timer {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            type uint16;
+            units "seconds";
+            description
+              "Time interval in seconds after which the BGP session is re-established after being torn down due to exceeding the IPv6 prefix limit.
+
+               This only applies if prevent-teardown is false.";
+          }
+          leaf prefix-limit-exceeded {
+            if-feature "srl_nokia-feat:bgp-prefix-limit";
+            config false;
+            type boolean;
+            description
+              "Changes from false to true when the number of received IPv6 routes increases to max-received-routes + 1 and remains true until the number of received IPv6 routes decreases back to max-received-routes      (applicable if prevent-teardown = true) or until the session is re-established (applicable if prevent-teardown = false)";
           }
         }
         leaf received-routes {
@@ -1827,6 +2136,32 @@ module srl_nokia-bgp {
           }
         }
       }
+      container ipv6-next-hops {
+        if-feature "srl_nokia-feat:bgp-ipv6-next-hop-tunnel-resolution";
+        description
+          "Options related to the resolution of BGP next-hops that are IPv6 addresses";
+        container tunnel-resolution {
+          description
+            "Options related to resolution using tunnels in the tunnel table";
+          leaf mode {
+            description
+              "Mode to control the order of tunnel resolution compared to route resolution";
+            type enumeration {
+              enum prefer;
+              enum require;
+              enum disabled;
+            }
+            default "disabled";
+          }
+          leaf-list allowed-tunnel-types {
+            description
+              "List of allowed tunnel types";
+            type identityref {
+              base srl_nokia-comm:tunnel-type;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -1966,6 +2301,17 @@ module srl_nokia-bgp {
           }
         }
       }
+      container best-path-selection {
+        if-feature "srl_nokia-feat:routing-policy-bgp-med";
+        description
+          "Container with options that control the BGP decision process (tie break between routes for the same NLRI).";
+        leaf always-compare-med {
+          type boolean;
+          default "false";
+          description
+            "Compare multi-exit discriminator (MED) value from different ASes when selecting the best route. The default behavior is to only compare MEDs for paths received from the same AS.";
+        }
+      }
       container convergence {
         description
           "Options for configuring address family independent BGP convergence parameters";
@@ -2100,6 +2446,39 @@ module srl_nokia-bgp {
           description
             "Administratively enable or disable the IPv4 unicast address family on all sessions";
         }
+        container add-paths {
+          if-feature "srl_nokia-feat:bgp-add-paths";
+          description
+            "Configure support for the advertisement and receipt of multiple paths for a single IPv4-unicast prefix with any single peer";
+          leaf receive {
+            type boolean;
+            default "false";
+            description
+              "Enable capability negotiation to receive multiple path advertisements for a single IPv4-unicast prefix from any single peer";
+          }
+          leaf send {
+            type boolean;
+            default "false";
+            description
+              "Enable capability negotiation to send multiple path advertisements for a single IPv4-unicast prefix towards any single peer";
+          }
+          choice selection-algorithm {
+            leaf send-max {
+              type uint8 {
+                range "1..16";
+              }
+              description
+                "Send the N best paths for a single IPv4-unicast prefix, or as many as possible until there are no more valid paths to send.
+
+                 This ensures the best path is advertised but does not limit the additional paths to being 'used' paths.";
+            }
+            leaf send-multipath {
+              type empty;
+              description
+                "Send the used paths for a single IPv4-unicast prefix, including all paths that are multipaths.";
+            }
+          }
+        }
         leaf advertise-ipv6-next-hops {
           type boolean;
           default "false";
@@ -2140,6 +2519,39 @@ module srl_nokia-bgp {
           default "disable";
           description
             "Administratively enable or disable the IPv6 unicast address family on all sessions";
+        }
+        container add-paths {
+          if-feature "srl_nokia-feat:bgp-add-paths";
+          description
+            "Configure support for the advertisement and receipt of multiple paths for a single IPv6-unicast prefix with any single peer";
+          leaf receive {
+            type boolean;
+            default "false";
+            description
+              "Enable capability negotiation to receive multiple path advertisements for a single IPv6-unicast prefix from any single peer";
+          }
+          leaf send {
+            type boolean;
+            default "false";
+            description
+              "Enable capability negotiation to send multiple path advertisements for a single IPv6-unicast prefix towards any single peer";
+          }
+          choice selection-algorithm {
+            leaf send-max {
+              type uint8 {
+                range "1..16";
+              }
+              description
+                "Send the N best paths for a single IPv6-unicast prefix, or as many as possible until there are no more valid paths to send.
+
+                 This ensures the best path is advertised but does not limit the additional paths to being 'used' paths.";
+            }
+            leaf send-multipath {
+              type empty;
+              description
+                "Send the used paths for a single IPv6-unicast prefix, including all paths that are multipaths.";
+            }
+          }
         }
         uses convergence-for-family;
         uses next-hop-resolution;
@@ -2299,6 +2711,19 @@ module srl_nokia-bgp {
       container transport {
         description
           "Options related to the TCP transport of BGP sessions";
+        leaf single-hop-connected-check {
+          if-feature "srl_nokia-feat:bgp-single-hop-connected-check";
+          type boolean;
+          default "true";
+          description
+            "Control whether a single-hop BGP session should be allowed to setup if its 'related interface' is down.
+
+             If single-hop-connected-check is false, a single-hop BGP session (EBGP or IBGP) to any IPv4 or IPv6 neighbor address is permitted to establish if there is ANY valid (IPv6 global unicast, IPv4 link-local, or IPv4 global) route to that neighbor address, regardless of whether the 'related interface' is up or down.
+
+             If single-hop-connected-check is true (default value), a single-hop BGP session (EBGP or IBGP) to any IPv4 or IPv6 neighbor address is only permitted to transition from idle to a higher state if the 'related interface' is up.
+
+             The 'related interface' of a single hop peer is the subinterface associated with the IPv6 link local neighbor address or else the subinterface with a primary or secondary IP address and prefix-length that covers the neighbor address.";
+        }
         leaf tcp-mss {
           type uint16 {
             range "536..9446";

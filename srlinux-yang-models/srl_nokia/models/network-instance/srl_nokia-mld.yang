@@ -31,6 +31,10 @@ module srl_nokia-mld {
   description
     "This yang file models configuration and state of the mld protocol";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -84,16 +88,19 @@ module srl_nokia-mld {
       must "starts-with(.,'ff')" {
         error-message "Not a valid IPv6 multicast address";
       }
+      must "not (re-match(.,'[f]{2}[0-9a-f][0-3].*') or re-match(.,'[f]{2}[0-9a-f][f].*'))" {
+        error-message "Not a valid IPv6 multicast addres scope";
+      }
     }
     leaf end {
       type srl_nokia-comm:ipv6-address;
       description
         "end of the group range.";
-      must '../start <= .' {
-        error-message "start should be lower than end";
-      }
       must "starts-with(.,'ff')" {
         error-message "Not a valid IPv6 multicast address";
+      }
+      must "not (re-match(.,'[f]{2}[0-9a-f][0-3].*') or re-match(.,'[f]{2}[0-9a-f][f].*'))" {
+        error-message "Not a valid IPv6 multicast addres scope";
       }
     }
   }
@@ -150,6 +157,26 @@ module srl_nokia-mld {
       description
         "Trace MLD Packet types
          Only one type can be enabled at a time";
+      container interface {
+        presence "Enable the tracing of IGMP packets";
+        description
+          "Enable interface filter for packets.";
+        choice interface {
+          mandatory true;
+          leaf name {
+            description
+              "Trace for interface with this name.";
+            type leafref {
+              path "../../../../../interface/interface-name";
+            }
+          }
+          leaf all {
+            description
+              "Trace for all interfaces.";
+            type empty;
+          }
+        }
+      }
       leaf type {
         type enumeration {
           enum all {
@@ -197,6 +224,7 @@ module srl_nokia-mld {
               "Enable tracing for the packets which are sent, received or dropped.";
           }
         }
+        default "egress-ingress-and-dropped";
       }
     }
   }
@@ -208,20 +236,26 @@ module srl_nokia-mld {
       container trace {
         description
           "Tracing parameter flags";
-        uses mld-interfaces-tracing-config;
-        uses mld-packet-tracing-config;
-      }
-    }
-  }
-
-  grouping mld-interface-trace-options {
-    container trace-options {
-      description
-        "Enter the trace-options context";
-      container trace {
-        description
-          "Tracing parameter flags";
-        uses mld-interfaces-tracing-config;
+        container interface {
+          presence "Enable the tracing of MLD packets";
+          description
+            "Enable tracing interface events.";
+          choice interface {
+            mandatory true;
+            leaf name {
+              description
+                "Trace for interface with this name.";
+              type leafref {
+                path "../../../../interface/interface-name";
+              }
+            }
+            leaf all {
+              description
+                "Trace for all interfaces.";
+              type empty;
+            }
+          }
+        }
         uses mld-packet-tracing-config;
       }
     }
@@ -310,7 +344,6 @@ module srl_nokia-mld {
       type uint32 {
         range "0..4096";
       }
-      default "0";
     }
     leaf max-sources {
       description
@@ -318,7 +351,6 @@ module srl_nokia-mld {
       type uint32 {
         range "0..512";
       }
-      default "0";
     }
     leaf max-group-sources {
       description
@@ -326,7 +358,6 @@ module srl_nokia-mld {
       type uint32 {
         range "0..4096";
       }
-      default "0";
     }
     leaf query-interval {
       description
@@ -356,7 +387,6 @@ module srl_nokia-mld {
       }
     }
     uses mld-policy;
-    uses mld-interface-trace-options;
     uses mld-ssm-config;
     container static {
       description

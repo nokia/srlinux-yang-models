@@ -6,6 +6,9 @@ module srl_nokia-platform-lc {
   import srl_nokia-platform {
     prefix srl-platform;
   }
+  import srl_nokia-platform-pipeline-counters {
+    prefix srl-platform-pipeline;
+  }
   import srl_nokia-extensions {
     prefix srl-ext;
   }
@@ -19,6 +22,10 @@ module srl_nokia-platform-lc {
   description
     "This module defines configuration and operational state data related to line cards.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -108,16 +115,33 @@ module srl_nokia-platform-lc {
           uses fabric-state;
         }
         list pipeline {
-          if-feature "srl-feat:tomahawk3";
+          if-feature "srl-feat:tomahawk3 or srl-feat:oc-extracted-cpm-traffic-stats";
           description
             "List of pipelines that make up one forwarding complex.";
           key "index";
           leaf index {
-            type uint8 {
-              range "0..7";
+            type union {
+              type uint8 {
+                range "0..7";
+              }
+              type enumeration {
+                enum egress {
+                  if-feature "srl-feat:oc-extracted-cpm-traffic-stats";
+                  description
+                    "Applicable to J2 and J2C+ systems only";
+                }
+                enum ingress {
+                  if-feature "srl-feat:oc-extracted-cpm-traffic-stats";
+                  description
+                    "Applicable to J2 and J2C+ systems only";
+                }
+              }
             }
             description
-              "The pipeline number.";
+              "The pipeline number (TH3 systems) or direction (J2 and J2C+ systems).";
+          }
+          uses srl-platform-pipeline:pipeline-counters {
+            if-feature "srl-feat:oc-extracted-cpm-traffic-stats";
           }
         }
       }

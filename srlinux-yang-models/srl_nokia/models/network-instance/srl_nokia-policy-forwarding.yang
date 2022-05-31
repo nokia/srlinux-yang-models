@@ -16,7 +16,7 @@ module srl_nokia-policy-forwarding {
     prefix srl_nokia-ext;
   }
   import srl_nokia-features {
-    prefix srl_nokia-feat;
+    prefix srl-feat;
   }
 
   organization
@@ -24,40 +24,13 @@ module srl_nokia-policy-forwarding {
   description
     "This module defines configuration and operational state data for policy-forwarding related objects.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
-  }
-
-  grouping pf-rule-statistics {
-    container statistics {
-      description
-        "Container for per-rule statistics";
-      config false;
-      leaf last-clear {
-        type srl_nokia-comm:date-and-time-delta;
-        description
-          "Time of the last clear command performed by the user at this level or a higher level";
-      }
-      leaf matched-packets {
-        srl_nokia-ext:show-importance "high";
-        description
-          "The number of ingress packets matching the entry since it was programmed or since the last clear, considering all subinterfaces that use the policy (sum across all linecards)";
-        type srl_nokia-comm:zero-based-counter64;
-      }
-      leaf matched-octets {
-        srl_nokia-ext:show-importance "high";
-        description
-          "The number of octets in ingress packets matching the entry since it was programmed or since the last clear, considering all subinterfaces that use the policy (sum across all linecards)";
-        type srl_nokia-comm:zero-based-counter64;
-      }
-      leaf last-match {
-        srl_nokia-ext:show-importance "high";
-        description
-          "The elapsed time since an ingress packet last matched the entry, considering all subinterfaces that use the policy (across all linecards)";
-        type srl_nokia-comm:date-and-time-delta;
-      }
-    }
   }
 
   grouping pf-action-config {
@@ -76,15 +49,13 @@ module srl_nokia-policy-forwarding {
 
   grouping pf-match-config {
     container match {
-      presence "Match packets for which a container is present. If the match container itself is not present, no packets are matched by the rule.";
       description
         "Container for the conditions that determine whether a packet matches this entry";
       container ipv4 {
-        presence "Match IPv4 packets. If the ipv4 container is not present, no IPv4 packets are matched by the rule.";
         description
           "Container for match conditions associated with IPv4 header fields
 
-           If no match conditions are provided then all IPv4 packets are matched.";
+           If no match conditions are provided then no IPv4 packets are matched.";
         leaf protocol {
           description
             "An IPv4 packet matches this condition if its IP protocol type field matches the specified value";
@@ -94,6 +65,15 @@ module srl_nokia-policy-forwarding {
           type srl_nokia-comm:dscp;
           description
             "A list of DSCP values to be matched for incoming packets. An OR match should be performed, such that a packet must match one of the values defined in this list. If the field is left empty then any DSCP value matches.";
+        }
+        container source-ip {
+          description
+            "Packet matching criteria based on source IPv4 address";
+          leaf prefix {
+            description
+              "Match a packet if its source IP address is within the specified IPv4 prefix.";
+            type srl_nokia-comm:ipv4-prefix;
+          }
         }
       }
     }
@@ -115,11 +95,11 @@ module srl_nokia-policy-forwarding {
         description
           "Description string for the policy";
       }
-      leaf last-clear {
+      leaf tcam-entries {
         config false;
-        type srl_nokia-comm:date-and-time-delta;
+        type uint16;
         description
-          "Time of the last clear command performed by the user at this level";
+          "The number of TCAM entries required to implement this entire policy.";
       }
       list rule {
         description
@@ -165,7 +145,6 @@ module srl_nokia-policy-forwarding {
         type leafref {
           path "../../policy/policy-id";
         }
-        mandatory true;
         description
           "The policy to be applied on the interface. Packets ingress on the referenced interface should be compared to the match criteria within the specified policy, and in the case that these criteria are met, the forwarding actions specified applied.";
       }
@@ -174,6 +153,9 @@ module srl_nokia-policy-forwarding {
 
   grouping policy-forwarding-top {
     container policy-forwarding {
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+      must "../srl_nokia-netinst:type = 'default'";
+      presence "Enable support for policy-based forwarding in the network instance.";
       description
         "Configuration and operational state relating to policy-forwarding within a network instance.";
       uses pf-policies;
@@ -182,7 +164,6 @@ module srl_nokia-policy-forwarding {
   }
 
   augment "/srl_nokia-netinst:network-instance" {
-    if-feature "srl_nokia-feat:disabled";
     uses policy-forwarding-top;
   }
 }

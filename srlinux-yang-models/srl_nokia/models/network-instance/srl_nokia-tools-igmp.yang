@@ -19,6 +19,10 @@ module srl_nokia-tools-igmp {
   description
     "Model for IGMP operational commands";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -28,28 +32,85 @@ module srl_nokia-tools-igmp {
     container igmp {
       if-feature "srl_nokia-feat:igmp";
       presence "Send operational commands to IGMP manager";
-      container interface {
+      container version {
+        leaf clear {
+          type empty;
+          description
+            "Reset the IGMP operational version for all interfaces.";
+        }
+      }
+      container counters {
+        leaf clear {
+          type empty;
+          description
+            "Reset IGMP counters for all interfaces.";
+        }
+      }
+      container membership {
+        leaf clear {
+          type empty;
+          description
+            "Clear the IGMP memberships for all interfaces.";
+        }
+        list group {
+          key "group";
+          description
+            "Multicast group membership.";
+          leaf group {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Multicast address.";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear all IGMP memberships for this group on all interfaces.";
+          }
+          list source {
+            key "source";
+            description
+              "Source addresses of multicast.";
+            leaf source {
+              type srl_nokia-comm:ipv4-address;
+              description
+                "Source address of multicast.";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all IGMP memberships for this group on all interfaces.";
+            }
+          }
+        }
+      }
+      list interface {
         description
-          "Container for IGMP interface tools";
+          "List of IGMP interfaces";
+        key "interface-name";
+        leaf interface-name {
+          type srl_nokia-comm:subinterface-all;
+          description
+            "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+        }
         container version {
           leaf clear {
             type empty;
             description
-              "Reset the IGMP operational version for all interfaces.";
+              "Reset the IGMP operational version for this interface.";
           }
         }
         container counters {
           leaf clear {
             type empty;
             description
-              "Reset IGMP counters for all interfaces.";
+              "Reset IGMP counters for this interface.";
           }
         }
         container membership {
           leaf clear {
             type empty;
             description
-              "Clear the IGMP memberships for all interfaces.";
+              "Clear all IGMP memberships for this interface.";
           }
           list group {
             key "group";
@@ -63,7 +124,7 @@ module srl_nokia-tools-igmp {
             leaf clear {
               type empty;
               description
-                "Clear all IGMP memberships for this group on all interfaces.";
+                "Clear all IGMP memberships for this group on this interface.";
             }
             list source {
               key "source";
@@ -77,68 +138,7 @@ module srl_nokia-tools-igmp {
               leaf clear {
                 type empty;
                 description
-                  "Clear all IGMP memberships for this group on all interfaces.";
-              }
-            }
-          }
-        }
-        list interface {
-          description
-            "List of IGMP interfaces";
-          key "interface-name";
-          leaf interface-name {
-            type srl_nokia-comm:subinterface-all;
-            description
-              "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
-          }
-          container version {
-            leaf clear {
-              type empty;
-              description
-                "Reset the IGMP operational version for this interface.";
-            }
-          }
-          container counters {
-            leaf clear {
-              type empty;
-              description
-                "Reset IGMP counters for this interface.";
-            }
-          }
-          container membership {
-            leaf clear {
-              type empty;
-              description
-                "Clear all IGMP memberships for this interface.";
-            }
-            list group {
-              key "group";
-              description
-                "Multicast group membership.";
-              leaf group {
-                type srl_nokia-comm:ipv4-address;
-                description
-                  "Multicast address.";
-              }
-              leaf clear {
-                type empty;
-                description
                   "Clear all IGMP memberships for this group on this interface.";
-              }
-              list source {
-                key "source";
-                description
-                  "Source addresses of multicast.";
-                leaf source {
-                  type srl_nokia-comm:ipv4-address;
-                  description
-                    "Source address of multicast.";
-                }
-                leaf clear {
-                  type empty;
-                  description
-                    "Clear all IGMP memberships for this group on this interface.";
-                }
               }
             }
           }

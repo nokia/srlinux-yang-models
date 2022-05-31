@@ -25,6 +25,10 @@ module srl_nokia-segment-routing {
   description
     "This YANG file covers segment routing configuration and state at the network-instance level.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -80,27 +84,20 @@ module srl_nokia-segment-routing {
         }
         leaf active {
           description
-            "When false, the prefix SID is inactive.";
+            "When false, the prefix SID is inactive.
+
+             It could be inactive because it is involved in a prefix or SID conflict that occurred between different protocol-instance. It could also be inactive because datapath programming failed.";
           type boolean;
         }
-        leaf inactive-reason {
+        leaf prefix-conflict {
+          type boolean;
           description
-            "The reason for the prefix SID being inactive";
-          type enumeration {
-            enum prefix-conflict {
-              description
-                "prefix-conflict occurs when there are multiple entries in the SID database for the same (prefix, protocol-instance, protocol-multi-topology, algorithm). All the conflicting entries become inactive except for the one with the smallest sid-index per draft-ietf-spring-conflict-resolution.";
-            }
-            enum global-sid-conflict {
-              description
-                "sid-conflict occurs when the same sid has been assigned to different prefixes after first eliminating inactive entries due to prefix-conflict. All entries involved in a sid-conflict that do not have the absolute lowest 'preference' value become inactive. In SRL implementation local-prefix-sid entries are considered to have a lower numerical preference than remote prefix-sid entries. If there are still SID conflicts then all the remaining conflicting entries become inactive except for the one with the smallest sid-index per draft-ietf-spring-conflict-resolution.";
-            }
-            enum sid-index-out-of-range {
-              description
-                "SID index + SRGB base exceeds the available label range";
-            }
-            enum fib-programming-failed;
-          }
+            "Reads true when the prefix SID entry is involved in a prefix conflict that has occurred between protocols. This occurs when there are multiple entries in the SID database for the same prefix. All the conflicting entries become inactive except for the one with the smallest sid-index.";
+        }
+        leaf sid-conflict {
+          type boolean;
+          description
+            "Reads true when the prefix SID entry is involved in a SID conflict that has occurred between protocols (after first removing inter-protocol prefix conflict entries). All entries involved in a SID conflict that do not have the absolute lowest 'preference' value become inactive. In the SRL implementation local-prefix-sid entries are considered to have a lower numerical preference than remote prefix-sid entries. If there are still SID conflicts then all the remaining conflicting entries become inactive except for the one with the smallest sid-index.";
         }
       }
     }

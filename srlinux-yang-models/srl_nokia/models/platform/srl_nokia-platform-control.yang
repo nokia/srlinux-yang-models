@@ -9,6 +9,9 @@ module srl_nokia-platform-control {
   import srl_nokia-extensions {
     prefix srl-ext;
   }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
   import srl_nokia-features {
     prefix srl-feat;
   }
@@ -16,6 +19,10 @@ module srl_nokia-platform-control {
   description
     "This module defines configuration and operational state data related to control modules.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2020-06-30 {
     description
       "SRLinux 20.6.1";
@@ -25,12 +32,49 @@ module srl_nokia-platform-control {
       "SRLinux 19.11.1";
   }
 
+  identity control-interfaces {
+    description
+      "Types of interfaces present on control modules";
+  }
+
+  identity usb {
+    base control-interfaces;
+    description
+      "The single USB type A interface present on the control module";
+  }
+
   typedef control-role-type {
     description
       "Details the current role of the control module";
     type enumeration {
       enum active;
       enum standby;
+    }
+  }
+
+  grouping control-interfaces-top {
+    description
+      "Grouping for configuration and state relating to control module interfaces";
+    list interface {
+      key "name";
+      leaf name {
+        description
+          "Name of a specific control module interface";
+        type identityref {
+          base control-interfaces;
+        }
+      }
+      leaf admin-state {
+        description
+          "Set the administrative state of this interface";
+        type srl-comm:admin-state;
+      }
+      leaf oper-state {
+        config false;
+        description
+          "Indicates the current operational state of this interface";
+        type srl-comm:oper-state;
+      }
     }
   }
 
@@ -47,12 +91,14 @@ module srl_nokia-platform-control {
          This is set to 'A' for systems without removable control modules.";
     }
     leaf type {
+      config false;
       type string;
       srl-ext:show-importance "high";
       description
         "Control module type, as translated from the components EEPROM";
     }
     leaf role {
+      config false;
       if-feature "srl-feat:chassis";
       type control-role-type;
       srl-ext:show-importance "high";
@@ -67,11 +113,13 @@ module srl_nokia-platform-control {
     description
       "Grouping for control module configuration and state";
     list control {
-      config false;
       key "slot";
       description
         "Top-level container for control module configuration and state";
       uses control-state-top;
+      uses control-interfaces-top {
+        if-feature "srl-feat:platform-7210-sas24 or srl-feat:platform-7210-sas24g";
+      }
       uses srl-platform:component-common-state-top;
       uses srl-platform:component-common-state-sw;
       uses srl-platform:component-locator;

@@ -1,0 +1,74 @@
+module srl_nokia-tools-l2cp {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-l2cp";
+  prefix srl_nokia-tools-l2cp;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  description
+    "Model for system level L2CP operational commands";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  grouping tools-l2cp-top {
+    container l2cp-transparency {
+      presence "Configure tools l2cp-transparency";
+      if-feature "srl_nokia-feat:l2cp-transparency";
+      container l2cp-total-statistics {
+        leaf clear {
+          type empty;
+          description
+            "Clears the global statistics for the L2CP protocols.";
+        }
+      }
+      container lldp {
+        leaf clear {
+          type empty;
+          description
+            "Clears the statistics for Link Layer Discovery Protocol.";
+        }
+      }
+      container lacp {
+        leaf clear {
+          type empty;
+          description
+            "Clears the statistics for Link Aggregation Control Protocol.";
+        }
+      }
+      container xstp {
+        leaf clear {
+          type empty;
+          description
+            "Clears the statistics for all the Spanning Tree Protocols.";
+        }
+      }
+      container dot1x {
+        leaf clear {
+          type empty;
+          description
+            "Clears the statistics for the 802.1x Port based Network Access Control protocol.";
+        }
+      }
+      container ptp {
+        leaf clear {
+          type empty;
+          description
+            "Clears the statistics for the Precision Time Protocol .";
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    if-feature "srl_nokia-feat:l2cp-transparency";
+    uses tools-l2cp-top;
+  }
+}

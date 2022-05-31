@@ -6,10 +6,17 @@ module srl_nokia-sync-ptp {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
   import srl_nokia-sync-types {
     prefix srl_nokia-sync-types;
   }
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -44,6 +51,7 @@ module srl_nokia-sync-ptp {
          using the protocol.";
     }
   }
+
   grouping ptp-time-grouping {
     description
       "Time include seconds and nanoseconds";
@@ -60,13 +68,15 @@ module srl_nokia-sync-ptp {
         "Nano-seconds of time";
     }
   }
-  grouping pathtrace-data-set-grouping {
+
+  grouping pathtrace-ds-grouping {
     description
       "Path Trace info";
-    leaf path-trace-enable {
-      type boolean;
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
       description
-        "Turn on PTP Path Trace";
+        "Indicates if the PTP Path Trace is enabled or disabled";
     }
     leaf path-trace-number-of-clocks {
       type uint8;
@@ -74,18 +84,16 @@ module srl_nokia-sync-ptp {
       description
         "Number of clock retrieved from Path Trace";
     }
-    list path-trace-list {
+    list path-trace {
       config false;
-      key path-trace-index;
+      key "path-trace-index";
       description
         "List representing the Path Trace results";
-
       leaf path-trace-index {
-            type uint8 {
-              range "1..20";
-            }
+        type uint8 {
+          range "1..20";
+        }
       }
-      
       leaf clock-id {
         type srl_nokia-sync-types:clock-identity-type;
         description
@@ -93,7 +101,8 @@ module srl_nokia-sync-ptp {
       }
     }
   }
-  grouping ptp-default-data-set-top {
+
+  grouping ptp-default-ds-top {
     description
       "Grouping for ptp default data set configuration";
     container default-ds {
@@ -129,7 +138,7 @@ module srl_nokia-sync-ptp {
       }
       leaf priority1 {
         type uint8;
-        default 128;
+        default "128";
         description
           "The IEEE Std 1588 priority1 of the PTP Instance.
            Since priority1 is one of the first comparisons
@@ -139,7 +148,7 @@ module srl_nokia-sync-ptp {
         type uint8 {
           range "0..255";
         }
-        default 128;
+        default "128";
         description
           "The IEEE Std 1588 priority2 of the PTP Instance.
            The priority2 member is compared by the Best Master
@@ -150,7 +159,7 @@ module srl_nokia-sync-ptp {
         type uint8 {
           range "24..43";
         }
-        default 24;
+        default "24";
         description
           "The IEEE Std 1588 domainNumber of the PTP Instance.
            A domain consists of one or more PTP Instances
@@ -162,12 +171,11 @@ module srl_nokia-sync-ptp {
       }
       leaf slave-only {
         type boolean;
-        default false;
+        default "false";
         config false;
         description
           "The value of slave-only shall be true if the
            PTP Instance is a slave-only PTP Instance";
-        // KW: Will always be FALSE and can't be changed in our implementation
       }
       leaf local-priority {
         type uint8 {
@@ -179,13 +187,6 @@ module srl_nokia-sync-ptp {
            The priority2 member is compared by the Best Master
            Clock Algorithm (BMCA) after priority1 and clockQuality.
            Lower values take precedence.";
-      }
-      leaf admin-state {
-        type srl_nokia-comm:admin-state;
-        default "disable";
-        description
-          "Indicates if the PTP Instance is enabled for
-           PTP operation.";
       }
       leaf max-steps-removed {
         type uint8 {
@@ -205,7 +206,8 @@ module srl_nokia-sync-ptp {
       }
     }
   }
-  grouping ptp-current-data-set-top {
+
+  grouping ptp-current-ds-top {
     container current-ds {
       description
         "Provides current data from operation
@@ -251,7 +253,7 @@ module srl_nokia-sync-ptp {
     }
   }
 
-  grouping ptp-parent-data-set-top {
+  grouping ptp-parent-ds-top {
     description
       "Grouping for ptp parent data set configuration";
     container parent-ds {
@@ -277,18 +279,18 @@ module srl_nokia-sync-ptp {
           type uint16;
           config false;
           description
-           "Port number of the parent clock.
-            The value of 1021 refers to the ToD1 port while the value of 1022 refers to the ToD2 port.";
+            "Port number of the parent clock.
+             The value of 1021 refers to the ToD1 port while the value of 1022 refers to the ToD2 port.";
         }
       }
       leaf parent-stats {
         type boolean;
-        default false;
+        default "false";
         description
-              "When set to true, the values of
-               observedParentOffsetScaledLogVariance and
-               observedParentClockPhaseChangeRate of parentDS
-               have been measured and are valid.";
+          "When set to true, the values of
+           observedParentOffsetScaledLogVariance and
+           observedParentClockPhaseChangeRate of parentDS
+           have been measured and are valid.";
       }
       leaf observed-parent-offset-scaled-log-variance {
         type uint16;
@@ -332,7 +334,7 @@ module srl_nokia-sync-ptp {
     }
   }
 
-  grouping ptp-time-data-set-top {
+  grouping ptp-time-ds-top {
     description
       "Grouping for ptp parent data set configuration";
     container time-properties-ds {
@@ -345,110 +347,159 @@ module srl_nokia-sync-ptp {
         type boolean;
         config false;
         description
-           "When set to true, the current UTC offset is valid.";
+          "When set to true, the current UTC offset is valid.";
       }
       leaf current-utc-offset {
         when "../current-utc-offset-valid='true'";
         type int16;
         config false;
         description
-              "The offset between TAI and UTC when the epoch of the
-               PTP system is the PTP epoch in units of seconds, i.e.,
-               when ptp-timescale is TRUE; otherwise, the value has
-               no meaning.";
+          "The offset between TAI and UTC when the epoch of the
+           PTP system is the PTP epoch in units of seconds, i.e.,
+           when ptp-timescale is TRUE; otherwise, the value has
+           no meaning.";
       }
       leaf leap59 {
         type boolean;
         config false;
         description
-              "When set to true, the last minute of the current UTC
-               day contains 59 seconds.";
+          "When set to true, the last minute of the current UTC
+           day contains 59 seconds.";
       }
       leaf leap61 {
         type boolean;
         config false;
         description
-              "When set to true, the last minute of the current UTC
-               day contains 61 seconds.";
+          "When set to true, the last minute of the current UTC
+           day contains 61 seconds.";
       }
       leaf time-traceable {
         type boolean;
         config false;
         description
-              "When set to true, the timescale and the
-               currentUtcOffset are traceable to a primary
-               reference.";
+          "When set to true, the timescale and the
+           currentUtcOffset are traceable to a primary
+           reference.";
       }
       leaf frequency-traceable {
         type boolean;
         config false;
         description
-              "When set to true, the frequency determining the
-               timescale is traceable to a primary reference.";
-      }   
+          "When set to true, the frequency determining the
+           timescale is traceable to a primary reference.";
+      }
       leaf ptp-timescale {
         type boolean;
         config false;
         description
-              "When set to true, the clock timescale of the
-               grandmaster clock is PTP; otherwise, the timescale is
-               ARB (arbitrary).";
+          "When set to true, the clock timescale of the
+           grandmaster clock is PTP; otherwise, the timescale is
+           ARB (arbitrary).";
       }
       leaf time-source {
         type enumeration {
-          enum "atomic-clock"                 { value 16; }
-          enum "gps"                          { value 32; }
-          enum "terrestrial-radio"            { value 48; }
-          enum "ptp"                          { value 64; }
-          enum "ntp"                          { value 80; }
-          enum "hand-set"                     { value 96; }
-          enum "other"                        { value 144; }
-          enum "internal-oscillator"          { value 160; }
-          enum "240"                          { value 240; }
-          enum "241"                          { value 241; }
-          enum "242"                          { value 242; }
-          enum "243"                          { value 243; }
-          enum "244"                          { value 244; }
-          enum "245"                          { value 245; }
-          enum "246"                          { value 246; }
-          enum "247"                          { value 247; }
-          enum "248"                          { value 248; }
-          enum "249"                          { value 249; }
-          enum "250"                          { value 250; }
-          enum "251"                          { value 251; }
-          enum "252"                          { value 252; }
-          enum "253"                          { value 253; }
-          enum "254"                          { value 254; }
-          enum "reserved"                     { value 255; }
+          enum atomic-clock {
+            value 16;
+          }
+          enum gps {
+            value 32;
+          }
+          enum terrestrial-radio {
+            value 48;
+          }
+          enum ptp {
+            value 64;
+          }
+          enum ntp {
+            value 80;
+          }
+          enum hand-set {
+            value 96;
+          }
+          enum other {
+            value 144;
+          }
+          enum internal-oscillator {
+            value 160;
+          }
+          enum 240 {
+            value 240;
+          }
+          enum 241 {
+            value 241;
+          }
+          enum 242 {
+            value 242;
+          }
+          enum 243 {
+            value 243;
+          }
+          enum 244 {
+            value 244;
+          }
+          enum 245 {
+            value 245;
+          }
+          enum 246 {
+            value 246;
+          }
+          enum 247 {
+            value 247;
+          }
+          enum 248 {
+            value 248;
+          }
+          enum 249 {
+            value 249;
+          }
+          enum 250 {
+            value 250;
+          }
+          enum 251 {
+            value 251;
+          }
+          enum 252 {
+            value 252;
+          }
+          enum 253 {
+            value 253;
+          }
+          enum 254 {
+            value 254;
+          }
+          enum reserved {
+            value 255;
+          }
         }
-        description "The source of time used by the grandmaster clock.";
+        description
+          "The source of time used by the grandmaster clock.";
       }
       leaf sync-uncertain-flag {
         type boolean;
         config false;
         description
-              "When set to true, the incoming clock is in sync-uncertain state";
+          "When set to true, the incoming clock is in sync-uncertain state";
       }
-      container pathtrace-data-set {
+      container pathtrace-ds {
         description
           "The clockQuality of the local clock.";
-        uses pathtrace-data-set-grouping;
+        uses pathtrace-ds-grouping;
       }
       leaf sync-loss-detect {
         type uint8 {
           range "2..255";
         }
         default "3";
-        units seconds;
+        units "seconds";
         description
-              "Sets detection time for the detection of the SYNC message loss alarm.";
-      }      
+          "Sets detection time for the detection of the SYNC message loss alarm.";
+      }
       leaf delay-resp-loss-detect {
         type uint8 {
           range "2..255";
         }
         default "3";
-        units seconds;
+        units "seconds";
         description
           "Sets detection time for the detection of the Delay_resp message loss alarm.";
       }
@@ -462,105 +513,101 @@ module srl_nokia-sync-ptp {
           range "1..15";
         }
         default "1";
-        units minutes;
+        units "minutes";
         description
-              "The reporting duration of the time error monitoring in minutes.";
+          "The reporting duration of the time error monitoring in minutes.";
       }
       leaf time-error-mon-interval {
         type uint8 {
           range "1..5";
         }
         default "5";
-        units seconds;
+        units "seconds";
         description
-              "The sample interval of the time error monitoring in seconds.";
+          "The sample interval of the time error monitoring in seconds.";
       }
       leaf time-error-mon-ref {
         type enumeration {
           enum none {
             value 0;
-          description
-            "No input as time reference for time error measurement";
+            description
+              "No input as time reference for time error measurement";
           }
           enum tod {
             value 1;
-          description
-            "Sets the 1PPS+ToD port as the time reference for the time error measurement";
+            description
+              "Sets the 1PPS+ToD port as the time reference for the time error measurement";
           }
         }
-        default none;
+        default "none";
         description
-              "To configure the 1PPS+ToD port as the time reference for the time error measurement.";
+          "To configure the 1PPS+ToD port as the time reference for the time error measurement.";
       }
-      leaf alarm-profile {
-        type string {
-          length "1..40";
-        }
-      description
-        "Configured the Alarm Severity Assignment profile (ASAP) name.";
-      }   
     }
   }
-  grouping ptp-port-data-set-top {
+
+  grouping ptp-port-ds-top {
     description
       "Grouping for ptp port data set configuration";
-    container ptp-port-data-set {
-      list port-ds-list {
+    container ptp-port-ds {
+      list port-ds {
         key "port-number";
         description
-            "List of port data sets of the clock (see IEEE Std
-             1588-2008 subclause 8.2.5).";
+          "List of port data sets of the clock (see IEEE Std
+           1588-2008 subclause 8.2.5).";
         reference
-            "IEEE Std 1588-2008: 8.2.5";
+          "IEEE Std 1588-2008: 8.2.5";
         leaf port-number {
           type uint16;
           description
-              "Port number.
-               The data sets (i.e., information model) of IEEE Std
-               1588-2008 specify a member portDS.portIdentity, which
-               uses a typed struct with members clockIdentity and
-               portNumber.
+            "Port number.
+             The data sets (i.e., information model) of IEEE Std
+             1588-2008 specify a member portDS.portIdentity, which
+             uses a typed struct with members clockIdentity and
+             portNumber.
 
-               In this YANG data model, portIdentity is not modeled
-               in the port-ds-list.  However, its members are provided
-               as follows:
-               portIdentity.portNumber is provided as this
-               port-number leaf in port-ds-list, and
-               portIdentity.clockIdentity is provided as the
-               clock-identity leaf in default-ds of the instance
-               (i.e., ../../default-ds/clock-identity).";
+             In this YANG data model, portIdentity is not modeled
+             in the port-ds.  However, its members are provided
+             as follows:
+             portIdentity.portNumber is provided as this
+             port-number leaf in port-ds, and
+             portIdentity.clockIdentity is provided as the
+             clock-identity leaf in default-ds of the instance
+             (i.e., ../../default-ds/clock-identity).";
         }
         leaf port-state {
-          type srl_nokia-sync-types:port-state-enumeration;
+          type srl_nokia-sync-types:port-state;
+          config false;
           default "initializing";
           description
-              "Current state associated with the port.";
+            "Current state associated with the port.";
         }
         leaf underlying-interface {
           type srl_nokia-sync-types:interface-ptp;
           description
-              "Reference to the configured underlying interface that
-               is used by this PTP port (see RFC 8343).";
+            "Reference to the configured underlying interface that
+             is used by this PTP port (see RFC 8343).";
           reference
-              "RFC 8343: A YANG Data Model for Interface Management";
+            "RFC 8343: A YANG Data Model for Interface Management";
         }
         leaf log-min-delay-req-interval {
-          type int8{
+          type int8 {
             range "-7..4";
           }
           default "-4";
           description
-              "The base-2 logarithm of the minDelayReqInterval
-               (the minimum permitted mean time interval between
-               successive Delay_Req messages).";
+            "The base-2 logarithm of the minDelayReqInterval
+             (the minimum permitted mean time interval between
+             successive Delay_Req messages).";
         }
         leaf peer-mean-path-delay {
           type srl_nokia-sync-types:time-interval-type;
+          config false;
           default "0";
           description
-              "An estimate of the current one-way propagation delay
-               on the link when the delayMechanism is P2P; otherwise,
-               it is zero.";
+            "An estimate of the current one-way propagation delay
+             on the link when the delayMechanism is P2P; otherwise,
+             it is zero.";
         }
         leaf log-announce-interval {
           type int8 {
@@ -568,9 +615,9 @@ module srl_nokia-sync-ptp {
           }
           default "-3";
           description
-              "The base-2 logarithm of the mean
-               announceInterval (mean time interval between
-               successive Announce messages).";
+            "The base-2 logarithm of the mean
+             announceInterval (mean time interval between
+             successive Announce messages).";
         }
         leaf announce-receipt-timeout {
           type uint8 {
@@ -578,10 +625,10 @@ module srl_nokia-sync-ptp {
           }
           default "3";
           description
-              "The number of announceIntervals that have to pass
-               without receipt of an Announce message before the
-               occurrence of the event ANNOUNCE_RECEIPT_TIMEOUT_
-               EXPIRES.";
+            "The number of announceIntervals that have to pass
+             without receipt of an Announce message before the
+             occurrence of the event ANNOUNCE_RECEIPT_TIMEOUT_
+             EXPIRES.";
         }
         leaf log-sync-interval {
           type int8 {
@@ -589,95 +636,59 @@ module srl_nokia-sync-ptp {
           }
           default "-4";
           description
-              "The base-2 logarithm of the mean SyncInterval
-               for multicast messages.  The rates for unicast
-               transmissions are negotiated separately on a per-port
-               basis and are not constrained by this attribute.";
+            "The base-2 logarithm of the mean SyncInterval
+             for multicast messages.  The rates for unicast
+             transmissions are negotiated separately on a per-port
+             basis and are not constrained by this attribute.";
         }
         leaf delay-mechanism {
-          type srl_nokia-sync-types:delay-mechanism-enumeration;
+          type srl_nokia-sync-types:delay-mechanism;
           default "e2e";
           config false;
           description
-              "The propagation delay measuring option used by the
-               port in computing meanPathDelay.";
+            "The propagation delay measuring option used by the
+             port in computing meanPathDelay.";
         }
-        /* Pdelay not supported
-        leaf log-min-pdelay-req-interval {
-          type int8;
-          description
-              "The base-2 logarithm of the
-               minPdelayReqInterval (minimum permitted mean time
-               interval between successive Pdelay_Req messages).";
-        } */
         leaf major-version-number {
           type uint8;
           config false;
           description
-              "The PTP majort version number in use on the port.";
+            "The PTP majort version number in use on the port.";
         }
         leaf minor-version-number {
           type uint8;
           config false;
           description
-              "The PTP minor version number in use on the port.";
+            "The PTP minor version number in use on the port.";
         }
         leaf ptp-entity-type {
           type enumeration {
             enum disabled {
               value 0;
-            description
-              "Not enabled.";
+              description
+                "Not enabled.";
             }
             enum ptp-port-mode {
               value 1;
-            description
-            "Enable ptp port mode.";
+              description
+                "Enable ptp port mode.";
             }
-      /*      enum ptp-service-mode {
-              value 2;
-            description
-            "Enable future ptp service mode.";
-            }           */
           }
           default "ptp-port-mode";
           description
-              "Configure ptp-port or ptp-service or disabled."; // ptp-service is for TC
-        }
-        leaf alarm-profile {
-          type string {
-            length "1..40";
-          }
-          description
-        "Configured the Alarm Severity Assignment profile (ASAP) name.";
+            "Configure ptp-port or ptp-service or disabled.";
         }
         leaf port-role {
           type enumeration {
             enum auto {
               value 0;
-            description
-              "The status of the port is determined by the BMCA.";
+              description
+                "The status of the port is determined by the BMCA.";
             }
-    /* Not currently supporting 1588 Default Profle
-            enum master {
-              value 1;
-            description
-            "The status of the port is forced to master. Only applicable for 1588 Default Profle.";
-            }
-            enum slave {
-              value 2;
-            description
-            "EThe status of the port is forced to slave. Only applicable for 1588 Default Profle.";
-            }    
-            enum passive {
-              value 3;
-            description
-            "EThe status of the port is forced to passive. Only applicable for 1588 Default Profle.";
-            }         */              
           }
           default "auto";
           description
-              "Use BMCA or override port to be master, slave or passive.";
+            "Use BMCA or override port to be master, slave or passive.";
         }
         leaf local-priority {
           type uint8 {
@@ -685,179 +696,143 @@ module srl_nokia-sync-ptp {
           }
           default "128";
           description
-              "Specifies the local priority of the ptp port.";
+            "Specifies the local priority of the ptp port.";
         }
         leaf master-only {
           type boolean;
-          default true;
+          default "true";
           description
-              "Specifies the masterOnly attribute of the ptp port.";
-        }      
+            "Specifies the masterOnly attribute of the ptp port.";
+        }
         leaf asym-correction {
           type int32 {
             range "-100000000..100000000";
           }
           default "0";
-          units nanoseconds;
+          units "nanoseconds";
           description
-              "Specifies the asymmetry correction value (integer ns) for the ptp port.";
+            "Specifies the asymmetry correction value (integer ns) for the ptp port.";
         }
         leaf encap-type {
           type enumeration {
             enum ethernet {
               value 0;
-            description
-              "The clock uses Ethernet encapsulaton.";
+              description
+                "The clock uses Ethernet encapsulaton.";
             }
           }
           default "ethernet";
           description
-              "Encapsulation type used for ptp on this port.";
+            "Encapsulation type used for ptp on this port.";
         }
         leaf ptp-port-mac-address {
           type srl_nokia-comm:mac-address;
           config false;
           description
-              "Specifies the MAC address of the port to be used for the ptp port.";
-        }        
+            "Specifies the MAC address of the port to be used for the ptp port.";
+        }
         leaf vlan-id {
           type uint16 {
             range "0..4094";
           }
+          config false;
           default "0";
           description
-              "Specifies the VLAN ID to be used for the ptp port.";
+            "Specifies the VLAN ID to be used for the ptp port.";
         }
         leaf addressing-mode {
           type enumeration {
-    /*      commented out options for 1588 Default Profile  
-            enum unicast-default-profile {
-              value 0;
-            description
-              "The clock uses the provisioned unicast address for this ptp port. 
-              Only applicable for 1588 Default Profle.";
-            }
-            enum multicast-default-profile {
-              value 1;
-            description
-              "The clock uses the provisioned multicast address for this ptp port. 
-              Only applicable for 1588 Default Profle.";
-            }
-            enum hybrid-default-profile {
-              value 2;
-            description
-              "The clock uses the learned unicast address to transmit the Delay_Resp message and
-              uses the standard multicast address for other messages.
-              Only applicable for 1588 Default Profle.";
-            } 
-            */   
             enum multicast {
               value 3;
-            description
-              "The clock uses the provisioned multicast address for this ptp port. 
-              Only applicable for 1588 Default Profle.";
-            }                       
+              description
+                "The clock uses the provisioned multicast address for this ptp port.
+                 Only applicable for 1588 Default Profle.";
+            }
           }
           default "multicast";
           description
-              "Configure addressing mode to be used with PTP.";
+            "Configure addressing mode to be used with PTP.";
         }
         leaf dest-mac {
-          type enumeration {      
+          type enumeration {
             enum forwardable {
               value 0;
-            description
-              "The clock uses the forwardable MAC address: 01-1B-19-00-00-00.";
+              description
+                "The clock uses the forwardable MAC address: 01-1B-19-00-00-00.";
             }
             enum non-forwardable {
               value 1;
-            description
-              "The clock uses the non-forwardable MAC address: 01-80-C2-00-00-0E.";
+              description
+                "The clock uses the non-forwardable MAC address: 01-80-C2-00-00-0E.";
             }
           }
           default "forwardable";
           description
-              "Configure the MAC address associated with forwardable or non-forwardable.";
-              // leaving out user selected mac address
+            "Configure the MAC address associated with forwardable or non-forwardable.";
         }
         leaf admin-state {
           type srl_nokia-comm:admin-state;
           default "disable";
           description
-              "The administrative state of the ptp port.";
+            "The administrative state of the ptp port.";
         }
         container statistics {
+          config false;
           leaf anno-msg-tx {
             type uint32;
-            config false;
             description
-              "Specifies the number of annouce messages transmitted out the ptp port.";
+              "Specifies the number of announce messages transmitted out the ptp port.";
           }
           leaf anno-msg-rx {
             type uint32;
-            config false;
             description
-              "Specifies the number of annouce messages received on the ptp port.";
+              "Specifies the number of announce messages received on the ptp port.";
           }
           leaf sync-msg-tx {
             type uint32;
-            config false;
             description
               "Specifies the number of sync messages transmitted out the ptp port.";
           }
           leaf sync-msg-rx {
             type uint32;
-            config false;
             description
               "Specifies the number of sync messages received on the ptp port.";
           }
           leaf del-req-msg-tx {
             type uint32;
-            config false;
             description
               "Specifies the number of delay-req messages transmitted out the ptp port.";
           }
           leaf del-req-msg-rx {
             type uint32;
-            config false;
             description
               "Specifies the number of delay-req messages received on the ptp port.";
           }
           leaf del-resp-msg-tx {
             type uint32;
-            config false;
             description
               "Specifies the number of delay-resp messages transmitted out the ptp port.";
           }
           leaf del-resp-msg-rx {
             type uint32;
-            config false;
             description
               "Specifies the number of delay-resp messages received on the ptp port.";
           }
           leaf follow-up-msg-tx {
             type uint32;
-            config false;
             description
               "Specifies the number of follow-up messages transmitted out the ptp port.";
           }
           leaf follow-up-msg-rx {
             type uint32;
-            config false;
             description
               "Specifies the number of follow-up messages received on the ptp port.";
           }
         }
-        leaf ptp-port-alarm-profile {
-          type string {
-            length "1..40";
-          }
-          description
-            "Configured the Alarm Severity Assignment profile (ASAP) name.";
-        }
       }
     }
   }
+
   grouping ptp-instance-top {
     description
       "The PTP struct containing all attributes of PTP data set,
@@ -877,42 +852,43 @@ module srl_nokia-sync-ptp {
       default "ptp";
     }
     leaf tod-msg-type {
+      if-feature "srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
       type srl_nokia-sync-types:tod-msg-type;
       default "itu";
     }
-    list instance-list {
+    list instance {
       key "instance-number";
       description
         "List of one or more PTP Instances in the product (PTP Node).
          Each PTP Instance represents a distinct instance of PTP
          implementation (i.e. distinct Ordinary Clock, Boundary Clock,
-         or Transparent Clock), maintaining a distinct time.";      
-    
+         or Transparent Clock), maintaining a distinct time.";
       leaf instance-number {
         type uint32 {
           range "1..10";
-        } // only 1 instance supported
-
+        }
         description
           "The instance number of the current PTP instance.
            This instance number is used for management purposes
            only.  This instance number does not represent the PTP
            domain number and is not used in PTP messages.";
-        // range changed to match current TPS numbers
       }
-
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "The administrative state of the PTP instance.";
+      }
       leaf clock-mode {
         type srl_nokia-sync-types:clock-mode-type;
-        default "ptpdisabled";
         description
           "The type of PTP Instance.";
-        // configuration of the clock mode of the single PTP clock instance
-      }  
-      uses ptp-default-data-set-top;
-      uses ptp-current-data-set-top;
-      uses ptp-parent-data-set-top;
-      uses ptp-time-data-set-top;
-      uses ptp-port-data-set-top;
+      }
+      uses ptp-default-ds-top;
+      uses ptp-current-ds-top;
+      uses ptp-parent-ds-top;
+      uses ptp-time-ds-top;
+      uses ptp-port-ds-top;
     }
   }
 }

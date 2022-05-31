@@ -7,6 +7,10 @@ module srl_nokia-ethcfm-types {
     "This module defines derived types for configuration and operational state data
      related to Ethernet CFM management.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -146,11 +150,11 @@ module srl_nokia-ethcfm-types {
     }
   }
 
-  typedef ccm-interval-type {
+  typedef interval-type {
     description
-      "The possible intervals between CCM transmissions.";
+      "The possible intervals between PDU transmissions.";
     type enumeration {
-      enum 300hz;
+      enum 3330us;
       enum 10ms;
       enum 100ms;
       enum 1s;
@@ -484,101 +488,6 @@ module srl_nokia-ethcfm-types {
        period for a frame)";
     reference
       "[Y.1731] sections 7.4, 7.6; [MEF7.1] III.2";
-  }
-
-  typedef suspect-status-type {
-    type boolean;
-    description
-      "This boolean data type indicates whether the measurement interval
-       has been marked as suspect.
-       The object is set to false at the start of a measurement
-       interval. It is set to true when there is a discontinuity in the
-       performance measurements during the measurement interval.
-       Conditions for a discontinuity include, but are not limited to
-       the following:
-       1 - The local time-of-day clock is adjusted by at least 10
-       seconds
-       2 - The conducting of a performance measurement is halted before
-       the current measurement interval is completed
-       3 - A local test, failure, or reconfiguration that disrupts
-       service";
-    reference
-      "[MEF SOAM PM IA] R39, R40, 41 and R42";
-  }
-
-  typedef pm-interval-type {
-    type uint32 {
-      range "3..3600000";
-    }
-    units "ms";
-    description
-      "This integer data type indicates the transmission time between the
-       SOAM PM frames for session, in ms.";
-  }
-
-  typedef availability-type {
-    type enumeration {
-      enum available {
-        description
-          "Indicates the MEP is available.";
-      }
-      enum unavailable {
-        description
-          "Indicates the MEP is unavailable.";
-      }
-      enum unknown {
-        description
-          "Indicates the availability is not known, for instance because
-           insufficient time has passed to make an availability
-           calculation, the time has been excluded because of a
-           maintenance interval, or because availability measurement is
-           not enabled.";
-      }
-    }
-    description
-      "This enumeration data type defines the availability of a session,
-       measured by a loss measurement session.";
-    reference
-      "MEF-SOAM-TC-MIB.MefSoamTcAvailabilityType";
-  }
-
-  typedef bin-15-min-number {
-    type uint32 {
-      range "1..33";
-    }
-  }
-
-  typedef bin-1-day-number {
-    type uint32 {
-      range "1..8";
-    }
-  }
-
-  typedef slm-interval {
-    type enumeration {
-      enum 3300us {
-        value 3300;
-      }
-      enum 10ms {
-        value 10000;
-      }
-      enum 100ms {
-        value 100000;
-      }
-      enum 1s {
-        value 1000000;
-      }
-      enum 10s {
-        value 10000000;
-      }
-      enum 60s {
-        value 60000000;
-      }
-      enum 600s {
-        value 600000000;
-      }
-    }
-    units "microseconds";
   }
 
   typedef relay-action {

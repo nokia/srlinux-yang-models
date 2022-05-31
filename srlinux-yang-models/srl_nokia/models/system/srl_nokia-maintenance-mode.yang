@@ -26,6 +26,10 @@ module srl_nokia-maintenance-mode {
     "This module defines configuration and operational state data
      for Maintenance Mode.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -107,22 +111,25 @@ module srl_nokia-maintenance-mode {
       "Top-level grouping for Maintenance Mode Group";
     list group {
       description
-        "List of user-configured and built-in maintenance groups";
+        "List of user-configured maintenance groups";
       key "name";
       leaf name {
-        type string;
+        type srl_nokia-comm:name;
         description
-          "Name of the maintenance group.
-           The name \"system\" is reserved";
+          "Name of the maintenance group.";
       }
       container maintenance-mode {
         description
-          "Container for activating maintenance mode";
+          "Container with options for activating and deactivating maintenance mode for this group";
         leaf admin-state {
           type srl_nokia-comm:admin-state;
           default "disable";
           description
-            "Enable or disable maintenance mode group";
+            "Enable or disable maintenance mode for this group
+
+             The enable setting is blocked if there is another maintenance group with at least one BGP session in its scope that overlaps with this maintenance group and that other maintenance group is currently in maintenance mode.
+
+             While a maintenance group is in maintenance mode it is not possible to modify the BGP configuration of its members.";
         }
       }
       leaf maintenance-profile {
@@ -142,20 +149,23 @@ module srl_nokia-maintenance-mode {
     list profile {
       key "name";
       leaf name {
-        type string;
+        type srl_nokia-comm:name;
         description
           "Name of the maintenance profile";
       }
       container bgp {
         description
-          "Container for BGP policies used to
-           achieve traffic draining";
+          "Container for BGP policies used to achieve traffic draining";
         leaf import-policy {
+          description
+            "A reference to the pre-configured routing policy to apply as an additional/final import policy on BGP sessions in the maintenance group";
           type leafref {
             path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
           }
         }
         leaf export-policy {
+          description
+            "A reference to the pre-configured routing policy to apply as an additional/final export policy on BGP sessions in the maintenance group";
           type leafref {
             path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
           }

@@ -1,0 +1,50 @@
+module srl_nokia-mpls-services-evpn-label-management {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/mpls-services-evpn-management";
+  prefix srl_nokia-mplsservicesbtevpnlbl;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-mpls-label-management {
+    prefix srl_nokia-mplslbl;
+  }
+
+  description
+    "This module defines configuration and operational state data for system wide Services bridge-table MPLS label management.";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  grouping mpls-services-evpn-management-top {
+    container evpn {
+      if-feature "srl_nokia-feat:evpn-mpls";
+      presence "Configure the services bridge table evpn management";
+      description
+        "Container for system wide Services EVPN MPLS label management";
+      leaf dynamic-label-block {
+        mandatory true;
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:dynamic/srl_nokia-mplslbl:name";
+        }
+        description
+          "Reference to a dynamic label block";
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:services" {
+    uses mpls-services-evpn-management-top;
+  }
+}

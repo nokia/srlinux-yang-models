@@ -6,6 +6,9 @@ module srl_nokia-bridge-table-proxy-arp-nd {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
   import srl_nokia-features {
     prefix srl-feat;
   }
@@ -16,6 +19,10 @@ module srl_nokia-bridge-table-proxy-arp-nd {
   description
     "This yang file gives a description of bridge table proxy arp and nd configuration.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -56,26 +63,26 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       "The programming state of the neighbor entry.";
   }
 
-  grouping bridge-table-proxy-arp-nd-evpn-route-tag-config {
-    leaf route-tag {
-      description
-        "Route tag to be added when the proxy entries are advertised to EVPN";
+  grouping bridge-table-proxy-arp-nd-evpn-admin-tag-config {
+    leaf admin-tag {
       type uint32 {
         range "0|1..255";
       }
       default "0";
+      description
+        "Configure an admin-tag to be added when the proxy entries are advertised to EVPN";
     }
   }
 
   grouping bridge-table-proxy-arp-evpn-flood-config {
     container flood {
       description
-        "How ARP frames received on a proxy service are flooded into the evpn network";
+        "How ARP frames received on a proxy service are flooded into the EVPN network";
       leaf unknown-arp-req {
-        description
-          "Whether to flood ARP requests (with source squelching) when there is no hit in the bridge-table-proxy-arp table";
         type boolean;
         default "true";
+        description
+          "Whether to flood ARP requests (with source squelching) when there is no hit in the bridge-table-proxy-arp table";
       }
       leaf gratuitous-arp {
         description
@@ -90,47 +97,51 @@ module srl_nokia-bridge-table-proxy-arp-nd {
     container evpn {
       description
         "How proxy arp interacts with evpn";
-      uses bridge-table-proxy-arp-nd-evpn-route-tag-config;
+      uses bridge-table-proxy-arp-nd-evpn-admin-tag-config;
       uses bridge-table-proxy-arp-evpn-flood-config;
     }
   }
 
   grouping bridge-table-proxy-arp-nd-common-dupdetect-config {
-    container duplicate-detect {
+    container ip-duplication {
       description
-        "Proxy arp/nd dup detect information";
-      leaf window {
-        description
-          "Time to monitor the MAC address in the anti-spoofing mechanism";
+        "Configuration of the proxy arp/nd IP duplication procedures";
+      leaf monitoring-window {
         type uint32 {
           range "1..15";
         }
         default "3";
         units "minutes";
+        description
+          "Monitoring window for detecting duplication on a given ip address in the proxy ARP/ND table.
+
+           An IP is declared duplicate if it exceeds the num-moves within the monitoring-window.";
       }
       leaf num-moves {
-        description
-          "Override count associated with anti-spoofing mechanism for proxy Arp/ND entry";
         type uint32 {
           range "3..10";
         }
         default "5";
+        description
+          "Number of moves in the proxy ARP/ND table that an ip is allowed within the monitoring-window before it is declared duplicate.";
       }
       leaf hold-down-time {
-        description
-          "Time to hold down the MAC address in the anti-spoofing mechanism";
         type union {
+          type enumeration {
+            enum indefinite {
+              value 0;
+            }
+          }
           type uint32 {
             range "2..60";
           }
-          type enumeration {
-            enum max {
-              value -1;
-            }
-          }
         }
-        default "9";
         units "minutes";
+        default "9";
+        description
+          "Time to wait from the moment an ip is declared duplicate to the time the IP is removed from the proxy ARP/ND table.
+
+           When the duplicate ip is removed, the monitoring process for the ip is restarted.";
       }
       leaf anti-spoof-mac {
         description
@@ -146,64 +157,407 @@ module srl_nokia-bridge-table-proxy-arp-nd {
     }
   }
 
+  grouping bridge-table-proxy-arp-nd-trace-options {
+    container trace-options {
+      description
+        "Debug traceoptions for Proxy-ARP";
+      list flag {
+        key "name";
+        description
+          "Tracing parameters";
+        leaf name {
+          type enumeration {
+            enum request {
+              value 1;
+              description
+                "Trace all ARP request protocol packets snooped or generated for proxy-ARP.";
+            }
+            enum reply {
+              value 2;
+              description
+                "Trace all ARP reply protocol packets snooped or generated for proxy-ARP.";
+            }
+          }
+        }
+        leaf modifier {
+          mandatory true;
+          type enumeration {
+            enum detail {
+              value 0;
+              description
+                "To enable detailed tracing. Includes both received and sent packets.";
+            }
+            enum receive {
+              value 1;
+              description
+                "To enable tracing for the packets which are received.";
+            }
+            enum send {
+              value 2;
+              description
+                "To enable tracing for the sent packets.";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-nd-common-dynamic-learning-config {
+    container dynamic-learning {
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Configurable state of the learning procedures for dynamic arp/nd entries.
+
+           The dynamic arp/nd entries are learned out of snooped GARP/ARP/ND messages on bridged sub-interfaces.
+           These entries will be shown as dynamic as opposed to evpn entries or static entries. If the admin-state
+           is disabled, the existing arp/nd entries in the proxy table will be kept (and refreshed).";
+      }
+      leaf age-time {
+        type union {
+          type enumeration {
+            enum never {
+              value 0;
+            }
+          }
+          type uint32 {
+            range "60..86400";
+          }
+        }
+        default "never";
+        units "seconds";
+        description
+          "Aging timer value for the proxy entries.
+
+           When the aging expires, the entry is flushed";
+      }
+      leaf send-refresh {
+        type union {
+          type uint32 {
+            range "120..86400";
+          }
+          type enumeration {
+            enum never {
+              value 0;
+            }
+          }
+        }
+        default "never";
+        description
+          "Configures the interval at which the system generates three ARP Requests or Neighbor Solicitations
+           with the intend to refresh the proxy entry.
+
+           The refresh is sent within the age-time window.";
+      }
+    }
+  }
+
   grouping bridge-table-proxy-arp-nd-common-cfg {
     leaf admin-state {
       type srl_nokia-comm:admin-state;
       default "enable";
       description
-        "Configurable state of the layer-2 bridge-table-proxy-arp.";
-    }
-    leaf dynamic-populate {
-      description
-        "Whether system will populate proxy ARP entries from snooped GARP/ARP/ND messages on sub-interfaces in addition to the entries coming from EVPN (when EVPN is enabled). These entries will be shown as dynamic as opposed to evpn entries or static entries";
-      type boolean;
-      default "false";
-    }
-    leaf age-time {
-      description
-        "Aging timer value for the proxy entries. When the aging expires, the entry is flushed";
-      type union {
-        type enumeration {
-          enum never {
-            value 0;
-          }
-        }
-        type uint32 {
-          range "60..86400";
-        }
-      }
-      default "never";
-      units "seconds";
-    }
-    leaf send-refresh {
-      description
-        "Whether system will attempt to send 3 ARP/ND-NA requests (with senders IP address as zeros) within the aging-timer window, trying to refresh the proxy entry";
-      type union {
-        type uint32 {
-          range "120..86400";
-        }
-        type enumeration {
-          enum never {
-            value 0;
-          }
-        }
-      }
-      default "never";
+        "Configurable state of the layer-2 proxy arp/nd table.";
     }
     leaf table-size {
-      description
-        "Maximum number of learned and static entries allowed in the proxy table of this service";
       type uint32 {
-        range "1..16383";
+        range "1..8192";
       }
       default "250";
+      description
+        "Maximum number of entries allowed in the proxy table of the network-instance.";
     }
+    uses bridge-table-proxy-arp-nd-common-dynamic-learning-config;
     uses bridge-table-proxy-arp-nd-common-dupdetect-config;
   }
 
   grouping bridge-table-proxy-arp-cfg {
     uses bridge-table-proxy-arp-nd-common-cfg;
     uses bridge-table-proxy-arp-evpn-config;
+    uses bridge-table-proxy-arp-nd-trace-options;
+    leaf process-arp-probes {
+      type boolean;
+      default true;
+      description
+        "Determines whether the router processes ARP probe messages.
+        
+         When set to true, ARP probe messages used by the hosts for Duplicate Address Detection 
+         are processed, replied if a proxy-arp entry is hit or reinjected into the data path.
+         When set to false, ARP probe messages are flooded to the remote nodes if unknown-arp-requests
+         are configured to be flooded. ARP probe messages are identified as ARP Requests that use IP
+         address 0.0.0.0 as sender's address.";
+    }
+  }
+
+  grouping bridge-table-proxy-arp-duplicate-entries-top {
+    container duplicate-entries {
+      config false;
+      list neighbor {
+        key "ipv4-address";
+        description
+          "List of duplicate proxy ARP entries.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "IPv4 address of the proxy ARP entry.";
+        }
+        leaf link-layer-address {
+          type srl_nokia-comm:mac-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The resolving MAC address of the proxy ARP entry.";
+        }
+        leaf detect-time {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time when the proxy ARP entry was declared duplicate.";
+        }
+        leaf hold-down-time-remaining {
+          type union {
+            type enumeration {
+              enum indefinite {
+                value 1;
+              }
+            }
+            type uint64;
+          }
+          units "seconds";
+          srl_nokia-ext:show-importance "high";
+          description
+            "Remaining hold down time for duplicate proxy entry.";
+        }
+        leaf state {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-state;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The state of the proxy ARP entry";
+        }
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-dynamic-entries-top {
+    container dynamic-entries {
+      config false;
+      list neighbor {
+        key "ipv4-address";
+        description
+          "List of dynamic proxy ARP entries.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "IPv4 address of the proxy ARP entry.";
+        }
+        leaf link-layer-address {
+          type srl_nokia-comm:mac-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The resolving MAC address of the proxy ARP entry.";
+        }
+        leaf last-update {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time of the last update of this proxy ARP entry";
+        }
+        leaf aging {
+          type union {
+            type uint64;
+            type enumeration {
+              enum disabled {
+                value -1;
+              }
+            }
+          }
+          units "seconds";
+          srl_nokia-ext:show-importance "high";
+          description
+            "remaining age time for learnt macs";
+        }
+        leaf state {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-state;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The state of the proxy ARP entry";
+        }
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-table-entries-top {
+    container table-entries {
+      config false;
+      list neighbor {
+        key "ipv4-address";
+        description
+          "List of static and dynamic proxy ARP entries that map an IPv4 address to a MAC address.
+
+           To configure a static proxy ARP entry a value must be written into this leaf, as well as the link-layer-address leaf.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "IPv4 address resolved by the proxy ARP entry.
+
+             To configure a static neighbor entry a value must be written into this leaf, as well as the link-layer-address leaf.";
+        }
+        leaf link-layer-address {
+          type srl_nokia-comm:mac-address;
+          mandatory true;
+          description
+            "The resolving MAC address of the proxy ARP entry.
+
+             To configure a static proxy ARP entry a value must be written into this leaf and the ipv4-address leaf.";
+        }
+        leaf origin {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-origin;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The origin of the proxy ARP entry";
+        }
+        leaf last-update {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time of the last update of this proxy ARP entry";
+        }
+        leaf state {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-state;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The state of the proxy ARP entry";
+        }
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-evpn-entries-top {
+    container evpn-entries {
+      config false;
+      list neighbor {
+        key "ipv4-address";
+        description
+          "List of evpn proxy ARP entries.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "IPv4 address of the proxy ARP entry.";
+        }
+        leaf link-layer-address {
+          type srl_nokia-comm:mac-address;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The resolving MAC address of the proxy ARP entry.";
+        }
+        leaf last-update {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time of the last update of this proxy ARP entry";
+        }
+        leaf state {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-state;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The state of the proxy ARP entry";
+        }
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-table-statistics-type-top {
+    leaf total-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of proxy ARP entries.";
+    }
+    leaf active-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of active proxy ARP entries.";
+    }
+    leaf in-active-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of inactive proxy ARP entries.";
+    }
+    leaf pending-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of pending proxy ARP entries.";
+    }
+  }
+
+  grouping bridge-table-proxy-arp-table-statistics-top {
+    container statistics {
+      config false;
+      uses bridge-table-proxy-arp-table-statistics-type-top;
+      list neighbor-origin {
+        config false;
+        key "origin";
+        description
+          "the origin of the proxy ARP installed in the table.";
+        leaf origin {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-origin;
+          srl_nokia-ext:show-importance "high";
+        }
+        uses bridge-table-proxy-arp-table-statistics-type-top;
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-static-entries-top {
+    container static-entries {
+      list neighbor {
+        key "ipv4-address";
+        description
+          "List of static proxy ARP entries that map an IPv4 address to a MAC address.
+
+           To configure a static proxy ARP entry a value must be written into this leaf, as well as the link-layer-address leaf.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "IPv4 address resolved by the proxy ARP entry.
+
+             To configure a static neighbor entry a value must be written into this leaf, as well as the link-layer-address leaf.";
+        }
+        leaf link-layer-address {
+          type srl_nokia-comm:unicast-mac-address;
+          mandatory true;
+          description
+            "The resolving MAC address of the proxy ARP entry.
+
+             To configure a static proxy ARP entry a value must be written into this leaf and the ipv4-address leaf.";
+        }
+        leaf last-update {
+          config false;
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time of the last update of this proxy ARP entry";
+        }
+        leaf state {
+          config false;
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-state;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The state of the proxy ARP entry";
+        }
+      }
+    }
   }
 
   grouping bridge-table-proxy-arp-top {
@@ -211,6 +565,12 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       presence "Configure bridge-table";
       if-feature "srl-feat:l2-proxy-arp";
       uses bridge-table-proxy-arp-cfg;
+      uses bridge-table-proxy-arp-static-entries-top;
+      uses bridge-table-proxy-arp-duplicate-entries-top;
+      uses bridge-table-proxy-arp-dynamic-entries-top;
+      uses bridge-table-proxy-arp-table-entries-top;
+      uses bridge-table-proxy-arp-evpn-entries-top;
+      uses bridge-table-proxy-arp-table-statistics-top;
     }
   }
 

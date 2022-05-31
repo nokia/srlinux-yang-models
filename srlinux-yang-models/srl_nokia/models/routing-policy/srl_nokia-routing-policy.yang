@@ -22,6 +22,10 @@ module srl_nokia-routing-policy {
   description
     "YANG model for route policies. It supports widely used constructs for managing how routes are imported, exported, and modified across different routing protocols.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -218,6 +222,19 @@ module srl_nokia-routing-policy {
           type uint32;
           description
             "The new value of LOCAL_PREF to write into the matching BGP routes";
+        }
+      }
+      container med {
+        if-feature "srl_nokia-feat:routing-policy-bgp-med";
+        leaf set {
+          type union {
+            type uint32;
+            type enumeration {
+              enum route-table-cost;
+            }
+          }
+          description
+            "The new value of the Multi-Exit Discriminator attribute value to write into the matching BGP routes. The route-table-cost option derives the MED from the route metric.";
         }
       }
       container origin {

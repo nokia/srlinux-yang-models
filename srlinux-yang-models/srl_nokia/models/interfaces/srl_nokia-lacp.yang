@@ -24,6 +24,10 @@ module srl_nokia-lacp {
 
      This model describes management of LACP parameters under SRL";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -115,89 +119,7 @@ module srl_nokia-lacp {
       "IEEE 802.3ad";
   }
 
-  grouping lag-lacp-members-state {
-    description
-      "Operational status data for the member interfaces";
-    leaf activity {
-      type lacp-activity-type;
-      description
-        "Indicates participant is active or passive";
-    }
-    leaf timeout {
-      type lacp-timeout-type;
-      description
-        "The timeout type (short or long) used by the
-         participant";
-    }
-    leaf synchronization {
-      type lacp-synchronization-type;
-      description
-        "Indicates whether the participant is in-sync or
-         out-of-sync";
-    }
-    leaf aggregatable {
-      type boolean;
-      description
-        "A true value indicates that the participant will allow
-         the link to be used as part of the aggregate. A false
-         value indicates the link should be used as an individual
-         link";
-    }
-    leaf collecting {
-      type boolean;
-      description
-        "If true, the participant is collecting incoming frames
-         on the link, otherwise false";
-    }
-    leaf distributing {
-      type boolean;
-      description
-        "When true, the participant is distributing outgoing
-         frames; when false, distribution is disabled";
-    }
-    leaf system-id {
-      type srl_nokia-comm:mac-address;
-      description
-        "MAC address that defines the local system ID for the
-         aggregate interface";
-    }
-    leaf oper-key {
-      type uint16;
-      description
-        "Current operational value of the key for the aggregate
-         interface";
-    }
-    leaf partner-id {
-      type srl_nokia-comm:mac-address;
-      description
-        "MAC address representing the protocol partner's interface
-         system ID";
-    }
-    leaf partner-key {
-      type uint16;
-      description
-        "Operational value of the protocol partner's key";
-    }
-    leaf port-num {
-      type uint16;
-      description
-        "Port number of the local (actor) aggregation member";
-    }
-    leaf partner-port-num {
-      type uint16;
-      description
-        "Port number of the partner (remote) port for this member
-         port";
-    }
-    leaf lacp-port-priority {
-      if-feature "srl_nokia-feat:lacp-fallback";
-      type uint16;
-      description
-        "Configure the port priority for LACP.  This value is used to  determine which port should be activated with LACP fallback mode. Lower values are more preferred.";
-    }
-  }
-
-  grouping lag-lacp-members-statistics {
+  grouping lag-lacp-member-statistics {
     description
       "LACP packet statistics for the member interfaces";
     container statistics {
@@ -236,12 +158,93 @@ module srl_nokia-lacp {
     }
   }
 
-  augment "/srl_nokia-if:interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:members" {
-    uses lag-lacp-members-state;
+  grouping lag-lacp-member-state {
+    container lacp {
+      description
+        "Operational status data for the member interfaces";
+      leaf activity {
+        type lacp-activity-type;
+        description
+          "Indicates participant is active or passive";
+      }
+      leaf timeout {
+        type lacp-timeout-type;
+        description
+          "The timeout type (short or long) used by the
+           participant";
+      }
+      leaf synchronization {
+        type lacp-synchronization-type;
+        description
+          "Indicates whether the participant is in-sync or
+           out-of-sync";
+      }
+      leaf aggregatable {
+        type boolean;
+        description
+          "A true value indicates that the participant will allow
+           the link to be used as part of the aggregate. A false
+           value indicates the link should be used as an individual
+           link";
+      }
+      leaf collecting {
+        type boolean;
+        description
+          "If true, the participant is collecting incoming frames
+           on the link, otherwise false";
+      }
+      leaf distributing {
+        type boolean;
+        description
+          "When true, the participant is distributing outgoing
+           frames; when false, distribution is disabled";
+      }
+      leaf system-id {
+        type srl_nokia-comm:mac-address;
+        description
+          "MAC address that defines the local system ID for the
+           aggregate interface";
+      }
+      leaf oper-key {
+        type uint16;
+        description
+          "Current operational value of the key for the aggregate
+           interface";
+      }
+      leaf partner-id {
+        type srl_nokia-comm:mac-address;
+        description
+          "MAC address representing the protocol partner's interface
+           system ID";
+      }
+      leaf partner-key {
+        type uint16;
+        description
+          "Operational value of the protocol partner's key";
+      }
+      leaf port-num {
+        type uint16;
+        description
+          "Port number of the local (actor) aggregation member";
+      }
+      leaf partner-port-num {
+        type uint16;
+        description
+          "Port number of the partner (remote) port for this member
+           port";
+      }
+      leaf lacp-port-priority {
+        if-feature "srl_nokia-feat:lacp-fallback";
+        type uint16;
+        description
+          "Configure the port priority for LACP.  This value is used to  determine which port should be activated with LACP fallback mode. Lower values are more preferred.";
+      }
+      uses lag-lacp-member-statistics;
+    }
   }
 
-  augment "/srl_nokia-if:interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:members" {
-    uses lag-lacp-members-statistics;
+  augment "/srl_nokia-if:interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:member" {
+    uses lag-lacp-member-state;
   }
 
   grouping lacp-system-config {
@@ -299,7 +302,7 @@ module srl_nokia-lacp {
         description
           "Configure the LACP admin-key to be advertised by the local system.
            If this value is not specified a value starting from 32768 is automatically
-            assigned by the system.";
+           assigned by the system.";
         type uint16 {
           range "1..65535";
         }

@@ -31,6 +31,10 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
   description
     "This yang file models configuration and state of the bgp-evpn ethernet segments.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -55,11 +59,31 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
       enum preference {
         if-feature "srl_nokia-feat:evpn-mh-pref-alg";
       }
+      enum manual {
+        if-feature "srl_nokia-feat:evpn-mh-manual-alg";
+      }
     }
     description
       "Designated Forwarder algorithm type.
         Type 0 or default refers to the modulo based algorithm described in RFC8584.
         Type 2 or preference based refers to the algorithm described in draft-ietf-bess-evpn-pref-df.";
+  }
+
+  typedef es-type {
+    type enumeration {
+      enum none;
+      enum virtual {
+        if-feature "srl_nokia-feat:evpn-mh-virtual-es";
+      }
+    }
+    description
+      "Ethernet Segment association type.
+
+       Type none is the RFC7432 compliant Ethernet Segment, associated to an interface.
+       Type virtual is described in draft-ietf-bess-evpn-virtual-eth-segment and associates the ES to
+       an interface and VLANs or VLAN-ranges. It is also used for the association to other virtual interfaces
+       such as Layer-3 CE next-hops (as described in draft-sajassi-bess-evpn-ip-aliasing) in the context of
+       an IP-VRF network-instance.";
   }
 
   grouping es-and-ad-es-routes {
@@ -228,6 +252,33 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
             }
           }
         }
+        container manual-alg {
+          presence "Configure manual DF Election algorithm aspects.";
+          must "../type = 'manual'" {
+            error-message "The algorithm type must be 'manual'";
+          }
+          list primary-evi-range {
+            key "start-evi";
+            description
+              "evi range for this ethernet-segment";
+            leaf start-evi {
+              description
+                "start of the evi-range for this ethernet-segment";
+              type srl_nokia-comm:evi;
+              srl_nokia-ext:show-importance "high";
+            }
+            leaf end-evi {
+              type srl_nokia-comm:evi;
+              description
+                "end of the evi-range for this ethernet-segment";
+              srl_nokia-ext:show-importance "high";
+              mandatory true;
+              must '. >= ../start-evi' {
+                error-message "end evi must be greater than the start.";
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -339,6 +390,13 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
             description
               "A unique name identifying the ethernet segment.";
           }
+          leaf type {
+            type es-type;
+            default "none";
+            srl_nokia-ext:show-importance "high";
+            description
+              "Ethernet Segment type.";
+          }
           leaf admin-state {
             type srl_nokia-comm:admin-state;
             default "disable";
@@ -370,17 +428,53 @@ module srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
             description
               "The operational Ethernet Segment Identifier used in the ethernet segment.";
           }
-          leaf interface {
-            type leafref {
-              path "/srl_nokia-if:interface/srl_nokia-if:name";
+          choice interface-association {
+            case layer-2-interface {
+              list interface {
+                key "ethernet-interface";
+                max-elements 1;
+                leaf ethernet-interface {
+                  type leafref {
+                    path "/srl_nokia-if:interface/srl_nokia-if:name";
+                  }
+                  must "(starts-with(.,'ethernet') or  starts-with(.,'lag') or starts-with(., 'lif') or starts-with(., 'enp') or starts-with(., 'vhn'))" {
+                    error-message "Interface cannot be associated with Ethernet Segments. Not supported.";
+                  }
+                  must "../../type = 'none'" {
+                    error-message "not supported with virtual type";
+                  }
+                  description
+                    "Interface associated with the ethernet segment.";
+                }
+              }
             }
-            must "(starts-with(.,'ethernet') or  starts-with(.,'lag'))" {
-              error-message "Only Ethernet or LAG interfaces can be associated with Ethernet Segments.";
+            case layer-3-next-hop {
+              if-feature "srl_nokia-feat:evpn-mh-ip-aliasing";
+              list next-hop {
+                key "l3-next-hop";
+                max-elements 1;
+                leaf l3-next-hop {
+                  type srl_nokia-comm:ip-address;
+                  must "../../type = 'virtual'" {
+                    error-message "supported only with virtual type";
+                  }
+                  description
+                    "Layer-3 next-hop associated with the ethernet segment.";
+                }
+                list evi {
+                  key "start";
+                  max-elements 1;
+                  description
+                    "evi range for this ethernet-segment association";
+                  leaf start {
+                    description
+                      "start of the evi-range for this ethernet-segment";
+                    type srl_nokia-comm:evi;
+                    srl_nokia-ext:show-importance "high";
+                  }
+                }
+              }
             }
-            srl_nokia-ext:show-importance "high";
-            description
-              "Interface associated with the ethernet segment. Only one interface can be associated in
-               the current release.";
           }
           leaf multi-homing-mode {
             type multi-homing-mode;

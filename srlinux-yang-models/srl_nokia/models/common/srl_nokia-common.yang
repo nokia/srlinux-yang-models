@@ -14,6 +14,10 @@ module srl_nokia-common {
     "This module contains a set of Internet address related
      types for use in OpenConfig modules.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -232,9 +236,14 @@ module srl_nokia-common {
             + '(mgmt0\.0|'
             + 'system0\.0|'
             + 'lo(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
+            + 'lif-.*\.(0|[1-9](\d){0,3})|'
+            + 'vhn-.*\.(0|[1-9](\d){0,3})|'
+            + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]\.(0|[1-9](\d){0,3})|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
+            + 'ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))'
+            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3})|'
+            + 'otc-1/([1-8])\.([0]|[1-9](\d){0,3}))'
             + ')?';
     }
     description
@@ -461,9 +470,14 @@ module srl_nokia-common {
             + 'mgmt0-standby|'
             + 'system0|'
             + 'lo(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])|'
+            + 'lif-.*|'
+            + 'vhn-.*|'
+            + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
+            + 'ethernet-1/x[1-4](/[1-4])?|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))';
+            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))|'
+            + 'otc-1/([1-8]))';
     }
   }
 
@@ -471,6 +485,7 @@ module srl_nokia-common {
     type interface-name {
       length "3..20";
       pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
+            + 'ethernet-1/x[1-4](/[1-4])?|'
             + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))';
     }
   }
@@ -481,16 +496,21 @@ module srl_nokia-common {
       pattern '(mgmt0\.0|'
             + 'system0\.0|'
             + 'lo(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
+            + 'lif-.*\.(0|[1-9](\d){0,3})|'
+            + 'vhn-.*\.(0|[1-9](\d){0,3})|'
+            + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]\.(0|[1-9](\d){0,3})|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
+            + 'ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))';
+            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3})|'
+            + 'otc-1/([1-8])\.([0]|[1-9](\d){0,3}))';
     }
   }
 
   typedef subinterface-eth-lag {
     type subinterface-name {
       length "5..25";
-      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))';
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))';
     }
   }
 
@@ -499,9 +519,14 @@ module srl_nokia-common {
       length "5..25";
       pattern '(system0\.0|'
             + 'lo(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
+            + 'lif-.*\.(0|[1-9](\d){0,3})|'
+            + 'vhn-.*\.(0|[1-9](\d){0,3})|'
+            + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]\.(0|[1-9](\d){0,3})|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
+            + 'ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))';
+            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3})|'
+            + 'otc-1/([1-8])\.([0]|[1-9](\d){0,3}))';
     }
   }
 
@@ -581,6 +606,13 @@ module srl_nokia-common {
           "Component or process is currently warm rebooting
 
            This state is set during a warm reboot immediately following initiation of the reboot, continuing after startup until the system has completed audit. In this state the system will not accept configuration changes.";
+      }
+      enum waiting {
+        value 13;
+        description
+          "Component or process is currently waiting
+
+           This state can be set by event handler when the reinvoke-with-delay action is used, and indicates that the event handler is waiting for the provided delay before reinvoking the instance.";
       }
     }
     description
@@ -1130,7 +1162,6 @@ module srl_nokia-common {
   }
 
   identity sr-isis {
-    if-feature "srl-feat:future-21-11";
     base tunnel-type;
     description
       "Segment routing using MPLS dataplane, programmed by IS-IS";
@@ -1151,8 +1182,8 @@ module srl_nokia-common {
   }
 
   identity sr-mpls {
+    if-feature "srl-feat:future-0-0";
     base mpls-label-entry-type;
-    base tunnel-type;
     description
       "Segment routing using MPLS dataplane, programmed by segment routing manager.";
   }
@@ -1243,6 +1274,9 @@ module srl_nokia-common {
       enum eth-cfm {
         value 10;
       }
+      enum roe {
+        value 11;
+      }
     }
     description
       "type of mac addresses in the system";
@@ -1264,6 +1298,9 @@ module srl_nokia-common {
       }
       enum reserved {
         value 5;
+      }
+      enum evpn-mpls {
+        value 6;
       }
     }
     description
@@ -1299,16 +1336,6 @@ module srl_nokia-common {
     }
     description
       "multicast type of destination in the system";
-  }
-
-  typedef encap-type {
-    type enumeration {
-      enum vxlan {
-        value 1;
-      }
-    }
-    description
-      "Encap type destination in the system";
   }
 
   typedef routing-password {
@@ -1349,5 +1376,13 @@ module srl_nokia-common {
          6 | SHA-512
 
        These may not all be supported by a target device.";
+  }
+
+  typedef evi {
+    description
+      "The supported range of EVPN Instances.";
+    type uint32 {
+      range "1..65535";
+    }
   }
 }

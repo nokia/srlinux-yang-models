@@ -9,6 +9,10 @@ module srl_nokia-packet-match-types {
     "This module defines common types for use in models requiring
      data definitions related to packet matches.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -39,6 +43,98 @@ module srl_nokia-packet-match-types {
        operator is needed only if lower-port is specified
        and upper-port is not specified. The operator
        therefore further qualifies lower-port only.";
+  }
+
+  typedef ethertype {
+    type union {
+      type string {
+        pattern '0x[0-9a-fA-F]{4}';
+      }
+      type enumeration {
+        enum ipv4 {
+          description
+            "Internet Protocol version 4. Ethertype 0x0800.";
+        }
+        enum arp {
+          description
+            "Address Resolution Protocol. Ethertype 0x0806.";
+        }
+        enum ipv6 {
+          description
+            "Internet Protocol version 6. Ethertype 0x86DD.";
+        }
+        enum flow-control {
+          description
+            "Ethernet flow control PAUSE frames. Ethertype 0x8808";
+        }
+        enum lacp {
+          description
+            "LACP. Ethertype 0x8809.";
+        }
+        enum mpls-unicast {
+          description
+            "MPLS unicast. Ethertype 0x8847.";
+        }
+        enum mpls-multicast {
+          description
+            "MPLS multicast. Ethertype 0x8848.";
+        }
+        enum pppoe-discovery {
+          description
+            "PPPoE discovery. Ethertype 0x8863.";
+        }
+        enum pppoe-session {
+          description
+            "PPPoE session. Ethertype 0x8864.";
+        }
+        enum 8021x-authentication {
+          description
+            "802.1x authentication (EAP). Ethertype 0x888E.";
+        }
+        enum lldp {
+          description
+            "Link Layer Discovery Protocol. Ethertype 0x88CC.";
+        }
+        enum macsec {
+          description
+            "IEEE 802.1AE MAC security. Ethertype 0x88E5.";
+        }
+        enum pbb {
+          description
+            "Provider Backbone Bridging. Ethertype 0x88E7.";
+        }
+        enum ptp {
+          description
+            "Precision Time Protocol. Ethertype 0x88F7.";
+        }
+        enum eth-oam {
+          description
+            "IEEE 802.1ag CFM and ITU-T Y.1731 OAM. Ethertype 0x8902.";
+        }
+        enum fcoe {
+          description
+            "Fibre Channel over Ethernet. Ethertype 0x8906.";
+        }
+        enum fcoe-initialization {
+          description
+            "Fibre Channel over Ethernet Initialization Protocol. Ethertype 0x8914.";
+        }
+        enum roce {
+          description
+            "RDMA over Converged Ethernet. Ethertype 0x8915.";
+        }
+      }
+    }
+    description
+      "The Ethertype value in an Ethernet frame.";
+  }
+
+  typedef vlan-id-type {
+    type uint16 {
+      range "0..4095";
+    }
+    description
+      "VLAN identifier";
   }
 
   typedef ip-protocol-type {
@@ -176,6 +272,11 @@ module srl_nokia-packet-match-types {
             "Cisco EIGRP";
           reference
             "RFC7868";
+        }
+        enum ospf {
+          value 89;
+          description
+            "OSPFv2 and OSPFv3";
         }
         enum pim {
           value 103;

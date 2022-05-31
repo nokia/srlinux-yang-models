@@ -25,6 +25,10 @@ module srl_nokia-platform-acl {
   description
     "This module defines configuration and operational state related to ACL and TCAM resources in the system";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -48,45 +52,73 @@ module srl_nokia-platform-acl {
   }
 
   identity input-ipv4-filter-instances {
-    if-feature "srl_feat:jericho2 or srl_feat:tomahawk3";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3";
     base acl-resources;
     description
       "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on the forwarding complex. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every subinterface using the IPv4 filter.";
   }
 
   identity input-ipv4-filter-instances-routed {
-    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl or srl_feat:monterey";
     base acl-resources;
     description
       "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on routed subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every routed subinterface using the IPv4 filter.";
   }
 
   identity input-ipv4-filter-instances-bridged {
-    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl or srl_feat:monterey";
     base acl-resources;
     description
       "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on bridged subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every bridged subinterface using the IPv4 filter.";
   }
 
   identity input-ipv6-filter-instances {
-    if-feature "srl_feat:jericho2 or srl_feat:tomahawk3";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3";
     base acl-resources;
     description
       "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on the forwarding complex. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every subinterface using the IPv6 filter.";
   }
 
   identity input-ipv6-filter-instances-routed {
-    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl or srl_feat:monterey";
     base acl-resources;
     description
       "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on routed subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every routed subinterface using the IPv6 filter.";
   }
 
   identity input-ipv6-filter-instances-bridged {
-    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl";
+    if-feature "srl_feat:trident3 or srl_feat:platform-vsrl or srl_feat:monterey";
     base acl-resources;
     description
       "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on bridged subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every bridged subinterface using the IPv6 filter.";
+  }
+
+  identity if-input-ipv4-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for ingress IPv4 ACLs";
+  }
+
+  identity if-input-ipv6-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for ingress IPv6 ACLs";
+  }
+
+  identity if-output-ipv4-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for egress IPv4 ACLs";
+  }
+
+  identity if-output-ipv6-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for egress IPv6 ACLs";
   }
 
   identity tcam-resources {
@@ -101,7 +133,7 @@ module srl_nokia-platform-acl {
   }
 
   identity if-output-ipv4 {
-    if-feature "srl_feat:jericho2";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 ACLs applied as subinterface-output filers";
@@ -114,21 +146,21 @@ module srl_nokia-platform-acl {
   }
 
   identity if-output-ipv6 {
-    if-feature "srl_feat:jericho2";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 ACLs applied as subinterface-output filers";
   }
 
   identity cpm-capture-ipv4 {
-    if-feature "srl_feat:jericho2";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 cpm-filter ACLs and capture-filter ACLs";
   }
 
   identity cpm-capture-ipv6 {
-    if-feature "srl_feat:jericho2";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 cpm-filter ACLs and capture-filter ACLs";
@@ -149,31 +181,52 @@ module srl_nokia-platform-acl {
   }
 
   identity capture-ipv4 {
-    if-feature "srl_feat:tomahawk3";
+    if-feature "srl_feat:tomahawk3 or srl_feat:monterey";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 capture-filter ACLs";
   }
 
   identity capture-ipv6 {
-    if-feature "srl_feat:tomahawk3";
+    if-feature "srl_feat:tomahawk3 or srl_feat:monterey";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 capture-filter ACLs";
   }
 
   identity if-output-cpm-ipv4 {
-    if-feature "srl_feat:trident3 or srl_feat:tomahawk3 or srl_feat:platform-vsrl";
+    if-feature "srl_feat:trident3 or srl_feat:tomahawk3 or srl_feat:platform-vsrl or srl_feat:monterey";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv4 egress ACLs and cpm-filter ACLs";
   }
 
   identity if-output-cpm-ipv6 {
-    if-feature "srl_feat:trident3 or srl_feat:tomahawk3 or srl_feat:platform-vsrl";
+    if-feature "srl_feat:trident3 or srl_feat:tomahawk3 or srl_feat:platform-vsrl or srl_feat:monterey";
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 egress ACLs and cpm-filter ACLs";
+  }
+
+  identity if-input-mac {
+    if-feature "srl_feat:mac-acls-on-td3-monterey";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by MAC ACLs applied as subinterface-input filers";
+  }
+
+  identity if-output-cpm-mac {
+    if-feature "srl_feat:mac-acls-on-td3-monterey";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by MAC egress ACLs and MAC cpm-filter ACLs";
+  }
+
+  identity policy-forwarding-ipv4 {
+    if-feature "srl_feat:policy-based-forwarding-dscp-ip-protocol and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 policy-forwarding entries";
   }
 
   grouping acl-resource-monitoring {
@@ -218,13 +271,17 @@ module srl_nokia-platform-acl {
           type srl_nokia-comm:percentage;
           default "90";
           description
-            "Sets the threshold that triggers the generation of a WARNING log whenever the utilization of the TCAM resource in any linecard/complex/core reaches this value in a rising direction";
+            "Sets the threshold that triggers the generation of a WARNING log whenever the utilization of the TCAM resource in any linecard/complex/core reaches this value in a rising direction
+
+             On platforms that support dynamic TCAM the utilization considers free-dynamic, and not free-static.";
         }
         leaf falling-threshold-log {
           type srl_nokia-comm:percentage;
           default "70";
           description
-            "Sets the threshold that triggers the generation of a NOTICE log whenever the utilization of the TCAM resource in any linecard/complex/core falls reaches this value in a falling direction";
+            "Sets the threshold that triggers the generation of a NOTICE log whenever the utilization of the TCAM resource in any linecard/complex/core falls reaches this value in a falling direction.
+
+             On platforms that support dynamic TCAM the utilization considers free-dynamic, and not free-static.";
         }
       }
     }
@@ -272,10 +329,16 @@ module srl_nokia-platform-acl {
           description
             "The name of the TCAM resource";
         }
-        leaf free {
+        leaf free-static {
           type uint32;
           description
-            "The number of available, unused TCAM entries remaining in this resource pool";
+            "The number of available and unused TCAM entries for the entry type, assuming that the number of dynamic TCAM slices that are currently allocated to the entry type remains constant at its current value.";
+        }
+        leaf free-dynamic {
+          if-feature "srl_feat:dynamic-tcam";
+          type uint32;
+          description
+            "The number of available and unused TCAM entries for the entry type, assuming that all the remaining unused TCAM slices would be dynamically allocated to this one type of entry (subject to chip level constraints on the placement of double-wide and triple-wide TCAM slice groups).";
         }
         leaf reserved {
           type uint32;

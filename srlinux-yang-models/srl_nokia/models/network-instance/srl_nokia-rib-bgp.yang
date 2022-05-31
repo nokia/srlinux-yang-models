@@ -11,8 +11,12 @@ module srl_nokia-rib-bgp {
   }
 
   description
-    "This yang file gives a description of static route configuration.";
+    "This yang file models the state held by the BGP RIB databases.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -71,6 +75,16 @@ module srl_nokia-rib-bgp {
       description
         "Set to true if the route is marked for deletion.";
       type boolean;
+    }
+    leaf neighbor-as {
+      type srl_nokia-comm:as-number;
+      description
+        "The last external AS to advertise the route into the local AS";
+    }
+    leaf group-best {
+      type boolean;
+      description
+        "Set to true if the route is the best BGP route amongst all routes received from one particular neighbor AS";
     }
     leaf tie-break-reason {
       description
@@ -956,7 +970,7 @@ module srl_nokia-rib-bgp {
           container communities {
             config false;
             description
-              "";
+              "Container for different types of BGP communities";
             leaf-list community {
               description
                 "List of standard 4-byte community values in the COMMUNITY path
@@ -989,7 +1003,7 @@ module srl_nokia-rib-bgp {
             list unknown-attribute {
               config false;
               description
-                "";
+                "List of unknown BGP path attributes";
               key "unknown-attr-index";
               leaf unknown-attr-index {
                 config false;

@@ -1,0 +1,350 @@
+module srl_nokia-qos-policers {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/qos-policers";
+  prefix srl_nokia-qos-policers;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  typedef forwarding-type {
+    type enumeration {
+      enum unicast {
+        description
+          "A packet is 'unicast' if the destination address is unicast and it matches an entry in the FIB";
+      }
+      enum unknown-unicast {
+        description
+          "A packet is 'unknown-unicast' if the destination address is unicast but it doesn't match any entry in the FIB and is therefore conventionally flooded";
+      }
+      enum broadcast {
+        description
+          "A packet is 'broadcast' if the destination address is a broadcast address.";
+      }
+      enum multicast {
+        description
+          "A packet is 'multicast' if the destination address is a multicast address.";
+      }
+    }
+  }
+
+  typedef drop-probability-level {
+    description
+      "The various drop probability classifications that can be applied to a packet";
+    type enumeration {
+      enum low {
+        description
+          "Traffic that should be dropped last when there is congestion. Internally this is traffic that is colored green.";
+      }
+      enum medium {
+        description
+          "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
+      }
+      enum high {
+        description
+          "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
+      }
+    }
+  }
+
+  grouping policer-templates-top {
+    container policer-templates {
+      description
+        "Policer templates used for subinterface traffic metering.";
+      list policer-template {
+        description
+          "List of policer templates.";
+        key "name";
+        leaf name {
+          description
+            "The name assigned to the policer template.";
+          type srl_nokia-comm:name;
+        }
+        list policer {
+          description
+            "The list of policer instances belonging to the template definition.";
+          key "index";
+          leaf index {
+            description
+              "The policer index";
+            type uint8 {
+              range "1..32";
+            }
+          }
+          list forwarding-class {
+            key "fc";
+            leaf fc {
+              description
+                "A forwarding class that has traffic to match to the policer.";
+              type srl_nokia-comm:forwarding-class;
+            }
+            leaf-list forwarding-type {
+              ordered-by system;
+              max-elements 4;
+              description
+                "The list of forwarding types, belonging to this forwarding-class, to match to the policer. If none are specified, this implies ALL forwarding types.";
+              type forwarding-type;
+            }
+          }
+          choice peak-rate-format {
+            leaf peak-rate-percent {
+              type uint8 {
+                range "1..100";
+              }
+              default "100";
+              description
+                "The peak information rate (PIR) of the policer, defined as a percentage of port bandwidth";
+            }
+            leaf peak-rate-bps {
+              type uint64;
+              units "bps";
+              description
+                "The peak information rate (PIR) of the policer, defined in bits per second.";
+            }
+          }
+          choice committed-rate-format {
+            leaf committed-rate-percent {
+              type uint8 {
+                range "0..100";
+              }
+              description
+                "The committed information rate (CIR) of the policer, defined as a percentage of port bandwidth";
+            }
+            leaf committed-rate-bps {
+              type uint64;
+              units "bps";
+              description
+                "The committed information rate (CIR) of the policer, defined in bits per second.";
+            }
+          }
+          choice maximum-burst-format {
+            leaf maximum-burst-size {
+              type uint32;
+              units "bytes";
+              description
+                "Maximum PIR bucket depth in bytes.";
+            }
+            leaf maximum-burst-time {
+              type uint64;
+              units "microseconds";
+              description
+                "Maximum PIR bucket depth measured in units of time to transmit all the tokens in the bucket at line rate of the port.";
+            }
+          }
+          choice committed-burst-format {
+            leaf committed-burst-size {
+              type uint32;
+              units "bytes";
+              description
+                "Maximum CIR bucket depth in bytes.";
+            }
+            leaf committed-burst-time {
+              type uint64;
+              units "microseconds";
+              description
+                "Maximum CIR bucket depth measured in units of time to transmit all the tokens in the bucket at line rate of the port.";
+            }
+          }
+          container exceed-action {
+            description
+              "Container with options that specify the handling of packets that the policer has determined are exceeding (yellow)";
+            choice exceed-handling {
+              case drop {
+                leaf drop {
+                  description
+                    "Exceeding packets should be dropped immediately";
+                  type empty;
+                }
+              }
+              case re-color {
+                leaf drop-probability {
+                  description
+                    "Recolor exceeding packets to the specified drop-probability level";
+                  type drop-probability-level;
+                }
+              }
+            }
+          }
+          container violate-action {
+            description
+              "Container with options that specify the handling of packets that the policer has determined are violating (red)";
+            choice violate-handling {
+              case drop {
+                leaf drop {
+                  description
+                    "Violating packets should be dropped immediately";
+                  type empty;
+                }
+              }
+              case re-color {
+                leaf drop-probability {
+                  description
+                    "Recolor violating packets to the specified drop-probability level";
+                  type drop-probability-level;
+                }
+              }
+            }
+          }
+        }
+        leaf statistics-mode {
+          description
+            "The statistics mode of all policers belonging to this template";
+          type enumeration {
+            enum violating-focus {
+              description
+                "In this statistics mode only 4 counters are provided: accepted-packets, accepted-octets, violating-packets, violating-octets";
+            }
+            enum forwarding-focus {
+              description
+                "In this statistics mode only 4 counters are provided: committed-packets, committed-octets, exceeding-packets, exceeding-octets";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping subinterface-qos-input-policers {
+    container policers {
+      description
+        "Container with information about the policers applied to input traffic on the subinterface.";
+      leaf policer-template {
+        description
+          "The name of the policer template applied to input traffic on the subinterface
+
+           If this is configured but no value is displayed in state information then there were insufficient resources to completely apply the template.";
+        type leafref {
+          path "/srl_nokia-qos:qos/srl_nokia-qos-policers:policer-templates/srl_nokia-qos-policers:policer-template/srl_nokia-qos-policers:name";
+        }
+      }
+      list policer {
+        config false;
+        description
+          "The list of policer instances belonging to the template definition.";
+        key "index";
+        leaf index {
+          description
+            "The policer index";
+          type uint8 {
+            range "1..32";
+          }
+        }
+        uses policer-instance-state;
+      }
+    }
+  }
+
+  grouping policer-instance-state {
+    leaf peak-rate-bps {
+      config false;
+      type uint64;
+      units "bps";
+      description
+        "The actual/operational peak information rate (PIR) of the policer as it is programmed into hardware.";
+    }
+    leaf committed-rate-bps {
+      config false;
+      type uint64;
+      units "bps";
+      description
+        "The actual/operational committed information rate (CIR) of the policer as it is programmed into hardware.";
+    }
+    leaf maximum-burst-size {
+      config false;
+      type uint32;
+      units "bytes";
+      description
+        "The actual/operational maximum PIR bucket depth in bytes as it is programmed into hardware.";
+    }
+    leaf committed-burst-size {
+      config false;
+      type uint32;
+      units "bytes";
+      description
+        "The actual/operational maximum CIR bucket depth in bytes as it is programmed into hardware.";
+    }
+    container statistics {
+      config false;
+      leaf accepted-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number packets that were accepted by the policer, counting all drop-probabilities at policer output
+
+           Not available in forwarding-focus mode";
+      }
+      leaf accepted-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number octets in packets that were accepted by the policer, counting all drop-probabilities at policer output
+
+           Not available in forwarding-focus mode";
+      }
+      leaf dropped-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number packets that were dropped by the policer, counting medium and high drop-probabilities at policer output
+
+           Not available in forwarding-focus mode";
+      }
+      leaf dropped-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in packets that were dropped by the policer, counting medium and high drop-probabilities at policer output
+
+           Not available in forwarding-focus mode";
+      }
+      leaf committed-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number packets that were acceped with low drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+      leaf committed-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number octets in packets that were acceped with low drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+      leaf exceeding-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number packets that were accepted with medium drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+      leaf exceeding-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in packets that were accepted with medium drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+    }
+  }
+
+  augment "/srl_nokia-qos:qos" {
+    if-feature "srl-feat:future-0-0";
+    uses policer-templates-top;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-qos:qos/srl_nokia-qos:input" {
+    if-feature "srl-feat:future-0-0";
+    uses subinterface-qos-input-policers;
+  }
+}

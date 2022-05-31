@@ -16,9 +16,13 @@ module srl_nokia-sync {
     prefix srl_nokia-sync-interfaces;
   }
   import srl_nokia-features {
-    prefix srl-feat;
+    prefix srl_nokia-feat;
   }
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -26,6 +30,7 @@ module srl_nokia-sync {
 
   grouping sync-top {
     container sync {
+      if-feature "srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
       description
         "Context to configure sync parameters and report sessions state";
       container ptp {
@@ -38,19 +43,22 @@ module srl_nokia-sync {
         uses srl_nokia-sync-freq:freq-clock-top;
       }
       container bits {
+        if-feature "srl_nokia-feat:platform-7210-sas24";
         uses srl_nokia-sync-interfaces:bits-interface-top;
       }
       container tod {
+        if-feature "srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
         uses srl_nokia-sync-interfaces:tod-interface-top;
       }
       container ppstest {
+        if-feature "srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
         uses srl_nokia-sync-interfaces:ppstest-interface-top;
       }
     }
   }
 
   augment "/srl-system:system" {
-    if-feature "srl-feat:sync";
+    if-feature "srl_nokia-feat:sync";
     uses sync-top;
   }
 }

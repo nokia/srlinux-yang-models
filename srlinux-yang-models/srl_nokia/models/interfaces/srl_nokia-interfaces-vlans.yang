@@ -15,6 +15,10 @@ module srl_nokia-interfaces-vlans {
 
      This model describes management of VLAN parameters under SRL Interfaces";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -385,6 +389,25 @@ module srl_nokia-interfaces-vlans {
     }
   }
 
+  grouping vlan-tpid-config {
+    description
+      "TPID configuration for dot1q-enabled interfaces";
+    leaf tpid {
+      type identityref {
+        base TPID_TYPES;
+      }
+      must "starts-with(../srl_nokia-if:name, 'ethernet') or starts-with(../srl_nokia-if:name, 'lag') or starts-with(../srl_nokia-if:name, 'lif') or starts-with(../srl_nokia-if:name, 'enp') or starts-with(../srl_nokia-if:name, 'vhn') or starts-with(../srl_nokia-if:name, 'otc')" {
+        error-message "tpid not configurable on this interface";
+      }
+      must 'not(../breakout-mode)' {
+        error-message "tpid not configurable when breakout-mode is enabled";
+      }
+      description
+        "Optionally set the tag protocol identifier field (TPID) that
+         is accepted on the VLAN";
+    }
+  }
+
   grouping vlan-subinterface-top {
     description
       "Top-level configuration and state for VLAN parameters per subinterface";
@@ -414,6 +437,9 @@ module srl_nokia-interfaces-vlans {
       description
         "When set to true the interface is allowed to accept frames with one or more VLAN tags";
       type boolean;
+      must "starts-with(../srl_nokia-if:name, 'ethernet') or starts-with(../srl_nokia-if:name, 'lag') or starts-with(../srl_nokia-if:name, 'lif') or starts-with(../srl_nokia-if:name, 'enp') or starts-with(../srl_nokia-if:name, 'vhn') or starts-with(../srl_nokia-if:name, 'otc')" {
+        error-message "vlan-tagging not configurable on this interface";
+      }
       must 'not(../breakout-mode)' {
         error-message "vlan-tagging not configurable when breakout-mode is enabled";
       }
@@ -426,5 +452,10 @@ module srl_nokia-interfaces-vlans {
 
   augment "/srl_nokia-if:interface" {
     uses vlan-interface-top;
+  }
+
+  augment "/srl_nokia-if:interface" {
+    if-feature "srl_nokia-feat:vlan-tpid";
+    uses vlan-tpid-config;
   }
 }

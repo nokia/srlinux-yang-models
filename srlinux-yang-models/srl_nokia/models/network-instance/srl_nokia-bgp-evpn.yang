@@ -25,6 +25,10 @@ module srl_nokia-bgp-evpn {
   description
     "This yang file models configuration and state of the bgp-evpn protocol";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -32,14 +36,6 @@ module srl_nokia-bgp-evpn {
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
-  }
-
-  typedef evi {
-    description
-      "The supported range of EVPN Instances.";
-    type uint32 {
-      range "1..65535";
-    }
   }
 
   typedef ethernet-tag-id {
@@ -133,6 +129,15 @@ module srl_nokia-bgp-evpn {
     }
   }
 
+  grouping evpn-mpls-bridge-table-group-top {
+    container bridge-table {
+      presence "Bridge table config and state for evpn-mpls";
+      must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+        error-message "The bridge-table configuration is possible only on network-instances of type mac-vrf.";
+      }
+    }
+  }
+
   grouping bgp-evpn-top {
     description
       "Top-level grouping containing the bgp-evpn configuration and state.";
@@ -153,13 +158,24 @@ module srl_nokia-bgp-evpn {
           "Configurable state of the bgp evpn instance.";
       }
       leaf encapsulation-type {
-        type srl_nokia-comm:encap-type;
-        default "vxlan";
+        type enumeration {
+          enum vxlan {
+            value 1;
+          }
+          enum mpls {
+            if-feature "srl-feat:mpls and srl-feat:evpn-mpls";
+            value 2;
+          }
+        }
         description
           "encap type of the bgp evpn instance.";
+        default "vxlan";
       }
       leaf vxlan-interface {
         if-feature "srl-feat:vxlan";
+        must "../encapsulation-type = 'vxlan'" {
+          error-message "supported only when encapsulation is vxlan";
+        }
         type leafref {
           path "../../../../srl_nokia-netinst:vxlan-interface/srl_nokia-netinst:name";
         }
@@ -167,7 +183,7 @@ module srl_nokia-bgp-evpn {
           "Identifier of vxlan-interface used in this bgp-instance.";
       }
       leaf evi {
-        type evi;
+        type srl_nokia-comm:evi;
         description
           "EVPN Instance identifier associated to the bgp-evpn instance.
 
@@ -208,6 +224,7 @@ module srl_nokia-bgp-evpn {
           enum ethernet-segment-multiple-subinterfaces;
           enum vxlan_interface_no_source_ip_address;
           enum bgp-vpn-instance-oper-down;
+          enum no-mpls-label;
         }
         description
           "The reason for the bgp-instance being down";
@@ -217,6 +234,20 @@ module srl_nokia-bgp-evpn {
         description
           "The admin-tag that can be used by an export policy to match all the bgp-evpn routes for the bgp-instance.";
         default "0";
+      }
+      leaf ingress-replication-bum-label {
+        type boolean;
+        default "false";
+        description
+          "Use the same label as the one advertised for unicast traffic.";
+      }
+      container mpls {
+        presence "Configure EVPN-MPLS and enables the resolution of BGP-EVPN route next-hops to tunnels in TTM";
+        if-feature "srl-feat:evpn-mpls";
+        must "../encapsulation-type = 'mpls'" {
+          error-message "supported only when encapsulation is mpls";
+        }
+        uses evpn-mpls-bridge-table-group-top;
       }
       uses bgp-evpn-routes;
     }

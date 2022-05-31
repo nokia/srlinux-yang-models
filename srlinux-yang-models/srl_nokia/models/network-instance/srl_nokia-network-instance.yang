@@ -34,6 +34,10 @@ module srl_nokia-network-instance {
   description
     "This yang file gives a description of a network-instance. This may be a Layer 3 forwarding construct such as a virtual routing and forwarding (VRF) instance, or a Layer 2 instance such as a virtual switch instance (VSI). Mixed Layer 2 and Layer 3 instances are also supported.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -196,14 +200,29 @@ module srl_nokia-network-instance {
           description
             "If set to true then the following check is done on every subinterface of the network-instance: if an IPv6 packet is received on a subinterface and the IPv6 oper-status of this subinterface is down the packet is discarded. If this leaf is set to false then received IPv6 packets are accepted on all subinterfaces of the network-instance that are up, even if they do not have any IPv6 addresses.";
         }
+        container last-resort-lookup {
+          leaf network-instance {
+            description
+              "A reference to another network-instance in which the system will try to find a matching IP route if this network instance does not have any route to the destination IP";
+            type leafref {
+              path "/srl_nokia-netinst:network-instance/name";
+            }
+            must 'not(/network-instance[name=current()]/type = "srl_nokia-netinst:mac-vrf" or /network-instance[name=current()]/type = "srl_nokia-netinst:host")' {
+              error-message "Network instance of last-resort must be a default network-instance or an ip-vrf network-instance";
+            }
+          }
+        }
       }
       container ip-load-balancing {
-        if-feature "srl-feat:jericho2";
+        if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:trident3 or srl-feat:monterey";
         description
           "Container for IP load-balancing options that are specific to the network-instance";
         list resilient-hash-prefix {
           description
             "List of IPv4 and IPv6 prefixes which should be programmed for resilient ECMP hashing.";
+          must "(../../type = 'srl_nokia-netinst:ip-vrf' or ../../type = 'srl_nokia-netinst:default')" {
+            error-message "Resilient-hash-prefix configuration is not possible on network-instance of types other than ip-vrf or default";
+          }
           key "ip-prefix";
           leaf ip-prefix {
             type srl_nokia-comm:ip-prefix;

@@ -1,0 +1,222 @@
+module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/network-instance/protocols/bgp-evpn/bgp-instance/mpls/bridge-table/unicast-destinations";
+  prefix srl_nokia-bgp-evpn-bgp-instance-mpls-bt-unicast-destinations;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-bgp-evpn {
+    prefix srl_bgp-evpn;
+  }
+
+  description
+    "Model for bridge-table unicast destinations on the bgp-evpn mpls instance";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  grouping evpn-mpls-bridge-table-statistics-top {
+    description
+      "Statistics related to the bridge-table.";
+    container statistics {
+      config false;
+      leaf active-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of entries that are active on the evpn-mpls instance.";
+        srl_nokia-ext:show-importance "high";
+      }
+      leaf total-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of macs, active and inactive, on the evpn-mpls instance.";
+        srl_nokia-ext:show-importance "high";
+      }
+      leaf failed-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of macs, which have not been programmed on at least one slot.";
+        srl_nokia-ext:show-importance "high";
+      }
+      list mac-type {
+        key "type";
+        description
+          "The type of the mac on the evpn-mpls instance.";
+        leaf type {
+          type srl_nokia-comm:mac-type;
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf active-entries {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "The total number of entries of this type on the evpn-mpls instance.";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf total-entries {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "The total number of macs of this type, active and inactive, on the evpn-mpls instance.";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf failed-entries {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "The total number of macs of this type, which have not been programmed on at least one slot";
+          srl_nokia-ext:show-importance "high";
+        }
+      }
+    }
+  }
+
+  grouping evpn-mpls-bridge-table-mac-table-top {
+    container mac-table {
+      config false;
+      list mac {
+        key "address";
+        description
+          "macs learnt on the bridging instance";
+        leaf address {
+          type srl_nokia-comm:mac-address;
+        }
+        leaf type {
+          type srl_nokia-comm:mac-type;
+          srl_nokia-ext:show-importance "high";
+          description
+            "the type of the mac installed in the fib.";
+        }
+        leaf last-update {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The date and time of the last update of this mac";
+        }
+        leaf not-programmed-reason {
+          srl_nokia-ext:show-importance "high";
+          type enumeration {
+            enum mac-limit;
+            enum failed-on-slots;
+            enum no-destination-index;
+            enum reserved;
+          }
+          description
+            "The reason why the mac is not programmed";
+        }
+        leaf-list failed-slots {
+          srl_nokia-ext:show-importance "high";
+          type uint8 {
+            range "1..8";
+          }
+          description
+            "The list of slot IDs corresponding to the linecards that did not successfully program the mac";
+        }
+      }
+    }
+  }
+
+  grouping evpn-mpls-unicast-bridge-table-statistics-top {
+    container statistics {
+      config false;
+      leaf active-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of entries that are active on the sub-interface.";
+        srl_nokia-ext:show-importance "high";
+      }
+      leaf total-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of macs, active and inactive, on the sub-interface.";
+        srl_nokia-ext:show-importance "high";
+      }
+      leaf failed-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of macs, which have not been programmed on atleast one slot";
+        srl_nokia-ext:show-importance "high";
+      }
+      list mac-type {
+        key "type";
+        description
+          "the type of the mac on the sub-interface.";
+        leaf type {
+          type srl_nokia-comm:mac-type;
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf active-entries {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "The total number of entries of this type on the sub-interface";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf total-entries {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "The total number of macs of this type , active and inactive, on the sub-interface.";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf failed-entries {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "The total number of macs of this type, which have not been programmed on atleast one slot";
+          srl_nokia-ext:show-importance "high";
+        }
+      }
+    }
+  }
+
+  grouping evpn-mpls-bridge-table-unicast-destinations-destination-top {
+    list destination {
+      config false;
+      key "tep evi-label";
+      leaf tep {
+        srl_nokia-ext:show-importance "high";
+        type srl_nokia-comm:ip-address;
+        description
+          "The IP address that identifies the remote EVPN Termination Endpoint (TEP).";
+      }
+      leaf evi-label {
+        type srl_nokia-comm:mpls-label-non-reserved;
+        srl_nokia-ext:show-importance "high";
+        description
+          "EVI label of the destination.";
+      }
+      leaf destination-index {
+        type uint64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "A system-wide unique identifier of this evpn-mpls destination object (system allocated).";
+      }
+      leaf not-programmed-reason {
+        srl_nokia-ext:show-importance "high";
+        type enumeration {
+          enum no-destination-index;
+          enum egress-label-allocation-failure;
+        }
+        description
+          "The reason why the evpn-mpls destination is not programmed.";
+      }
+      uses evpn-mpls-unicast-bridge-table-statistics-top;
+      uses evpn-mpls-bridge-table-mac-table-top;
+    }
+  }
+
+  grouping evpn-mpls-bridge-table-unicast-destinations-top {
+    container unicast-destinations {
+      config false;
+      uses evpn-mpls-bridge-table-unicast-destinations-destination-top;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-netinst:bgp-evpn/srl_bgp-evpn:bgp-instance/srl_bgp-evpn:mpls/srl_bgp-evpn:bridge-table" {
+    uses evpn-mpls-bridge-table-unicast-destinations-top;
+  }
+}

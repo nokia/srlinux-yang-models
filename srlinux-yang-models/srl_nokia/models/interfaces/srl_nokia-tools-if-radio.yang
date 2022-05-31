@@ -1,0 +1,54 @@
+module srl_nokia-tools-if-radio {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-interfaces-radio-mapper-demapper";
+  prefix srl_nokia-tools-interfaces-radio-mapper-demapper;
+
+  import srl_nokia-tools-interfaces {
+    prefix srl_nokia_tools-if;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+
+  description
+    "Model for managing Radio subinterfaces";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  grouping roe {
+    container roe {
+      list mapper-demapper {
+        key "mapper-demapper-id";
+        leaf mapper-demapper-id {
+          type uint32 {
+            range "1..128";
+          }
+        }
+        leaf clear-stats {
+          type empty;
+          description
+            "Clear stats for this mapper-demapper.";
+        }
+      }
+    }
+  }
+
+  grouping tools-radio-roe-mapper-demapper-top {
+    description
+      "Top-level tools for radio parameters";
+    container radio {
+      presence "tools command for radio roe";
+      must "starts-with(../srl_nokia_tools-if:name, 'ethernet')" {
+        error-message "radio not supported on this interface";
+      }
+      uses roe;
+    }
+  }
+
+  augment "/srl_nokia_tools-if:interface" {
+    uses tools-radio-roe-mapper-demapper-top;
+  }
+}

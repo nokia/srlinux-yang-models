@@ -19,6 +19,10 @@ module srl_nokia-mpls-label-management {
   description
     "This module defines configuration and operational state data for system wide MPLS label management.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -73,6 +77,12 @@ module srl_nokia-mpls-label-management {
     base mpls-protocol;
     description
       "A pseudo protocol representing static MPLS routes";
+  }
+
+  identity evpn {
+    base mpls-protocol;
+    description
+      "The BGP/EVPN protocol carrying labels.";
   }
 
   grouping common-label-block {
@@ -156,6 +166,13 @@ module srl_nokia-mpls-label-management {
     }
   }
 
+  grouping mpls-services-label-management-top {
+    container services {
+      description
+        "Container for system wide Services MPLS label management";
+    }
+  }
+
   grouping mpls-label-management-top {
     container mpls {
       if-feature "srl_nokia-feat:label-management";
@@ -199,6 +216,7 @@ module srl_nokia-mpls-label-management {
           uses common-label-block;
         }
       }
+      uses mpls-services-label-management-top;
     }
   }
 

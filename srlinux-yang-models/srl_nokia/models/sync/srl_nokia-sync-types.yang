@@ -6,11 +6,21 @@ module srl_nokia-sync-types {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
 
   description
     "This module defines derived types for configuration and operational state data
      related to time management.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -28,14 +38,15 @@ module srl_nokia-sync-types {
 
   typedef clock-mode-type {
     type enumeration {
-      enum ptpdisabled {
-        value 0;
-      }
       enum ttsc {
         value 4;
+        description
+          "Telecom Time Slave Clock";
       }
       enum tbc {
         value 5;
+        description
+          "Telecom Boundary Clock";
       }
     }
   }
@@ -86,6 +97,7 @@ module srl_nokia-sync-types {
   typedef time-reference-type {
     type enumeration {
       enum extTod {
+        if-feature "srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
         value 1;
         description
           "the PTP clock aligns the time to the external ToD signal";
@@ -116,6 +128,7 @@ module srl_nokia-sync-types {
   typedef clock-identity-type {
     type binary {
       length "8";
+      srl_nokia-ext:output-flavor "hex";
     }
     description
       "Identifies unique entities within a PTP Network.
@@ -126,8 +139,8 @@ module srl_nokia-sync-types {
   }
 
   typedef time-seconds-type {
-    type binary {
-      length "48";
+    type uint64 {
+      srl_nokia-ext:output-flavor "hex";
     }
     units "seconds";
     description
@@ -135,15 +148,15 @@ module srl_nokia-sync-types {
   }
 
   typedef time-nanoseconds-type {
-    type binary {
-      length "32";
+    type uint32 {
+      srl_nokia-ext:output-flavor "hex";
     }
-    units "nanaseconds";
+    units "nanoseconds";
     description
       "Identifies nanoseconds number of the time";
   }
 
-  typedef delay-mechanism-enumeration {
+  typedef delay-mechanism {
     type enumeration {
       enum e2e {
         value 1;
@@ -159,7 +172,7 @@ module srl_nokia-sync-types {
       "IEEE Std 1588-2008: 8.2.5.4.4";
   }
 
-  typedef port-state-enumeration {
+  typedef port-state {
     type enumeration {
       enum initializing {
         value 1;
@@ -238,7 +251,7 @@ module srl_nokia-sync-types {
     }
   }
 
-  typedef ql-set-enumeration {
+  typedef ql-set {
     type enumeration {
       enum auto {
         value 255;
@@ -298,7 +311,7 @@ module srl_nokia-sync-types {
     }
   }
 
-  typedef ql-rx-enumeration {
+  typedef ql-rx {
     type enumeration {
       enum not-applicable {
         value 253;
@@ -331,7 +344,7 @@ module srl_nokia-sync-types {
           "QL of SEC.";
       }
       enum dnu {
-        value 15;
+        value 1515;
         description
           "QL of Do Not Use.";
       }
@@ -380,10 +393,15 @@ module srl_nokia-sync-types {
         description
           "QL of PNO.";
       }
+      enum dus {
+        value 15;
+        description
+          "QL of Do not Use for Sync.";
+      }
     }
   }
 
-  typedef ql-status-enumeration {
+  typedef ql-status {
     type enumeration {
       enum valid {
         value 0;
@@ -408,7 +426,7 @@ module srl_nokia-sync-types {
     }
   }
 
-  typedef ref-status-enumeration {
+  typedef ref-status {
     type enumeration {
       enum not-assigned {
         value 0;
@@ -433,7 +451,7 @@ module srl_nokia-sync-types {
     }
   }
 
-  typedef ref-switch-state-enumeration {
+  typedef ref-switch-state {
     type enumeration {
       enum no-request {
         value 0;
@@ -458,7 +476,7 @@ module srl_nokia-sync-types {
     }
   }
 
-  typedef freq-clock-state-enumeration {
+  typedef freq-clock-state {
     type enumeration {
       enum locked {
         value 0;
@@ -483,7 +501,7 @@ module srl_nokia-sync-types {
     }
   }
 
-  typedef bits-signal-type-enumeration {
+  typedef bits-signal-type {
     type enumeration {
       enum 2mhz {
         value 0;
@@ -518,17 +536,17 @@ module srl_nokia-sync-types {
     }
   }
 
-  typedef synce-mode-enumeration {
+  typedef synce-mode {
     type enumeration {
-      enum ansi {
+      enum sdh {
         value 0;
         description
-          "ANSI / SONET mode for SyncE.";
+          "sdh specifies the values corresponding to G.781 Option 1 compliant networks.";
       }
-      enum etsi {
+      enum sonet {
         value 1;
         description
-          "ETSI / SDH mode for SyncE.";
+          "sonet specifies the values corresponding to G.781 Option 2 compliant networks";
       }
     }
   }

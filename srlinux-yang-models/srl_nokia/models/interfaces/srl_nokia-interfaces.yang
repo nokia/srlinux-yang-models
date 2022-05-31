@@ -28,6 +28,10 @@ module srl_nokia-interfaces {
      This model reuses data items defined in the IETF YANG model for
      interfaces described by RFC 7223";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -99,6 +103,7 @@ module srl_nokia-interfaces {
       enum interface-hold-time-up-active;
       enum interface-reload-timer-active;
       enum connector-down;
+      enum event-handler;
     }
   }
 
@@ -544,8 +549,11 @@ module srl_nokia-interfaces {
         description
           "The value of this leaf indicates the context in which the
            ethernet subinterface will be used in";
-        must "(starts-with(../../srl_nokia-if:name, 'ethernet') or starts-with(../../srl_nokia-if:name, 'lag'))" {
+        must "(starts-with(../../srl_nokia-if:name, 'ethernet') or starts-with(../../srl_nokia-if:name, 'lag') or starts-with(../../srl_nokia-if:name, 'lif') or starts-with(../../srl_nokia-if:name, 'enp') or starts-with(../../srl_nokia-if:name, 'vhn'))" {
           error-message "type not supported on this interface";
+        }
+        must "(. != 'srl_nokia-if:local-mirror-dest') or (starts-with(../../srl_nokia-if:name, 'ethernet') or starts-with(../../srl_nokia-if:name, 'lag'))" {
+          error-message "local-mirror-dest is not supported on this interface";
         }
       }
       uses subinterface-config;
@@ -607,6 +615,9 @@ module srl_nokia-interfaces {
 
            Valid options are:
            irb<N>, N=0..255
+           lif-<lif_name>
+           enp<bus>s<dev>f<fn>, bus=0..255, dev=0..31, fn=0..7
+           vhn-<vhn_name>
            lag<N>, N=1..128 [note1]
            lo<N>, N=0..255
            mgmt0
@@ -615,11 +626,13 @@ module srl_nokia-interfaces {
            ethernet-<slot>/<mda>/<port>
            system0
 
+           <lif_name>=Linux interface name
+           <vhn_name>=vhost interface name
            <slot>=slot number {1,2,3,..}
            <mda>=mda id {a,b,c,d}
            <port>=port id {1,2,3,..}
 
-           [note1] N=1..32 for 7220-D1, 7220-D2, 7220-D3. N=1..127 for 7220-H2, 7220-H3.";
+           [note1] N=1..32 for 7220-D1. N=1..48 for 7220-D2, 7220-D3. N=1..127 for 7220-H2, 7220-H3.";
       }
       uses interface-phys-config;
       leaf ifindex {
@@ -676,7 +689,7 @@ module srl_nokia-interfaces {
             "Corresponds to ifHCInMulticastPkts from the IF-MIB.";
         }
         leaf in-discarded-packets {
-          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:platform-vsrl";
+          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
           type srl_nokia-comm:zero-based-counter64;
           description
             "Corresponds to ifInDiscards from the IFMIB.
@@ -699,7 +712,7 @@ module srl_nokia-interfaces {
             "Corresponds to ifHCOutOctetsfrom the IF-MIB.";
         }
         leaf out-mirror-octets {
-          if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3";
+          if-feature "srl_nokia-feat:mirroring";
           type srl_nokia-comm:zero-based-counter64;
           description
             "This counts the number of outgoing mirrored octets";
@@ -732,7 +745,7 @@ module srl_nokia-interfaces {
             "Corresponds to ifOutErrors from the IF-MIB.";
         }
         leaf out-mirror-packets {
-          if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3";
+          if-feature "srl_nokia-feat:mirroring";
           type srl_nokia-comm:zero-based-counter64;
           description
             "This counts the number of outgoing mirrored packets";
@@ -1147,6 +1160,9 @@ module srl_nokia-interfaces {
           must 'not(true() = ../../vlan-tagging or false() = ../../vlan-tagging)' {
             error-message "vlan-tagging and aggregate-id can not be configured together";
           }
+          must 'not(../../tpid)' {
+            error-message "tpid and aggregate-id can not be configured together";
+          }
           must 'not(../../ethernet/duplex-mode)' {
             error-message "duplex-mode and aggregate-id can not be configured together";
           }
@@ -1185,7 +1201,7 @@ module srl_nokia-interfaces {
         leaf auto-negotiate {
           if-feature "srl_nokia-feat:platform-7220-d1 or srl_nokia-feat:platform-7210-sas24g";
           type boolean;
-          must "re-match(../../srl_nokia-if:name, 'ethernet-1/[1-9]') or re-match(../../srl_nokia-if:name, 'ethernet-1/[1-3][0-9]') or re-match(../../srl_nokia-if:name, 'ethernet-1/4[0-8]')" {
+          must "re-match(../../srl_nokia-if:name, 'ethernet-1/[1-9]') or re-match(../../srl_nokia-if:name, 'ethernet-1/[1-3][0-9]') or re-match(../../srl_nokia-if:name, 'ethernet-1/4[0-8]') or re-match(../../srl_nokia-if:name, 'otc-1/[1-4]')" {
             error-message "auto-negotiation not supported on this interface";
           }
           description
@@ -1287,7 +1303,7 @@ module srl_nokia-interfaces {
               if-feature "srl_nokia-feat:disabled";
             }
           }
-          must "(starts-with(../../srl_nokia-if:name, 'ethernet'))" {
+          must "(starts-with(../../srl_nokia-if:name, 'ethernet') or starts-with(../../srl_nokia-if:name, 'otc') or starts-with(../../srl_nokia-if:name, 'lif') or starts-with(../../srl_nokia-if:name, 'enp') or starts-with(../../srl_nokia-if:name, 'vhn'))" {
             error-message "port speed not configurable on this interface";
           }
           must 'not(../../breakout-mode)' {
@@ -1353,6 +1369,25 @@ module srl_nokia-interfaces {
           type srl_nokia-comm:mac-address;
           description
             "The MAC address associated with the port";
+        }
+        leaf mac-address {
+          if-feature "srl_nokia-feat:configurable-intf-mac-addr";
+          type srl_nokia-comm:mac-address;
+          must "not (starts-with(../../srl_nokia-if:name, 'lo') or starts-with(../../srl_nokia-if:name, 'system'))" {
+            error-message "mac-address not configurable on this interface";
+          }
+          must 'not(../../breakout-mode)' {
+            error-message "mac-address not configurable when breakout-mode is enabled";
+          }
+          description
+            "MAC address of the interface
+
+             If not configured, this is set to the hw-mac-address, which is populated depending on interface type:
+
+             - For interfaces with a discoverable MAC address (either populated by an external system or present in hardware) the discovered value is populated.
+             - For interfaces without a discoverable MAC address, the address is generated from a hash of the interface name and the chassis MAC address.
+
+             When deleted, will revert back to the value of hw-mac-address.";
         }
         leaf physical-medium {
           config false;

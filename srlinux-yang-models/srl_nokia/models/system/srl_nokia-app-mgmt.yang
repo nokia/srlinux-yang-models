@@ -16,6 +16,10 @@ module srl_nokia-app-mgmt {
   description
     "This module defines application management.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -23,6 +27,23 @@ module srl_nokia-app-mgmt {
   revision 2019-11-30 {
     description
       "SRLinux 19.11.1";
+  }
+
+  typedef start-type {
+    type enumeration {
+      enum warm {
+        description
+          "A warm start indicates that the application will leave state in IDB during a restart, and recover it post restart
+
+           This type results in less disruption to surrounding applications and functionality.";
+      }
+      enum cold {
+        description
+          "A cold start indicates that the application will not leave state in IDB during a restart
+
+           This type is equivalent to a normal application restart, i.e. one where the application's state is purged from the system during the restart, and recreated after.";
+      }
+    }
   }
 
   typedef restricted-operation-type {
@@ -145,6 +166,17 @@ module srl_nokia-app-mgmt {
       type srl-comm:date-and-time-delta;
       description
         "Date and time the application instance last changed state";
+    }
+    leaf last-start-type {
+      srl-ext:show-importance "high";
+      type start-type;
+      description
+        "Indicates the type of the most recent start or restart of this application instance";
+    }
+    leaf-list supported-restart-types {
+      type start-type;
+      description
+        "Indicates the supported restart types for this application";
     }
     leaf author {
       srl-ext:show-importance "high";

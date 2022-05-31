@@ -25,6 +25,10 @@ module srl_nokia-platform-datapath-resources {
   description
     "This module defines configuration and operational state related to datapath resources in the system";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -49,7 +53,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity ip-hosts {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
     description
       "IP host route resources.
 
@@ -57,6 +61,9 @@ module srl_nokia-platform-datapath-resources {
        Reports the number of entries used in the IP host table. Every local host /32 route, ARP entry and IPv4 subnet broadcast address requires 1 entry. In non-ALPM operation every remote /32 route also requires 1 entry. Every local host /128 route, and ND entry requires 2 entries. In non-ALPM operation every remote /128 route also requires 2 entries. Free entries reflects the total number of entries remaining in shared + dedicated UFT banks
 
        Tomahawk3:
+       Reports the number of entries used in the IP host table. Every ARP entry and IPv4 subnet broadcast address requires 1 entry. Every ND entry requires 2 entries.
+
+       Monterey:
        Reports the number of entries used in the IP host table. Every ARP entry and IPv4 subnet broadcast address requires 1 entry. Every ND entry requires 2 entries.";
   }
 
@@ -69,12 +76,15 @@ module srl_nokia-platform-datapath-resources {
        Reports the percentage utilization of the KAPS1 or KAPS2 table, whichever is higher. These tables are used for storing longest-prefix-match IPv4 and IPv6 routes.
 
        Trident3 and Tomahawk3:
-       Reports the used and free number of half-wide entries in the hardware LPM table. An IPv4 route (or index to IPv4 ALPM lookup) requires a half-wide entry. An IPv6 route (or index to IPv6 ALPM lookup) that is /64 or less requires a single-wide entry (2 half-wide entries). An IPv6 route (or index to IPv6 ALPM lookup) that is more than /64 requires a double-wide entry (4 half-wide entries).";
+       Reports the used and free number of half-wide entries in the hardware LPM table. An IPv4 route (or index to IPv4 ALPM lookup) requires a half-wide entry. An IPv6 route (or index to IPv6 ALPM lookup) that is /64 or less requires a single-wide entry (2 half-wide entries). An IPv6 route (or index to IPv6 ALPM lookup) that is more than /64 requires a double-wide entry (4 half-wide entries).
+
+       Monterey:
+       Reports the used and free number of half-wide entries in the hardware LPM table. An IPv4 route requires a half-wide entry. An IPv6 route that is /64 or less requires a single-wide entry (2 half-wide entries). An IPv6 route that is more than /64 requires a double-wide entry (4 half-wide entries).";
   }
 
   identity mac-addresses {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
     description
       "MAC address resources.
 
@@ -118,6 +128,9 @@ module srl_nokia-platform-datapath-resources {
        Reports the used number of ECMP groups, adding overlay and underlay ECMP groups.
 
        Tomahawk3:
+       Reports used number of ECMP groups.
+
+       Monterey:
        Reports used number of ECMP groups.";
   }
 
@@ -133,12 +146,15 @@ module srl_nokia-platform-datapath-resources {
        Reports the used number of ECMP members, adding overlay and underlay ECMP members.
 
        Tomahawk3:
+       Reports used number of ECMP members.
+
+       Monterey:
        Reports used number of ECMP members.";
   }
 
   identity egress-next-hops {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
     description
       "Egress next-hop resources.
 
@@ -146,12 +162,15 @@ module srl_nokia-platform-datapath-resources {
        Reports the number of entries used in the egress next-hop table, counting entries in the overlay partition and entries in the underlay partition. 1 entry = 1 IPv4 next-hop address or 1 IPv6 next-hop address.
 
        Tomahawk3:
+       Reports the number of entries used in the egress next-hop table. 1 entry = 1 IPv4 next-hop address or 1 IPv6 next-hop address.
+
+       Monterey:
        Reports the number of entries used in the egress next-hop table. 1 entry = 1 IPv4 next-hop address or 1 IPv6 next-hop address.";
   }
 
   identity lag-groups {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
     description
       "LAG group resources.
 
@@ -160,7 +179,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity lag-members {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
     description
       "LAG member resources.
 
@@ -178,21 +197,21 @@ module srl_nokia-platform-datapath-resources {
 
   identity mpls-next-hops {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "One resource is used for every next-hop that pushes an MPLS label in every next-hop-group that is tied to an ILM entry that performs a 'swap'. One additional resource is used for every next-hop that pushes an MPLS label in every next-hop-group that is tied to an MPLS tunnel.";
   }
 
   identity mpls-incoming-labels {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "One resource is used for every MPLS ILM entry that performs either a 'swap' or a 'pop' operation.";
   }
 
   identity tunnels {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "Tunnel resources. One tunnel resource is used per VXLAN or MPLS tunnel endpoint.
 
@@ -206,40 +225,49 @@ module srl_nokia-platform-datapath-resources {
 
   identity ip-lpm-ipv4-routes {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
     description
       "Trident3:
        Reports the number of IPv4 entries in the hardware LPM table. In non-ALPM mode, free entries is the remaining number of half-wide entries in all partitions (i.e. it assumes no IPv6 routes consume those entries). In ALPM mode, free entries is the Minimum Guaranteed Capacity returned by the BCM SDK.
 
        Tomahawk3:
+       Reports the number of IPv4 routes installed in the FIB. Free entries is the Minimum Guaranteed Capacity returned by the BCM SDK.
+
+       Monterey:
        Reports the number of IPv4 routes installed in the FIB. Free entries is the Minimum Guaranteed Capacity returned by the BCM SDK.";
   }
 
   identity ip-lpm-ipv6-shorter-routes {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
     description
       "Trident3:
        Reports the number of IPv6 entries with prefix length less than 65 bits in the hardware LPM table. In non-ALPM mode, free entries is the remaining number of single-wide + double-wide entries (i.e. it assumes no other types of routes consume those entries). In ALPM mode, free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
 
        Tomahawk3:
+       Reports the number of IPv6 entries with prefix length less than 65 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
+
+       Monterey:
        Reports the number of IPv6 entries with prefix length less than 65 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.";
   }
 
   identity ip-lpm-ipv6-longer-routes {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
     description
       "Trident3:
        Reports the number of IPv6 entries with prefix length greater than 64 bits in the hardware LPM table. In non-ALPM mode, free entries is the remaining number of double-wide entries (i.e. it assumes no other types of routes consume those entries). In ALPM mode, free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
 
        Tomahawk3:
+       Reports the number of IPv6 entries with prefix length greater than 64 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
+
+       Monterey:
        Reports the number of IPv6 entries with prefix length greater than 64 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.";
   }
 
   identity exact-match-entries {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "Reports the number of half-wide entries used in the LEM table. Each MPLS ILM record uses one half-wide entry. Each IPv4 address used as a host route, ARP entry or subnet broadcast address requires a half-wide entry. An IPv6 address used as a host route, or ND entry requires a single-wide entry (2 half-wide entries). Free entries is the remaining number of half-wide entries.";
   }
@@ -322,7 +350,7 @@ module srl_nokia-platform-datapath-resources {
     description
       "EGR_VLAN_XLATE_1 resources.
 
-       Corresponds to the ‘EGR_VLAN_XLATE_1’ HW table (8K entries). These entries are used for finding the egress VNI to be used for VXLAN packets.";
+       Corresponds to the 'EGR_VLAN_XLATE_1' HW table (8K entries). These entries are used for finding the egress VNI to be used for VXLAN packets.";
   }
 
   identity egress-vlan-translate-local-bias-pairs {
@@ -331,12 +359,12 @@ module srl_nokia-platform-datapath-resources {
     description
       "EGR_VLAN_XLATE_2 resources.
 
-       Corresponds to the ‘EGR_VLAN_XLATE_2’ HW table (24K entries). These entries are used for local bias (ES pruning).";
+       Corresponds to the 'EGR_VLAN_XLATE_2' HW table (24K entries). These entries are used for local bias (ES pruning).";
   }
 
   identity level-1-ecmp-groups {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "L1 ECMP group resources.
 
@@ -345,7 +373,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity level-2-ecmp-groups {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "L2 ECMP group resources.
 
@@ -354,7 +382,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity level-1-ecmp-members {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "L1 ECMP member resources.
 
@@ -363,7 +391,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity level-2-ecmp-members {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "L2 ECMP member resources.
 
@@ -372,7 +400,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity level-1-non-ecmp-fecs {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "L1 non-ECMP FEC resources.
 
@@ -381,7 +409,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity level-2-non-ecmp-fecs {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2";
+    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "L2 non-ECMP FEC resources.
 

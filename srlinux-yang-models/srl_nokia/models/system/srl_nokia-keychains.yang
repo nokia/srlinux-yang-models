@@ -12,10 +12,17 @@ module srl_nokia-keychains {
   import srl_nokia-extensions {
     prefix srl-ext;
   }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
 
   description
     "This module defines configuration and operational state data for authentication keychains used by control plane protocols such as OSPF, ISIS and BGP.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -99,14 +106,30 @@ module srl_nokia-keychains {
           type srl_nokia-comm:admin-state;
           default "disable";
           description
-            "When set to disable, the keychain is inactive. When a protocol refers to a keychain that is inactive, no authentication data is added to the outbound messages and all inbound messages with authentication data are dropped.
+            "When set to disable, the keychain is inactive. When a protocol refers to a keychain that is inactive, no authentication data is added to the outbound messages and/or all inbound messages with authentication data are dropped, depending on the context.
 
-             A key chain is also inactive if no key is configured.";
+             A keychain is operationally disabled in a particular direction (send/receive) if:
+             - the keychain is administratively disabled
+             - no keys are configured
+             - all of the keys are administratively disabled
+             - all of the  keys are inactive because their start-times are in the future
+             - all of the keys are inactive because their end-times (plus tolerance) are in the past (applies only to receive direction)";
         }
         leaf description {
           type srl_nokia-comm:description;
           description
             "The user configured description for the keychain";
+        }
+        leaf tolerance {
+          if-feature "srl-feat:keychain";
+          type uint32;
+          default "0";
+          units "seconds";
+          description
+            "Tolerance for receive keys.  If tolerance is Z then all receive keys remain valid up to the configured/applicable end-time plus an additional Z seconds.";
+          must "(. = 0) or (../type = 'isis')" {
+            error-message "Only ISIS supports keychains with tolerance.";
+          }
         }
         leaf type {
           type keychain-type;
@@ -114,7 +137,6 @@ module srl_nokia-keychains {
             "Specifies the intended use of the keychain. The type constrains the set of crypto algorithms that are available to use with each key in the keychain. It is also used ensure that this keychain is only used by protocols for which it is intended.";
         }
         list key {
-          max-elements 1;
           key "index";
           description
             "List of keys in the keychain";
@@ -138,6 +160,64 @@ module srl_nokia-keychains {
               "The secret key.
 
                The maximum string length is 25 characters, of which a maximum of 20 characters is the secret data and the remaining 5 characters, if provided, must be ‘ hash’ (i.e. one whitespace plus the word hash). The trailing ‘hash’ keyword indicates that the secret data was already encrypted and this is the display version of that secret data, which is a hash of the original data. If the ‘hash’ keyword is omitted the string is assumed to be the actual secret data. Whenever the value of authentication-key is read by any management interface, from any datastore (candidate, running, state) the return value is always the encrypted value – i.e. with the trailing ‘ hash’ characters included.";
+          }
+          container send-lifetime {
+            if-feature "srl-feat:keychain";
+            description
+              "Specifies the lifetime of the key for sending authentication information to the peer.";
+            leaf start-time {
+              type srl_nokia-comm:date-and-time;
+              description
+                "The time at which the key becomes valid for use in the send direction. The default is the Unix Epoch (Jan 1, 1970 00:00:00 UTC).
+
+                 If there are multiple keys in the keychain the one used for sending authentication information is the key with the most recent send-lifetime start-time that is earlier than the current date and time";
+              must "(../../../type = 'isis')" {
+                error-message "Only ISIS supports keychains with individal key start and end times.";
+              }
+            }
+            leaf send-and-receive {
+              type boolean;
+              description
+                "When this is set to true (the default value), the specified start-time also applies to the receive direction.  When set to false, router uses the specific start-time for the receive direction (asymmetric mode).";
+              must "(../../../type = 'isis')" {
+                error-message "Only ISIS supports keychains with individal key start and end times.";
+              }
+            }
+          }
+          container receive-lifetime {
+            if-feature "srl-feat:keychain";
+            leaf start-time {
+              type srl_nokia-comm:date-and-time;
+              description
+                "The time at which the key becomes valid for use in the receive direction. If send-and-receive is true, this value is ignored. If send-and-receive is false the default is the Unix Epoch (Jan 1, 1970 00:00:00 UTC).
+
+                 If there are multiple keys in the keychain the one used for checking received authentication information is the key with the most recent receive-lifetime start-time that is earlier than the current date and time and that has not exceeded its receive-lifetime end-time by more than 'tolerance' seconds";
+              must "(../../../type = 'isis')" {
+                error-message "Only ISIS supports keychains with individal key start and end times.";
+              }
+              must '(../../send-lifetime/send-and-receive != true())' {
+                error-message "receive-lifetime can not be configured when send-lifetime send-and-recive is true";
+              }
+            }
+            leaf end-time {
+              type union {
+                type enumeration {
+                  enum forever {
+                    description
+                      "Receive key does not expire (equivalent to infinite tolerance).";
+                  }
+                }
+                type srl_nokia-comm:date-and-time;
+              }
+              description
+                "The time at which the key becomes invalid for use in the receive direction. The default is forever.";
+              must "(../../../type = 'isis')" {
+                error-message "Only ISIS supports keychains with individal key start and end times.";
+              }
+              must '(../../send-lifetime/send-and-receive != true())' {
+                error-message "receive-lifetime can not be configured when send-lifetime send-and-recive is true";
+              }
+            }
           }
         }
       }

@@ -18,10 +18,17 @@ module srl_nokia-gnmi-server {
   import srl_nokia-extensions {
     prefix srl-ext;
   }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
 
   description
     "This module defines configuration and operational state data related to the gnmi server.";
 
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -56,6 +63,17 @@ module srl_nokia-gnmi-server {
       default "true";
       description
         "Enable or disable the use of username/password authentication for every gNMI request";
+    }
+    leaf yang-models {
+      if-feature "srl-feat:openconfig";
+      type enumeration {
+        enum srl;
+        enum oc;
+      }
+      srl-ext:show-importance "high";
+      default "srl";
+      description
+        "Specify yang-models to be used when origin field is not present in the gnmi requests";
     }
   }
 
