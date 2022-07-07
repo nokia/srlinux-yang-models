@@ -7,6 +7,10 @@ module srl_nokia-ethcfm-types {
     "This module defines derived types for configuration and operational state data
      related to Ethernet CFM management.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -272,62 +276,49 @@ module srl_nokia-ethcfm-types {
     }
   }
 
-  typedef mep-defect-flags {
+  typedef mep-defect-flag {
     description
       "A MEP can detect and report a number of defects, and multiple
-       defects can be present at the same time. These defects are:
-       rdi-ccm    A remote MEP is reported the RDI bit in its last CCM.
-       mac-status Either some remote MEP is reporting its
-                  Interface Status TLV as not isUp, or all remote
-                  MEPs are reporting a Port Status TLV that
-                  contains some value other than psUp.
-       remote-ccm The MEP is not receiving valid CCMs from at
-                  least one of the remote MEPs.
-       error-ccm  The MEP has received at least one invalid CCM
-                  whose CCM Interval has not yet timed out.
-       xcon-cmm   The MEP has received at least one CCM from
-                  either another MAID or a lower MD Level whose
-                  CCM Interval has not yet timed out.";
-    type bits {
-      bit rdi-ccm {
-        position 0;
+       defects can be present at the same time. They are defined in
+       IEEE 802.1ag and ITU-T G.8013/Y1731.";
+    type union {
+      type uint8;
+      type bits {
+        bit rdi {
+          position 0;
+        }
+        bit loc {
+          position 1;
+        }
+        bit unp {
+          position 2;
+        }
+        bit unm {
+          position 3;
+        }
+        bit mmg {
+          position 4;
+        }
+        bit unl {
+          position 5;
+        }
       }
-      bit mac-status {
-        position 1;
-      }
-      bit remote-ccm {
-        position 2;
-      }
-      bit error-ccm {
-        position 3;
-      }
-      bit xcon-ccm {
-        position 4;
-      }
-    }
-  }
-
-  typedef mep-defect-flags-y1731 {
-    description
-      "The MEP defects defined in ITU-T G.8013/Y1731.";
-    type bits {
-      bit rdi {
-        position 0;
-      }
-      bit loc {
-        position 1;
-      }
-      bit unp {
-        position 2;
-      }
-      bit unm {
-        position 3;
-      }
-      bit mmg {
-        position 4;
-      }
-      bit unl {
-        position 5;
+      type bits {
+        bit rdi-ccm {
+          position 0;
+        }
+        bit mac-status {
+          position 1;
+        }
+        bit remote-ccm {
+          position 2;
+        }
+        bit error-ccm {
+          position 3;
+        }
+        bit xcon-ccm {
+          position 4;
+        }
       }
     }
   }

@@ -24,12 +24,19 @@ module srl_nokia-aaa {
   import srl_nokia-aaa-tacacs {
     prefix srl-aaa-tacacs;
   }
+  import srl_nokia-aaa-password {
+    prefix srl-aaa-password;
+  }
 
   description
     "This module defines configuration and operational state data related to authorization, authentication, and accounting (AAA) management.
 
      Portions of this model reuse data definitions or structure from RFC 7317 - A YANG Data Model for System Management";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -306,6 +313,7 @@ module srl_nokia-aaa {
     leaf password {
       type string {
         srl-ext:generated-class-name "PasswordHash";
+        srl-ext:hash-algorithm "ar2";
       }
       description
         "The user password, supplied as cleartext
@@ -422,9 +430,36 @@ module srl_nokia-aaa {
       leaf password {
         type string {
           srl-ext:generated-class-name "PasswordHash";
+          srl-ext:hash-algorithm "ar2";
         }
         description
           "The admin password, supplied as cleartext
+
+           The system will hash the value, storing only the hashed value";
+      }
+    }
+  }
+
+  grouping aaa-authentication-linuxadmin-users {
+    description
+      "Top-level grouping for linuxadmin users";
+    container linuxadmin-user {
+      description
+        "Enclosing container for linuxadmin user";
+      leaf username {
+        type string;
+        default "linuxadmin";
+        description
+          "Assigned username for linuxadmin user";
+        config false;
+      }
+      leaf password {
+        type string {
+          srl-ext:generated-class-name "PasswordHash";
+          srl-ext:hash-algorithm "sha2";
+        }
+        description
+          "The linuxadmin password, supplied as cleartext
 
            The system will hash the value, storing only the hashed value";
       }
@@ -580,8 +615,14 @@ module srl_nokia-aaa {
         "Top-level container for global authentication data";
       uses aaa-authentication-config;
       uses aaa-authentication-admin-users;
+      uses aaa-authentication-linuxadmin-users {
+          if-feature "srl-feat:future-22-6-2";
+      }
       uses aaa-authentication-user-top;
       uses aaa-state-sessions-top;
+      uses srl-aaa-password:aaa-password-top {
+          if-feature "srl-feat:password-complexity-and-lockout";
+      }
     }
   }
 

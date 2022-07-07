@@ -16,6 +16,10 @@ module srl_nokia-qos {
     prefix srl-feat;
   }
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -158,7 +162,7 @@ module srl_nokia-qos {
         description
           "List of queue templates that can be applied to egress queues or VOQ sets
 
-           The 7250 IXR-6/10 platforms supports a maximum 8 queue-templates. The 7220-D2/D3/H2/H3 platforms support a maximum of 64 queue-templates.";
+           7250 IXR-6/10 supports a maximum 8 queue-templates. 7220-D2/D3/D5/H2/H3 supports a maximum of 64 queue-templates.";
         key "name";
         leaf name {
           type srl_nokia-comm:name;
@@ -173,19 +177,18 @@ module srl_nokia-qos {
             units "bytes";
             default "0";
             description
-              "Maximum queue depth in bytes. MBS buffer space is not guaranteed.
+              "Maximum amount of shared buffer memory available to the queue.
 
-               On J2 systems this parameter applies to a set of VOQs and the default is 256 MB (268435456 bytes).
+               On IXR-6/10 this parameter applies to a set of VOQs. If the configured value is 0 or no value is configured the limit is 256 MB (268435456 bytes), however the use of 'alpha' may limit the effective value to less than 256 MB. A configured non-zero value sets a static limit without 'alpha'.
 
-               On TD3, TH3 and SAS systems this parameter applies to an egress queue and the default value of zero instructs the forwarding chip to apply its own limit based on 'alpha'. A non-zero value disables 'alpha'.
-
-               On SAS systems the actual hardware value is a multiple of 2048 bytes.
+               On 7220-D2/D3/D5/H2/H3 this parameter applies to an egress queue and the default value of zero instructs the forwarding chip to apply its own limit based on 'alpha'. A non-zero value disables 'alpha'. The alpha value  is 5 (0.25 multiplier of shared buffer space) for unicast queues and 4 (0.125 multiplier of shared buffer space) for multicast queues.
 
                Must be non-zero/non-default in order to add the active-queue-management presence container.";
           }
           leaf committed-burst-size {
             if-feature "srl-feat:monterey";
             type uint32;
+            must '. <= ../maximum-burst-size';
             units "bytes";
             default "0";
             description
@@ -194,6 +197,7 @@ module srl_nokia-qos {
                On SAS systems this parameter applies to an egress queue and the default is 0.";
           }
           leaf high-threshold-bytes {
+            if-feature "not srl-feat:platform-7220-d5";
             type uint32;
             must '. <= ../maximum-burst-size';
             default "0";
@@ -202,13 +206,13 @@ module srl_nokia-qos {
 
                The default value of 0 disables the functionality.
 
-               On J2 systems this parameter applies to a set of VOQs (and therefore to unicast traffic only). On TD3/TH3 systems this parameter applies to a unicast queue only; the configuration of this leaf is ignored when the queue-template is attached to a multicast-queue.
+               On IXR-6/10 this parameter applies to a set of VOQs (and therefore to unicast traffic only). On 7220-D2/D3/H2/H3 this parameter applies to a unicast queue only; the configuration of this leaf is ignored when the queue-template is attached to a queue with queue-type other than unicast.
 
-               On TD3 the threshold is rounded up the nearest multiple of 2048 bytes. On J2 the threshold is rounded up to the nearest multiple of 4096 bytes. On TH3 the threshold is rounded up to the nearest multiple of 254 bytes.";
+               On 7220-D2/D3 the threshold is rounded up the nearest multiple of 2048 bytes. On IXR-6/10 the threshold is rounded up to the nearest multiple of 4096 bytes. On 7220-H2/H3 the threshold is rounded up to the nearest multiple of 254 bytes.";
           }
         }
         container active-queue-management {
-          presence "Presence container for WRED and/or ECN slopes. On TD3/TH3, this container cannot be present to use the queue-template with a multicast queue.";
+          presence "Presence container for WRED and/or ECN slopes. On 7220-D2/D3/D5/H2/H3, this container cannot be present to use the queue-template with a multicast queue.";
           leaf weight-factor {
             type uint8 {
               range "0..15";
@@ -306,7 +310,7 @@ module srl_nokia-qos {
               description
                 "The maximum probability of marking a packet (at or above the max-threshold).
 
-                 On TD3/TH3 max-probability has a limited set of discrete values: 1,2,3,4,5,6,7,8,9,10,25,50,75,100. The user is allowed to enter any value but the system will choose the next-highest value that is supported.
+                 On 7220-D2/D3/D5/H2/H3 max-probability has a limited set of discrete values: 1,2,3,4,5,6,7,8,9,10,25,50,75,100. The user is allowed to enter any value but the system will choose the next-highest value that is supported.
 
                  A slope is disabled by setting min-threshold-percent=100, max-threshold-percent=100 and max-probability=0.";
             }
@@ -421,8 +425,7 @@ module srl_nokia-qos {
 
   grouping dot1p-classifier {
     list dot1p-policy {
-      if-feature "srl-feat:future-0-0";
-      if-feature "srl-feat:monterey or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
+      if-feature "srl-feat:dot1p-classifier-rewrite";
       key "name";
       leaf name {
         type srl_nokia-comm:name;
@@ -544,8 +547,7 @@ module srl_nokia-qos {
 
   grouping dot1p-rewrite {
     list dot1p-policy {
-      if-feature "srl-feat:future-0-0";
-      if-feature "srl-feat:monterey or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
+      if-feature "srl-feat:dot1p-classifier-rewrite";
       key "name";
       leaf name {
         type srl_nokia-comm:name;
@@ -711,7 +713,7 @@ module srl_nokia-qos {
                 description
                   "The maximum probability of dropping a packet (at or above the max-threshold).
 
-                   On 7250 IXR systems there can be a significant difference between the configured value and the operational value.";
+                   On 7250 IXR-6/10 there can be a significant difference between the configured value and the operational value.";
               }
             }
             list ecn-slope {
@@ -748,7 +750,7 @@ module srl_nokia-qos {
                 description
                   "The maximum probability of marking a packet (at or above the max-threshold).
 
-                   On 7250 IXR systems there can be a significant difference between the configured value and the operational value.";
+                   On 7250 IXR-6/10 there can be a significant difference between the configured value and the operational value.";
               }
             }
           }
@@ -769,11 +771,13 @@ module srl_nokia-qos {
                 "Committed queue depth in bytes.";
             }
             leaf last-high-threshold-time {
+              if-feature "not srl-feat:platform-7220-d5";
               description
                 "The last time the queue depth exceeded the high-threshold in a rising direction.";
               type srl_nokia-comm:date-and-time;
             }
             leaf high-threshold-bytes {
+              if-feature "not srl-feat:platform-7220-d5";
               type uint32;
               units "bytes";
               description
@@ -919,6 +923,13 @@ module srl_nokia-qos {
               units "bytes";
               description
                 "Maximum queue depth in bytes.";
+            }
+            leaf committed-burst-size {
+              if-feature "srl-feat:monterey";
+              type uint32;
+              units "bytes";
+              description
+                "Committed queue depth in bytes.";
             }
             leaf last-high-threshold-time {
               description
@@ -1210,15 +1221,15 @@ module srl_nokia-qos {
           }
           leaf dot1p {
             srl_nokia-ext:first-released "22.6.1";
-            if-feature "srl-feat:future-0-0";
+            if-feature "srl-feat:dot1p-classifier-rewrite";
             if-feature "srl-feat:monterey or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dot1p-policy/srl_nokia-qos:name";
             }
             description
               "Reference to the name of a dot1p classifier policy.";
-            must "../../../../srl_nokia-if:type != 'srl_nokia-if:routed'" {
-              error-message "dot1p classifiers not allowed with type routed";
+            must "../../../../srl_nokia-if:type = 'srl_nokia-if:bridged'" {
+              error-message "dot1p classifiers allowed with type bridged only";
             }
           }
           leaf mpls-traffic-class {
@@ -1263,8 +1274,8 @@ module srl_nokia-qos {
             }
           }
           leaf dot1p {
-            if-feature "srl-feat:future-0-0";
             srl_nokia-ext:first-released "22.6.1";
+            if-feature "srl-feat:dot1p-classifier-rewrite";
             if-feature "srl-feat:monterey or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dot1p-policy/srl_nokia-qos:name";

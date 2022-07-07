@@ -25,6 +25,10 @@ module srl_nokia-sr-policies {
   description
     "Configuration and state related to segment routing policies.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -78,6 +82,12 @@ module srl_nokia-sr-policies {
     base segment-list-invalid-reason;
     description
       "The most recent query to TEDB about the named path (triggered by periodic re-optimization or initially) indicated that the named path is not viable.";
+  }
+
+  identity maximum-label-stack-depth-exceeded {
+    base segment-list-invalid-reason;
+    description
+      "The resolution of the named path requires more labels than supported by the hardware datapath.";
   }
 
   typedef segment-list-invalid-reason-type {
@@ -219,6 +229,12 @@ module srl_nokia-sr-policies {
          -  unresolved-first-segment: the first SID (MPLS label value) cannot be resolved into one or more outgoing interface(s) and next-hop(s)
          -  unresolved-named-path: the most recent query to TEDB about the named path (triggered by periodic re-optimization or initially) indicated that the named path is not viable";
     }
+    leaf sbfd-session-id {
+      config false;
+      type uint32;
+      description
+        "Sessions ID used to associate segement list to seamless-BFD session";
+    }
     container statistics {
       config false;
       leaf out-packets {
@@ -308,11 +324,13 @@ module srl_nokia-sr-policies {
               "The index number of the hop. Hops are processed in ascending sequence.";
           }
           leaf ip-address {
+            mandatory true;
             type srl_nokia-comm:ip-address;
             description
               "An IPv4 or IPv6 address that is a hop to be visited on the way to the destination";
           }
           leaf hop-type {
+            mandatory true;
             type enumeration {
               enum strict {
                 description
@@ -490,7 +508,7 @@ module srl_nokia-sr-policies {
         }
         leaf endpoint {
           mandatory true;
-          type srl_nokia-comm:ip-address;
+          type srl_nokia-comm:ip-address-excluding-all-zero;
           description
             "Policy endpoint IP address";
         }

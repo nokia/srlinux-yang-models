@@ -1,0 +1,888 @@
+module srl_nokia-igmp-snooping {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/igmp-snooping";
+  prefix srl_nokia-igmp-snooping;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl-rpol;
+  }
+  import srl_nokia-igmp-types {
+    prefix srl_nokia-igmp-types;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  description
+    "This yang file models configuration and state of the igmp snooping protocol on mac-vrf";
+
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+
+  typedef igmp-version {
+    type uint8 {
+      range "1..3";
+    }
+    description
+      "IGMP Version.";
+    reference
+      "v1 = RFC1112, v2 = RFC2236, v3 = RFC3376";
+  }
+
+  typedef igmp-interval-type {
+    type uint32;
+    units "seconds";
+    description
+      "Interval at which the router sends the IGMP query message toward
+       the upstream neighbor.";
+    reference
+      "RFC3376 8.2 Page 40";
+  }
+
+  grouping igmp-interface-key {
+    leaf interface-name {
+      description
+        "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+      type leafref {
+        path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
+      }
+    }
+  }
+
+  grouping igmp-group-range-keys {
+    leaf start {
+      type srl_nokia-comm:ipv4-address;
+      description
+        "Start of the group range.";
+      must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*'))" {
+        error-message "Not a valid IPv4 multicast addres";
+      }
+      must "not ((. >= '224.0.0.0') and (. <= '224.0.0.255'))" {
+        error-message "Must not be in the reserved multicast address range 224.0.0.0 to 224.0.0.255";
+      }
+    }
+    leaf end {
+      type srl_nokia-comm:ipv4-address;
+      description
+        "End of the group range.";
+      must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*'))" {
+        error-message "Not a valid IPv4 multicast addres";
+      }
+      must "not ((. >= '224.0.0.0') and (. <= '224.0.0.255'))" {
+        error-message "Must not be in the reserved multicast address range 224.0.0.0 to 224.0.0.255";
+      }
+    }
+  }
+
+  grouping igmp-snooping-global-trace-options {
+    container trace-options {
+      description
+        "Enter the trace-options context";
+      container trace {
+        description
+          "Tracing parameter flags";
+        container packet {
+          presence "Enable the tracing of IGMP packets";
+          description
+            "Trace IGMP Packet types";
+          list interface {
+            description
+              "List of interfaces to trace.";
+            key "interface-name";
+            leaf interface-name {
+              description
+                "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+              type leafref {
+                path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
+              }
+            }
+          }
+          list source-mac {
+            description
+              "List of source mac addresses to trace.";
+            key "source-mac";
+            leaf source-mac {
+              type srl_nokia-comm:mac-address;
+            }
+          }
+          leaf modifier {
+            type enumeration {
+              enum dropped {
+                value 0;
+                description
+                  "Enable tracing for the packets which are dropped.";
+              }
+              enum ingress-and-dropped {
+                value 1;
+                description
+                  "Enable tracing for the packets which are sent or received.";
+              }
+              enum egress-ingress-and-dropped {
+                value 2;
+                description
+                  "Enable tracing for the packets which are sent, received or dropped.";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-mrouter-state {
+    leaf address {
+      config false;
+      description
+        "The source IP address used by queries sent out by this multicast router.";
+      type srl_nokia-comm:ipv4-address;
+    }
+    leaf version {
+      config false;
+      description
+        "The version of the protocol that is sent by this multicast router.";
+      type igmp-version;
+    }
+    leaf up-time {
+      config false;
+      description
+        "The time since this multicast router has been known in this service.";
+      type uint32;
+      units "seconds";
+    }
+    leaf expiry-time {
+      config false;
+      description
+        "The time remaining before this multicast router is aged out.";
+      type uint32;
+      units "seconds";
+    }
+    container igmp-v3-states {
+      config false;
+      description
+        "Enter the igmp-v3-states context";
+      leaf general-query-interval {
+        description
+          "The General Query Interval used by this multicast router.";
+        type uint32;
+        units "seconds";
+      }
+      leaf general-response-interval {
+        description
+          "The General Query Response interval used by this multicast router.";
+        type uint32;
+        units "seconds";
+      }
+      leaf robust-count {
+        description
+          "The Robust Count value used by this multicast router.";
+        type uint32;
+      }
+    }
+    leaf interface {
+      config false;
+      description
+        "Interface behind which this multicast router is located.";
+      type leafref {
+        path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
+      }
+    }
+  }
+
+  grouping igmp-snooping-global-config {
+    description
+      "IGMP specific configuration.";
+    leaf admin-state {
+      description
+        "Administratively enable or disable the IGMP instance.";
+      type srl_nokia-comm:admin-state;
+      default "disable";
+    }
+    leaf query-interval {
+      description
+        "Interval at which the router sends the IGMP membership queries";
+      type igmp-interval-type {
+        range "2..1024";
+      }
+      default "125";
+    }
+    leaf robust-count {
+      description
+        "Configures the IGMP robustness to allow for the expected IGMP packet loss.
+
+         The robust-count variable allows tuning for the expected packet
+         loss on a subnet. If a subnet anticipates losses, the robust-count
+         variable can be increased.";
+      type uint32 {
+        range "2..10";
+      }
+      default "2";
+    }
+    leaf query-source-address {
+      type srl_nokia-comm:ipv4-address;
+      description
+        "Source IP address used when generating IGMP queries";
+    }
+    leaf report-source-address {
+      type srl_nokia-comm:ipv4-address;
+      description
+        "Source IP address used when generating IGMP reports";
+    }
+    container evpn-proxy {
+      description
+        "BGP-EVPN proxy information.";
+      reference
+        "draft-ietf-bess-evpn-igmp-mld-proxy";
+      leaf admin-state {
+        description
+          "Used to administratively enable or disable the use of EVPN to
+           create multicast state.";
+        type srl_nokia-comm:admin-state;
+        default "disable";
+      }
+    }
+  }
+
+  grouping igmp-snooping-global-state {
+    leaf oper-state {
+      config false;
+      description
+        "Used to report operational state of the IGMP instance.";
+      type srl_nokia-comm:admin-state;
+    }
+    leaf transmitted-bgp-smet-routes {
+      config false;
+      description
+        "Transmitted BGP SMET routes";
+      type yang:counter32;
+    }
+    container querier {
+      description
+        "Enter the querier context";
+      uses igmp-snooping-mrouter-state;
+    }
+    list multicast-routers {
+      config false;
+      description
+        "Enter the multicast-router list instance";
+      key "address";
+      uses igmp-snooping-mrouter-state;
+    }
+    leaf membership-group-count {
+      config false;
+      description
+        "The number of multicast groups which have been learned.";
+      type uint32;
+    }
+    container membership-groups {
+      config false;
+      description
+        "List of IGMP Membership information.";
+      list group {
+        key "group";
+        config false;
+        description
+          "Multicast group membership.";
+        leaf group {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "Multicast address.";
+        }
+        leaf filter-mode {
+          config false;
+          type srl_nokia-igmp-types:filter-mode;
+        }
+        leaf up-time {
+          config false;
+          description
+            "The time elapsed since this entry was created.";
+          type uint32;
+          units "seconds";
+        }
+        list source {
+          config false;
+          key "source";
+          description
+            "Source addresses of multicast.";
+          leaf source {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Source address of multicast.";
+          }
+          leaf up-time {
+            config false;
+            description
+              "The time elapsed since this entry was created.";
+            type uint32;
+            units "seconds";
+          }
+        }
+      }
+    }
+    container evpn-membership-groups {
+      config false;
+      description
+        "List of IGMP Evpn Membership information.";
+      list group {
+        key "group";
+        config false;
+        description
+          "Multicast group membership.";
+        leaf group {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "Multicast address.";
+        }
+        leaf filter-mode {
+          config false;
+          type srl_nokia-igmp-types:filter-mode;
+        }
+        leaf up-time {
+          config false;
+          description
+            "The time elapsed since this entry was created.";
+          type uint32;
+          units "seconds";
+        }
+        leaf v1-support {
+          config false;
+          description
+            "IGMP Version 1 is supported.";
+          type boolean;
+        }
+        leaf v2-support {
+          config false;
+          description
+            "IGMP Version 2 is supported.";
+          type boolean;
+        }
+        leaf v3-support {
+          config false;
+          description
+            "IGMP Version 3 is supported.";
+          type boolean;
+        }
+        list source {
+          config false;
+          key "source";
+          description
+            "Source addresses of multicast.";
+          leaf source {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Source address of multicast.";
+          }
+          leaf up-time {
+            config false;
+            description
+              "The time elapsed since this entry was created.";
+            type uint32;
+            units "seconds";
+          }
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-interface-config {
+    leaf router-alert-check {
+      description
+        "Enable or disable router alert checking for IGMP messages received on this interface.";
+      type boolean;
+      default "true";
+    }
+    leaf version {
+      description
+        "IGMP Version";
+      type igmp-version;
+      default "3";
+    }
+    leaf maximum-number-groups {
+      description
+        "Maximum number of IGMP Groups for this interface.";
+      type uint32 {
+        range "1..4096";
+      }
+    }
+    leaf maximum-number-sources {
+      description
+        "Maximum number of IGMP sources per group for this interface.";
+      type uint32 {
+        range "1..512";
+      }
+    }
+    leaf maximum-number-group-sources {
+      description
+        "Maximum number of IGMP group/source combinations for this interface.";
+      type uint32 {
+        range "1..4096";
+      }
+    }
+    leaf query-interval {
+      description
+        "Interval at which the router sends the IGMP membership queries";
+      type igmp-interval-type {
+        range "2..1024";
+      }
+      must '. > ../query-response-interval' {
+        error-message "query-response-interval must be less than query-interval";
+      }
+      must '. > ../query-last-member-interval' {
+        error-message "query-last-member-interval must be less than query-interval";
+      }
+    }
+    leaf query-last-member-interval {
+      description
+        "Interval at which Group-Specific-Query packets are transmitted";
+      type igmp-interval-type {
+        range "1..1023";
+      }
+    }
+    leaf query-response-interval {
+      description
+        "Time to wait to receive a response to the IGMP membership query from the host";
+      type igmp-interval-type {
+        range "1..1023";
+      }
+    }
+    leaf robust-count {
+      description
+        "Tune IGMP robustness to allow for expected packet loss.
+
+         The robust-count variable allows tuning for the expected packet
+         loss on a subnet. If a subnet anticipates losses, the robust-count
+         variable can be increased.";
+      type uint32 {
+        range "2..10";
+      }
+      default "2";
+    }
+    leaf fast-leave {
+      description
+        "Allow IGMP fast leave processing
+
+         When enabled, the multicast state is removed immediately upon receiving an IGMP
+         leave message.";
+      type boolean;
+      default "false";
+    }
+    leaf mrouter-port {
+      description
+        "Operate port as a multicast router port";
+      type boolean;
+      default "false";
+    }
+    leaf send-queries {
+      description
+        "Generate IGMP general queries";
+      type boolean;
+      default "false";
+      must "not(. = 'true' and ../mrouter-port = 'true')" {
+        error-message "mrouter-port and send-queries are mutually exclusive";
+      }
+    }
+    leaf import-policy {
+      description
+        "Apply an import policy. The lenght of the policy name should not exceed 32 charachters.";
+      type leafref {
+        path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+      }
+    }
+    container static-membership-groups {
+      description
+        "Container to configure static <S,G>s for this interface.";
+      list group-range {
+        key "start end";
+        uses igmp-group-range-keys;
+        choice source-or-starg {
+          mandatory true;
+          case source {
+            list source {
+              description
+                "Multicast source address list.";
+              key "source";
+              leaf source {
+                type srl_nokia-comm:ipv4-address;
+                description
+                  "Multicast source address.";
+                must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
+                  error-message "Not a valid IPv4 unicast addres";
+                }
+              }
+            }
+          }
+          case starg {
+            leaf starg {
+              description
+                "any source address (*,G)";
+              type empty;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-msg-stats {
+    leaf general-queries {
+      config false;
+      description
+        "General Queries.";
+      type yang:zero-based-counter32;
+    }
+    leaf group-queries {
+      config false;
+      description
+        "Group Specific Queries.";
+      type yang:zero-based-counter32;
+    }
+    leaf group-source-queries {
+      config false;
+      description
+        "Group and Source Specific Queries.";
+      type yang:zero-based-counter32;
+    }
+    leaf v1-reports {
+      config false;
+      description
+        "V1 Reports.";
+      type yang:zero-based-counter32;
+    }
+    leaf v2-reports {
+      config false;
+      description
+        "V2 Reports.";
+      type yang:zero-based-counter32;
+    }
+    leaf v3-reports {
+      config false;
+      description
+        "V3 Reports.";
+      type yang:zero-based-counter32;
+    }
+    leaf leave-messages {
+      config false;
+      description
+        "Leave messages.";
+      type yang:zero-based-counter32;
+    }
+    leaf discarded-packets {
+      config false;
+      description
+        "Total number of discarded IGMP packets.";
+      type yang:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-msg-tx-stats {
+    uses igmp-snooping-msg-stats;
+    leaf error-packets {
+      config false;
+      description
+        "Transmission error IGMP packets.";
+      type yang:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-msg-fwd-stats {
+    uses igmp-snooping-msg-stats;
+    leaf unknown-type {
+      config false;
+      description
+        "Unknown IGMP types.";
+      type yang:zero-based-counter32;
+    }
+    leaf errors {
+      config false;
+      description
+        "Forwarding Errors.";
+      type yang:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-msg-error-stats {
+    leaf bad-length {
+      config false;
+      description
+        "Bad length.";
+      type yang:zero-based-counter32;
+    }
+    leaf unknown-type {
+      config false;
+      description
+        "Unknown type.";
+      type yang:zero-based-counter32;
+    }
+    leaf wrong-version {
+      config false;
+      description
+        "Wrong version.";
+      type yang:zero-based-counter32;
+    }
+    leaf import-policy-drops {
+      config false;
+      description
+        "Number of times the host IP address or group or
+         source IP addresses specified in the import policy are matched.";
+      type yang:zero-based-counter32;
+    }
+    leaf missing-router-alert {
+      config false;
+      description
+        "Router alert flag is not set.";
+      type yang:zero-based-counter32;
+    }
+    leaf bad-encoding {
+      config false;
+      description
+        "Badly encoded packets.";
+      type yang:zero-based-counter32;
+    }
+    leaf local-scope {
+      config false;
+      description
+        "Link-local scope multicast group address.";
+      type yang:zero-based-counter32;
+    }
+    leaf reached-maximum-number-groups {
+      config false;
+      description
+        "Number of times a join is discarded because the maximum number of
+         groups is reached.";
+      type yang:zero-based-counter32;
+    }
+    leaf reached-maximum-number-group-sources {
+      config false;
+      description
+        "Number of times a join is discarded because the maximum number of
+         group-source combinations is reached.";
+      type yang:zero-based-counter32;
+    }
+    leaf reached-maximum-number-sources {
+      config false;
+      description
+        "Number of times a join is discarded because the maximum number of
+         sources per group is reached.";
+      type yang:zero-based-counter32;
+    }
+    leaf out-of-memory-discarded-packets {
+      config false;
+      description
+        "Number of times a join is discarded because the router ran out of memory.";
+      type yang:zero-based-counter32;
+    }
+    leaf bad-ip-checksum {
+      config false;
+      description
+        "Number of times a packet is discarded because of a bad IP header checksum.";
+      type yang:zero-based-counter32;
+    }
+    leaf bad-igmp-checksum {
+      config false;
+      description
+        "Number of times a packet is discarded because of a bad IGMP header checksum.";
+      type yang:zero-based-counter32;
+    }
+    leaf zero-source-ip-address {
+      config false;
+      description
+        "Number of times a packet is discarded because it has a zero source IP address.";
+      type yang:zero-based-counter32;
+    }
+    leaf send-query-configured-discarded-packets {
+      config false;
+      description
+        "Number of times a query is discarded because send-queries is configured in the
+         sub-interface.";
+      type yang:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-statistics-state {
+    container received {
+      config false;
+      description
+        "Received message statistics.";
+      uses igmp-snooping-msg-stats;
+    }
+    container transmitted {
+      config false;
+      description
+        "Transmit message statistics.";
+      uses igmp-snooping-msg-tx-stats;
+    }
+    container forwarded {
+      config false;
+      description
+        "Forward message statistics.";
+      uses igmp-snooping-msg-fwd-stats;
+    }
+    container error {
+      config false;
+      description
+        "Error message statistics.";
+      uses igmp-snooping-msg-error-stats;
+    }
+  }
+
+  grouping igmp-snooping-interface-group-source-state {
+    leaf source-type {
+      config false;
+      type srl_nokia-igmp-types:learn-type;
+    }
+    leaf forwarding-state {
+      config false;
+      description
+        "Traffic forwardeding state on this port.";
+      type srl_nokia-igmp-types:forwarding-state;
+    }
+    leaf up-time {
+      config false;
+      description
+        "The time elapsed since this entry was created.";
+      type uint32;
+      units "seconds";
+    }
+    leaf expiry-time {
+      config false;
+      description
+        "The time left before multicast group timeout.";
+      type uint32;
+      units "seconds";
+    }
+  }
+
+  grouping igmp-snooping-interface-group-state {
+    description
+      "IGMP membership state.";
+    leaf group-type {
+      config false;
+      type srl_nokia-igmp-types:learn-type;
+    }
+    leaf filter-mode {
+      config false;
+      type srl_nokia-igmp-types:filter-mode;
+    }
+    leaf expiry-time {
+      config false;
+      description
+        "The time left before multicast group timeout.";
+      type uint32;
+      units "seconds";
+    }
+    leaf up-time {
+      config false;
+      description
+        "The time elapsed since this entry was created.";
+      type uint32;
+      units "seconds";
+    }
+    leaf v1-host-timer {
+      config false;
+      description
+        "The time remaining until the local router will assume that
+         there are no longer any version 1 members.";
+      type uint32;
+      units "seconds";
+    }
+    leaf v2-host-timer {
+      config false;
+      description
+        "The time remaining until the local router will assume that
+         there are no longer any version 2 members.";
+      type uint32;
+      units "seconds";
+    }
+    leaf igmp-compatibility-mode {
+      config false;
+      description
+        "Compatibility with older version routers.";
+      type srl_nokia-igmp-types:igmp-version;
+    }
+  }
+
+  grouping igmp-snooping-membership {
+    description
+      "IGMP membership information.";
+    leaf membership-group-count {
+      config false;
+      description
+        "The number of multicast groups which have been learned.";
+      type uint32;
+    }
+    container membership-groups {
+      config false;
+      description
+        "List of IGMP Membership information.";
+      list group {
+        key "group";
+        config false;
+        description
+          "Multicast group membership.";
+        leaf group {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "Multicast address.";
+        }
+        uses igmp-snooping-interface-group-state;
+        list source {
+          config false;
+          key "source";
+          description
+            "Source addresses of multicast.";
+          leaf source {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Source address of multicast.";
+          }
+          uses igmp-snooping-interface-group-source-state;
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-interface-state {
+    uses igmp-snooping-membership;
+    container statistics {
+      config false;
+      description
+        "IGMP sub-interface statistics.";
+      uses igmp-snooping-statistics-state;
+    }
+  }
+
+  grouping igmp-snooping-top {
+    container igmp-snooping {
+      if-feature "srl_nokia-feat:igmp-snooping";
+      presence "Configure IGMP snooping";
+      must "(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
+        error-message "IGMP-snooping configuration is only possible on a network-instance of type mac-vrf";
+      }
+      uses igmp-snooping-global-config;
+      uses igmp-snooping-global-trace-options;
+      uses igmp-snooping-global-state;
+      list interface {
+        description
+          "List of IGMP interfaces";
+        key "interface-name";
+        uses igmp-interface-key;
+        uses igmp-snooping-interface-config;
+        uses igmp-snooping-interface-state;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses igmp-snooping-top;
+  }
+}

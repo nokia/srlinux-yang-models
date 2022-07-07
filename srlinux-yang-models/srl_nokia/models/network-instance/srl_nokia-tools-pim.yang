@@ -1,0 +1,267 @@
+module srl_nokia-tools-pim {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-pim";
+  prefix srl_nokia-tools-pim;
+
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  description
+    "Model for PIM operational commands";
+
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+
+  grouping pim-tools-top {
+    container pim {
+      if-feature "srl_nokia-feat:pim";
+      presence "Send operational commands to PIM manager";
+      container counters {
+        container ipv4 {
+          description
+            "IPv4 specific counters";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM counters.";
+          }
+        }
+        container ipv6 {
+          description
+            "IPv6 specific counters";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM counters.";
+          }
+        }
+        list group {
+          key "group";
+          description
+            "Multicast group.";
+          leaf group {
+            type srl_nokia-comm:ip-address;
+            description
+              "Multicast group address.";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear all PIM statistics for this group.";
+          }
+          list source {
+            key "source";
+            description
+              "Source addresses.";
+            leaf source {
+              type srl_nokia-comm:ip-address;
+              description
+                "Source address";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all PIM statistics for this source.";
+            }
+          }
+        }
+      }
+      container database {
+        container ipv4 {
+          description
+            "IPv4 specific tools";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM instance database.";
+          }
+        }
+        container ipv6 {
+          description
+            "IPv6 specific tools";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM instance database.";
+          }
+        }
+        list group {
+          key "group";
+          description
+            "Multicast group.";
+          leaf group {
+            type srl_nokia-comm:ip-address;
+            description
+              "Multicast group address.";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear all PIM statistics for this group.";
+          }
+          list source {
+            key "source";
+            description
+              "Source addresses.";
+            leaf source {
+              type srl_nokia-comm:ip-address;
+              description
+                "Source address";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all PIM statistics for this source.";
+            }
+          }
+        }
+      }
+      list interface {
+        description
+          "List of PIM interfaces";
+        key "interface-name";
+        leaf interface-name {
+          type srl_nokia-comm:subinterface-all;
+          description
+            "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+        }
+        container counters {
+          container ipv4 {
+            description
+              "IPv4 specific counters";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM counters.";
+            }
+          }
+          container ipv6 {
+            description
+              "IPv6 specific counters";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM counters.";
+            }
+          }
+        }
+        container database {
+          container ipv4 {
+            description
+              "IPv4 specific database";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM database.";
+            }
+          }
+          container ipv6 {
+            description
+              "IPv6 specific counters";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM database.";
+            }
+          }
+          list group {
+            key "group";
+            description
+              "Multicast group.";
+            leaf group {
+              type srl_nokia-comm:ip-address;
+              description
+                "Multicast group address.";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all PIM statistics for this group on this interface.";
+            }
+            list source {
+              key "source";
+              description
+                "Source addresses.";
+              leaf source {
+                type srl_nokia-comm:ip-address;
+                description
+                  "Source address.";
+              }
+              leaf clear {
+                type empty;
+                description
+                  "Clear all PIM statistics for this source on this interface.";
+              }
+            }
+          }
+        }
+      }
+      container neighbor {
+        description
+          "Clear PIM neighbors.";
+        container ipv4 {
+          description
+            "IPv4 specific database";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM database.";
+          }
+        }
+        container ipv6 {
+          description
+            "IPv6 specific counters";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM database.";
+          }
+        }
+        list interface {
+          description
+            "List of PIM interfaces";
+          key "interface-name";
+          leaf interface-name {
+            type srl_nokia-comm:subinterface-all;
+            description
+              "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+          }
+          container ipv4 {
+            description
+              "IPv4 specific database";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM database.";
+            }
+          }
+          container ipv6 {
+            description
+              "IPv6 specific counters";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM database.";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {
+    uses pim-tools-top;
+  }
+}

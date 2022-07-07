@@ -25,6 +25,10 @@ module srl_nokia-p4rt-server {
   description
     "This module defines configuration and operational state data related to the P4Runtime server";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -179,7 +183,9 @@ module srl_nokia-p4rt-server {
         srl-ext:show-importance "low";
         default "20";
         description
-          "Set a limit on the number of simultaneous active P4Runtime sessions";
+          "Set a limit on the number of simultaneous active P4Runtime sessions
+
+           A session is defined as an individual RPC invocation, which could result in a single client generating multiple sessions.";
       }
       list client {
         config false;
@@ -208,15 +214,19 @@ module srl_nokia-p4rt-server {
              Only a single primary per forwarding complex is supported";
         }
         container forwarding-complex {
+          leaf location {
+            type string;
+            description
+              "The normalized location for this forwarding-complex
+
+               This is the slot number and complex number seperated by a '/', 0 indexed. For example '1/0', or '1/1' representing two forwarding complexes on slot 1.";
+          }
           leaf id {
             type uint64;
             description
-              "The ID of the forwarding complex for which this client has established itself";
-          }
-          leaf slot {
-            type uint8;
-            description
-              "The linecard slot for which this forwarding complex resides on";
+              "The P4Runtime ID of the forwarding complex for which this client has established itself
+
+               This is the value configured at /platform/linecard/forwarding-complex/p4rt/id, or a system derived default.";
           }
         }
         leaf user {

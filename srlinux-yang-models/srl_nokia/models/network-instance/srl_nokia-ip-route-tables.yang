@@ -19,6 +19,10 @@ module srl_nokia-ip-route-tables {
   description
     "A model describing the IP routing tables of a network instance.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -93,6 +97,50 @@ module srl_nokia-ip-route-tables {
       "Next-hop will cause matching subnet-bradcast packets to be delivered to the control plane.";
   }
 
+  typedef encapsulation-header-type {
+    type enumeration {
+      enum gre {
+        description
+          "The encapsulation header is a Generic Routing Encapsulation
+           header.";
+      }
+      enum ipv4 {
+        description
+          "The encapsulation header is an IPv4 packet header";
+      }
+      enum ipv6 {
+        description
+          "The encapsulation header is an IPv6 packet header";
+      }
+      enum mpls {
+        description
+          "The encapsulation header is one or more MPLS labels indicated
+           by the pushed and popped label stack lists.";
+      }
+    }
+  }
+
+  typedef operation-type {
+    type enumeration {
+      enum add {
+        description
+          "The current or last operation was an attempt to create a new entry.";
+      }
+      enum delete {
+        description
+          "The current or last operation was an attempt to delete an existing entry.";
+      }
+      enum modify {
+        description
+          "The current or last operation was an attempt to modify an existing entry.";
+      }
+      enum none {
+        description
+          "There was no prior operation for this entry or there is no current operation that is in process";
+      }
+    }
+  }
+
   grouping ipv4-ipv6-entry-common-fields {
     leaf route-type {
       type identityref {
@@ -127,7 +175,7 @@ module srl_nokia-ip-route-tables {
         "If set to true then the route is installed as the active route for the IP prefix in the FIB. A route can be inactive because there is a more preferred route for the same prefix or else its next-hops are unresolved.";
     }
     leaf last-app-update {
-      type srl_nokia-comm:date-and-time-delta;
+      type srl_nokia-comm:date-and-time;
       description
         "The date and time of the last update of this route by the owning application or protocol.";
     }
@@ -138,38 +186,60 @@ module srl_nokia-ip-route-tables {
       description
         "The next-hop-group indirection object used by this route.";
     }
+    leaf next-hop-group-network-instance {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+      }
+      description
+        "The network instance where the next-hop-group can be found.  If unspecified, the next hop group is in the local network instance.";
+    }
+    leaf gribi-metadata {
+      type binary {
+        length "0..8";
+      }
+      description
+        "Metadata persistently stored with the entry.";
+    }
     leaf resilient-hash {
       type boolean;
       description
         "Set to true if the route is covered by a resilient-hash-prefix entry";
     }
+    uses fib-programming-status;
+  }
+
+  grouping fib-programming-status {
     container fib-programming {
       description
-        "Container for state related to the FIB programming of the route";
-      leaf status {
-        type enumeration {
-          enum success {
-            description
-              "The route was downloaded to the linecards and all of them have sent an acknowledgement that covers the route.";
-          }
-          enum failed {
-            description
-              "The route was not programmed into the FIB table of one or more linecards due to the FIB table being full.";
-          }
-          enum pending {
-            description
-              "The route was downloaded to the linecards but some of them have not sent an acknowledgement yet.";
-          }
-        }
+        "Container for state related to the FIB programming of the object";
+      leaf last-successful-operation-type {
+        type operation-type;
         description
-          "The status of the FIB programming";
+          "The last operation type that completed successfully.";
       }
-      leaf-list failed-slots {
-        type uint8 {
-          range "1..8";
-        }
+      leaf last-successful-operation-timestamp {
+        type srl_nokia-comm:date-and-time;
         description
-          "The list of slot IDs corresponding to the linecards that did not successfully program the route due to the FIB table being full";
+          "The date and time of the last operation to complete sucessfully.
+
+           A delete operation is immediately timestamped by FIB manager on the assumption that it will ultimately be successful on all complexes. For other operations the timestamp is generated when the last complex that was expected to respond has responded with a success acknowledgement.";
+      }
+      leaf pending-operation-type {
+        type operation-type;
+        description
+          "The current operation type that is in progress because not all complexes have responded.";
+      }
+      leaf last-failed-operation-type {
+        type operation-type;
+        description
+          "The last operation type that failed.";
+      }
+      leaf-list last-failed-complexes {
+        description
+          "List of forwarding complexes that reported a failure for the last operation. They appear in the format (slot-number,complex-number).";
+        type string {
+          pattern '(\([0-2][1-4]?,[0-1]\))+';
+        }
       }
     }
   }
@@ -277,6 +347,11 @@ module srl_nokia-ip-route-tables {
         description
           "A system-wide unique identifier of a next-hop-group indirection object (system allocated).";
       }
+      leaf programmed-index {
+        type uint64;
+        description
+          "The index assigned to the next-hop-group by the gRIBI client";
+      }
       leaf backup-next-hop-group {
         type leafref {
           path "../index";
@@ -284,7 +359,7 @@ module srl_nokia-ip-route-tables {
         description
           "The backup next-hop-group for the current group. When all entries within the next-hop group become unusable, the backup next-hop group is used if specified.";
       }
-      container fib-programming;
+      uses fib-programming-status;
       list next-hop {
         key "id";
         leaf id {
@@ -315,7 +390,6 @@ module srl_nokia-ip-route-tables {
           description
             "Set to true when the next-hop was resolved. This reads not-applicable for resolve=false next-hops.";
         }
-        container fib-programming;
       }
     }
     list next-hop {
@@ -325,6 +399,11 @@ module srl_nokia-ip-route-tables {
         description
           "A system-wide unique identifier of a next-hop object (system allocated).";
       }
+      leaf programmed-index {
+        type uint64;
+        description
+          "The index assigned to the next-hop by the gRIBI client";
+      }
       leaf type {
         type identityref {
           base fib-nexthop-type;
@@ -332,6 +411,13 @@ module srl_nokia-ip-route-tables {
         srl_nokia-ext:show-importance "high";
         description
           "The next-hop type used by the datapath.";
+      }
+      leaf network-instance {
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+        }
+        description
+          "Indicates that the next-hop is another network instance. If this is specified but an IP address or interface is not provided, the meaning is that a new IP lookup should occur in the other network instance.";
       }
       leaf ip-address {
         type srl_nokia-comm:ip-address;

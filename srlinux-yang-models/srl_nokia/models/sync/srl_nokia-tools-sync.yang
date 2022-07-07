@@ -6,13 +6,14 @@ module srl_nokia-tools-sync {
   import srl_nokia-tools-system {
     prefix srl-tools-system;
   }
-  import srl_nokia-sync-types {
-    prefix srl_nokia-sync-types;
-  }
 
   description
     "Model for operational commands on time protocols and statstics";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -28,6 +29,43 @@ module srl_nokia-tools-sync {
     container sync {
       description
         "Top-level grouping for sync operational commands";
+      container ptp {
+        description
+          "Grouping for ptp operational commands";
+        container statistics {
+          leaf clear {
+            type empty;
+          }
+        }
+        list instance {
+          key "instance-number";
+          description
+            "Grouping for PTP instance operational commands";
+          leaf instance-number {
+            type uint32 {
+              range "1..10";
+            }
+          }
+          container statistics {
+            leaf clear {
+              type empty;
+            }
+          }
+          list ptp-port-ds {
+            key "port-number";
+            description
+              "Grouping for PTP Port DS operational commands";
+            leaf port-number {
+              type uint16;
+            }
+            container statistics {
+              leaf clear {
+                type empty;
+              }
+            }
+          }
+        }
+      }
     }
   }
 

@@ -16,6 +16,10 @@ module srl_nokia-qos-policers {
     prefix srl-feat;
   }
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -63,6 +67,7 @@ module srl_nokia-qos-policers {
 
   grouping policer-templates-top {
     container policer-templates {
+      if-feature "srl-feat:subif-policer";
       description
         "Policer templates used for subinterface traffic metering.";
       list policer-template {
@@ -100,89 +105,49 @@ module srl_nokia-qos-policers {
               type forwarding-type;
             }
           }
-          choice peak-rate-format {
-            leaf peak-rate-percent {
-              type uint8 {
-                range "1..100";
-              }
-              default "100";
-              description
-                "The peak information rate (PIR) of the policer, defined as a percentage of port bandwidth";
-            }
-            leaf peak-rate-bps {
-              type uint64;
-              units "bps";
-              description
-                "The peak information rate (PIR) of the policer, defined in bits per second.";
-            }
+          leaf peak-rate-kbps {
+            mandatory true;
+            type uint32;
+            units "kbps";
+            description
+              "The peak information rate (PIR) of the policer, defined in kilobits (1024 bits) per second.";
           }
-          choice committed-rate-format {
-            leaf committed-rate-percent {
-              type uint8 {
-                range "0..100";
-              }
-              description
-                "The committed information rate (CIR) of the policer, defined as a percentage of port bandwidth";
-            }
-            leaf committed-rate-bps {
-              type uint64;
-              units "bps";
-              description
-                "The committed information rate (CIR) of the policer, defined in bits per second.";
-            }
+          leaf committed-rate-kbps {
+            mandatory true;
+            type uint32;
+            units "kbps";
+            description
+              "The committed information rate (CIR) of the policer, defined in kilobits (1024 bits) per second.";
           }
-          choice maximum-burst-format {
-            leaf maximum-burst-size {
-              type uint32;
-              units "bytes";
-              description
-                "Maximum PIR bucket depth in bytes.";
-            }
-            leaf maximum-burst-time {
-              type uint64;
-              units "microseconds";
-              description
-                "Maximum PIR bucket depth measured in units of time to transmit all the tokens in the bucket at line rate of the port.";
-            }
+          leaf maximum-burst-size {
+            mandatory true;
+            type uint32;
+            units "bytes";
+            description
+              "Maximum PIR bucket depth in bytes.";
           }
-          choice committed-burst-format {
-            leaf committed-burst-size {
-              type uint32;
-              units "bytes";
-              description
-                "Maximum CIR bucket depth in bytes.";
-            }
-            leaf committed-burst-time {
-              type uint64;
-              units "microseconds";
-              description
-                "Maximum CIR bucket depth measured in units of time to transmit all the tokens in the bucket at line rate of the port.";
-            }
+          leaf committed-burst-size {
+            mandatory true;
+            type uint32;
+            units "bytes";
+            description
+              "Maximum CIR bucket depth in bytes.";
           }
           container exceed-action {
             description
               "Container with options that specify the handling of packets that the policer has determined are exceeding (yellow)";
-            choice exceed-handling {
-              case drop {
-                leaf drop {
-                  description
-                    "Exceeding packets should be dropped immediately";
-                  type empty;
-                }
-              }
-              case re-color {
-                leaf drop-probability {
-                  description
-                    "Recolor exceeding packets to the specified drop-probability level";
-                  type drop-probability-level;
-                }
-              }
+            leaf drop-probability {
+              description
+                "Recolor exceeding packets to the specified drop-probability level";
+              type drop-probability-level;
+              default "medium";
             }
           }
           container violate-action {
             description
               "Container with options that specify the handling of packets that the policer has determined are violating (red)";
             choice violate-handling {
+              default "re-color";
               case drop {
                 leaf drop {
                   description
@@ -195,6 +160,7 @@ module srl_nokia-qos-policers {
                   description
                     "Recolor violating packets to the specified drop-probability level";
                   type drop-probability-level;
+                  default "high";
                 }
               }
             }
@@ -213,6 +179,7 @@ module srl_nokia-qos-policers {
                 "In this statistics mode only 4 counters are provided: committed-packets, committed-octets, exceeding-packets, exceeding-octets";
             }
           }
+          default "violating-focus";
         }
       }
     }
@@ -220,6 +187,7 @@ module srl_nokia-qos-policers {
 
   grouping subinterface-qos-input-policers {
     container policers {
+      if-feature "srl-feat:subif-policer";
       description
         "Container with information about the policers applied to input traffic on the subinterface.";
       leaf policer-template {
@@ -249,17 +217,17 @@ module srl_nokia-qos-policers {
   }
 
   grouping policer-instance-state {
-    leaf peak-rate-bps {
+    leaf peak-rate-kbps {
       config false;
-      type uint64;
-      units "bps";
+      type uint32;
+      units "kbps";
       description
         "The actual/operational peak information rate (PIR) of the policer as it is programmed into hardware.";
     }
-    leaf committed-rate-bps {
+    leaf committed-rate-kbps {
       config false;
-      type uint64;
-      units "bps";
+      type uint32;
+      units "kbps";
       description
         "The actual/operational committed information rate (CIR) of the policer as it is programmed into hardware.";
     }
@@ -293,17 +261,17 @@ module srl_nokia-qos-policers {
 
            Not available in forwarding-focus mode";
       }
-      leaf dropped-packets {
+      leaf violating-packets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number packets that were dropped by the policer, counting medium and high drop-probabilities at policer output
+          "The number packets that were considered violating by the policer
 
            Not available in forwarding-focus mode";
       }
-      leaf dropped-octets {
+      leaf violating-octets {
         type srl_nokia-comm:zero-based-counter64;
         description
-          "The number of octets in packets that were dropped by the policer, counting medium and high drop-probabilities at policer output
+          "The number of octets in packets that were considered violasting by the policer
 
            Not available in forwarding-focus mode";
       }
@@ -339,12 +307,10 @@ module srl_nokia-qos-policers {
   }
 
   augment "/srl_nokia-qos:qos" {
-    if-feature "srl-feat:future-0-0";
     uses policer-templates-top;
   }
 
   augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-qos:qos/srl_nokia-qos:input" {
-    if-feature "srl-feat:future-0-0";
     uses subinterface-qos-input-policers;
   }
 }

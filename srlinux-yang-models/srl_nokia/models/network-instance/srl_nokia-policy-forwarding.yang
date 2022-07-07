@@ -12,9 +12,6 @@ module srl_nokia-policy-forwarding {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
-  import srl_nokia-extensions {
-    prefix srl_nokia-ext;
-  }
   import srl_nokia-features {
     prefix srl-feat;
   }
@@ -24,6 +21,10 @@ module srl_nokia-policy-forwarding {
   description
     "This module defines configuration and operational state data for policy-forwarding related objects.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -38,6 +39,7 @@ module srl_nokia-policy-forwarding {
       description
         "Container for the actions to be applied to packets matching the policy forwarding rule.";
       leaf network-instance {
+        mandatory true;
         type leafref {
           path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
         }
@@ -153,7 +155,7 @@ module srl_nokia-policy-forwarding {
 
   grouping policy-forwarding-top {
     container policy-forwarding {
-      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+      if-feature "srl-feat:policy-based-forwarding-dscp-ip-protocol";
       must "../srl_nokia-netinst:type = 'default'";
       presence "Enable support for policy-based forwarding in the network instance.";
       description

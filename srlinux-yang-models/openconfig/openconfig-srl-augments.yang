@@ -1,0 +1,38 @@
+module openconfig-srl-augments {
+  yang-version "1";
+  namespace "urn:srl_nokia/oc-srl-augments";
+
+  prefix "oc-srl-aug";
+
+  import openconfig-interfaces { prefix oc-if; }
+  import openconfig-if-aggregate { prefix oc-if-agg; }
+  import openconfig-if-ethernet { prefix oc-if-eth; }
+
+  description
+    "SRL augments to the OpenConfig models";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  grouping lag-augments
+  {
+    leaf member-speed {
+      type identityref {
+        base oc-if-eth:ETHERNET_SPEED;
+      }
+      description
+        "SRL mandates that a lag be configured with a speed.";
+    }
+  }
+
+  augment "/oc-if:interfaces/oc-if:interface/oc-if-agg:aggregation/" +
+    "oc-if-agg:config" {
+    uses lag-augments;
+  }
+  augment "/oc-if:interfaces/oc-if:interface/oc-if-agg:aggregation/" +
+    "oc-if-agg:state" {
+    uses lag-augments;
+  }
+}

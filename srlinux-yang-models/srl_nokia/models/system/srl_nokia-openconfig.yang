@@ -20,6 +20,10 @@ module srl_nokia-openconfig {
     "This module defines configuration and operational state data
      related to the OpenConfig schema";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -37,6 +41,9 @@ module srl_nokia-openconfig {
 
            This will disable OpenConfig throughout the system, and bring any gRPC servers that use it operationally down.";
         type srl-comm:admin-state;
+        must "(. = 'disable' or ../../../lldp)" {
+          error-message "OpenConfig can only be enabled if the lldp presence container is configured";
+        }
       }
       leaf oper-state {
         config false;

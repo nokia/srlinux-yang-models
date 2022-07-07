@@ -28,6 +28,10 @@ module srl_nokia-interfaces {
      This model reuses data items defined in the IETF YANG model for
      interfaces described by RFC 7223";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -182,16 +186,29 @@ module srl_nokia-interfaces {
     container breakout-mode {
       if-feature "srl_nokia-feat:port-breakout";
       presence "Configures the connector for breakout mode";
-      description
-        "Configuration of breakout options";
-      must "re-match(../srl_nokia-if:name, 'ethernet-1/[1-9]') or re-match(../srl_nokia-if:name, 'ethernet-1/1[0-9]') or re-match(../srl_nokia-if:name, 'ethernet-1/2[0-9]') or re-match(../srl_nokia-if:name, 'ethernet-1/3[0-3]') or re-match(../srl_nokia-if:name, 'ethernet-1/x[1-4]')" {
-        error-message "Breakout not supported for this port or at this level";
+      must 'starts-with(../srl_nokia-if:name, "ethernet")' {
+        error-message "Breakout not supported for this port type.";
       }
+      description
+        "Configuration of breakout options.
+
+         The 7220 D3 supports 4x10 and 4x25 breakout on ports 3-33.
+         The 7220 D3L supports 4x10 and 4x25 breakout on ports 1-31.
+         The 7220 H3 supports 4x100 breakout on ports 3-34.
+         The 7220 D5 supports 2x100 breakout on ports 1-32 as of release 22.6.2.";
       leaf num-channels {
         description
           "The number of channels (breakout ports) supported by this connector.";
         type enumeration {
-          enum 4;
+          enum 2 {
+            if-feature "srl_nokia-feat:platform-7220-d5 and srl_nokia-feat:future-22-6-2";
+          }
+          enum 4 {
+            if-feature "(not srl_nokia-feat:platform-7220-d5)";
+          }
+        }
+        must "not(. = '2' and ../channel-speed != '100G')" {
+          error-message "channel-speed must be 100G when num-channels is 2";
         }
         mandatory true;
       }
@@ -200,9 +217,14 @@ module srl_nokia-interfaces {
           "The speed of each channel (breakout port).";
         type enumeration {
           enum 10G {
-            if-feature "srl_nokia-feat:platform-7220-d3";
+            if-feature "srl_nokia-feat:platform-7220-d3 or ((srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-d5) and srl_nokia-feat:future-0-0)";
           }
-          enum 25G;
+          enum 25G {
+            if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:monterey or ((srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-d5) and srl_nokia-feat:future-0-0)";
+          }
+          enum 100G {
+            if-feature "srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-d5";
+          }
         }
         mandatory true;
       }
@@ -1183,7 +1205,7 @@ module srl_nokia-interfaces {
           }
         }
         leaf forwarding-viable {
-          if-feature "srl_nokia-feat:lag-forwarding-viable";
+          if-feature "srl_nokia-feat:lag";
           type boolean;
           must '(../aggregate-id)' {
             error-message "aggregate-id must be configured";
@@ -1199,7 +1221,7 @@ module srl_nokia-interfaces {
              This LAG member link should process any received frames when it is an active member link.  L2 protocols such as LLDP, LACP and micro-BFD should continue to be sent and processed.";
         }
         leaf auto-negotiate {
-          if-feature "srl_nokia-feat:platform-7220-d1 or srl_nokia-feat:platform-7210-sas24g";
+          if-feature "srl_nokia-feat:platform-7220-d1 or srl_nokia-feat:platform-7210-sas24g or srl_nokia-feat:platform-7210-sas24";
           type boolean;
           must "re-match(../../srl_nokia-if:name, 'ethernet-1/[1-9]') or re-match(../../srl_nokia-if:name, 'ethernet-1/[1-3][0-9]') or re-match(../../srl_nokia-if:name, 'ethernet-1/4[0-8]') or re-match(../../srl_nokia-if:name, 'otc-1/[1-4]')" {
             error-message "auto-negotiation not supported on this interface";
@@ -1226,6 +1248,18 @@ module srl_nokia-interfaces {
           }
           description
             "When auto-negotiate is true, this sets the duplex mode that will be advertised to the peer.  When auto-negotiate is false, this directly sets the duplex mode of the interface.";
+        }
+        leaf dac-link-training {
+          if-feature "srl_nokia-feat:dac-link-training";
+          type boolean;
+          must "starts-with(../../srl_nokia-if:name, 'ethernet')" {
+            error-message "dac-link-training not supported on this interface";
+          }
+          must 'not(../../breakout-mode)' {
+            error-message "dac-link-training not configurable when breakout-mode is enabled";
+          }
+          description
+            "If the system detects that the transceiver is connected to a DAC cable then a true setting enables link training for better link stastability. The link training setting must be the same at both ends of the DAC cable or else the link may not come up.";
         }
         container flow-control {
           leaf receive {
@@ -1449,7 +1483,6 @@ module srl_nokia-interfaces {
             "The remaining time until the reload-delay expires and the interface can go operationally up.";
         }
         container hold-time {
-          if-feature "srl_nokia-feat:interface-hold-time";
           presence "Configures the hold-time values";
           must "starts-with(../../srl_nokia-if:name, 'ethernet')" {
             error-message "hold-time not supported on this interface";
@@ -1573,7 +1606,7 @@ module srl_nokia-interfaces {
           }
         }
         container synce {
-          if-feature "srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24g";
+          if-feature "srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24g or srl_nokia-feat:platform-7210-sas24";
           presence "Configures the synce parameters";
           must "starts-with(../../srl_nokia-if:name, 'ethernet') or starts-with(../../srl_nokia-if:name, 'otc')" {
             error-message "synce not supported on this interface";

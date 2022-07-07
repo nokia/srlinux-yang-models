@@ -13,6 +13,10 @@ module srl_nokia-sync-freq {
     prefix srl_nokia-feat;
   }
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -105,7 +109,7 @@ module srl_nokia-sync-freq {
         if-feature "srl_nokia-feat:platform-7210-sas24";
         type boolean;
         description
-          "Request to lock out this reference from the available list of references for output.";
+          "Request to lock out this reference from the available list of references for BITS output.";
         default "false";
       }
       leaf underlying-interface {
@@ -114,7 +118,7 @@ module srl_nokia-sync-freq {
           "Reference to the configured underlying interface that is used by this frequency recovery.
             Options include line/client ports, OTC ports and BITS port.";
       }
-      leaf ref-ql-enable {
+      leaf ql-processing {
         type boolean;
         default "true";
         description
@@ -126,15 +130,22 @@ module srl_nokia-sync-freq {
         }
         default "0";
         description
-          "Sets the priority of this line timing reference for the system timing selection process.";
+          "Sets the priority of this line timing reference for the system timing selection process.
+           0 = not available to be selected
+           1 = highest priority
+           7 = lowest priority";
       }
-      leaf priority-output {
+      leaf priority-bits-output {
+        if-feature "srl_nokia-feat:platform-7210-sas24";
         type uint8 {
           range "0..7";
         }
         default "0";
         description
-          "Sets the priority of this line timing reference for the output timing selection process.";
+          "Sets the priority of this line timing reference for the BITS output selection process.
+           0 = not available to be selected
+           1 = highest priority
+           7 = lowest priority";
       }
       leaf ql-override {
         type srl_nokia-sync-types:ql-set;
@@ -174,12 +185,6 @@ module srl_nokia-sync-freq {
   grouping freq-clock-top {
     description
       "This struct containing all attributes for frequency clock.";
-    leaf admin-state {
-      type srl_nokia-comm:admin-state;
-      default "disable";
-      description
-        "Configure the administrative state of SyncE";
-    }
     leaf ql-input-threshold {
       type srl_nokia-sync-types:ql-rx;
       default "st3";
@@ -291,7 +296,7 @@ module srl_nokia-sync-freq {
       description
         "Output frequency clock configuration.";
     }
-    leaf active-ref-output {
+    leaf output-select-active-ref {
       type enumeration {
         enum 0 {
           value 0;
@@ -320,13 +325,13 @@ module srl_nokia-sync-freq {
       }
       config false;
       description
-        "Displays information about the current selected (active) line timing reference for output.";
+        "Displays information about the current selected (active) line timing reference.";
     }
     leaf ref-switch-state {
       type srl_nokia-sync-types:ref-switch-state;
       config false;
       description
-        "Shows the current state of switch command.";
+        "Shows the current state of switch command for the BITS output.";
     }
   }
 }

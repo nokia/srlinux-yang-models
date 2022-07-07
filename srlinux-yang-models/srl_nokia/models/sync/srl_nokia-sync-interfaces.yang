@@ -13,6 +13,10 @@ module srl_nokia-sync-interfaces {
     prefix srl_nokia-sync-freq;
   }
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -131,12 +135,6 @@ module srl_nokia-sync-interfaces {
         "Selects the line build out of the BITS port. Only applicable to ds1-sf and ds1-esf.";
     }
     uses srl_nokia-sync-freq:freq-sync-bits-out-top;
-    leaf line-ref-ql-enabled {
-      type boolean;
-      config false;
-      description
-        "Shows if QL/SSM processing on the selected line references is enabled or not.";
-    }
     leaf ql-output-override {
       type srl_nokia-sync-types:ql-set;
       description
@@ -147,7 +145,7 @@ module srl_nokia-sync-interfaces {
       type srl_nokia-sync-types:ql-rx;
       default "st3";
       description
-        "Specifies the quality level threshold value for squelching the output timing.";
+        "Specifies the quality level threshold value for squelching the BITS output timing.";
     }
     leaf squelch-mode {
       type enumeration {
@@ -223,6 +221,10 @@ module srl_nokia-sync-interfaces {
         "Sets the compensation value for the 1PPS output.
          Only valid when the direction of the 1PPS port is set to output.";
     }
+    leaf tod-msg-type {
+      type srl_nokia-sync-types:tod-msg-type;
+      default "itu";
+    }
     leaf tod-input-threshold {
       type uint32 {
         range "0..7 | 140 | 150 | 160 | 248";
@@ -288,16 +290,6 @@ module srl_nokia-sync-interfaces {
       description
         "Configure the administrative state of the 1PPSTEST (50 ohm) port.
          When enabled, output is enabled. Otherwise, the output is disabled.";
-    }
-    leaf output-compensation {
-      type int8 {
-        range "-127..127";
-      }
-      default "0";
-      units "nanoseconds";
-      description
-        "Sets the compensation value for the 1PPSTEST output.
-         Only valid when the direction of the 1PPSTEST port is set to output.";
     }
   }
 }

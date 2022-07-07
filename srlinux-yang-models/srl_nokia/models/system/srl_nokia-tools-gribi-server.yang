@@ -1,0 +1,58 @@
+module srl_nokia-tools-gribi-server {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-gribi-server";
+  prefix srl-tools-gribi-server;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  description
+    "This module defines tools related to the gRIBI server";
+
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+
+  grouping gribi-tools-common {
+    leaf disconnect {
+      description
+        "Disconnect this client from the server";
+      type empty;
+    }
+  }
+
+  grouping gribi-server-top {
+    container gribi-server {
+      presence "Configure tools gribi-server";
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+      description
+        "Tools relating to the gRPC Routing Information Base Interface (gRIBI) service";
+      list client {
+        description
+          "List of active gRIBI client sessions";
+        key "id";
+        leaf id {
+          type uint32 {
+            range "0..4294967295";
+          }
+          description
+            "System generated ID for for the client";
+        }
+        uses gribi-tools-common;
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    srl-ext:first-released "22.3.1";
+    uses gribi-server-top;
+  }
+}

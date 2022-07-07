@@ -19,6 +19,10 @@ module srl_nokia-keychains {
   description
     "This module defines configuration and operational state data for authentication keychains used by control plane protocols such as OSPF, ISIS and BGP.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -172,7 +176,7 @@ module srl_nokia-keychains {
 
                  If there are multiple keys in the keychain the one used for sending authentication information is the key with the most recent send-lifetime start-time that is earlier than the current date and time";
               must "(../../../type = 'isis')" {
-                error-message "Only ISIS supports keychains with individal key start and end times.";
+                error-message "Only ISIS supports keychains with individual key start and end times.";
               }
             }
             leaf send-and-receive {
@@ -180,7 +184,7 @@ module srl_nokia-keychains {
               description
                 "When this is set to true (the default value), the specified start-time also applies to the receive direction.  When set to false, router uses the specific start-time for the receive direction (asymmetric mode).";
               must "(../../../type = 'isis')" {
-                error-message "Only ISIS supports keychains with individal key start and end times.";
+                error-message "Only ISIS supports keychains with individual key start and end times.";
               }
             }
           }
@@ -193,7 +197,7 @@ module srl_nokia-keychains {
 
                  If there are multiple keys in the keychain the one used for checking received authentication information is the key with the most recent receive-lifetime start-time that is earlier than the current date and time and that has not exceeded its receive-lifetime end-time by more than 'tolerance' seconds";
               must "(../../../type = 'isis')" {
-                error-message "Only ISIS supports keychains with individal key start and end times.";
+                error-message "Only ISIS supports keychains with individual key start and end times.";
               }
               must '(../../send-lifetime/send-and-receive != true())' {
                 error-message "receive-lifetime can not be configured when send-lifetime send-and-recive is true";
@@ -212,7 +216,7 @@ module srl_nokia-keychains {
               description
                 "The time at which the key becomes invalid for use in the receive direction. The default is forever.";
               must "(../../../type = 'isis')" {
-                error-message "Only ISIS supports keychains with individal key start and end times.";
+                error-message "Only ISIS supports keychains with individual key start and end times.";
               }
               must '(../../send-lifetime/send-and-receive != true())' {
                 error-message "receive-lifetime can not be configured when send-lifetime send-and-recive is true";

@@ -9,6 +9,9 @@ module srl_nokia-bfd {
   import srl_nokia-extensions {
     prefix srl_nokia-ext;
   }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
   import srl_nokia-interfaces {
     prefix srl_nokia-if;
   }
@@ -17,6 +20,10 @@ module srl_nokia-bfd {
     "This yang file gives a description of bfd protocol
      configuration.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -195,6 +202,15 @@ module srl_nokia-bfd {
 
              Implicitly enabled echo mode on the associated interface.";
         }
+        leaf max-hop-count {
+          if-feature "srl_nokia-feat:bfd-max-hop-count";
+          type uint8 {
+            range "2..255";
+          }
+          default "255";
+          description
+            "TTL to be used in the BFD IP header for multihop BFD.";
+        }
       }
       list network-instance {
         key "name";
@@ -335,6 +351,24 @@ module srl_nokia-bfd {
 
                The detection interval for the BFD session is calculated by multiplying the
                value of the negotiated transmission interval by this value.";
+          }
+          leaf sr-policy-segment-list-id {
+            config false;
+            type uint32;
+            description
+              "SR-Policy segment ID associated with this seamless BFD session";
+          }
+          leaf sr-policy-color {
+            config false;
+            type uint32;
+            description
+              "SR-Policy color associated with this seamless BFD session";
+          }
+          leaf sr-policy-endpoint {
+            config false;
+            type srl_nokia-comm:ip-address;
+            description
+              "SR-Policy endpoint IP address associated with this seamless BFD session";
           }
           container async {
             srl_nokia-ext:delivery-node-override "true";

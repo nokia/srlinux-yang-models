@@ -25,6 +25,10 @@ module srl_nokia-bgp-evpn {
   description
     "This yang file models configuration and state of the bgp-evpn protocol";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -125,6 +129,25 @@ module srl_nokia-bgp-evpn {
                ip-vrf can interoperate with a remote system working in EVPN IFF (Interface-ful) Unnumbered mode.";
           }
         }
+      }
+    }
+  }
+
+  grouping next-hop-resolution {
+    description
+      "Options for controlling next-hop resolution procedures for VPN families";
+    container next-hop-resolution {
+      description
+        "Options related to the resolution of IPv4 or IPv6 BGP next-hops to Tunnels";
+      leaf-list allowed-tunnel-types {
+        type identityref {
+          base srl_nokia-comm:tunnel-type;
+        }
+        must ".='sr-policy-mpls' or .='sr-isis'" {
+          error-message "tunnel-type not supported";
+        }
+        description
+          "list of allowed tunnel types";
       }
     }
   }
@@ -235,19 +258,23 @@ module srl_nokia-bgp-evpn {
           "The admin-tag that can be used by an export policy to match all the bgp-evpn routes for the bgp-instance.";
         default "0";
       }
-      leaf ingress-replication-bum-label {
-        type boolean;
-        default "false";
-        description
-          "Use the same label as the one advertised for unicast traffic.";
-      }
       container mpls {
         presence "Configure EVPN-MPLS and enables the resolution of BGP-EVPN route next-hops to tunnels in TTM";
         if-feature "srl-feat:evpn-mpls";
+        must "../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf'" {
+          error-message "EVPN MPLS can only be configured on MAC-VRF network instances";
+        }
         must "../encapsulation-type = 'mpls'" {
           error-message "supported only when encapsulation is mpls";
         }
+        leaf ingress-replication-bum-label {
+          type boolean;
+          default "false";
+          description
+            "Use the same label as the one advertised for unicast traffic.";
+        }
         uses evpn-mpls-bridge-table-group-top;
+        uses next-hop-resolution;
       }
       uses bgp-evpn-routes;
     }

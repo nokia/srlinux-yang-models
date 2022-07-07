@@ -33,6 +33,10 @@ module srl_nokia-ethcfm {
      management of Ethernet Services Operations, Administration and
      Maintenance for Connectivity Fault Management.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -690,7 +694,7 @@ module srl_nokia-ethcfm {
             "[802.1q] 12.14.7.5.3:d";
         }
         leaf last-egress-identifier {
-          type binary {
+          type string {
             length "8";
           }
           description
@@ -701,7 +705,7 @@ module srl_nokia-ethcfm {
             "[802.1q] 12.14.7.5.3:e";
         }
         leaf next-egress-identifier {
-          type binary {
+          type string {
             length "8";
           }
           description
@@ -1053,8 +1057,17 @@ module srl_nokia-ethcfm {
     container ethcfm {
       presence "Configure Ethernet CFM";
       description
-        "Configuration and operational data for the management of Ethernet
-         Services OAM for CFM.";
+        "Configuration and operational data for the management of
+         Ethernet Services OAM for CFM.";
+      leaf fault-mode {
+        description
+          "The fault mode for reporting Ethernet CFM defects.";
+        type enumeration {
+          enum itu;
+          enum ieee;
+        }
+        default "itu";
+      }
       list domain {
         description
           "A Maintenance Domain managed object is required in order to create an MA
@@ -1303,17 +1316,16 @@ module srl_nokia-ethcfm {
               reference
                 "[802.1q] 12.14.7.1.3:n";
             }
-            leaf active-defects {
-              type srl_nokia-ethcfm-types:mep-defect-flags-y1731;
+            leaf active-defect {
+              type srl_nokia-ethcfm-types:mep-defect-flag;
               config false;
-              mandatory true;
               description
                 "A bit field of potential active defects.";
               reference
                 "[802.1q] 12.14.7.1.3:o, p, q, r, s";
             }
             leaf last-error-ccm {
-              type binary {
+              type string {
                 length "1..1522";
               }
               config false;
@@ -1323,7 +1335,7 @@ module srl_nokia-ethcfm {
                 "[802.1q] 12.14.7.1.3:t";
             }
             leaf last-cross-connect-ccm {
-              type binary {
+              type string {
                 length "1..1522";
               }
               config false;

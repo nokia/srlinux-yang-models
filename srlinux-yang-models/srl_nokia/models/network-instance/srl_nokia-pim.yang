@@ -25,6 +25,10 @@ module srl_nokia-pim {
   description
     "This yang file models configuration and state of the PIM protocol";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -43,7 +47,7 @@ module srl_nokia-pim {
         "Administratively enable or disable PIM";
       default "enable";
     }
-    uses pim-policy;
+    uses pim-policies;
     uses pim-ecmp;
   }
 
@@ -63,12 +67,23 @@ module srl_nokia-pim {
     }
   }
 
-  grouping pim-policy {
-    leaf import-policy {
+  grouping pim-policies {
+    container import-policies {
       description
-        "Apply an import policy for PIM";
-      type leafref {
-        path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+        "Import policies.";
+      leaf-list join-policy {
+        type leafref {
+          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+        }
+        max-elements 5;
+        ordered-by user;
+      }
+      leaf-list register-policy {
+        type leafref {
+          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+        }
+        max-elements 5;
+        ordered-by user;
       }
     }
   }
@@ -256,6 +271,79 @@ module srl_nokia-pim {
         description
           "Global PIM counters";
         uses pim-af-counters-state;
+      }
+    }
+  }
+
+  grouping pim-database-ipvx-state {
+    description
+      "State of IPvX PIM (S,G) (*,G), (*,*,RP) database";
+    leaf up-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time since this (S,G) entry was created";
+      type uint32;
+      units "seconds";
+    }
+    leaf rpf-neighbor-address {
+      config false;
+      description
+        "IP address of the RPF neighbor";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf rpf-neighbor-interface-name {
+      config false;
+      description
+        "The router interface on which the RPF neighbor exists";
+      type string;
+    }
+  }
+
+  grouping pim-database-ipv4-top {
+    container database {
+      config false;
+      description
+        "Database of IPv4 PIM (S,G) (*,G), (*,*,RP)";
+      list group {
+        key "group source";
+        leaf group {
+          srl_nokia-ext:show-importance "high";
+          description
+            "IPv4 multicast group address";
+          type srl_nokia-comm:ipv4-address;
+        }
+        leaf source {
+          srl_nokia-ext:show-importance "high";
+          description
+            "IPv4 source address";
+          type srl_nokia-comm:ipv4-address;
+        }
+        uses pim-database-ipvx-state;
+      }
+    }
+  }
+
+  grouping pim-database-ipv6-top {
+    container database {
+      config false;
+      description
+        "Database of IPv6 PIM (S,G) (*,G), (*,*,RP)";
+      list group {
+        key "group source";
+        leaf group {
+          srl_nokia-ext:show-importance "high";
+          description
+            "ipv6 multicast group address";
+          type srl_nokia-comm:ipv6-address;
+        }
+        leaf source {
+          srl_nokia-ext:show-importance "high";
+          description
+            "IPv6 source address";
+          type srl_nokia-comm:ipv6-address;
+        }
+        uses pim-database-ipvx-state;
       }
     }
   }
@@ -506,6 +594,18 @@ module srl_nokia-pim {
       description
         "Used to modify admin-state of the PIM protocol on an routed subinterface";
       type srl_nokia-comm:admin-state;
+      default "enable";
+    }
+    leaf ipv4-admin-state {
+      type srl_nokia-comm:admin-state;
+      description
+        "Administratively enable or disable PIM IPv4 address family";
+      default "enable";
+    }
+    leaf ipv6-admin-state {
+      type srl_nokia-comm:admin-state;
+      description
+        "Administratively enable or disable PIM IPv6 address family";
       default "enable";
     }
     leaf assert-interval {
@@ -787,6 +887,9 @@ module srl_nokia-pim {
     container pim {
       if-feature "srl_nokia-feat:pim";
       presence "Configure PIM";
+      must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:ip-vrf')" {
+        error-message "PIM routing configuration is not possible on network-instance of type ip-vrf";
+      }
       must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
         error-message "PIM routing configuration is not possible on network-instance of type mac-vrf";
       }
@@ -801,12 +904,14 @@ module srl_nokia-pim {
           "IPv4 specific PIM parameters";
         uses pim-af-config;
         uses pim-af-state;
+        uses pim-database-ipv4-top;
       }
       container ipv6 {
         description
           "IPv6 specific PIM parameters";
         uses pim-af-config;
         uses pim-af-state;
+        uses pim-database-ipv6-top;
       }
       list interface {
         description

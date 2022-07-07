@@ -6,16 +6,20 @@ module srl_nokia-tools-aaa {
   import srl_nokia-tools-system {
     prefix srl-tools-system;
   }
-  import srl_nokia-common {
-    prefix srl-comm;
-  }
   import srl_nokia-extensions {
     prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
   }
 
   description
     "This module defines operational commands related to AAA.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -40,15 +44,29 @@ module srl_nokia-tools-aaa {
           type empty;
         }
       }
+      list user {
+        if-feature "srl-feat:password-complexity-and-lockout";
+        description
+          "List of local users including admin and linuxadmin";
+        key "username";
+        leaf username {
+          type string;
+        }
+        leaf unlock {
+          description
+            "Unlock the user, This will change its lockout state into false";
+          type empty;
+        }
+      }
     }
   }
 
   grouping aaa-top {
     container aaa {
-      presence "Configure tools system aaa";
+      presence "Configure tools system AAA";
       srl-ext:first-released "21.11.1";
       description
-        "Top-level container for operational commands related to aaa";
+        "Top-level container for operational commands related to AAA";
       uses aaa-tools-top;
     }
   }

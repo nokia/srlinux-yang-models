@@ -22,6 +22,10 @@ module srl_nokia-routing-policy {
   description
     "YANG model for route policies. It supports widely used constructs for managing how routes are imported, exported, and modified across different routing protocols.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -136,13 +140,11 @@ module srl_nokia-routing-policy {
     }
   }
 
-  grouping action-accept {
+  grouping common-action-top {
     description
-      "Common grouping containing policy action accept";
+      "Common grouping containing policy actions";
     container bgp {
-      presence "bgp specific actions";
       container as-path {
-        presence "bgp as-path specific actions";
         description
           "Modify AS Path attribute of routes";
         leaf remove {
@@ -158,7 +160,6 @@ module srl_nokia-routing-policy {
             "Clear the existing AS path and replace it a new AS_SEQUENCE containing the listed AS numbers.";
         }
         container prepend {
-          presence "bgp as-path specific actions";
           description
             "Prepend a BGP AS number to the AS Path attribute of routes";
           leaf as-number {
@@ -251,43 +252,23 @@ module srl_nokia-routing-policy {
     }
   }
 
-  grouping common-action-top {
-    description
-      "grouping for policy actions";
-    container reject {
-      presence "Reject routes that do not match any policy entry";
-      description
-        "Reject action";
-      must 'not(../accept)';
-    }
-    container accept {
-      presence "Accept routes that do not match any policy entry";
-      description
-        "Accept action";
-      must 'not(../reject)';
-      uses action-accept;
-    }
-    container next-entry {
-      presence "match next entry";
-      if-feature "srl_nokia-feat:routing-policy-fallthrough-actions";
-      must 'not(../reject or ../accept or ../next-policy)';
-      description
-        "next entry action";
-    }
-    container next-policy {
-      presence "match next policy";
-      if-feature "srl_nokia-feat:routing-policy-fallthrough-actions";
-      description
-        "next policy action";
-      must 'not(../reject or ../accept or ../next-entry)';
-    }
-  }
-
   grouping default-action-top {
     container default-action {
       description
         "Actions for routes that do not match any policy entry";
-      uses common-action-top;
+      container reject {
+        presence "Reject routes that do not match any policy entry";
+        description
+          "Reject action";
+        must 'not(../accept)';
+      }
+      container accept {
+        presence "Accept routes that do not match any policy entry";
+        description
+          "Accept action";
+        must 'not(../reject)';
+        uses common-action-top;
+      }
     }
   }
 
@@ -303,57 +284,80 @@ module srl_nokia-routing-policy {
     }
   }
 
-  grouping match-bgp-config-top {
-    description
-      "Configuration for BGP-specific policy match criteria";
-    leaf as-path-set {
+  grouping match-bgp-evpn {
+    container evpn {
       description
-        "Reference to an as-path-set name
-
-         A route meets this condition if it matches the regular expression";
-      type leafref {
-        path "/srl_rpol:routing-policy/srl_rpol:as-path-set/name";
-      }
-    }
-    container as-path-length {
-      presence "number of asn match conditions";
-      description
-        "A BGP route matches this condition if the number of (unique) AS numbers in its AS_PATH matches this value or the range implied by the value+operator.";
-      leaf value {
+        "Container for match conditions that are specific to BGP EVPN routes.";
+      leaf-list route-type {
         type uint8 {
-          range "0..255";
+          range "1..5";
         }
-        mandatory true;
+        max-elements 1;
         description
-          "The number of (unique) AS numbers in the AS path";
-      }
-      leaf operator {
-        type srl_nokia-pol-types:comparison-operator-type;
-        default "eq";
-        description
-          "The comparison operator that applies to the value";
-      }
-      leaf unique {
-        type boolean;
-        default "false";
-        description
-          "Count a repeated sequence of the same AS number as just 1 element";
-      }
-    }
-    leaf community-set {
-      description
-        "Reference to a community-set name
-
-         A route meets this condition if has any community value matching a community member in the referenced community-set";
-      type leafref {
-        path "/srl_rpol:routing-policy/srl_rpol:community-set/name";
+          "An EVPN route meets this condition if the route-type field in the NLRI is one of the values provided in this list.";
       }
     }
   }
 
-  grouping match-protocol-top {
+  grouping match-bgp {
+    container bgp {
+      description
+        "Configuration for BGP-specific policy match criteria";
+      leaf as-path-set {
+        description
+          "Reference to an as-path-set name
+
+           A route meets this condition if it matches the regular expression";
+        type leafref {
+          path "/srl_rpol:routing-policy/srl_rpol:as-path-set/name";
+        }
+      }
+      container as-path-length {
+        description
+          "A BGP route matches this condition if the number of (unique) AS numbers in its AS_PATH matches this value or the range implied by the value+operator.";
+        leaf value {
+          type uint8 {
+            range "0..255";
+          }
+          description
+            "The number of (unique) AS numbers in the AS path";
+        }
+        leaf operator {
+          type srl_nokia-pol-types:comparison-operator-type;
+          default "eq";
+          description
+            "The comparison operator that applies to the value";
+        }
+        leaf unique {
+          type boolean;
+          default "false";
+          description
+            "Count a repeated sequence of the same AS number as just 1 element";
+        }
+      }
+      leaf community-set {
+        description
+          "Reference to a community-set name
+
+           A route meets this condition if has any community value matching a community member in the referenced community-set";
+        type leafref {
+          path "/srl_rpol:routing-policy/srl_rpol:community-set/name";
+        }
+      }
+      uses match-bgp-evpn;
+    }
+  }
+
+  grouping match-general {
     description
-      "A routing protocol as a match criterion for the entry";
+      "Configuration for general match criteria applicable to multiple route types";
+    leaf family {
+      type srl_nokia-pol-types:bgp-family-type;
+      description
+        "The name of an address family
+
+         A route meets this condition if the prefix belongs to the indicated address family.";
+    }
     leaf protocol {
       type identityref {
         base srl_nokia-comm:ip-route-type;
@@ -363,19 +367,7 @@ module srl_nokia-routing-policy {
     }
   }
 
-  grouping match-bgp-top {
-    description
-      "Top-level grouping for BGP-specific policy conditions";
-    container bgp {
-      presence "bgp specific match conditions";
-      description
-        "Top-level container ";
-      uses match-bgp-config-top;
-      uses match-bgp-evpn;
-    }
-  }
-
-  grouping match-igp-top {
+  grouping match-igp {
     container isis {
       srl_nokia-ext:first-released "20.12.1";
       description
@@ -441,20 +433,12 @@ module srl_nokia-routing-policy {
     description
       "Top-level grouping for match criteria";
     container match {
-      presence "policy conditions to match on routes ";
       description
         "Match conditions of the policy statement";
-      leaf family {
-        type srl_nokia-pol-types:bgp-family-type;
-        description
-          "The name of an address family
-
-           A route meets this condition if the prefix belongs to the indicated address family.";
-      }
       uses match-prefix-set;
-      uses match-bgp-top;
-      uses match-protocol-top;
-      uses match-igp-top;
+      uses match-bgp;
+      uses match-general;
+      uses match-igp;
     }
   }
 
@@ -463,22 +447,19 @@ module srl_nokia-routing-policy {
       "Top-level grouping for policy actions";
     container action {
       description
-        "Policy actions";
-      uses common-action-top;
-    }
-  }
-
-  grouping match-bgp-evpn {
-    container evpn {
-      description
-        "Container for match conditions that are specific to BGP EVPN routes.";
-      leaf-list route-type {
-        type uint8 {
-          range "1..5";
-        }
-        max-elements 1;
+        "Actions for routes that match the policy statement";
+      container reject {
+        presence "Reject routes that match the policy statement";
         description
-          "An EVPN route meets this condition if the route-type field in the NLRI is one of the values provided in this list.";
+          "Reject routes that match the policy statement";
+        must 'not(../accept)';
+      }
+      container accept {
+        presence "Accept routes that match the policy statement";
+        description
+          "Accept routes that match the policy statement";
+        must 'not(../reject)';
+        uses common-action-top;
       }
     }
   }
@@ -526,7 +507,6 @@ module srl_nokia-routing-policy {
     description
       "Top level container for route policies";
     container routing-policy {
-      presence "Configure Routing Policy";
       description
         "Top-level container for all routing policy configuration";
       uses as-path-set-top;

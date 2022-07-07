@@ -19,6 +19,10 @@ module srl_nokia-platform-p4rt {
   description
     "Model for managing P4Runtime configuration and state underneath forwarding complexes.";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -34,15 +38,16 @@ module srl_nokia-platform-p4rt {
         "Top-level container for P4Runtime forwarding complex configuration and state";
       leaf id {
         srl_nokia-ext:show-importance "high";
-        type uint64;
+        type uint64 {
+          range "1..max";
+        }
         description
-          "The numeric ID used by the controller to address the forwarding complex,
+          "The numeric ID used by the controller to address the forwarding complex
 
-           This ID may be referred to as a 'device', 'node' or 'target' by the P4RT
-           specification.
+           This ID may be referred to as a 'device', 'node' or 'target' by the P4RT specification.
 
-           Each switching ASIC (i.e., node) is addressed by the external entity
-           based on its numeric identifier.";
+           Each ASIC is addressed by the client based on this numeric identifier.";
+        mandatory true;
       }
     }
   }

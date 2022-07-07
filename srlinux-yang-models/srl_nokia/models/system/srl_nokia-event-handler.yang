@@ -19,9 +19,70 @@ module srl_nokia-event-handler {
   description
     "This module defines configuration and operational state data related to the event handler";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
+  }
+
+  typedef eh-instance-oper-reason {
+    type enumeration {
+      enum admin-disabled {
+        description
+          "Event handler instance is admin-disabled";
+      }
+      enum failed-to-compile {
+        description
+          "Event handler failed to compile the script, indicating that the script likely has a syntax error";
+      }
+      enum exception {
+        description
+          "Event handler caught an exception in the last execution of the script";
+      }
+      enum timeout {
+        description
+          "The last execution of the script did not complete before a timeout occurred";
+      }
+      enum subscription-failed {
+        description
+          "Event handler was unable to subscribe to the provided paths";
+      }
+      enum script-unavailable {
+        description
+          "Event handler was unable to find the script on the filesystem";
+      }
+      enum script-error {
+        description
+          "The script returned something invalid";
+      }
+      enum missing-function {
+        description
+          "Event handler was unable to find a function named event_handler_main() in the provided script";
+      }
+      enum system-error {
+        description
+          "There was a failure in setting up the python environment";
+      }
+      enum ephemeral-action-failed {
+        description
+          "Event handler was unable to perform a ephemeral-path action in the previous execution";
+      }
+      enum cfg-action-failed {
+        description
+          "Event handler was unable to perform a cfg-path action in the previous execution";
+      }
+      enum tools-action-failed {
+        description
+          "Event handler was unable to perform a tools-path action in the previous execution";
+      }
+      enum script-action-failed {
+        description
+          "Event handler was unable to perform a script action in the previous execution";
+      }
+    }
   }
 
   grouping eh-statistics-top {
@@ -29,22 +90,11 @@ module srl_nokia-event-handler {
       config false;
       description
         "Top-level container for event handler statistics";
-      leaf execution-duration {
-        type uint64;
-        units "microseconds";
-        description
-          "Time taken to complete the most recent execution of this script";
-      }
-      leaf last-execution {
-        type srl-comm:date-and-time-delta;
-        description
-          "The time this script last executed, either successfully or unsuccessfully";
-      }
-      leaf total-execution-duration {
+      leaf upython-duration {
         type uint64;
         units "milliseconds";
         description
-          "Total time taken to complete all executions of this script so far";
+          "Total time taken for all executions of this script to return output";
       }
       leaf execution-count {
         type srl-comm:zero-based-counter64;
@@ -69,6 +119,59 @@ module srl_nokia-event-handler {
     }
   }
 
+  grouping eh-execution-state {
+    leaf oper-down-reason {
+      type eh-instance-oper-reason;
+      config false;
+      srl-ext:show-importance "low";
+      description
+        "The reason this instance is or was in its last operational state";
+    }
+    leaf oper-down-reason-detail {
+      srl-ext:show-importance "low";
+      type string;
+      description
+        "Any additional detail event handler can provide around the last operational state of this instance";
+    }
+    leaf start-time {
+      type srl-comm:date-and-time-delta;
+      srl-ext:show-importance "high";
+      description
+        "The time this instance last started execution";
+    }
+    leaf end-time {
+      type srl-comm:date-and-time-delta;
+      srl-ext:show-importance "high";
+      description
+        "The time this instance last finished execution
+
+         This timestamp includes any actions provided as output from the execution";
+    }
+    leaf upython-duration {
+      type uint64;
+      units "microseconds";
+      description
+        "Time taken for the instance to return output";
+    }
+    leaf input {
+      type string;
+      description
+        "The input provided to the script";
+    }
+    leaf output {
+      type string;
+      description
+        "The output received from the script
+
+         If empty, no response was received.";
+    }
+    leaf stdout-stderr {
+      type string;
+      description
+        "The output printed on STDOUT or STDERR during this execution";
+    }
+  }
+
   grouping eh-state-top {
     leaf oper-state {
       config false;
@@ -77,92 +180,17 @@ module srl_nokia-event-handler {
       description
         "Details if this event handler instance is operationally available";
     }
-    leaf oper-reason {
+    container last-execution {
       config false;
-      srl-ext:show-importance "low";
-      type enumeration {
-        enum admin-disabled {
-          description
-            "Event handler instance is admin-disabled";
-        }
-        enum failed-to-compile {
-          description
-            "Event handler failed to compile the script, indicating that the script likely has a syntax error";
-        }
-        enum exception {
-          description
-            "Event handler caught an exception in the last execution of the script";
-        }
-        enum timeout {
-          description
-            "The last execution of the script did not complete before a timeout occurred";
-        }
-        enum subscription-failed {
-          description
-            "Event handler was unable to subscribe to the provided paths";
-        }
-        enum script-unavailable {
-          description
-            "Event handler was unable to find the script on the filesystem";
-        }
-        enum script-error {
-          description
-            "The script returned something invalid";
-        }
-        enum missing-function {
-          description
-            "Event handler was unable to find a function named event_handler_main() in the provided script";
-        }
-        enum system-error {
-          description
-            "There was a failure in setting up the python environment";
-        }
-        enum ephemeral-action-failed {
-          description
-            "Event handler was unable to perform a ephemeral-path action in the previous execution";
-        }
-        enum cfg-action-failed {
-          description
-            "Event handler was unable to perform a cfg-path action in the previous execution";
-        }
-        enum tools-action-failed {
-          description
-            "Event handler was unable to perform a tools-path action in the previous execution";
-        }
-        enum script-action-failed {
-          description
-            "Event handler was unable to perform a script action in the previous execution";
-        }
-      }
       description
-        "Indicates the reason this event handler instance is in its current operational state";
+        "Operational state of the last execution of this instance";
+      uses eh-execution-state;
     }
-    leaf oper-reason-detail {
-      srl-ext:show-importance "low";
-      type string;
+    container last-errored-execution {
       config false;
       description
-        "Any additional detail event handler can provide around the current operational state of this event handler instance";
-    }
-    leaf last-input {
-      config false;
-      type string;
-      description
-        "The last JSON-formatted input provided to the script";
-    }
-    leaf last-output {
-      config false;
-      type string;
-      description
-        "The last JSON-formatted response received from the script
-
-         If empty, no response was received.";
-    }
-    leaf last-stdout-stderr {
-      type string;
-      config false;
-      description
-        "The output received on STDOUT or STDERR during the last execution of the script";
+        "Operational state of the last errored execution of this instance";
+      uses eh-execution-state;
     }
   }
 
@@ -190,21 +218,19 @@ module srl_nokia-event-handler {
           description
             "Administratively enable or disable this event handler instance";
         }
-        leaf-list path {
+        leaf-list paths {
           max-elements 36;
           srl-ext:no-globbing;
           description
-            "List of valid YANG paths in CLI notation, to monitor for changes in
+            "List of valid YANG paths in CLI notation to monitor for changes
 
              If any events are received on any of the provided paths, the configured script will be executed.
 
-             This path may include keys, wildcards, ranges, and other management server supported constructs. Ranges will be expanded.
-             The root path can be specified with '/'.
+             This path may include keys, wildcards, ranges, and other management server supported constructs.
 
              E.g.
-                 /
-                 \"/interface\"
-                 \"/acl ipv4-filter foo* description\"";
+                 \"interface * oper-state\"
+                 \"acl ipv4-filter foo* description\"";
           type string {
             pattern '[A-Za-z0-9 !@#$%^&()|+=`~.,/_:;?\-{}*\\\\"\[\]]+';
           }
@@ -222,6 +248,7 @@ module srl_nokia-event-handler {
             choice object {
               leaf-list values {
                 srl-ext:no-globbing;
+                ordered-by user;
                 description
                   "List of values to associate with this object, these are serialized as a JSON array when provided as input to the script";
                 type string;
@@ -239,7 +266,8 @@ module srl_nokia-event-handler {
           description
             "File name of a MicroPython script, including .py suffix
 
-             This script should exist in /etc/opt/srlinux/eventmgr already - explicit paths outside of this directory are not permitted";
+             This script should exist in /etc/opt/srlinux/eventmgr or /opt/srlinux/eventmgr already.
+             Explicit paths outside of these two directories are not permitted.";
           type string {
             pattern '([^./][^/]*)|(\.[^\./]+)|(\.\.[^/])+';
           }

@@ -13,6 +13,10 @@ module srl_nokia-tools-qos {
     prefix srl-feat;
   }
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -32,7 +36,7 @@ module srl_nokia-tools-qos {
 
   augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:statistics" {
     container queue-statistics {
-      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7220-d5 or srl-feat:platform-7210-sas24g";
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7220-d5 or srl-feat:platform-7210-sas24g or srl-feat:platform-7210-sas24";
       leaf clear {
         type empty;
       }
@@ -59,5 +63,15 @@ module srl_nokia-tools-qos {
         }
       }
     }
+  }
+
+  grouping tools-qos-top {
+    container qos {
+      container input;
+    }
+  }
+
+  augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface" {
+    uses tools-qos-top;
   }
 }

@@ -9,11 +9,11 @@ module srl_nokia-bgp-vpn {
   import srl_nokia-network-instance {
     prefix srl_nokia-netinst;
   }
-  import srl_nokia-extensions {
-    prefix srl_nokia-ext;
-  }
   import srl_nokia-bgp {
     prefix srl-bgp;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
   }
   import srl_nokia-policy-types {
     prefix srl_nokia-pol-types;
@@ -22,6 +22,10 @@ module srl_nokia-bgp-vpn {
   description
     "This yang file models configuration and state of the bgp-vpn protocols (EVPN and IPVPN).";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -57,8 +61,8 @@ module srl_nokia-bgp-vpn {
             srl_nokia-ext:show-importance "high";
             type srl_nokia-comm:route-distinguisher;
             description
-              "Route Distinguisher (RD) configured in the bgp-vpn instance. When used for evpn and if not configured, the RD is auto-derived with the format <ip-address>:<evi>
-               where 'ip-address' is the ipv4 address associated to the subinterface lo0.1.";
+              "Route Distinguisher (RD) in the bgp-vpn instance. When used for evpn and if not configured, the RD is auto-derived
+               as <ip-address>:<evi> where 'ip-address' is the ipv4 address associated to the subinterface lo0.1.";
           }
           leaf route-distinguisher-origin {
             config false;
@@ -71,10 +75,12 @@ module srl_nokia-bgp-vpn {
             }
             description
               "Origin of the operational Route Distinguisher (RD) of the bgp-vpn instance.
-               'Auto-derived-from-evi' refers to an RD that is automatically allocated with the format <ip-address>:<evi>
-               where 'ip-address' is the ipv4 address associated to the subinterface lo0.1.
-               'Manual' refers to an RD that is configured.
-               'None' indicates that the RD is neither configured nor auto-derived.";
+                'Auto-derived-from-evi' refers to an RD that is automatically allocated with the format <ip-address>:<evi>
+                where 'ip-address' is the ipv4 address associated to the subinterface lo0.1.
+                'Auto-derived-from-system-ip:0' refers to the RD for the EVPN Ethernet Segment routes that is automatically allocated with the format <ip-address>:0
+                where 'ip-address' is the ipv4 address associated to the subinterface lo0.1.
+                'Manual' refers to an RD that is configured.
+                'None' indicates that the RD is neither configured nor auto-derived.";
           }
         }
         container route-target {
@@ -93,6 +99,7 @@ module srl_nokia-bgp-vpn {
             srl_nokia-ext:show-importance "high";
             type enumeration {
               enum auto-derived-from-evi;
+              enum auto-derived-from-esi-bytes-1-6;
               enum manual;
               enum none;
             }
@@ -100,10 +107,12 @@ module srl_nokia-bgp-vpn {
               "Origin of the operational export Route Target (RT) of the bgp-vpn instance.
                'Auto-derived-from-evi' refers to an RT that is automatically allocated with the format <asn>:<evi>
                where 'asn' is the autonomous-system-number configured in the network-instance default.
+               'Auto-derived-from-esi-bytes-1-6' refers to the ES-import RT for the EVPN Ethernet Segment routes that is derived from bytes 1 to 6 of the Ethernet Segment Identifier of the route.
                'Manual' refers to an export RT that is configured.
                'None' indicates that the export RT is neither configured nor auto-derived.";
           }
           leaf import-rt {
+            srl_nokia-ext:show-importance "high";
             type srl_nokia-pol-types:bgp-ext-community-type;
             must "starts-with(.,'target')";
             description
@@ -115,13 +124,15 @@ module srl_nokia-bgp-vpn {
             srl_nokia-ext:show-importance "high";
             type enumeration {
               enum auto-derived-from-evi;
+              enum auto-derived-from-esi-bytes-1-6;
               enum manual;
               enum none;
             }
             description
               "Origin of the operational import Route Target (RT) of the bgp-vpn instance.
                'Auto-derived-from-evi' refers to an RT that is automatically allocated with the format <asn>:<evi>
-               where 'asn' is the autonomous-system-number configured in the network-instance default.
+                where 'asn' is the autonomous-system-number configured in the network-instance default.
+               'Auto-derived-from-esi-bytes-1-6' refers to the ES-import RT for the EVPN Ethernet Segment routes that is derived from bytes 1 to 6 of the Ethernet Segment Identifier of the route.
                'Manual' refers to an import RT that is configured.
                'None' indicates that the import RT is neither configured nor auto-derived.";
           }
@@ -134,6 +145,7 @@ module srl_nokia-bgp-vpn {
             enum no-loopback-address-or-rd;
             enum no-autonomous-system-or-rt;
             enum network-instance-oper-down;
+            enum bad-rd-format;
             enum none;
           }
           description

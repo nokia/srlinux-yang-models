@@ -25,6 +25,10 @@ module srl_nokia-gribi-server {
   description
     "This module defines configuration and operational state data related to the gRIBI server";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -187,7 +191,9 @@ module srl_nokia-gribi-server {
         srl-ext:show-importance "low";
         default "20";
         description
-          "Set a limit on the number of simultaneous active gRIBI sessions";
+          "Set a limit on the number of simultaneous active gRIBI sessions
+
+           A session is defined as an individual RPC invocation, which could result in a single client generating multiple sessions.";
       }
       list client {
         config false;
@@ -314,10 +320,14 @@ module srl_nokia-gribi-server {
 
   augment "/srl-system:system" {
     srl-ext:first-released "21.11.1";
-    uses gribi-server-top;
+    uses gribi-server-top {
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+    }
   }
 
   augment "/srl-netinst:network-instance/srl-netinst:protocols" {
-    uses gribi-netinst-protocol;
+    uses gribi-netinst-protocol {
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+    }
   }
 }

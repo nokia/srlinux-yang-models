@@ -25,6 +25,10 @@ module srl_nokia-platform-acl {
   description
     "This module defines configuration and operational state related to ACL and TCAM resources in the system";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -180,6 +184,13 @@ module srl_nokia-platform-acl {
       "Resource pool of TCAM entries used by IPv6 capture-filter ACLs and IPv6 system-filter ACLs";
   }
 
+  identity system-capture {
+    if-feature "srl_feat:trident4";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 + IPv6 capture-filter ACLs and system-filter ACLs";
+  }
+
   identity capture-ipv4 {
     if-feature "srl_feat:tomahawk3 or srl_feat:monterey";
     base tcam-resources;
@@ -206,6 +217,13 @@ module srl_nokia-platform-acl {
     base tcam-resources;
     description
       "Resource pool of TCAM entries used by IPv6 egress ACLs and cpm-filter ACLs";
+  }
+
+  identity if-output-cpm {
+    if-feature "srl_feat:trident4";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 + IPv6 egress ACLs and cpm-filter ACLs";
   }
 
   identity if-input-mac {
@@ -273,7 +291,7 @@ module srl_nokia-platform-acl {
           description
             "Sets the threshold that triggers the generation of a WARNING log whenever the utilization of the TCAM resource in any linecard/complex/core reaches this value in a rising direction
 
-             On platforms that support dynamic TCAM the utilization considers free-dynamic, and not free-static.";
+             On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
         }
         leaf falling-threshold-log {
           type srl_nokia-comm:percentage;
@@ -281,7 +299,7 @@ module srl_nokia-platform-acl {
           description
             "Sets the threshold that triggers the generation of a NOTICE log whenever the utilization of the TCAM resource in any linecard/complex/core falls reaches this value in a falling direction.
 
-             On platforms that support dynamic TCAM the utilization considers free-dynamic, and not free-static.";
+             On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
         }
       }
     }

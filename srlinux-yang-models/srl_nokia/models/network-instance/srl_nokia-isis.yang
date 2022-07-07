@@ -6,9 +6,6 @@ module srl_nokia-isis {
   import ietf-yang-types {
     prefix yang;
   }
-  import ietf-inet-types {
-    prefix inet;
-  }
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
@@ -20,9 +17,6 @@ module srl_nokia-isis {
   }
   import srl_nokia-routing-policy {
     prefix srl-rpol;
-  }
-  import srl_nokia-interfaces {
-    prefix srl_nokia-if;
   }
   import srl_nokia-system {
     prefix srl-system;
@@ -49,6 +43,10 @@ module srl_nokia-isis {
   description
     "This yang file models configuration and state of the IS-IS protocol";
 
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -136,7 +134,7 @@ module srl_nokia-isis {
     description
       "This type defines ISIS wide metric.";
     type uint32 {
-      range "1..16777215";
+      range "0..16777215";
     }
   }
 
@@ -687,7 +685,6 @@ module srl_nokia-isis {
 
   grouping isis-interface-level-stats {
     container statistics {
-      if-feature "srl-feat:isis-stats-auth";
       config false;
       description
         "Interface per level statistics";
@@ -1224,6 +1221,16 @@ module srl_nokia-isis {
         type boolean;
         default "false";
       }
+      leaf acceptable-duration {
+        if-feature "srl-feat:isis-nsf";
+        description
+          "Initial value of the Remaining Time that is advertised in the Restart TLV with Restart Acknowledgement flag set when this router starts to help another router that has just (re)entered Restart mode.";
+        type uint32 {
+          range "1..20000";
+        }
+        units "seconds";
+        default "60";
+      }
     }
     container auto-cost {
       leaf reference-bandwidth {
@@ -1303,7 +1310,6 @@ module srl_nokia-isis {
 
   grouping isis-level-stats {
     container statistics {
-      if-feature "srl-feat:isis-stats-auth";
       config false;
       description
         "Per level statistics in an ISIS instance";
@@ -1433,6 +1439,10 @@ module srl_nokia-isis {
         must "../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
           error-message "Segment routing is only supported in the default network instance";
         }
+        must '../../srl_nokia-isis:ipv6-unicast/srl_nokia-isis:multi-topology = false()' {
+          srl_nokia-ext:if-feature "srl-feat:isis-mt";
+          error-message "Segment routing is not supported in combination with IPv6 multi-topology";
+        }
         must 'boolean(../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block) and boolean(../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls)' {
           error-message "Segment routing can be supported only when network instance has segment routing enabled along with a SRGB.";
         }
@@ -1470,6 +1480,9 @@ module srl_nokia-isis {
           type leafref {
             path "/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static/srl_nokia-mplslbl:name";
           }
+          must 'not ((/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()]/shared) = true())' {
+            error-message "Static label block must not be shareable";
+          }
           description
             "Reference to a static label block to use an SRLB.
 
@@ -1490,9 +1503,7 @@ module srl_nokia-isis {
 
              The label block may show as unavailable if there is pending cleanup.";
         }
-        uses isis-sid-database {
-          if-feature "srl-feat:isis-sid-database";
-        }
+        uses isis-sid-database;
       }
     }
   }
@@ -2050,13 +2061,11 @@ module srl_nokia-isis {
       type string;
     }
     leaf-list area-address {
-      if-feature "srl-feat:isis-stats-auth";
       description
         "Area address of the neighbor.";
       type isis-area-address;
     }
     leaf designated-is-system-id {
-      if-feature "srl-feat:isis-stats-auth";
       description
         "System id of the designated IS router.";
       type srl_nokia-comm:isis-system-id;
@@ -2100,7 +2109,6 @@ module srl_nokia-isis {
       type isis-level;
     }
     leaf neighbor-extended-circuit-id {
-      if-feature "srl-feat:isis-stats-auth";
       description
         "Extended circuit ID assigned by the neighbor.";
       type isis-extended-circuit-id;
@@ -2149,7 +2157,6 @@ module srl_nokia-isis {
       }
     }
     leaf-list nlpid {
-      if-feature "srl-feat:isis-stats-auth";
       description
         "List of protocols supported by the adjacency.";
       type isis-protocols-supported;
@@ -2170,7 +2177,6 @@ module srl_nokia-isis {
       type isis-extended-circuit-id;
     }
     container statistics {
-      if-feature "srl-feat:isis-stats-auth";
       config false;
       description
         "Statistics associated with this IS-IS interface.";
@@ -2922,6 +2928,17 @@ module srl_nokia-isis {
     }
   }
 
+  grouping isis-nsf-config {
+    container non-stop-forwarding {
+      leaf admin-state {
+        description
+          "Used to administratively enable or disable the IS-IS non-stop forwarding functionality.";
+        type srl_nokia-comm:admin-state;
+        default "disable";
+      }
+    }
+  }
+
   grouping isis-top {
     container isis {
       presence "Configure ISIS";
@@ -2930,6 +2947,9 @@ module srl_nokia-isis {
       }
       must "../../srl_nokia-netinst:type != 'srl_nokia-netinst:host'" {
         error-message "ISIS routing configuration is not possible on network-instance of type host";
+      }
+      uses isis-nsf-config {
+        if-feature "srl-feat:isis-nsf";
       }
       uses isis-protocol-segment-routing {
         if-feature "srl-feat:label-management";
