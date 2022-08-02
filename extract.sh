@@ -8,11 +8,9 @@
 # usage: bash extract.sh $srlVersion
 # example: bash extract.sh 21.6.3
 
-
 set -e
 
-if [ -z "$1" ]
-then
+if [ -z "$1" ]; then
     echo "srlinux version is not set. usage: bash extract.sh <version>"
     exit 1
 fi
@@ -20,7 +18,8 @@ fi
 SRL_VER=$1
 
 DIR_NAME="$(pwd)/srlinux-yang-models"
-docker pull ghcr.io/nokia/srlinux:$1
+# if pull is not successfull, assume that image is present locally
+docker pull ghcr.io/nokia/srlinux:$1 || echo "using local image"
 id=$(docker create ghcr.io/nokia/srlinux:$SRL_VER foo)
 # remove prev yang files
 rm -rf $DIR_NAME
