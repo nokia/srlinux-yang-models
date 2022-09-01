@@ -67,7 +67,7 @@ module srl_nokia-qos-policers {
 
   grouping policer-templates-top {
     container policer-templates {
-      if-feature "srl-feat:subif-policer";
+      if-feature srl-feat:ingress-subif-policing;
       description
         "Policer templates used for subinterface traffic metering.";
       list policer-template {
@@ -80,17 +80,20 @@ module srl_nokia-qos-policers {
           type srl_nokia-comm:name;
         }
         list policer {
+          max-elements 32;
           description
             "The list of policer instances belonging to the template definition.";
-          key "index";
-          leaf index {
-            description
-              "The policer index";
-            type uint8 {
-              range "1..32";
+          key sequence-id;
+          leaf sequence-id {
+            type uint32 {
+              range "1..65535";
             }
+            description
+                "A number to indicate the relative evaluation order of the different policers in a template; policers with lower sequence-id numbers are evaluated before policers with higher sequence-id numbers";
           }
           list forwarding-class {
+            description
+                "The list of forwarding classes with traffic to be sent to the policer. If this list is not configured then all subinterface traffic is matched.";
             key "fc";
             leaf fc {
               description
@@ -187,10 +190,18 @@ module srl_nokia-qos-policers {
 
   grouping subinterface-qos-input-policers {
     container policers {
-      if-feature "srl-feat:subif-policer";
+      if-feature srl-feat:ingress-subif-policing;
       description
         "Container with information about the policers applied to input traffic on the subinterface.";
       leaf policer-template {
+        must "not(starts-with(../../../../../srl_nokia-if:name,'irb'))" {
+            error-message "Not supported on IRB interfaces";
+        }
+        must "../../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
+            error-message "policer not allowed on subinterface with type local-mirror-dest";
+        }
+
+
         description
           "The name of the policer template applied to input traffic on the subinterface
 
@@ -203,13 +214,13 @@ module srl_nokia-qos-policers {
         config false;
         description
           "The list of policer instances belonging to the template definition.";
-        key "index";
-        leaf index {
-          description
-            "The policer index";
-          type uint8 {
-            range "1..32";
-          }
+        key sequence-id;
+        leaf sequence-id {
+            type uint32 {
+              range "1..65535";
+            }
+            description
+              "Policer sequeunce-id";
         }
         uses policer-instance-state;
       }

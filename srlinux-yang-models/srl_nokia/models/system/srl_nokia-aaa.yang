@@ -297,6 +297,63 @@ module srl_nokia-aaa {
     }
   }
 
+  grouping aaa-authentication-user-lockout {
+    description
+      "Grouping of state information relating to user lockouts";
+    container lockout {
+      config false;
+      description
+        "Information relating to the lockout state of this user";
+      leaf active {
+        type boolean;
+        description
+          "Indicates if a lockout is active for the user
+
+          Lockouts can occur after successive failed logins, and can be cleared by 'tools system aaa authentication user <username> unlock'";
+      }
+      leaf start {
+        type srl-comm:date-and-time;
+        description
+          "Indicates the time at which the most recent lockout for this user started";
+      }
+      leaf end {
+        type srl-comm:date-and-time-delta;
+        description
+          "Indicates the time at which the most recent lockout for this user ended or will end";
+      }
+    }
+
+  }
+
+  grouping aaa-authentication-user-state {
+    description
+      "Grouping of state information relating to users";
+    leaf failed-login-attempts {
+      config false;
+      type srl-comm:zero-based-counter64;
+      description
+        "Number of failed login attempts from the user";
+    }
+    leaf last-failed-login {
+      config false;
+      type srl-comm:date-and-time;
+      description
+        "The date and time of the last login failure from this user";
+    }
+    leaf last-successful-login {
+      config false;
+      type srl-comm:date-and-time;
+      description
+        "The date and time of the last successful login from this user";
+    }
+    leaf password-change-required {
+      config false;
+      type boolean;
+      description
+        "Indicates if the user must change their password on next login";
+    }
+  }
+
   grouping aaa-authentication-user-config {
     description
       "Configuration data for local users";
@@ -342,6 +399,8 @@ module srl_nokia-aaa {
          The most specific rule for a particular role takes precedence.
          Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
     }
+    uses aaa-authentication-user-state;
+    uses aaa-authentication-user-lockout;
   }
 
   grouping aaa-authentication-user-top {
@@ -437,6 +496,8 @@ module srl_nokia-aaa {
 
            The system will hash the value, storing only the hashed value";
       }
+      uses aaa-authentication-user-state;
+      uses aaa-authentication-user-lockout;
     }
   }
 
@@ -620,9 +681,7 @@ module srl_nokia-aaa {
       }
       uses aaa-authentication-user-top;
       uses aaa-state-sessions-top;
-      uses srl-aaa-password:aaa-password-top {
-          if-feature "srl-feat:password-complexity-and-lockout";
-      }
+      uses srl-aaa-password:aaa-password-top;
     }
   }
 

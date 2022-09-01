@@ -194,14 +194,13 @@ module srl_nokia-interfaces {
 
          The 7220 D3 supports 4x10 and 4x25 breakout on ports 3-33.
          The 7220 D3L supports 4x10 and 4x25 breakout on ports 1-31.
-         The 7220 H3 supports 4x100 breakout on ports 3-34.
-         The 7220 D5 supports 2x100 breakout on ports 1-32 as of release 22.6.3.";
+         The 7220 H3 supports 4x100 breakout on ports 3-34.";
       leaf num-channels {
         description
           "The number of channels (breakout ports) supported by this connector.";
         type enumeration {
           enum 2 {
-            if-feature "srl_nokia-feat:platform-7220-d5 and srl_nokia-feat:future-22-6-3";
+            if-feature "srl_nokia-feat:disabled";
           }
           enum 4 {
             if-feature "(not srl_nokia-feat:platform-7220-d5)";
@@ -711,7 +710,7 @@ module srl_nokia-interfaces {
             "Corresponds to ifHCInMulticastPkts from the IF-MIB.";
         }
         leaf in-discarded-packets {
-          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
+          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:trident4 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
           type srl_nokia-comm:zero-based-counter64;
           description
             "Corresponds to ifInDiscards from the IFMIB.
@@ -798,6 +797,61 @@ module srl_nokia-interfaces {
             "The egress bandwidth utilization of the port, updated every 10 seconds";
         }
       }
+      container adapter {
+        config false;
+        description
+          "State for adapters";
+        leaf model-number {
+          type string;
+          description
+            "Model information for the adapter.
+
+             This is the information as read from the EEPROM of the part.  The string is expected to contain printable ASCII characters, but unprintable ASCII characters read from the EEPROM are not filtered out.";
+        }
+        leaf type {
+          type enumeration {
+            enum unknown {
+              value 0;
+            }
+            enum qsfp28-to-sfp+/sfp28 {
+              value 1;
+            }
+            enum cfp-to-qsfp28 {
+              value 2;
+            }
+          }
+          description
+            "Type of adapter for the port.";
+        }
+        leaf vendor-manufacture-date {
+          type string;
+          description
+            "Vendor's date code.
+
+             This is the information as read from the EEPROM of the part.  ";
+        }
+        leaf vendor-oui {
+          type string;
+          description
+            "Vendor's OUI which contains the IEEE company identifier for the vendor.
+
+             This is the information as read from the EEPROM of the part.  A value of all zero indicates that the vendor OUI is unspecified.";
+        }
+        leaf vendor-part-number {
+          type string;
+          description
+            "Vendor's part number or product name of the adapter.
+
+             This is the information as read from the EEPROM of the part.  An empty string indicates the vendor part number is unspecified. The string is expected to contain printable ASCII characters, but unprintable ASCII characters read from the EEPROM are not filtered out.";
+        }
+        leaf vendor-serial-number {
+          type string;
+          description
+            "Vendor's serial number of the adapter.
+
+             This is the information as read from the EEPROM of the part.  An empty string indicates the vendor serial number is unspecified. The string is expected to contain printable ASCII characters, but unprintable ASCII characters read from the EEPROM are not filtered out.";
+        }
+      } // container adapter
       container transceiver {
         leaf tx-laser {
           type boolean;
@@ -1316,7 +1370,7 @@ module srl_nokia-interfaces {
               if-feature "srl_nokia-feat:platform-7250-j2 or srl_nokia-feat:platform-7220-d1 or srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:platform-7220-bcmsvk or srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
             }
             enum 25G {
-              if-feature "srl_nokia-feat:platform-7220-d2 or (srl_nokia-feat:port-breakout and srl_nokia-feat:platform-7220-d3) or srl_nokia-feat:platform-vsrl or srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
+              if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:platform-7210-sas12 or srl_nokia-feat:platform-7210-sas24 or srl_nokia-feat:platform-7210-sas24g";
             }
             enum 40G {
               if-feature "srl_nokia-feat:platform-7250-ixr or srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-crimson or srl_nokia-feat:platform-vsrl";
@@ -1375,12 +1429,13 @@ module srl_nokia-interfaces {
              7220-D1 ports 1-48: 10M, 100M, 1G
              7220-D1 ports 49-52: 10G
              7220-D2/D2L ports 1-48: 1G, 10G, 25G [note2]
-             7220-D2/D2L ports 49-56: 40G, 100G
+             7220-D2 ports 49-56: 40G, 100G
+             7220-D2L ports 49-56: 10G, 25G, 40G, 100G
              7220-D2L ports 57-58: 10G
              7220-D3 ports 1-2: 10G
              7220-D3 ethernet-1/[3-34]: 40G, 100G
              7220-D3 ethernet-1/[3-33]/n: 10G, 25G
-             7220-D3L ethernet-1/[1-32]: 40G, 100G
+             7220-D3L ethernet-1/[1-32]: 10G, 25G, 40G, 100G
              7220-D3L ethernet-1/[1-31]/n: 10G, 25G
              7220-D3L ports 33-34: 10G
              7220-D5 ports 1-32: 40G, 100G, 400G

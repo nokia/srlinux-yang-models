@@ -1282,6 +1282,13 @@ module srl_nokia-qos {
             }
             description
               "Reference to the name of a dot1p rewrite policy.";
+            must "../../../../../srl_nokia-if:vlan-tagging = true()" {
+              error-message "rewrite-rules not allowed on untagged subinterface ";
+            }
+            must "not(starts-with(../../../../../srl_nokia-if:name,'lo'))" {
+              error-message "rewrite-rules not allowed on loopback subinterface";
+            }
+
           }
           leaf mpls-traffic-class {
             if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:monterey";

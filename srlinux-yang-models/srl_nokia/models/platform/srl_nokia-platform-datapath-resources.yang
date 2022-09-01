@@ -53,18 +53,15 @@ module srl_nokia-platform-datapath-resources {
 
   identity ip-hosts {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or (srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4) or srl_nokia-feat:tomahawk3";
     description
       "IP host route resources.
 
        Trident3:
-       Reports the number of entries used in the IP host table. Every local host /32 route, ARP entry and IPv4 subnet broadcast address requires 1 entry. In non-ALPM operation every remote /32 route also requires 1 entry. Every local host /128 route, and ND entry requires 2 entries. In non-ALPM operation every remote /128 route also requires 2 entries. Free entries reflects the total number of entries remaining in shared + dedicated UFT banks
+         Reports the number of entries used in the IP host table. Every local host /32 route, ARP entry and IPv4 subnet broadcast address requires 1 entry. In non-ALPM operation every remote /32 route also requires 1 entry. Every local host /128 route, and ND entry requires 2 entries. In non-ALPM operation every remote /128 route also requires 2 entries. Free entries reflects the total number of entries remaining in shared + dedicated UFT banks
 
-       Tomahawk3:
-       Reports the number of entries used in the IP host table. Every ARP entry and IPv4 subnet broadcast address requires 1 entry. Every ND entry requires 2 entries.
-
-       Monterey:
-       Reports the number of entries used in the IP host table. Every ARP entry and IPv4 subnet broadcast address requires 1 entry. Every ND entry requires 2 entries.";
+       Trident4 and Tomahawk3:
+         Reports the number of entries used in the IP host table. Every local host /32 route, ARP entry and IPv4 subnet broadcast address requires 1 entry. Every local host /128 route, and ND entry requires 2 entries.";
   }
 
   identity ip-lpm-routes {
@@ -72,23 +69,26 @@ module srl_nokia-platform-datapath-resources {
     description
       "IP longest prefix match route resources.
 
-       Jericho2:
-       Reports the percentage utilization of the KAPS1 or KAPS2 table, whichever is higher. These tables are used for storing longest-prefix-match IPv4 and IPv6 routes.
+      Jericho2:
+        Every installed IPv4 and IPv6 route counts as one used route.
 
-       Trident3 and Tomahawk3:
-       Reports the used and free number of half-wide entries in the hardware LPM table. An IPv4 route (or index to IPv4 ALPM lookup) requires a half-wide entry. An IPv6 route (or index to IPv6 ALPM lookup) that is /64 or less requires a single-wide entry (2 half-wide entries). An IPv6 route (or index to IPv6 ALPM lookup) that is more than /64 requires a double-wide entry (4 half-wide entries).
+      Trident3 and Tomahawk3:
+        In ALPM-disabled mode:
+          Reports the number of half-wide entries. An IPv4 route requires a half-wide entry. An IPv6 route that is /64 or less requires a single-wide entry (2 half-wide entries). An IPv6 route that is more than /64 requires a double-wide entry (4 half-wide entries).
+        In ALPM mode:
+          Every IPv4 route counts as 1 used route and every IPv6 route (regardless of prefix length) counts as 2 used routes.
 
-       Monterey:
-       Reports the used and free number of half-wide entries in the hardware LPM table. An IPv4 route requires a half-wide entry. An IPv6 route that is /64 or less requires a single-wide entry (2 half-wide entries). An IPv6 route that is more than /64 requires a double-wide entry (4 half-wide entries).";
+      Trident4:
+        Every IPv4 route counts as 1 used route and every IPv6 route (regardless of prefix length) counts as 4 used routes.";
   }
 
   identity mac-addresses {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or (srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4) or srl_nokia-feat:platform-vsrl";
     description
       "MAC address resources.
 
-       Reports the used number of entries, where 1 entry = 1 MAC address. Free entries reflects the total number of entries remaining in shared + dedicated UFT banks";
+       Reports the number of entries used in the MAC lookup table. On TD3, free entries reflects the total number of entries remaining in shared + dedicated UFT banks";
   }
 
   identity direct-next-hops {
@@ -127,10 +127,7 @@ module srl_nokia-platform-datapath-resources {
        Trident3:
        Reports the used number of ECMP groups, adding overlay and underlay ECMP groups.
 
-       Tomahawk3:
-       Reports used number of ECMP groups.
-
-       Monterey:
+       Trident4 and Tomahawk3:
        Reports used number of ECMP groups.";
   }
 
@@ -145,32 +142,26 @@ module srl_nokia-platform-datapath-resources {
        Trident3:
        Reports the used number of ECMP members, adding overlay and underlay ECMP members.
 
-       Tomahawk3:
-       Reports used number of ECMP members.
-
-       Monterey:
+       Trident4 and Tomahawk3:
        Reports used number of ECMP members.";
   }
 
   identity egress-next-hops {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or (srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4) or srl_nokia-feat:tomahawk3";
     description
       "Egress next-hop resources.
 
        Trident3:
        Reports the number of entries used in the egress next-hop table, counting entries in the overlay partition and entries in the underlay partition. 1 entry = 1 IPv4 next-hop address or 1 IPv6 next-hop address.
 
-       Tomahawk3:
-       Reports the number of entries used in the egress next-hop table. 1 entry = 1 IPv4 next-hop address or 1 IPv6 next-hop address.
-
-       Monterey:
+       Trident4 and Tomahawk3:
        Reports the number of entries used in the egress next-hop table. 1 entry = 1 IPv4 next-hop address or 1 IPv6 next-hop address.";
   }
 
   identity lag-groups {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or (srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4) or srl_nokia-feat:platform-vsrl";
     description
       "LAG group resources.
 
@@ -179,7 +170,7 @@ module srl_nokia-platform-datapath-resources {
 
   identity lag-members {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or (srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4) or srl_nokia-feat:platform-vsrl";
     description
       "LAG member resources.
 
@@ -211,11 +202,11 @@ module srl_nokia-platform-datapath-resources {
 
   identity tunnels {
     base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
+    if-feature "srl_nokia-feat:trident3 or (srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4) or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
       "Tunnel resources. One tunnel resource is used per VXLAN or MPLS tunnel endpoint.
 
-       On TD3 systems this equates to a DVP resource.";
+       On TD3 and TD4 systems this equates to a DVP resource.";
   }
 
   identity asic-datapath-resources {
@@ -225,43 +216,41 @@ module srl_nokia-platform-datapath-resources {
 
   identity ip-lpm-ipv4-routes {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or (srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4) or srl_nokia-feat:tomahawk3";
     description
       "Trident3:
        Reports the number of IPv4 entries in the hardware LPM table. In non-ALPM mode, free entries is the remaining number of half-wide entries in all partitions (i.e. it assumes no IPv6 routes consume those entries). In ALPM mode, free entries is the Minimum Guaranteed Capacity returned by the BCM SDK.
 
-       Tomahawk3:
-       Reports the number of IPv4 routes installed in the FIB. Free entries is the Minimum Guaranteed Capacity returned by the BCM SDK.
-
-       Monterey:
+       Trident4 and Tomahawk3:
        Reports the number of IPv4 routes installed in the FIB. Free entries is the Minimum Guaranteed Capacity returned by the BCM SDK.";
+  }
+
+  identity ip-lpm-ipv6-routes {
+    base asic-datapath-resources;
+    if-feature "srl_nokia-feat:trident4 and srl_nokia-feat:future-22-6-4";
+    description
+      "Reports the number of IPv6 routes installed in the FIB. Free entries is the Minimum Guaranteed Capacity returned by the BCM SDK.";
   }
 
   identity ip-lpm-ipv6-shorter-routes {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3";
     description
       "Trident3:
        Reports the number of IPv6 entries with prefix length less than 65 bits in the hardware LPM table. In non-ALPM mode, free entries is the remaining number of single-wide + double-wide entries (i.e. it assumes no other types of routes consume those entries). In ALPM mode, free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
 
        Tomahawk3:
-       Reports the number of IPv6 entries with prefix length less than 65 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
-
-       Monterey:
        Reports the number of IPv6 entries with prefix length less than 65 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.";
   }
 
   identity ip-lpm-ipv6-longer-routes {
     base asic-datapath-resources;
-    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
+    if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:tomahawk3";
     description
       "Trident3:
        Reports the number of IPv6 entries with prefix length greater than 64 bits in the hardware LPM table. In non-ALPM mode, free entries is the remaining number of double-wide entries (i.e. it assumes no other types of routes consume those entries). In ALPM mode, free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
 
        Tomahawk3:
-       Reports the number of IPv6 entries with prefix length greater than 64 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.
-
-       Monterey:
        Reports the number of IPv6 entries with prefix length greater than 64 bits installed in the FIB. Free entries is based on the Minimum Guaranteed Capacity returned by the BCM SDK.";
   }
 
