@@ -25,6 +25,8 @@ id=$(docker create ghcr.io/nokia/srlinux:$SRL_VER foo)
 rm -rf $DIR_NAME
 mkdir -p $DIR_NAME
 docker cp $id:/opt/srlinux/models/. $DIR_NAME
+# copy mappings
+docker cp $id:/opt/srlinux/mappings $DIR_NAME
 
 # remove j2 configs as they are not related to yang models
 rm -f $DIR_NAME/*.j2
