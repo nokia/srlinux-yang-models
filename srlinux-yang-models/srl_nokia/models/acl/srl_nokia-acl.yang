@@ -24,6 +24,10 @@ module srl_nokia-acl {
   description
     "This module defines configuration and operational state data for access control lists (ACLs) and related objects.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -73,6 +77,7 @@ module srl_nokia-acl {
           "Time of the last clear command performed by the user at this level";
       }
       container distributed-policer {
+        if-feature "not srl_nokia-feat:trident4 and not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not srl_nokia-feat:platform-7220-h4";
         description
           "Distributed policer stats for traffic matching the entry.";
         uses policer-stats;
@@ -153,7 +158,7 @@ module srl_nokia-acl {
       }
       container per-interface {
         description
-          "Container for per-entry statistics on a per interface basis. Not present if the entry is part of a filter with statistics-per-entry set to false.";
+          "Container for per-entry statistics on a per subinterface basis.";
         list subinterface {
           description
             "If subinterface-specific=disabled then this list is empty.
@@ -316,7 +321,7 @@ module srl_nokia-acl {
         }
       }
       list policer {
-        if-feature "not srl_nokia-feat:trident4";
+        if-feature "not srl_nokia-feat:trident4 and not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not srl_nokia-feat:platform-7220-h4";
         description
           "List of hardware policer templates. For each policer in this list one or more policer instances are implemented in the linecards of the system.";
         key "name";
@@ -485,7 +490,7 @@ module srl_nokia-acl {
                 "Reference to a system-cpu-policer.";
             }
             leaf distributed-policer {
-              if-feature "not srl_nokia-feat:trident4";
+              if-feature "not srl_nokia-feat:trident4 and not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not srl_nokia-feat:platform-7220-h4";
               type leafref {
                 path "../../../../../../../policers/policer/name";
               }
@@ -1401,7 +1406,7 @@ module srl_nokia-acl {
 
   grouping mac-filter-top {
     list mac-filter {
-      if-feature "srl_nokia-feat:mac-acls-on-td3-monterey";
+      if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3";
       description
         "List of MAC ACL policies";
       key "name";
@@ -1453,7 +1458,7 @@ module srl_nokia-acl {
         uses cpm-ipv6-filter-top;
       }
       container mac-filter {
-        if-feature "srl_nokia-feat:mac-acls-on-td3-monterey";
+        if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3";
         description
           "Top level container for CPM MAC filter";
         uses cpm-mac-filter-top;
@@ -1480,7 +1485,7 @@ module srl_nokia-acl {
 
   grouping system-filter-top {
     container system-filter {
-      if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:platform-vsrl";
+      if-feature "srl_nokia-feat:trident3";
       description
         "Top level container for System filters";
       container ipv4-filter {
@@ -1503,7 +1508,7 @@ module srl_nokia-acl {
         "Container to represent the progress of ACL datapath programming";
       list forwarding-complex {
         description
-          "List of forwarding complexes";
+          "List of forwarding complexes that are currently installed and online";
         key "slot-id complex-id";
         leaf slot-id {
           description
@@ -1562,7 +1567,7 @@ module srl_nokia-acl {
         }
       }
       leaf egress-mac-filtering {
-        if-feature "srl_nokia-feat:mac-acls-on-td3-monterey";
+        if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3";
         type boolean;
         default "false";
         description
@@ -1598,7 +1603,13 @@ module srl_nokia-acl {
               must "../../../srl_nokia-if:type = 'srl_nokia-if:bridged' or
                     ../../..//srl_nokia-if:type = 'srl_nokia-if:routed' or
                     not(../../../srl_nokia-if:type)" {
-                error-message "ACL allowed on subinterface type bridged or routed only";
+                error-message "ACL allowed with subinterface type bridged or routed";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'system'))" {
+                error-message "IP ACLs not allowed on system subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
+                error-message "IP ACLs not allowed on loopback subinterface";
               }
             }
             leaf ipv6-filter {
@@ -1610,13 +1621,19 @@ module srl_nokia-acl {
               must "../../../srl_nokia-if:type = 'srl_nokia-if:bridged' or
                     ../../..//srl_nokia-if:type = 'srl_nokia-if:routed' or
                     not(../../../srl_nokia-if:type)" {
-                error-message "ACL allowed on subinterface type bridged or routed only";
+                error-message "ACL allowed with subinterface type bridged or routed";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'system'))" {
+                error-message "IP ACLs not allowed on system subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
+                error-message "IP ACLs not allowed on loopback subinterface";
               }
             }
           }
           case mac {
             leaf mac-filter {
-              if-feature "srl_nokia-feat:mac-acls-on-td3-monterey";
+              if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3";
               description
                 "MAC filter to be applied on this interface";
               type leafref {
@@ -1625,7 +1642,16 @@ module srl_nokia-acl {
               must "../../../srl_nokia-if:type = 'srl_nokia-if:bridged' or
                     ../../..//srl_nokia-if:type = 'srl_nokia-if:routed' or
                     not(../../../srl_nokia-if:type)" {
-                error-message "ACL allowed on subinterface type bridged or routed only";
+                error-message "ACL allowed with subinterface type bridged or routed";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'irb'))" {
+                error-message "MAC ACLs not allowed on IRB subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'system'))" {
+                error-message "MAC ACLs not allowed on system subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
+                error-message "MAC ACLs not allowed on loopback subinterface";
               }
             }
           }
@@ -1645,7 +1671,13 @@ module srl_nokia-acl {
               must "../../../srl_nokia-if:type = 'srl_nokia-if:bridged' or
                     ../../..//srl_nokia-if:type = 'srl_nokia-if:routed' or
                     not(../../../srl_nokia-if:type)" {
-                error-message "ACL allowed on subinterface type bridged or routed only";
+                error-message "ACL allowed with subinterface type bridged or routed";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'system'))" {
+                error-message "IP ACLs not allowed on system subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
+                error-message "IP ACLs not allowed on loopback subinterface";
               }
             }
             leaf ipv6-filter {
@@ -1657,13 +1689,19 @@ module srl_nokia-acl {
               must "../../../srl_nokia-if:type = 'srl_nokia-if:bridged' or
                     ../../..//srl_nokia-if:type = 'srl_nokia-if:routed' or
                     not(../../../srl_nokia-if:type)" {
-                error-message "ACL allowed on subinterface type bridged or routed only";
+                error-message "ACL allowed with subinterface type bridged or routed";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'system'))" {
+                error-message "IP ACLs not allowed on system subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
+                error-message "IP ACLs not allowed on loopback subinterface";
               }
             }
           }
           case mac {
             leaf mac-filter {
-              if-feature "srl_nokia-feat:mac-acls-on-td3-monterey";
+              if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3";
               description
                 "MAC filter to be applied on this interface";
               type leafref {
@@ -1672,7 +1710,16 @@ module srl_nokia-acl {
               must "../../../srl_nokia-if:type = 'srl_nokia-if:bridged' or
                     ../../..//srl_nokia-if:type = 'srl_nokia-if:routed' or
                     not(../../../srl_nokia-if:type)" {
-                error-message "ACL allowed on subinterface type bridged or routed only";
+                error-message "ACL allowed with subinterface type bridged or routed";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'irb'))" {
+                error-message "MAC ACLs not allowed on IRB subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'system'))" {
+                error-message "MAC ACLs not allowed on system subinterface";
+              }
+              must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
+                error-message "MAC ACLs not allowed on loopback subinterface";
               }
             }
           }

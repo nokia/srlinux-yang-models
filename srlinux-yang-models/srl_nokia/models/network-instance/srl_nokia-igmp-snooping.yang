@@ -21,10 +21,17 @@ module srl_nokia-igmp-snooping {
   import srl_nokia-features {
     prefix srl_nokia-feat;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
 
   description
     "This yang file models configuration and state of the igmp snooping protocol on mac-vrf";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -60,22 +67,11 @@ module srl_nokia-igmp-snooping {
     }
   }
 
-  grouping igmp-group-range-keys {
-    leaf start {
+  grouping igmp-group-key {
+    leaf group {
       type srl_nokia-comm:ipv4-address;
       description
-        "Start of the group range.";
-      must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*'))" {
-        error-message "Not a valid IPv4 multicast addres";
-      }
-      must "not ((. >= '224.0.0.0') and (. <= '224.0.0.255'))" {
-        error-message "Must not be in the reserved multicast address range 224.0.0.0 to 224.0.0.255";
-      }
-    }
-    leaf end {
-      type srl_nokia-comm:ipv4-address;
-      description
-        "End of the group range.";
+        "group address.";
       must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*'))" {
         error-message "Not a valid IPv4 multicast addres";
       }
@@ -107,6 +103,7 @@ module srl_nokia-igmp-snooping {
                 path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
               }
             }
+            max-elements 8;
           }
           list source-mac {
             description
@@ -115,6 +112,7 @@ module srl_nokia-igmp-snooping {
             leaf source-mac {
               type srl_nokia-comm:mac-address;
             }
+            max-elements 8;
           }
           leaf modifier {
             type enumeration {
@@ -149,12 +147,14 @@ module srl_nokia-igmp-snooping {
     }
     leaf version {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "The version of the protocol that is sent by this multicast router.";
       type igmp-version;
     }
     leaf up-time {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "The time since this multicast router has been known in this service.";
       type uint32;
@@ -162,6 +162,7 @@ module srl_nokia-igmp-snooping {
     }
     leaf expiry-time {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "The time remaining before this multicast router is aged out.";
       type uint32;
@@ -172,18 +173,21 @@ module srl_nokia-igmp-snooping {
       description
         "Enter the igmp-v3-states context";
       leaf general-query-interval {
+        srl_nokia-ext:show-importance "high";
         description
           "The General Query Interval used by this multicast router.";
         type uint32;
         units "seconds";
       }
       leaf general-response-interval {
+        srl_nokia-ext:show-importance "high";
         description
           "The General Query Response interval used by this multicast router.";
         type uint32;
         units "seconds";
       }
       leaf robust-count {
+        srl_nokia-ext:show-importance "high";
         description
           "The Robust Count value used by this multicast router.";
         type uint32;
@@ -212,7 +216,7 @@ module srl_nokia-igmp-snooping {
       description
         "Interval at which the router sends the IGMP membership queries";
       type igmp-interval-type {
-        range "2..1024";
+        range "1..65535";
       }
       default "125";
     }
@@ -224,7 +228,7 @@ module srl_nokia-igmp-snooping {
          loss on a subnet. If a subnet anticipates losses, the robust-count
          variable can be increased.";
       type uint32 {
-        range "2..10";
+        range "1..255";
       }
       default "2";
     }
@@ -256,12 +260,14 @@ module srl_nokia-igmp-snooping {
   grouping igmp-snooping-global-state {
     leaf oper-state {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Used to report operational state of the IGMP instance.";
       type srl_nokia-comm:admin-state;
     }
     leaf transmitted-bgp-smet-routes {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Transmitted BGP SMET routes";
       type yang:counter32;
@@ -278,16 +284,20 @@ module srl_nokia-igmp-snooping {
       key "address";
       uses igmp-snooping-mrouter-state;
     }
-    leaf membership-group-count {
+    leaf proxy-membership-group-count {
       config false;
       description
         "The number of multicast groups which have been learned.";
       type uint32;
     }
-    container membership-groups {
+    container proxy-membership-groups {
       config false;
       description
-        "List of IGMP Membership information.";
+        "Proxy Database created for the network-instance.
+
+         The content of this table is used by the router to proxy the
+         reports towards the Querier, when the Querier is attached to a
+         sub-interface.";
       list group {
         key "group";
         config false;
@@ -300,10 +310,12 @@ module srl_nokia-igmp-snooping {
         }
         leaf filter-mode {
           config false;
+          srl_nokia-ext:show-importance "high";
           type srl_nokia-igmp-types:filter-mode;
         }
         leaf up-time {
           config false;
+          srl_nokia-ext:show-importance "high";
           description
             "The time elapsed since this entry was created.";
           type uint32;
@@ -321,6 +333,7 @@ module srl_nokia-igmp-snooping {
           }
           leaf up-time {
             config false;
+            srl_nokia-ext:show-importance "high";
             description
               "The time elapsed since this entry was created.";
             type uint32;
@@ -329,10 +342,14 @@ module srl_nokia-igmp-snooping {
         }
       }
     }
-    container evpn-membership-groups {
+    container proxy-evpn-membership-groups {
       config false;
       description
-        "List of IGMP Evpn Membership information.";
+        "EVPN Proxy Database created for the network-instance.
+
+         The content of this table is used by the router to proxy the
+         reports towards the remote PEs via BGP EVPN SMET (Selective
+         Multicast Ethernet Tag) routes .";
       list group {
         key "group";
         config false;
@@ -345,10 +362,12 @@ module srl_nokia-igmp-snooping {
         }
         leaf filter-mode {
           config false;
+          srl_nokia-ext:show-importance "high";
           type srl_nokia-igmp-types:filter-mode;
         }
         leaf up-time {
           config false;
+          srl_nokia-ext:show-importance "high";
           description
             "The time elapsed since this entry was created.";
           type uint32;
@@ -356,18 +375,21 @@ module srl_nokia-igmp-snooping {
         }
         leaf v1-support {
           config false;
+          srl_nokia-ext:show-importance "high";
           description
             "IGMP Version 1 is supported.";
           type boolean;
         }
         leaf v2-support {
           config false;
+          srl_nokia-ext:show-importance "high";
           description
             "IGMP Version 2 is supported.";
           type boolean;
         }
         leaf v3-support {
           config false;
+          srl_nokia-ext:show-importance "high";
           description
             "IGMP Version 3 is supported.";
           type boolean;
@@ -384,6 +406,7 @@ module srl_nokia-igmp-snooping {
           }
           leaf up-time {
             config false;
+            srl_nokia-ext:show-importance "high";
             description
               "The time elapsed since this entry was created.";
             type uint32;
@@ -440,13 +463,15 @@ module srl_nokia-igmp-snooping {
       must '. > ../query-last-member-interval' {
         error-message "query-last-member-interval must be less than query-interval";
       }
+      default "125";
     }
     leaf query-last-member-interval {
       description
         "Interval at which Group-Specific-Query packets are transmitted";
       type igmp-interval-type {
-        range "1..1023";
+        range "1..50";
       }
+      default "1";
     }
     leaf query-response-interval {
       description
@@ -454,6 +479,7 @@ module srl_nokia-igmp-snooping {
       type igmp-interval-type {
         range "1..1023";
       }
+      default "10";
     }
     leaf robust-count {
       description
@@ -487,7 +513,7 @@ module srl_nokia-igmp-snooping {
         "Generate IGMP general queries";
       type boolean;
       default "false";
-      must "not(. = 'true' and ../mrouter-port = 'true')" {
+      must 'not(. = true() and ../mrouter-port = true())' {
         error-message "mrouter-port and send-queries are mutually exclusive";
       }
     }
@@ -501,9 +527,9 @@ module srl_nokia-igmp-snooping {
     container static-membership-groups {
       description
         "Container to configure static <S,G>s for this interface.";
-      list group-range {
-        key "start end";
-        uses igmp-group-range-keys;
+      list group {
+        key "group";
+        uses igmp-group-key;
         choice source-or-starg {
           mandatory true;
           case source {
@@ -536,48 +562,60 @@ module srl_nokia-igmp-snooping {
   grouping igmp-snooping-msg-stats {
     leaf general-queries {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "General Queries.";
       type yang:zero-based-counter32;
     }
     leaf group-queries {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Group Specific Queries.";
       type yang:zero-based-counter32;
     }
     leaf group-source-queries {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Group and Source Specific Queries.";
       type yang:zero-based-counter32;
     }
     leaf v1-reports {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "V1 Reports.";
       type yang:zero-based-counter32;
     }
     leaf v2-reports {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "V2 Reports.";
       type yang:zero-based-counter32;
     }
     leaf v3-reports {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "V3 Reports.";
       type yang:zero-based-counter32;
     }
     leaf leave-messages {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Leave messages.";
       type yang:zero-based-counter32;
     }
+  }
+
+  grouping igmp-snooping-msg-rx-stats {
+    uses igmp-snooping-msg-stats;
     leaf discarded-packets {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Total number of discarded IGMP packets.";
       type yang:zero-based-counter32;
@@ -588,6 +626,7 @@ module srl_nokia-igmp-snooping {
     uses igmp-snooping-msg-stats;
     leaf error-packets {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Transmission error IGMP packets.";
       type yang:zero-based-counter32;
@@ -598,12 +637,14 @@ module srl_nokia-igmp-snooping {
     uses igmp-snooping-msg-stats;
     leaf unknown-type {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Unknown IGMP types.";
       type yang:zero-based-counter32;
     }
     leaf errors {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Forwarding Errors.";
       type yang:zero-based-counter32;
@@ -613,24 +654,28 @@ module srl_nokia-igmp-snooping {
   grouping igmp-snooping-msg-error-stats {
     leaf bad-length {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Bad length.";
       type yang:zero-based-counter32;
     }
     leaf unknown-type {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Unknown type.";
       type yang:zero-based-counter32;
     }
     leaf wrong-version {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Wrong version.";
       type yang:zero-based-counter32;
     }
     leaf import-policy-drops {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times the host IP address or group or
          source IP addresses specified in the import policy are matched.";
@@ -638,24 +683,28 @@ module srl_nokia-igmp-snooping {
     }
     leaf missing-router-alert {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Router alert flag is not set.";
       type yang:zero-based-counter32;
     }
     leaf bad-encoding {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Badly encoded packets.";
       type yang:zero-based-counter32;
     }
     leaf local-scope {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Link-local scope multicast group address.";
       type yang:zero-based-counter32;
     }
     leaf reached-maximum-number-groups {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times a join is discarded because the maximum number of
          groups is reached.";
@@ -663,6 +712,7 @@ module srl_nokia-igmp-snooping {
     }
     leaf reached-maximum-number-group-sources {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times a join is discarded because the maximum number of
          group-source combinations is reached.";
@@ -670,6 +720,7 @@ module srl_nokia-igmp-snooping {
     }
     leaf reached-maximum-number-sources {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times a join is discarded because the maximum number of
          sources per group is reached.";
@@ -677,30 +728,28 @@ module srl_nokia-igmp-snooping {
     }
     leaf out-of-memory-discarded-packets {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times a join is discarded because the router ran out of memory.";
       type yang:zero-based-counter32;
     }
-    leaf bad-ip-checksum {
-      config false;
-      description
-        "Number of times a packet is discarded because of a bad IP header checksum.";
-      type yang:zero-based-counter32;
-    }
     leaf bad-igmp-checksum {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times a packet is discarded because of a bad IGMP header checksum.";
       type yang:zero-based-counter32;
     }
     leaf zero-source-ip-address {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times a packet is discarded because it has a zero source IP address.";
       type yang:zero-based-counter32;
     }
     leaf send-query-configured-discarded-packets {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Number of times a query is discarded because send-queries is configured in the
          sub-interface.";
@@ -711,43 +760,62 @@ module srl_nokia-igmp-snooping {
   grouping igmp-snooping-statistics-state {
     container received {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Received message statistics.";
-      uses igmp-snooping-msg-stats;
+      uses igmp-snooping-msg-rx-stats;
     }
     container transmitted {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Transmit message statistics.";
       uses igmp-snooping-msg-tx-stats;
     }
     container forwarded {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Forward message statistics.";
       uses igmp-snooping-msg-fwd-stats;
     }
     container error {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Error message statistics.";
       uses igmp-snooping-msg-error-stats;
+    }
+    leaf star-g {
+      config false;
+      description
+        "The number of (*,G)s";
+      type yang:counter32;
+    }
+    leaf sg {
+      config false;
+      description
+        "The number of (S,G)s";
+      type yang:counter32;
     }
   }
 
   grouping igmp-snooping-interface-group-source-state {
     leaf source-type {
       config false;
+      srl_nokia-ext:show-importance "high";
       type srl_nokia-igmp-types:learn-type;
     }
     leaf forwarding-state {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "Traffic forwardeding state on this port.";
       type srl_nokia-igmp-types:forwarding-state;
     }
     leaf up-time {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "The time elapsed since this entry was created.";
       type uint32;
@@ -755,6 +823,7 @@ module srl_nokia-igmp-snooping {
     }
     leaf expiry-time {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "The time left before multicast group timeout.";
       type uint32;
@@ -767,14 +836,17 @@ module srl_nokia-igmp-snooping {
       "IGMP membership state.";
     leaf group-type {
       config false;
+      srl_nokia-ext:show-importance "high";
       type srl_nokia-igmp-types:learn-type;
     }
     leaf filter-mode {
       config false;
+      srl_nokia-ext:show-importance "high";
       type srl_nokia-igmp-types:filter-mode;
     }
     leaf expiry-time {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "The time left before multicast group timeout.";
       type uint32;
@@ -782,6 +854,7 @@ module srl_nokia-igmp-snooping {
     }
     leaf up-time {
       config false;
+      srl_nokia-ext:show-importance "high";
       description
         "The time elapsed since this entry was created.";
       type uint32;

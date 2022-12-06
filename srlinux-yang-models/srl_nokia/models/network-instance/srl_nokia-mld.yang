@@ -27,10 +27,17 @@ module srl_nokia-mld {
   import srl_nokia-features {
     prefix srl_nokia-feat;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
 
   description
     "This yang file models configuration and state of the mld protocol";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -392,7 +399,7 @@ module srl_nokia-mld {
     }
     uses mld-policy;
     uses mld-ssm-config;
-    container static {
+    container static-membership-groups {
       description
         "Container to configure static <S,G>s for this interface.";
       list group-range {
@@ -621,7 +628,7 @@ module srl_nokia-mld {
     }
   }
 
-  grouping mld-group-source-state {
+  grouping mld-interface-group-source-state {
     leaf source-type {
       config false;
       type srl_nokia-igmp-types:learn-type;
@@ -648,7 +655,7 @@ module srl_nokia-mld {
     }
   }
 
-  grouping mld-group-state {
+  grouping mld-interface-group-state {
     description
       "MLD membership state.";
     leaf last-reporter {
@@ -696,13 +703,13 @@ module srl_nokia-mld {
     }
   }
 
-  grouping mld-membership {
+  grouping mld-interface-membership {
     description
       "MLD membership information.";
     leaf group-count {
       config false;
       description
-        "The number of multicast groups which have been learned this interface.";
+        "The number of multicast groups which have been learned on this interface.";
       type uint32;
     }
     container membership-groups {
@@ -719,7 +726,7 @@ module srl_nokia-mld {
           description
             "Multicast address.";
         }
-        uses mld-group-state;
+        uses mld-interface-group-state;
         list source {
           config false;
           key "source";
@@ -730,7 +737,7 @@ module srl_nokia-mld {
             description
               "Source address of multicast.";
           }
-          uses mld-group-source-state;
+          uses mld-interface-group-source-state;
         }
       }
     }
@@ -742,6 +749,62 @@ module srl_nokia-mld {
       description
         "Used to report operational state of the MLD instance.";
       type srl_nokia-comm:admin-state;
+    }
+  }
+
+  grouping mld-global-membership {
+    description
+      "MLD membership information.";
+    leaf group-count {
+      config false;
+      description
+        "The number of multicast groups which have been learned on this instance.";
+      type uint32;
+    }
+    container membership-groups {
+      config false;
+      description
+        "List of MLD Membership information.";
+      list group {
+        key "group";
+        config false;
+        description
+          "Multicast group membership.";
+        leaf group {
+          type srl_nokia-comm:ipv6-address;
+          description
+            "Multicast address.";
+        }
+        list source {
+          config false;
+          key "source";
+          description
+            "Source addresses of multicast.";
+          leaf source {
+            type srl_nokia-comm:ipv6-address;
+            description
+              "Source address of multicast.";
+          }
+          list forwarding-interface {
+            config false;
+            key "interface-name";
+            leaf interface-name {
+              description
+                "Name of the interface on which this source is forwarded.";
+              type string;
+            }
+          }
+          list blocked-interface {
+            config false;
+            key "interface-name";
+            leaf interface-name {
+              description
+                "Name of the interface on which this source is blocked.";
+              type string;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -781,7 +844,7 @@ module srl_nokia-mld {
         units "seconds";
       }
     }
-    uses mld-membership;
+    uses mld-interface-membership;
     container counters {
       config false;
       description
@@ -795,6 +858,7 @@ module srl_nokia-mld {
       if-feature "srl_nokia-feat:mld";
       presence "Configure MLD";
       must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:ip-vrf')" {
+        srl_nokia-ext:if-feature "not srl_nokia-feat:mld-ipvrf";
         error-message "MLD routing configuration is not possible on network-instance of type ip-vrf";
       }
       must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
@@ -805,6 +869,7 @@ module srl_nokia-mld {
       }
       uses mld-global-config;
       uses mld-global-state;
+      uses mld-global-membership;
       list interface {
         description
           "List of MLD interfaces";

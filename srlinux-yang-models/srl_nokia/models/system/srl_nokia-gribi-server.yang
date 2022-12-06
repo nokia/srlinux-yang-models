@@ -25,6 +25,10 @@ module srl_nokia-gribi-server {
   description
     "This module defines configuration and operational state data related to the gRIBI server";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -149,7 +153,6 @@ module srl_nokia-gribi-server {
 
   grouping gribi-server-top {
     container gribi-server {
-      if-feature "srl-feat:gribi";
       description
         "Configures the gRPC Routing Information Base Interface (gRIBI) service";
       presence "Configures the gRPC Routing Information Base Interface (gRIBI) service";
@@ -266,7 +269,6 @@ module srl_nokia-gribi-server {
 
   grouping gribi-netinst-protocol {
     container gribi {
-      if-feature "srl-feat:gribi";
       presence "Configure the network instance to support gRIBI programming";
       must '(/srl-netinst:network-instance[srl-netinst:name = current()/../../srl-netinst:name]/srl-netinst:type = "srl-netinst:ip-vrf" or /srl-netinst:network-instance[srl-netinst:name = current()/../../srl-netinst:name]/srl-netinst:type = "srl-netinst:default")' {
         error-message "gRIBI programming not supported in network-instance types other than default and ip-vrf";
@@ -291,7 +293,7 @@ module srl_nokia-gribi-server {
         type uint8 {
           range "0..255";
         }
-        default "4";
+        default "6";
         description
           "Lower values indicate a higher degree of preference when deciding the route to use from different protocols.";
       }

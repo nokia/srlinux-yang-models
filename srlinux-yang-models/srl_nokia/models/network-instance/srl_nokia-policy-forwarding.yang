@@ -21,6 +21,10 @@ module srl_nokia-policy-forwarding {
   description
     "This module defines configuration and operational state data for policy-forwarding related objects.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -42,6 +46,9 @@ module srl_nokia-policy-forwarding {
         mandatory true;
         type leafref {
           path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+        }
+        must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:ip-vrf")' {
+          error-message "PBF is not supported into a network-instance type other than 'ip-vrf'";
         }
         description
           "When this leaf is set, packets matching the match criteria for the forwarding rule should be looked up in the network-instance that is referenced rather than the network-instance with which the interface is associated.";

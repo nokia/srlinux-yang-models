@@ -19,6 +19,10 @@ module srl_nokia-ip-route-tables {
   description
     "A model describing the IP routing tables of a network instance.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -95,6 +99,18 @@ module srl_nokia-ip-route-tables {
     base fib-nexthop-type;
     description
       "Next-hop will cause matching subnet-bradcast packets to be delivered to the control plane.";
+  }
+
+  identity redirect {
+    base fib-nexthop-type;
+    description
+      "Next-hop will redirect to another network-instance.";
+  }
+
+  identity interface-with-mac {
+    base fib-nexthop-type;
+    description
+      "Next-hop is associated with an outbound interface plus MAC address";
   }
 
   typedef encapsulation-header-type {
@@ -347,6 +363,11 @@ module srl_nokia-ip-route-tables {
         description
           "A system-wide unique identifier of a next-hop-group indirection object (system allocated).";
       }
+      leaf group-name-alias {
+        type string;
+        description
+          "The alias name associated with this next-hop-group.";
+      }
       leaf programmed-index {
         type uint64;
         description
@@ -375,11 +396,11 @@ module srl_nokia-ip-route-tables {
           }
         }
         leaf weight {
-          type srl_nokia-comm:percentage;
+          type uint64;
           description
-            "The actual weight applied to the next-hop within the group. This may differ from the configured weight because the datapath normalizes the weight and expresses it as a percentage. Traffic is balanced across the next-hops within the group in the proportion of weight.
+            "The configured/programmed weight assigned to the next-hop within the group
 
-             If there are two next-hops in the NHG, N1 with a weight of W1 and N2 with a weight of W2 such that W1 = nxW2, then N1 should ideally have n times as many hash buckets as N2. However, since fractional hash buckets do not exist and there are only 128 hash buckets in total for a given level of ECMP, the actual weight of a next-hop may differ from the ratio expected by taking the configured weight of the next-hop and dividing it by the sum of all the configured weights.";
+             This may be different from the actual weight used by the datapath, which changes depending on the next-hops that are up/down in the group. Traffic is balanced across the next-hops within the group in proportion of the actual weight.";
         }
         leaf resolved {
           type enumeration {
@@ -426,6 +447,13 @@ module srl_nokia-ip-route-tables {
           "The next-hop IP address. Only populated when the next-hop type is indirect or tunnel or static-mpls.
 
            For a VXLAN tunnel this is the destination VTEP address.";
+      }
+      leaf mac-address {
+        type srl_nokia-comm:mac-address;
+        description
+          "The MAC address of the next-hop that has been provided directly.
+
+           No value is populated if the next-hop IP is resolved by an ARP or IPv6 ND entry.";
       }
       leaf subinterface {
         type leafref {
@@ -498,6 +526,30 @@ module srl_nokia-ip-route-tables {
           type srl_nokia-comm:mac-address;
           description
             "VXLAN inner ethernet destination mac-address.";
+        }
+      }
+      leaf decapsulate-header {
+        description
+          "Packets matching this next-hop are decapsulated by removing the specified header.";
+        type encapsulation-header-type;
+      }
+      leaf encapsulate-header {
+        type encapsulation-header-type;
+        description
+          "Packets matching this next-hop are encapsulated by adding the specified header.";
+      }
+      container ip-in-ip {
+        description
+          "Specifies details of the IP-in-IP header added to the packet. This is valid only when encapsulate-header is ipv4 or ipv6";
+        leaf src-ip {
+          type srl_nokia-comm:ip-address;
+          description
+            "Source IP address to use for the encapsulated packet.";
+        }
+        leaf dst-ip {
+          type srl_nokia-comm:ip-address;
+          description
+            "Destination IP address to use for the encapsulated packet.";
         }
       }
     }

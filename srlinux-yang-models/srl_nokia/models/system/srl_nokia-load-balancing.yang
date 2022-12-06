@@ -16,6 +16,10 @@ module srl_nokia-load-balancing {
   description
     "This module defines configuration and operational state data related to ECMP and other load-balancing options.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -40,11 +44,11 @@ module srl_nokia-load-balancing {
       container hash-options {
         must 'destination-address = source-address' {
           error-message "Destination address and source address hashing cannot be set differently on this platform";
-          srl_nokia-ext:if-feature "srl_nokia-features:jericho2";
+          srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
         }
         must 'destination-port = source-port' {
           error-message "Destination address and source port hashing cannot be set differently on this platform";
-          srl_nokia-ext:if-feature "srl_nokia-features:jericho2";
+          srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
         }
         description
           "Container for packet header fields and other inputs used in hashing calculations";
@@ -95,7 +99,7 @@ module srl_nokia-load-balancing {
           default "true";
         }
         leaf vlan {
-          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:trident4 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:monterey";
+          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:trident4 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:tomahawk4";
           description
             "Include the received VLAN ID in the hash calculation";
           type boolean;

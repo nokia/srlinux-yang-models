@@ -20,6 +20,10 @@ module srl_nokia-sflow {
     "This yang file gives a description of sflow-agent
      configuration.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -47,6 +51,12 @@ module srl_nokia-sflow {
         default "disable";
         description
           "Administratively enable or disable sFlow for the system";
+      }
+      leaf source-address {
+        srl_nokia-ext:show-importance "high";
+        type srl_nokia-comm:ip-address;
+        description
+          "Specifies the IP address to be used as the source address in sFlow packets";
       }
       list collector {
         key "collector-id";
@@ -80,9 +90,14 @@ module srl_nokia-sflow {
         leaf source-address {
           srl_nokia-ext:show-importance "high";
           type srl_nokia-comm:ip-address;
-          mandatory true;
+          must 'not(boolean(../../source-address))' {
+            error-message "Should not have source-address configured at sflow context";
+          }
           description
             "Specifies the IP address to be used as the source address in sFlow packets";
+        }
+        must 'boolean(./source-address) or boolean(../source-address)' {
+          error-message "Should have source-address configured";
         }
         leaf port {
           srl_nokia-ext:show-importance "high";

@@ -9,6 +9,9 @@ module srl_nokia-event-handler {
   import srl_nokia-system {
     prefix srl-system;
   }
+  import srl_nokia-aaa {
+    prefix srl-aaa;
+  }
   import srl_nokia-extensions {
     prefix srl-ext;
   }
@@ -19,6 +22,10 @@ module srl_nokia-event-handler {
   description
     "This module defines configuration and operational state data related to the event handler";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -77,6 +84,10 @@ module srl_nokia-event-handler {
       enum tools-action-failed {
         description
           "Event handler was unable to perform a tools-path action in the previous execution";
+      }
+      enum state-action-failed {
+        description
+          "Event handler was unable to perform a state-path action in the previous execution";
       }
       enum script-action-failed {
         description
@@ -199,6 +210,15 @@ module srl_nokia-event-handler {
       presence "Start the event handler";
       description
         "Top-level container for configuration and state of event handler and event handling instances";
+      leaf run-as-user {
+        description
+          "The user to run event handler instances as
+
+           If no user is configured, scripts are executed as the 'admin' user.";
+        type leafref {
+          path "/srl-system:system/srl-aaa:aaa/srl-aaa:authentication/srl-aaa:user/srl-aaa:username";
+        }
+      }
       list instance {
         max-elements 20;
         description

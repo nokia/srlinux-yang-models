@@ -1,0 +1,257 @@
+module srl_nokia-platform-tcam {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/platform-tcam";
+  prefix srl_nokia-platform-tcam;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-platform-lc {
+    prefix srl_nokia-platform-lc;
+  }
+  import srl_nokia-platform-resource-monitoring {
+    prefix srl_nokia-platform-res-mon;
+  }
+  import srl_nokia-features {
+    prefix srl_feat;
+  }
+
+  description
+    "This module defines configuration and operational state related to TCAM resources in the system";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+
+  identity tcam-resources {
+    description
+      "Base type for TCAM resources";
+  }
+
+  identity if-input-ipv4 {
+    if-feature "not srl_feat:platform-vsrl";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 ACLs applied as subinterface-input filers";
+  }
+
+  identity if-output-ipv4 {
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 ACLs applied as subinterface-output filers";
+  }
+
+  identity if-input-ipv6 {
+    if-feature "not srl_feat:platform-vsrl";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv6 ACLs applied as subinterface-input filers";
+  }
+
+  identity if-output-ipv6 {
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv6 ACLs applied as subinterface-output filers";
+  }
+
+  identity cpm-capture-ipv4 {
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 cpm-filter ACLs and capture-filter ACLs";
+  }
+
+  identity cpm-capture-ipv6 {
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv6 cpm-filter ACLs and capture-filter ACLs";
+  }
+
+  identity system-capture-ipv4 {
+    if-feature "srl_feat:trident3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 capture-filter ACLs and IPv4 system-filter ACLs";
+  }
+
+  identity system-capture-ipv6 {
+    if-feature "srl_feat:trident3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv6 capture-filter ACLs and IPv6 system-filter ACLs";
+  }
+
+  identity system-capture {
+    if-feature "srl_feat:trident4";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 + IPv6 capture-filter ACLs and system-filter ACLs";
+  }
+
+  identity capture-ipv4 {
+    if-feature "srl_feat:tomahawk3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 capture-filter ACLs";
+  }
+
+  identity capture-ipv6 {
+    if-feature "srl_feat:tomahawk3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv6 capture-filter ACLs";
+  }
+
+  identity if-output-cpm-ipv4 {
+    if-feature "srl_feat:trident3 or srl_feat:tomahawk3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 egress ACLs and cpm-filter ACLs";
+  }
+
+  identity if-output-cpm-ipv6 {
+    if-feature "srl_feat:trident3 or srl_feat:tomahawk3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv6 egress ACLs and cpm-filter ACLs";
+  }
+
+  identity if-output-cpm {
+    if-feature "srl_feat:trident4";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 + IPv6 egress ACLs and cpm-filter ACLs";
+  }
+
+  identity if-input-mac {
+    if-feature "srl_feat:trident3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by MAC ACLs applied as subinterface-input filers";
+  }
+
+  identity if-output-cpm-mac {
+    if-feature "srl_feat:trident3";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by MAC egress ACLs and MAC cpm-filter ACLs";
+  }
+
+  identity policy-forwarding-ipv4 {
+    if-feature "srl_feat:policy-based-forwarding-dscp-ip-protocol and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by IPv4 policy-forwarding entries";
+  }
+
+  identity if-input-policer {
+    if-feature "srl_feat:ingress-subif-policing";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by ingress subinterface policer templates";
+  }
+
+  identity if-input-ipv4-qos {
+    if-feature "srl_feat:ip-qos-multifield";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries associated with IPv4 multi-field QoS classification entries, when applied to subinterface input";
+  }
+
+  identity if-input-ipv6-qos {
+    if-feature "srl_feat:ip-qos-multifield";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries associated with IPv6 multi-field QoS classification entries, when applied to subinterface input";
+  }
+
+  grouping tcam-resource-monitoring {
+    container tcam {
+      list resource {
+        key "name";
+        leaf name {
+          type identityref {
+            base tcam-resources;
+          }
+          description
+            "The name of the TCAM resource";
+        }
+        leaf rising-threshold-log {
+          type srl_nokia-comm:percentage;
+          default "90";
+          description
+            "Sets the threshold that triggers the generation of a WARNING log whenever the utilization of the TCAM resource in any linecard/complex/core reaches this value in a rising direction
+
+             On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
+        }
+        leaf falling-threshold-log {
+          type srl_nokia-comm:percentage;
+          default "70";
+          description
+            "Sets the threshold that triggers the generation of a NOTICE log whenever the utilization of the TCAM resource in any linecard/complex/core falls reaches this value in a falling direction.
+
+             On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
+        }
+      }
+    }
+  }
+
+  grouping tcam-utilization {
+    container tcam {
+      config false;
+      list resource {
+        srl_nokia-ext:delivery-node-override "true";
+        srl_nokia-ext:stream-mode "sample=5";
+        key "name";
+        leaf name {
+          type identityref {
+            base tcam-resources;
+          }
+          description
+            "The name of the TCAM resource";
+        }
+        leaf free-static {
+          type uint32;
+          description
+            "The number of available and unused TCAM entries for the entry type, assuming that the number of dynamic TCAM slices that are currently allocated to the entry type remains constant at its current value.";
+        }
+        leaf free-dynamic {
+          if-feature "srl_feat:dynamic-tcam";
+          type uint32;
+          description
+            "The number of available and unused TCAM entries for the entry type, assuming that all the remaining unused TCAM slices would be dynamically allocated to this one type of entry (subject to chip level constraints on the placement of double-wide and triple-wide TCAM slice groups).";
+        }
+        leaf reserved {
+          type uint32;
+          description
+            "The number of TCAM entries that are currently reserved in this resource pool. Reservation happens when a configuration change is committed. Reserved entries may not be programmed yet if the commit has just occurred.";
+        }
+        leaf programmed {
+          type uint32;
+          description
+            "The number of TCAM entries belonging to this resource that are currently programmed into hardware. When the number of programmed entries equals the number of reserved entries HW programming of this resource type has finished.";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-res-mon:resource-monitoring" {
+    if-feature "not srl_feat:platform-vsrl";
+    uses tcam-resource-monitoring;
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-lc:linecard/srl_nokia-platform-lc:forwarding-complex" {
+    if-feature "not srl_feat:platform-vsrl";
+    uses tcam-utilization;
+  }
+}

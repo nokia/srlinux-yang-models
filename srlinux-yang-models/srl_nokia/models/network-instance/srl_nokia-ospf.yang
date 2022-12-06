@@ -42,6 +42,10 @@ module srl_nokia-ospf {
   description
     "This yang file models configuration and state of the OSPF protocol";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -2009,7 +2013,7 @@ module srl_nokia-ospf {
         uses ospf-as-lsa-totals;
         uses ospf-as-lsdb-structure;
         uses srl_nokia-ldp:ldp-sync-global-config;
-        must './router-id != default or (../../../router-id != default and ../../../router-id != "0.0.0.0")' {
+        must './router-id or (../../../srl_nokia-netinst:router-id and ../../../srl_nokia-netinst:router-id != "0.0.0.0")' {
           error-message "Must have router-id defined in network-instance or in ospf-instance and it can not be 0.0.0.0";
         }
         must "(./version = 'srl_nokia-ospf-types:ospf-v2') or (./traffic-engineering/advertisement = false())" {

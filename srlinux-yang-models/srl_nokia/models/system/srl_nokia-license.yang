@@ -1,0 +1,121 @@
+module srl_nokia-license {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/license";
+  prefix srl_nokia-license;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  description
+    "This module defines configuration and operational state data for licenses.";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+
+  grouping license-config {
+    description
+      "Configuration options for system licenses";
+    leaf id {
+      type srl-comm:name;
+      description
+        "Unique identifier for this license";
+    }
+    leaf admin-state {
+      type srl-comm:admin-state;
+      default "disable";
+      description
+        "Enable or disable the use of this license";
+    }
+    leaf preferred {
+      type boolean;
+      default "false";
+      description
+        "Set a license as being preferred
+
+         Amongst all valid licenses, the preferred license will be chosen to become active. If no license is set as preferred or the preferred license is not valid, the valid license with the most distant expiry is chosen to become active.
+
+         Only a single license can be set as preferred.";
+    }
+    leaf data {
+      type string;
+      description
+        "Content of the license
+
+         This content includes a preceding UUID, followed by a space and the license data.
+
+         For example:
+         00000000-0000-0000-0000-000000000000 aACUAx...rYzNRPT0AAAAA";
+    }
+    leaf description {
+      type srl-comm:description;
+      description
+        "A user provided description for the license";
+    }
+  }
+
+  grouping license-state {
+    description
+      "Operational state data for system licenses";
+    leaf issued-date {
+      config false;
+      type srl-comm:date-and-time;
+      description
+        "Date and time the license was issued";
+    }
+    leaf expiration-date {
+      config false;
+      type srl-comm:date-and-time-delta;
+      description
+        "Date and time the license will expire";
+    }
+    leaf expired {
+      config false;
+      type boolean;
+      description
+        "Indicates if the license has expired";
+    }
+    leaf valid {
+      config false;
+      type boolean;
+      description
+        "Indicates if the license is valid for use";
+    }
+    leaf in-use {
+      config false;
+      type boolean;
+      description
+        "Indicates if the license is actively in use";
+    }
+  }
+
+  grouping license-top {
+    description
+      "Top-level grouping for license model";
+    list license {
+      key "id";
+      max-elements 5;
+      description
+        "List of licenses configured on the system";
+      uses license-config;
+      uses license-state;
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl-feat:license";
+    srl-ext:first-released "22.11.1";
+    uses license-top;
+  }
+}

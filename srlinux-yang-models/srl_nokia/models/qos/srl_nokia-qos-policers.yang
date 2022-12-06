@@ -6,16 +6,17 @@ module srl_nokia-qos-policers {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
-  import srl_nokia-qos {
-    prefix srl_nokia-qos;
-  }
-  import srl_nokia-interfaces {
-    prefix srl_nokia-if;
-  }
   import srl_nokia-features {
     prefix srl-feat;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -41,7 +42,14 @@ module srl_nokia-qos-policers {
       }
       enum multicast {
         description
-          "A packet is 'multicast' if the destination address is a multicast address.";
+          "A packet is 'multicast' if the destination address is a multicast address
+
+           On TD3 systems this includes multicast packets with a known destination/group address and multicast packets with an unknown destination/group address. On TD4 systems this only includes known multicast packets.";
+      }
+      enum unknown-multicast {
+        if-feature "srl-feat:trident4";
+        description
+          "Multicast packets with an unknown destination/group address";
       }
     }
   }
@@ -65,9 +73,35 @@ module srl_nokia-qos-policers {
     }
   }
 
+  grouping policers-top {
+    container policers {
+      if-feature "srl-feat:future-0-0";
+      description
+        "Global confugration of user defined policer-names
+         Per default there are no policers created";
+      list policer {
+        description
+          "List of policers";
+        key "name";
+        leaf name {
+          description
+            "The name assigned to the policer";
+          type srl_nokia-comm:name;
+        }
+        leaf policer-id {
+          description
+            "Policer index within a single block";
+          type uint8 {
+            range "0..31";
+          }
+        }
+      }
+    }
+  }
+
   grouping policer-templates-top {
     container policer-templates {
-      if-feature srl-feat:ingress-subif-policing;
+      if-feature "srl-feat:ingress-subif-policing";
       description
         "Policer templates used for subinterface traffic metering.";
       list policer-template {
@@ -83,26 +117,35 @@ module srl_nokia-qos-policers {
           max-elements 32;
           description
             "The list of policer instances belonging to the template definition.";
-          key sequence-id;
+          key "sequence-id";
           leaf sequence-id {
             type uint32 {
               range "1..65535";
             }
             description
-                "A number to indicate the relative evaluation order of the different policers in a template; policers with lower sequence-id numbers are evaluated before policers with higher sequence-id numbers";
+              "A number to indicate the relative evaluation order of the different policers in a template; policers with lower sequence-id numbers are evaluated before policers with higher sequence-id numbers";
           }
           list forwarding-class {
             description
-                "The list of forwarding classes with traffic to be sent to the policer. If this list is not configured then all subinterface traffic is matched.";
+              "The list of forwarding classes with traffic to be sent to the policer. If this list is not configured then all subinterface traffic is matched.";
             key "fc";
             leaf fc {
+              type union {
+                type leafref {
+                  path "../../../../../forwarding-classes/forwarding-class/name";
+                }
+                type srl_nokia-comm:default-forwarding-class;
+              }
               description
-                "A forwarding class that has traffic to match to the policer.";
-              type srl_nokia-comm:forwarding-class;
+                "A forwarding class that has traffic to match to the policer";
+              must "../../../../../forwarding-classes/forwarding-class[name = current()]/name = current () or
+                    re-match(.,'fc[0-7]')" {
+                error-message "forwarding-class doesn't exist";
+              }
             }
             leaf-list forwarding-type {
               ordered-by system;
-              max-elements 4;
+              max-elements 5;
               description
                 "The list of forwarding types, belonging to this forwarding-class, to match to the policer. If none are specified, this implies ALL forwarding types.";
               type forwarding-type;
@@ -113,28 +156,32 @@ module srl_nokia-qos-policers {
             type uint32;
             units "kbps";
             description
-              "The peak information rate (PIR) of the policer, defined in kilobits (1024 bits) per second.";
+              "The peak information rate (PIR) of the policer, defined in kilobits (1024 bits) per second.
+               On 7220-D2/D3 the minimum rate is 8 Kbps";
           }
           leaf committed-rate-kbps {
             mandatory true;
             type uint32;
             units "kbps";
             description
-              "The committed information rate (CIR) of the policer, defined in kilobits (1024 bits) per second.";
+              "The committed information rate (CIR) of the policer, defined in kilobits (1024 bits) per second
+               On 7220-D2/D3 the minimum rate  is 8 Kbps";
           }
           leaf maximum-burst-size {
             mandatory true;
             type uint32;
             units "bytes";
             description
-              "Maximum PIR bucket depth in bytes.";
+              "Maximum PIR bucket depth in bytes.
+               On 7220-D2/D3 the lower limit is 512 Bytes and higher limit is 268 MB";
           }
           leaf committed-burst-size {
             mandatory true;
             type uint32;
             units "bytes";
             description
-              "Maximum CIR bucket depth in bytes.";
+              "Maximum CIR bucket depth in bytes.
+               On 7220-D2/D3 the lower limit is 512 Bytes and higher limit is 268 MB";
           }
           container exceed-action {
             description
@@ -184,45 +231,6 @@ module srl_nokia-qos-policers {
           }
           default "violating-focus";
         }
-      }
-    }
-  }
-
-  grouping subinterface-qos-input-policers {
-    container policers {
-      if-feature srl-feat:ingress-subif-policing;
-      description
-        "Container with information about the policers applied to input traffic on the subinterface.";
-      leaf policer-template {
-        must "not(starts-with(../../../../../srl_nokia-if:name,'irb'))" {
-            error-message "Not supported on IRB interfaces";
-        }
-        must "../../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
-            error-message "policer not allowed on subinterface with type local-mirror-dest";
-        }
-
-
-        description
-          "The name of the policer template applied to input traffic on the subinterface
-
-           If this is configured but no value is displayed in state information then there were insufficient resources to completely apply the template.";
-        type leafref {
-          path "/srl_nokia-qos:qos/srl_nokia-qos-policers:policer-templates/srl_nokia-qos-policers:policer-template/srl_nokia-qos-policers:name";
-        }
-      }
-      list policer {
-        config false;
-        description
-          "The list of policer instances belonging to the template definition.";
-        key sequence-id;
-        leaf sequence-id {
-            type uint32 {
-              range "1..65535";
-            }
-            description
-              "Policer sequeunce-id";
-        }
-        uses policer-instance-state;
       }
     }
   }
@@ -315,13 +323,5 @@ module srl_nokia-qos-policers {
            Not available in violating-focus mode";
       }
     }
-  }
-
-  augment "/srl_nokia-qos:qos" {
-    uses policer-templates-top;
-  }
-
-  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-qos:qos/srl_nokia-qos:input" {
-    uses subinterface-qos-input-policers;
   }
 }

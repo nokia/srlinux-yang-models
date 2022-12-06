@@ -19,6 +19,10 @@ module srl_nokia-tunnel-tables {
   description
     "A model describing the tunnel tables of a network instance.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -115,6 +119,23 @@ module srl_nokia-tunnel-tables {
     }
   }
 
+  grouping ip-in-ip-fields {
+    container ip-in-ip {
+      leaf destination-address {
+        srl_nokia-ext:show-importance "high";
+        type srl_nokia-comm:ip-address;
+        description
+          "The IP address that identifies the destination of the tunnel.";
+      }
+      leaf source-address {
+        srl_nokia-ext:show-importance "high";
+        type srl_nokia-comm:ip-address;
+        description
+          "The IP address that identifies the source of the tunnel.";
+      }
+    }
+  }
+
   grouping tunnel-statistics {
     container statistics {
       leaf active-tunnels {
@@ -197,6 +218,7 @@ module srl_nokia-tunnel-tables {
         }
         uses tunnel-entry-common-fields;
         uses vxlan-fields;
+        uses ip-in-ip-fields;
       }
       uses tunnel-statistics;
       uses tunnel-summary;
@@ -230,6 +252,7 @@ module srl_nokia-tunnel-tables {
         }
         uses tunnel-entry-common-fields;
         uses vxlan-fields;
+        uses ip-in-ip-fields;
       }
       uses tunnel-statistics;
       uses tunnel-summary;

@@ -22,6 +22,10 @@ module srl_nokia-platform-vxdp {
   description
     "This module defines configuration and operational state data related to vXDP";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -41,11 +45,15 @@ module srl_nokia-platform-vxdp {
     description
       "Grouping for vXDP configuration";
     leaf-list cpu-set {
+      min-elements 1;
       description
-        "The list of CPUs pinned to vXDP threads
+        "The list of CPUs used for vXDP PMD threads
 
-         These CPUs should be isolated out-of-band of SR Linux";
-      type uint8;
+         These CPUs should be isolated out-of-band of SR Linux, and are used for forwarder and NIC threads for vhost-user, physical, and lif interfaces.
+         It is expected that the sibling of a CPU is always passed to vXDP, and in order to enforce this if a single CPU of a core is passed, vXDP will derive and bind to the undefined sibling. vXDP supports the passing of both single and both siblings together, and will perform a merge to ensure all siblings are consumed.";
+      type uint16 {
+        range "0..1024";
+      }
     }
   }
 
@@ -60,7 +68,7 @@ module srl_nokia-platform-vxdp {
       leaf id {
         description
           "Reference to a CPU within the configured cpu-set";
-        type uint8;
+        type uint16;
       }
       leaf oper-state {
         description
@@ -75,6 +83,7 @@ module srl_nokia-platform-vxdp {
           enum no-hugepages;
           enum irq-not-masked;
           enum sibling-not-isolated;
+          enum invalid-cpu-id;
         }
       }
       leaf socket-id {
@@ -82,10 +91,15 @@ module srl_nokia-platform-vxdp {
           "The socket this CPU resides on";
         type uint8;
       }
-      leaf sibling {
+      leaf core-id {
+        description
+          "The physical core this CPU resides on";
+        type uint8;
+      }
+      leaf sibling-id {
         description
           "The sibling CPU (if any) residing on the same core";
-        type uint8;
+        type uint16;
       }
     }
     container statistics {

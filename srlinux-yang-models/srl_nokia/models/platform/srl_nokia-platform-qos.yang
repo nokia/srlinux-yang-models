@@ -25,6 +25,10 @@ module srl_nokia-platform-qos {
   description
     "This module defines configuration and operational state related to QoS resources in the system";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -64,9 +68,7 @@ module srl_nokia-platform-qos {
   identity rewrite-profiles {
     base qos-resources;
     description
-      "On the 7250 IXR, a rewrite-profile resource is used every time a different combination of IPv4 DSCP rewrite-rule and IPv6 DSCP rewrite-rule is applied to an egress subinterface of the 7250 IXR IMM. There are 32 of these resources.
-
-       On the SAS, a rewrite-profile is used every time a different combination of dot1p and MPLS traffic-class rewrite-rule is applied to an egress subinterface of the system. There are 15 of these resources.";
+      "On the 7250 IXR, a rewrite-profile resource is used every time a different combination of IPv4 DSCP rewrite-rule and IPv6 DSCP rewrite-rule is applied to an egress subinterface of the 7250 IXR IMM. There are 32 of these resources.";
   }
 
   identity rewrite-policies {
@@ -140,7 +142,7 @@ module srl_nokia-platform-qos {
         "Container for utilization statistics of the packet buffer memory";
       leaf used {
         config false;
-        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:monterey";
+        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3";
         type uint64;
         units "bytes";
         description
@@ -148,7 +150,7 @@ module srl_nokia-platform-qos {
       }
       leaf free {
         config false;
-        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:monterey";
+        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3";
         type uint64;
         units "bytes";
         description
@@ -156,11 +158,11 @@ module srl_nokia-platform-qos {
       }
       leaf reserved {
         config false;
-        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:monterey";
+        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3";
         type uint64;
         units "bytes";
         description
-          "Reserved for internal purposes.";
+          "Buffer memory reserved for proper system operation and by the user (due to assignment of non-zero CBS for certain queues, on platforms that support CBS).";
       }
       container sram {
         config false;
@@ -205,7 +207,7 @@ module srl_nokia-platform-qos {
   }
 
   augment "/srl_nokia-platform:platform/srl_nokia-platform-lc:linecard/srl_nokia-platform-lc:forwarding-complex" {
-    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:monterey";
+    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3";
     uses buffer-memory;
   }
 }

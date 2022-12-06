@@ -1,0 +1,175 @@
+module srl_nokia-acl-qos {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/acl-qos";
+  prefix srl_nokia-acl-qos;
+
+  import srl_nokia-acl {
+    prefix srl_nokia-acl;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  description
+    "This module defines configuration and operational state data for access control lists (ACL) support of QoS classification conditions and actions.";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+
+  typedef drop-probability {
+    description
+      "The various drop probability classifications that can be applied to a packet";
+    type enumeration {
+      enum low {
+        description
+          "Traffic that should be dropped last when there is congestion. Internally this is traffic that is
+           colored green.";
+        value 1;
+      }
+      enum medium {
+        description
+          "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
+        value 2;
+      }
+      enum high {
+        description
+          "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
+        value 3;
+      }
+    }
+  }
+
+  grouping qos-actions {
+    container action {
+      description
+        "Container for the actions to be applied to packets matching the classifier entry.";
+      leaf forwarding-class {
+        type union {
+          type srl_nokia-comm:default-forwarding-class;
+          type leafref {
+            path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+          }
+        }
+        description
+          "The forwarding class to which the DSCP value is mapped";
+      }
+      leaf drop-probability {
+        type drop-probability;
+        description
+          "Assign matching packets to the specified drop probability level";
+      }
+      container rewrite {
+        description
+          "Rewrite actions associated with packets that match the classifier entry. Where a packet matches these criteria, the specified rewrite actions should be performed.";
+        leaf set-dscp {
+          type uint8 {
+            range "0..63";
+          }
+          description
+            "Sets the 6-bit DSCP (differentiated services code point) value in the IP packet header.";
+          reference
+            "RFC 2474 - Definition of the Differentiated Services Field (DS Field) in the IPv4 and IPv6 Headers";
+        }
+      }
+    }
+  }
+
+  grouping multifield-classification-policies {
+    container multifield {
+      description
+        "Container for multifield classification policies";
+      list ipv4-policy {
+        description
+          "List of IPv4 classifier policies";
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Name of the IPv4 classifier policy.";
+        }
+        list entry {
+          description
+            "List of classifier rules.";
+          key "sequence-id";
+          leaf sequence-id {
+            type uint32 {
+              range "1..65535";
+            }
+            description
+              "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+          }
+          uses srl_nokia-acl:common-ipv4-filter-entry-match-config;
+          uses qos-actions;
+          uses srl_nokia-acl:interface-filter-entry-tcam;
+        }
+      }
+      list ipv6-policy {
+        description
+          "List of IPv6 classifier policies";
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Name of the IPv6 classifier policy.";
+        }
+        list entry {
+          description
+            "List of classifier rules.";
+          key "sequence-id";
+          leaf sequence-id {
+            type uint32 {
+              range "1..65535";
+            }
+            description
+              "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+          }
+          uses srl_nokia-acl:common-ipv6-filter-entry-match-config;
+          uses qos-actions;
+          uses srl_nokia-acl:interface-filter-entry-tcam;
+        }
+      }
+    }
+  }
+
+  grouping subinterface-multifield-classifier {
+    container multifield {
+      leaf ipv4-policy {
+        type leafref {
+          path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-acl-qos:multifield/srl_nokia-acl-qos:ipv4-policy/srl_nokia-acl-qos:name";
+        }
+        description
+          "Reference to the name of an IPv4 multifield classifier policy.";
+      }
+      leaf ipv6-policy {
+        type leafref {
+          path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-acl-qos:multifield/srl_nokia-acl-qos:ipv6-policy/srl_nokia-acl-qos:name";
+        }
+        description
+          "Reference to the name of an IPv6 multifield classifier policy.";
+      }
+    }
+  }
+
+  augment "/srl_nokia-qos:qos/srl_nokia-qos:classifiers" {
+    if-feature "srl-feat:ip-qos-multifield";
+    uses multifield-classification-policies;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-qos:qos/srl_nokia-qos:input/srl_nokia-qos:classifiers" {
+    if-feature "srl-feat:ip-qos-multifield";
+    uses subinterface-multifield-classifier;
+  }
+}

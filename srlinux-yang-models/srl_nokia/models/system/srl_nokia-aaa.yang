@@ -33,6 +33,10 @@ module srl_nokia-aaa {
 
      Portions of this model reuse data definitions or structure from RFC 7317 - A YANG Data Model for System Management";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -309,7 +313,7 @@ module srl_nokia-aaa {
         description
           "Indicates if a lockout is active for the user
 
-          Lockouts can occur after successive failed logins, and can be cleared by 'tools system aaa authentication user <username> unlock'";
+           Lockouts can occur after successive failed logins, and can be cleared by 'tools system aaa authentication user <username> unlock'";
       }
       leaf start {
         type srl-comm:date-and-time;
@@ -322,7 +326,6 @@ module srl_nokia-aaa {
           "Indicates the time at which the most recent lockout for this user ended or will end";
       }
     }
-
   }
 
   grouping aaa-authentication-user-state {
@@ -373,9 +376,10 @@ module srl_nokia-aaa {
         srl-ext:hash-algorithm "ar2";
       }
       description
-        "The user password, supplied as cleartext
+        "The user password, supplied either as cleartext or as a hashed value
 
-         The system will hash the value on input, storing only the hashed value";
+         If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+         If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
     }
     leaf-list ssh-key {
       max-elements 32;
@@ -431,9 +435,7 @@ module srl_nokia-aaa {
       type enumeration {
         enum cli;
         enum gnmi;
-        enum gribi {
-          if-feature "srl-feat:gribi";
-        }
+        enum gribi;
         enum p4rt {
           if-feature "srl-feat:p4rt";
         }
@@ -491,10 +493,12 @@ module srl_nokia-aaa {
           srl-ext:generated-class-name "PasswordHash";
           srl-ext:hash-algorithm "ar2";
         }
+        default "$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ==";
         description
-          "The admin password, supplied as cleartext
+          "The admin password, supplied either as cleartext or as a hashed value
 
-           The system will hash the value, storing only the hashed value";
+           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+           If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
       }
       uses aaa-authentication-user-state;
       uses aaa-authentication-user-lockout;
@@ -519,10 +523,12 @@ module srl_nokia-aaa {
           srl-ext:generated-class-name "PasswordHash";
           srl-ext:hash-algorithm "sha2";
         }
+        default "$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0";
         description
-          "The linuxadmin password, supplied as cleartext
+          "The linuxadmin password, supplied either as cleartext or as a hashed value
 
-           The system will hash the value, storing only the hashed value";
+           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+           If provided as a hashed value, the value should include any '$' characters, for example '$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0'.";
       }
     }
   }
@@ -676,9 +682,7 @@ module srl_nokia-aaa {
         "Top-level container for global authentication data";
       uses aaa-authentication-config;
       uses aaa-authentication-admin-users;
-      uses aaa-authentication-linuxadmin-users {
-          if-feature "srl-feat:future-22-6-4";
-      }
+      uses aaa-authentication-linuxadmin-users;
       uses aaa-authentication-user-top;
       uses aaa-state-sessions-top;
       uses srl-aaa-password:aaa-password-top;

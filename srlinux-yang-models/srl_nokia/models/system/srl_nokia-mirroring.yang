@@ -28,6 +28,10 @@ module srl_nokia-mirroring {
   description
     "This module defines configuration and operational state data for mirroring (SPAN/ERSPAN).";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -75,7 +79,7 @@ module srl_nokia-mirroring {
     description
       "Top-level grouping containing a list of mirroring instances.";
     list mirroring-instance {
-      max-elements 4;
+      max-elements 8;
       key "name";
       description
         "Mirroring instances configured on the local system";
@@ -124,6 +128,7 @@ module srl_nokia-mirroring {
       description
         "Configure mirror source(s)";
       list interface {
+        if-feature "not srl-feat:platform-7250-ixr-e";
         description
           "List of interfaces used as mirror source";
         key "name";
@@ -142,6 +147,7 @@ module srl_nokia-mirroring {
         max-elements 128;
       }
       list subinterface {
+        if-feature "not srl-feat:platform-7250-ixr-e";
         description
           "List of subinterfaces used as mirror source";
         key "name";
@@ -203,6 +209,7 @@ module srl_nokia-mirroring {
       description
         "Configure mirror destination";
       leaf local {
+        if-feature "not srl-feat:platform-7250-ixr-e";
         description
           "subinterface of type local-mirror-dest used as local mirror destination";
         type mirroring-instance-subintf-ref;

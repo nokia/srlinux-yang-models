@@ -34,6 +34,10 @@ module srl_nokia-network-instance {
   description
     "This yang file gives a description of a network-instance. This may be a Layer 3 forwarding construct such as a virtual routing and forwarding (VRF) instance, or a Layer 2 instance such as a virtual switch instance (VSI). Mixed Layer 2 and Layer 3 instances are also supported.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -275,6 +279,9 @@ module srl_nokia-network-instance {
           }
           must "not(starts-with(.,'irb') and ../../bridge-table/proxy-arp)" {
             error-message "IRB interfaces cannot be configured with proxy-arp";
+          }
+          must "not(starts-with(.,'irb') and ../../bridge-table/proxy-nd)" {
+            error-message "IRB interfaces cannot be configured with proxy-nd";
           }
           description
             "Identifier of sub-interface used in this network-instance";

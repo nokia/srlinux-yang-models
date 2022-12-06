@@ -3,6 +3,9 @@ module srl_nokia-tools-sync {
   namespace "urn:srl_nokia/tools-sync";
   prefix srl_nokia-tools-sync;
 
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
   import srl_nokia-tools-system {
     prefix srl-tools-system;
   }
@@ -10,6 +13,10 @@ module srl_nokia-tools-sync {
   description
     "Model for operational commands on time protocols and statstics";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -27,6 +34,7 @@ module srl_nokia-tools-sync {
     description
       "Tools grouping for sync";
     container sync {
+      if-feature "srl_nokia-feat:platform-7220-d5";
       description
         "Top-level grouping for sync operational commands";
       container ptp {
@@ -35,6 +43,8 @@ module srl_nokia-tools-sync {
         container statistics {
           leaf clear {
             type empty;
+            description
+              "Clears all PTP statistics for PTP.";
           }
         }
         list instance {
@@ -46,9 +56,26 @@ module srl_nokia-tools-sync {
               range "1..10";
             }
           }
-          container statistics {
-            leaf clear {
-              type empty;
+          container default-ds {
+            description
+              "The default data set of the PTP Instance.
+               In the context of the protocol, this data set is required
+               for an Ordinary Clock or Boundary Clock";
+            container statistics {
+              leaf clear {
+                type empty;
+                description
+                  "Clears PTP statistics in the default-ds.";
+              }
+            }
+            container time-recovery-engine {
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Clears all PTP statistics for PTP time recovery engine.";
+                }
+              }
             }
           }
           list ptp-port-ds {
@@ -61,6 +88,8 @@ module srl_nokia-tools-sync {
             container statistics {
               leaf clear {
                 type empty;
+                description
+                  "Clears all PTP statistics for this PTP Port DS.";
               }
             }
           }

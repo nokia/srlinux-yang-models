@@ -31,6 +31,10 @@ module srl_nokia-bgp {
   description
     "This yang file models configuration and state of the BGP protocol";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -58,12 +62,6 @@ module srl_nokia-bgp {
   revision 2019-11-30 {
     description
       "SRLinux 19.11.1";
-  }
-
-  typedef autonomous-system-number {
-    type uint32 {
-      range "1..4294967295";
-    }
   }
 
   typedef ip-ecmp {
@@ -245,7 +243,7 @@ module srl_nokia-bgp {
       }
       leaf peer-as {
         srl_nokia-ext:show-importance "high";
-        type autonomous-system-number;
+        type srl_nokia-comm:as-number;
         description
           "The autonomous system number expected from each peer in the group
 
@@ -393,17 +391,11 @@ module srl_nokia-bgp {
             "Configure support for the advertisement and receipt of multiple paths for a single IPv4-unicast prefix with any single peer in the peer-group";
           leaf receive {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to receive multiple path advertisements for a single IPv4-unicast prefix from any single peer in the peer-group";
           }
           leaf send {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to send multiple path advertisements for a single IPv4-unicast prefix towards any single peer in the peer-group";
           }
@@ -412,9 +404,6 @@ module srl_nokia-bgp {
               type uint8 {
                 range "1..16";
               }
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the N best paths for a single IPv4-unicast prefix, or as many as possible until there are no more valid paths to send.
 
@@ -422,9 +411,6 @@ module srl_nokia-bgp {
             }
             leaf send-multipath {
               type empty;
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the used paths for a single IPv4-unicast prefix, including all paths that are multipaths.";
             }
@@ -464,7 +450,7 @@ module srl_nokia-bgp {
           leaf prevent-teardown {
             if-feature "srl_nokia-feat:bgp-prefix-limit";
             type boolean;
-            default "true";
+            default "false";
             description
               "When false the session is immediately torn down when the number of received IPv4 routes exceeds the configured limit.";
           }
@@ -493,17 +479,11 @@ module srl_nokia-bgp {
             "Configure support for the advertisement and receipt of multiple paths for a single IPv6-unicast prefix with any single peer in the peer-group";
           leaf receive {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to receive multiple path advertisements for a single IPv6-unicast prefix from any single peer in the peer-group";
           }
           leaf send {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to send multiple path advertisements for a single IPv6-unicast prefix towards any single peer in the peer-group";
           }
@@ -512,9 +492,6 @@ module srl_nokia-bgp {
               type uint8 {
                 range "1..16";
               }
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the N best paths for a single IPv6-unicast prefix, or as many as possible until there are no more valid paths to send.
 
@@ -522,9 +499,6 @@ module srl_nokia-bgp {
             }
             leaf send-multipath {
               type empty;
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the used paths for a single IPv6-unicast prefix, including all paths that are multipaths.";
             }
@@ -550,7 +524,7 @@ module srl_nokia-bgp {
           leaf prevent-teardown {
             if-feature "srl_nokia-feat:bgp-prefix-limit";
             type boolean;
-            default "true";
+            default "false";
             description
               "When false the session is immediately torn down when the number of received IPv6 routes exceeds the configured limit.";
           }
@@ -618,7 +592,7 @@ module srl_nokia-bgp {
         key "as-number";
         max-elements 1;
         leaf as-number {
-          type autonomous-system-number;
+          type srl_nokia-comm:as-number;
           description
             "The local autonomous system number used to override the global ASN on this group of BGP sessions
 
@@ -650,7 +624,10 @@ module srl_nokia-bgp {
         leaf cluster-id {
           description
             "The cluster-id to insert into the CLUSTER_LIST attribute when reflecting routes received by or sent to each client in the peer-group. The default is inherited from instance level configuration.";
-          type srl_nokia-comm:dotted-quad;
+          type union {
+            type uint32;
+            type srl_nokia-comm:dotted-quad;
+          }
         }
       }
       container send-community {
@@ -737,6 +714,12 @@ module srl_nokia-bgp {
       }
       uses traceoptions;
       container transport {
+        leaf mtu-discovery {
+          if-feature "srl_nokia-feat:bgp-mtu-discovery";
+          type boolean;
+          description
+            "Turns path mtu discovery for BGP TCP sessions on (true) or off (false)";
+        }
         leaf tcp-mss {
           type uint16 {
             range "536..9446";
@@ -1302,6 +1285,8 @@ module srl_nokia-bgp {
               "Indicates that the peer is EBGP (local-as != peer-as).";
           }
         }
+        description
+          "The session type. The type is EBGP when the local AS and peer AS are different, and the type is IBGP when the local AS and peer AS have the same value.";
       }
       uses bgp-policy;
       leaf local-preference {
@@ -1320,7 +1305,7 @@ module srl_nokia-bgp {
       }
       leaf peer-as {
         srl_nokia-ext:show-importance "high";
-        type autonomous-system-number;
+        type srl_nokia-comm:as-number;
         description
           "The autonomous system number expected from the peer
 
@@ -1481,7 +1466,7 @@ module srl_nokia-bgp {
           config false;
           type boolean;
           description
-            "Set to true when the router is actively helping the neighbor for at least one address family – i.e. for that address family the peer restarted with F=1 in its capability and the stale-routes-time has not expired yet";
+            "Set to true when the router is actively helping the neighbor for at least one address family - i.e. for that address family the peer restarted with F=1 in its capability and the stale-routes-time has not expired yet";
         }
         container neighbor-capability {
           config false;
@@ -1525,17 +1510,11 @@ module srl_nokia-bgp {
             "Configure support for the advertisement and receipt of multiple paths for a single IPv4-unicast prefix with the peer";
           leaf receive {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to receive multiple path advertisements for a single IPv4-unicast prefix from the peer";
           }
           leaf send {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to send multiple path advertisements for a single IPv4-unicast prefix towards the peer";
           }
@@ -1544,9 +1523,6 @@ module srl_nokia-bgp {
               type uint8 {
                 range "1..16";
               }
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the N best paths for a single IPv4-unicast prefix, or as many as possible until there are no more valid paths to send.
 
@@ -1554,9 +1530,6 @@ module srl_nokia-bgp {
             }
             leaf send-multipath {
               type empty;
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the used paths for a single IPv4-unicast prefix, including all paths that are multipaths.";
             }
@@ -1666,17 +1639,11 @@ module srl_nokia-bgp {
             "Configure support for the advertisement and receipt of multiple paths for a single IPv6-unicast prefix with any single peer in the peer-group";
           leaf receive {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to receive multiple path advertisements for a single IPv6-unicast prefix from any single peer in the peer-group";
           }
           leaf send {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to send multiple path advertisements for a single IPv6-unicast prefix towards any single peer in the peer-group";
           }
@@ -1685,9 +1652,6 @@ module srl_nokia-bgp {
               type uint8 {
                 range "1..16";
               }
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the N best paths for a single IPv6-unicast prefix, or as many as possible until there are no more valid paths to send.
 
@@ -1695,9 +1659,6 @@ module srl_nokia-bgp {
             }
             leaf send-multipath {
               type empty;
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the used paths for a single IPv6-unicast prefix, including all paths that are multipaths.";
             }
@@ -1866,7 +1827,7 @@ module srl_nokia-bgp {
         key "as-number";
         max-elements 1;
         leaf as-number {
-          type autonomous-system-number;
+          type srl_nokia-comm:as-number;
           description
             "The local autonomous system number used to override the global ASN on this session
 
@@ -1896,7 +1857,10 @@ module srl_nokia-bgp {
         leaf cluster-id {
           description
             "The cluster-id to insert into the CLUSTER_LIST attribute when reflecting routes received by or sent to this client. The default is inherited from group or instance level configuration.";
-          type srl_nokia-comm:dotted-quad;
+          type union {
+            type uint32;
+            type srl_nokia-comm:dotted-quad;
+          }
         }
       }
       container send-community {
@@ -2000,6 +1964,12 @@ module srl_nokia-bgp {
       }
       uses traceoptions;
       container transport {
+        leaf mtu-discovery {
+          if-feature "srl_nokia-feat:bgp-mtu-discovery";
+          type boolean;
+          description
+            "Turns path mtu discovery on (true) or off (false)";
+        }
         leaf tcp-mss {
           type uint16 {
             range "536..9446";
@@ -2264,7 +2234,7 @@ module srl_nokia-bgp {
           "State field to display the maintenance group to which this bgp instance belongs to.";
       }
       leaf autonomous-system {
-        type autonomous-system-number;
+        type srl_nokia-comm:as-number;
         mandatory true;
         description
           "The global AS number of the BGP instance
@@ -2533,6 +2503,18 @@ module srl_nokia-bgp {
 
              Routes of AFI/SAFI X received from peer Y are marked stale when peer Y goes down and its previous GR capability included AFI/SAFI X.";
         }
+        leaf requested-restart-time {
+          if-feature "srl_nokia-feat:bgp-graceful-restart-gaps";
+          description
+            "The restart time encoded in this router's GR capability.
+
+             If the neighbor honors this request then this is the maximum time allowed for this router to re-establish its TCP connection after a restart. If this time is exceeded, the neighbor is expected to flush stale routes that it was maintaining on behalf of this router.";
+          type uint16 {
+            range "1..3600";
+          }
+          units "seconds";
+          default "300";
+        }
       }
       uses bgp-group;
       container ipv4-unicast {
@@ -2550,17 +2532,11 @@ module srl_nokia-bgp {
             "Configure support for the advertisement and receipt of multiple paths for a single IPv4-unicast prefix with any single peer";
           leaf receive {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to receive multiple path advertisements for a single IPv4-unicast prefix from any single peer";
           }
           leaf send {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to send multiple path advertisements for a single IPv4-unicast prefix towards any single peer";
           }
@@ -2569,9 +2545,6 @@ module srl_nokia-bgp {
               type uint8 {
                 range "1..16";
               }
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the N best paths for a single IPv4-unicast prefix, or as many as possible until there are no more valid paths to send.
 
@@ -2579,9 +2552,6 @@ module srl_nokia-bgp {
             }
             leaf send-multipath {
               type empty;
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the used paths for a single IPv4-unicast prefix, including all paths that are multipaths.";
             }
@@ -2634,17 +2604,11 @@ module srl_nokia-bgp {
             "Configure support for the advertisement and receipt of multiple paths for a single IPv6-unicast prefix with any single peer";
           leaf receive {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to receive multiple path advertisements for a single IPv6-unicast prefix from any single peer";
           }
           leaf send {
             type boolean;
-            must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-              error-message "Add-paths is not supported in network instances other than default";
-            }
             description
               "Enable capability negotiation to send multiple path advertisements for a single IPv6-unicast prefix towards any single peer";
           }
@@ -2653,9 +2617,6 @@ module srl_nokia-bgp {
               type uint8 {
                 range "1..16";
               }
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the N best paths for a single IPv6-unicast prefix, or as many as possible until there are no more valid paths to send.
 
@@ -2663,9 +2624,6 @@ module srl_nokia-bgp {
             }
             leaf send-multipath {
               type empty;
-              must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
-                error-message "Add-paths is not supported in network instances other than default";
-              }
               description
                 "Send the used paths for a single IPv6-unicast prefix, including all paths that are multipaths.";
             }
@@ -2759,7 +2717,9 @@ module srl_nokia-bgp {
         description
           "Options for controlling the route table preference of BGP routes";
         leaf ebgp {
-          type uint8;
+          type uint8 {
+            range "1..255";
+          }
           default "170";
           description
             "The default route table preference for all EBGP learned routes
@@ -2767,7 +2727,9 @@ module srl_nokia-bgp {
              BGP import policies can override this preference value on a route by route basis.";
         }
         leaf ibgp {
-          type uint8;
+          type uint8 {
+            range "1..255";
+          }
           default "170";
           description
             "The default route table preference for all IBGP learned routes
@@ -2807,7 +2769,10 @@ module srl_nokia-bgp {
         leaf cluster-id {
           description
             "The cluster-id to insert into the CLUSTER_LIST attribute when reflecting routes received by or sent to clients in this scope of this container. The default is the router-id.";
-          type srl_nokia-comm:dotted-quad;
+          type union {
+            type uint32;
+            type srl_nokia-comm:dotted-quad;
+          }
         }
       }
       container send-community {
@@ -2841,6 +2806,13 @@ module srl_nokia-bgp {
              If single-hop-connected-check is true (default value), a single-hop BGP session (EBGP or IBGP) to any IPv4 or IPv6 neighbor address is only permitted to transition from idle to a higher state if the 'related interface' is up.
 
              The 'related interface' of a single hop peer is the subinterface associated with the IPv6 link local neighbor address or else the subinterface with a primary or secondary IP address and prefix-length that covers the neighbor address.";
+        }
+        leaf mtu-discovery {
+          if-feature "srl_nokia-feat:bgp-mtu-discovery";
+          type boolean;
+          default "false";
+          description
+            "Turns path mtu discovery for BGP TCP sessions on (true) or off (false)";
         }
         leaf tcp-mss {
           type uint16 {

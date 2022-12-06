@@ -13,6 +13,10 @@ module srl_nokia-sync-freq {
     prefix srl_nokia-feat;
   }
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -35,149 +39,70 @@ module srl_nokia-sync-freq {
         "List of line reference configured for frequency.";
       leaf instance-number {
         type uint8 {
-          range "0..6";
+          range "1..2";
         }
         description
-          "The instance number of the each line reference.";
-      }
-      leaf admin-state {
-        type srl_nokia-comm:admin-state;
-        default "disable";
-        description
-          "Configure the administrative state of this line reference.";
+          "PLM Note: Target is up to 4 but depends on hardware contraints
+           The instance number of the each line reference.";
       }
       leaf oper-state {
         type srl_nokia-comm:oper-state;
         config false;
         description
-          "Indicates the operational state of this line reference.";
-      }
-      leaf switch-ref-request {
-        type enumeration {
-          enum none {
-            value 0;
-            description
-              "No force switch being requested to this reference.";
-          }
-          enum force {
-            value 1;
-            description
-              "Request to perform a force switch to this reference.
-               It can be granted only if the reference must be enabled and not locked-out.";
-          }
-          enum manual {
-            value 2;
-            description
-              "Request to perform a manual switch to this reference.
-               It can be granted only if the reference must be enabled, not locked-out, not in
-               failed signal status or unassigned, and has a QL better than DNU in QL-enabled mode.";
-          }
-        }
-        default "none";
-      }
-      leaf lockout-ref {
-        type boolean;
-        description
-          "Request to lock out this reference from the available list of references.";
-        default "false";
-      }
-      leaf switch-ref-request-bits-out {
-        if-feature "srl_nokia-feat:platform-7210-sas24";
-        type enumeration {
-          enum none {
-            value 0;
-            description
-              "No force switch being requested to this reference.";
-          }
-          enum force {
-            value 1;
-            description
-              "Request to perform a force switch to this reference for the output.
-               It can be granted only if the reference must be enabled and not locked-out.";
-          }
-          enum manual {
-            value 2;
-            description
-              "Request to perform a manual switch to this reference for the output.
-               It can be granted only if the reference must be enabled, not locked-out, not in
-               failed signal status or unassigned, and has a QL better than DNU in QL-enabled mode.";
-          }
-        }
-        default "none";
-      }
-      leaf lockout-ref-bits-out {
-        if-feature "srl_nokia-feat:platform-7210-sas24";
-        type boolean;
-        description
-          "Request to lock out this reference from the available list of references for BITS output.";
-        default "false";
+          "PLM Note: SROS MIB object = tmnxSyncIfTimingRef1AdminStatus,etc
+           Indicates the operational state of this line reference.";
       }
       leaf underlying-interface {
         type srl_nokia-sync-types:interface-freq;
         description
           "Reference to the configured underlying interface that is used by this frequency recovery.
-            Options include line/client ports, OTC ports and BITS port.";
-      }
-      leaf ql-processing {
-        type boolean;
-        default "true";
-        description
-          "Enables or disables this line reference incoming QL (Quality Level) processing";
+            Options include line/client ports and ,if applicable, BITS port.";
       }
       leaf priority {
         type uint8 {
-          range "0..7";
+          range "0..5";
         }
         default "0";
         description
-          "Sets the priority of this line timing reference for the system timing selection process.
+          "PLM NOTE: duplicate numbers are not allowed
+           Sets the priority of this line timing reference for the system timing selection process.
            0 = not available to be selected
            1 = highest priority
-           7 = lowest priority";
-      }
-      leaf priority-bits-output {
-        if-feature "srl_nokia-feat:platform-7210-sas24";
-        type uint8 {
-          range "0..7";
-        }
-        default "0";
-        description
-          "Sets the priority of this line timing reference for the BITS output selection process.
-           0 = not available to be selected
-           1 = highest priority
-           7 = lowest priority";
+           5 = lowest priority";
       }
       leaf ql-override {
-        type srl_nokia-sync-types:ql-set;
-        default "auto";
+        type srl_nokia-sync-types:settable-ql-values;
+        default "unused";
         description
-          "Override the incoming QL/SSM value for this line reference.";
+          "PLM NOTE: SROS MIB object = tmnxSyncIfTimingRef1CfgQltyLevel,etc
+           Override the incoming QL/SSM value for this line reference.
+           Quality level override of a timing reference
+           Options are unused, prs, stu, st2, tnc, st3e, st3, prc, ssua, ssub, sec, eec1, eec2";
       }
-      leaf frequency-offset {
-        type decimal64 {
-          fraction-digits 3;
+      leaf ql-value {
+        type srl_nokia-sync-types:possible-ql-values;
+        config false;
+        description
+          "PLM NOTE: SROS MIB object = tmnxSyncIfTimingRef1RxQltyLevel,etc
+           The incoming QL/SSM value from this line reference.";
+      }
+      leaf ref-status {
+        type enumeration {
+          enum qualified {
+            value 1;
+            description
+              "Reference is in normal qaulified state.";
+          }
+          enum not-qualified {
+            value 2;
+            description
+              "Reference is in not-qaulified state.";
+          }
         }
         config false;
         description
-          "the current frequency offset of this line reference in PPM (Parts Per Million).";
-      }
-      leaf ql-status {
-        type srl_nokia-sync-types:ql-status;
-        config false;
-        description
-          "The incoming QL/SSM value from this line reference is valid or not.";
-      }
-      leaf ql-value {
-        type srl_nokia-sync-types:ql-rx;
-        config false;
-        description
-          "The incoming QL/SSM value from this line reference.";
-      }
-      leaf ref-status {
-        type srl_nokia-sync-types:ref-status;
-        config false;
-        description
-          "The current status this line reference.";
+          "PLM NOTE: SROS MIB object = tmnxSyncIfTimingRef1Qualified,etc
+           The current status this line reference.";
       }
     }
   }
@@ -186,26 +111,43 @@ module srl_nokia-sync-freq {
     description
       "This struct containing all attributes for frequency clock.";
     leaf ql-input-threshold {
-      type srl_nokia-sync-types:ql-rx;
-      default "st3";
+      type srl_nokia-sync-types:settable-ql-values;
+      default "unused";
       description
-        "Configures the SSM quality level degradation threshold value for system timing reference";
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingQlMin
+         This command configures the minimum acceptable QL value that a signal must have in order
+         to be considered for selection by the system timing module.
+         Options: unused, prs, stu, st2, tnc, st3e, st3, prc, ssua, ssub, sec, eec1, eec2";
     }
-    leaf synce-mode {
-      type srl_nokia-sync-types:synce-mode;
+    leaf network-type {
+      type enumeration {
+        enum sdh {
+          value 0;
+          description
+            "sdh specifies the values corresponding to G.781 Option 1 compliant networks.";
+        }
+        enum sonet {
+          value 1;
+          description
+            "sonet specifies the values corresponding to G.781 Option 2 compliant networks";
+        }
+      }
       default "sonet";
       description
-        "Configures SyncE for SSM code-type as SONET or SDH mode
+        "PLM NOTE: Used to be synce-mode. Has dual purpose for 2 SROS commands for synce and PTP
+         SROS MIB object =
+         Configures SyncE for SSM code-type as SONET or SDH mode
          sdh specifies the values corresponding to ITU-T G.781 Option 1 compliant networks.
          sonet specifies the values corresponding to ITU-T G.781 Option 2 compliant networks.";
     }
-    leaf system-ql-enable {
+    leaf ql-selection {
       type boolean;
-      default "true";
+      default "false";
       description
-        "System timing reference selection is done by SSM using quality levels as the
-         first criteria and by priorities as the second criteria. Otherwise, timing
-         reference selection is done only by priorities.";
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingQLSelection
+         When enabled, the selection of system timing reference and BITS output timing reference
+         takes into account quality level. Quality level is conveyed via the SSM or forced using
+         the ql-override command..";
     }
     leaf wait-to-restore {
       type int8 {
@@ -214,8 +156,20 @@ module srl_nokia-sync-freq {
       default "5";
       units "minutes";
       description
-        "Specifies the value of wait to restore time in minutes for all line references. Value of 0
-         to disable WTR.";
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingWaitToRestorTime
+         This command configures the time for the Wait to Restore timer. A previously failed input
+         reference must be valid for the time specified before it is used for the clock input
+         reference.";
+    }
+    leaf revert {
+      type boolean;
+      default "false";
+      description
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingRevert
+         This command allows the clock to revert to a higher priority reference if the current
+         reference goes offline or becomes unstable. When the failed reference becomes operational,
+         it is eligible for selection. When the mode is non-revertive, a failed clock source is not
+         selected again.";
     }
     leaf active-ref {
       type enumeration {
@@ -231,22 +185,14 @@ module srl_nokia-sync-freq {
         enum 3 {
           value 3;
         }
-        enum 4 {
-          value 4;
-        }
-        enum 5 {
-          value 5;
-        }
-        enum 6 {
-          value 6;
-        }
         enum internal {
           value -1;
         }
       }
       config false;
       description
-        "Displays information about the current selected (active) line timing reference.";
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingRef1InUse,etc
+         Displays information about the current selected (active) line timing reference.";
     }
     leaf freq-offset {
       type decimal64 {
@@ -254,84 +200,53 @@ module srl_nokia-sync-freq {
       }
       config false;
       description
-        "The frequency offset of the selected reference in ppm.";
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingFreqOffset
+         The frequency offset between the central frequency clock and the selected reference in ppm.";
     }
     leaf freq-clock-state {
-      type srl_nokia-sync-types:freq-clock-state;
+      type enumeration {
+        enum not-present {
+          value 1;
+          description
+            "Frequency clock is locked to a line timing reference signal.";
+        }
+        enum master-free-run {
+          value 2;
+          description
+            "Frequency clock is master free run mode.";
+        }
+        enum master-holdover {
+          value 3;
+          description
+            "Frequency clock is master holdover mode.";
+        }
+        enum master-locked {
+          value 4;
+          description
+            "Frequency clock is master locked mode.";
+        }
+        enum slave {
+          value 5;
+          description
+            "Frequency clock is slave mode.";
+        }
+        enum acquiring {
+          value 6;
+          description
+            "FFrequency clock is acquiring mode.";
+        }
+      }
       config false;
       description
-        "Shows the clock mode status.";
-    }
-    leaf ref-switch-state {
-      type srl_nokia-sync-types:ref-switch-state;
-      config false;
-      description
-        "Shows the current state of switch command.";
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingStatus
+         Shows the frequency clock mode state.";
     }
     leaf system-ql-value {
-      type srl_nokia-sync-types:ql-rx;
+      type srl_nokia-sync-types:possible-ql-values;
       config false;
       description
-        "System QL value based on the reference selected.";
-    }
-  }
-
-  grouping freq-sync-bits-out-top {
-    description
-      "This struct containing all attributes for BIS frequency output clock.";
-    leaf freq-output-select {
-      type enumeration {
-        enum output-selection {
-          value 0;
-          description
-            "Output is selected from output timing selection process.";
-        }
-        enum setg {
-          value 1;
-          description
-            "Output frequency clock based on input reference selection.";
-        }
-      }
-      default "setg";
-      description
-        "Output frequency clock configuration.";
-    }
-    leaf output-select-active-ref {
-      type enumeration {
-        enum 0 {
-          value 0;
-        }
-        enum 1 {
-          value 1;
-        }
-        enum 2 {
-          value 2;
-        }
-        enum 3 {
-          value 3;
-        }
-        enum 4 {
-          value 4;
-        }
-        enum 5 {
-          value 5;
-        }
-        enum 6 {
-          value 6;
-        }
-        enum internal {
-          value -1;
-        }
-      }
-      config false;
-      description
-        "Displays information about the current selected (active) line timing reference.";
-    }
-    leaf ref-switch-state {
-      type srl_nokia-sync-types:ref-switch-state;
-      config false;
-      description
-        "Shows the current state of switch command for the BITS output.";
+        "PLM NOTE: SROS MIB object = tmnxSyncIfTimingSystemQltyLevel
+         System QL value based on the reference selected.";
     }
   }
 }

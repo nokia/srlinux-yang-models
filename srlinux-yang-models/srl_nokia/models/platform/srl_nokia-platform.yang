@@ -16,6 +16,10 @@ module srl_nokia-platform {
   description
     "This module defines configuration and operational state data related to platform components.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -127,6 +131,21 @@ module srl_nokia-platform {
       default "enable";
       description
         "The administrative state of this component";
+    }
+  }
+
+  grouping component-delayed-reboot-state {
+    description
+      "Grouping for component delayed reboot state";
+    leaf rebooting-at {
+      type srl-comm:date-and-time-delta;
+      config false;
+      description
+        "Indicates the date and time this component will reboot
+
+         If empty, no delayed reboots are queued for this component.
+
+         A non empty value implies that a delayed reboot operation has been triggered for this component, which can be aborted using 'tools platform <component> reboot cancel'.";
     }
   }
 

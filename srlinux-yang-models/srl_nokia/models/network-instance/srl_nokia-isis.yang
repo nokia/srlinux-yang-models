@@ -43,6 +43,10 @@ module srl_nokia-isis {
   description
     "This yang file models configuration and state of the IS-IS protocol";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -434,6 +438,10 @@ module srl_nokia-isis {
         description
           "The authentication-key is used to generate a 16-byte (128 bit) MD5 digest using the HMAC algorithm (RFC 2104).";
       }
+      enum hmac-sha-256 {
+        description
+          "The authentication-key is used to generate a SHA2 digest using the HMAC algorithm (RFC 2104).The SHA-256 variant of SHA2 produces an output of 32 bytes (256 bits).";
+      }
     }
   }
 
@@ -720,7 +728,6 @@ module srl_nokia-isis {
       description
         "Specifies the use of IS-IS Hello PDU padding on the interface";
       type isis-hello-padding-type;
-      default "disable";
     }
     leaf passive {
       description
@@ -919,6 +926,15 @@ module srl_nokia-isis {
       type srl_nokia-comm:admin-state;
       default "disable";
     }
+    leaf instance-id {
+      if-feature "srl-feat:isis-mi";
+      description
+        "ISIS instance number";
+      type uint64 {
+        range "0..127";
+      }
+      default "0";
+    }
     leaf-list net {
       max-elements 1;
       description
@@ -948,12 +964,38 @@ module srl_nokia-isis {
       type boolean;
       default "false";
     }
+    leaf iid-tlv {
+      if-feature "srl-feat:isis-mi";
+      description
+        "ISIS Instance Identifier TLV. When set to true, IID-TLV identifies
+         the unique instance as well as the topology/topologies to which the
+         PDU applies.";
+      reference
+        "RFC6822: IS-IS Multi-Instance. TLV 7";
+      type boolean;
+      default "false";
+    }
     leaf export-policy {
       description
         "Apply an export policy to redistribute non-ISIS routes into ISIS";
       type leafref {
         path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
       }
+    }
+    leaf hello-padding {
+      description
+        "Specifies the use of IS-IS Hello PDU padding all interfaces
+         This can be overridden by interface configuration.";
+      type isis-hello-padding-type;
+      default "disable";
+    }
+    leaf enable-csnp-on-p2p-links {
+      description
+        "Enable/disable the transmission of periodic CSNP PDUs on point-to-point interfaces
+
+         When this is set to false, CSNP PDUs will only be sent on a P2P interface when the adjacency is initialized. This setting has no effect on broadcast interfaces.";
+      type boolean;
+      default "true";
     }
     container attached-bit {
       description
@@ -1019,6 +1061,9 @@ module srl_nokia-isis {
           description
             "When set to true, the Overload bit is set";
           type boolean;
+          must "not(../../../../non-stop-forwarding/admin-state = 'enable')" {
+            error-message "overload on-boot can be enabled only when no graceful restart is enabled.";
+          }
         }
         leaf max-metric {
           description
@@ -2117,6 +2162,11 @@ module srl_nokia-isis {
       description
         "The SNPA of the neighbor.";
       type isis-snpa;
+    }
+    leaf local-extended-circuit-id {
+      description
+        "Local extended circuit ID.";
+      type isis-extended-circuit-id;
     }
     leaf neighbor-ipv4 {
       description

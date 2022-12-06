@@ -1,0 +1,59 @@
+module srl_nokia-tools-lldp {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-lldp";
+  prefix srl_nokia-tools-lldp;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+
+  description
+    "This module defines tools commands related to LLDP.";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+
+  grouping lldp-tools-top {
+    description
+      "Top-level grouping for LLDP tools.";
+    container lldp {
+      presence "Configure tools LLDP";
+      description
+        "Top-level container for LLDP tools";
+      container statistics {
+        description
+          "LLDP global statistics tools commands";
+        leaf clear {
+          description
+            "Clear global LLDP statistics";
+          type empty;
+        }
+      }
+      list interface {
+        key "name";
+        description
+          "List of interfaces on which LLDP is enabled";
+        leaf name {
+          type string;
+          description
+            "Reference to a LLDP Ethernet interface";
+        }
+        container statistics {
+          description
+            "LLDP interface statistics tools commands";
+          leaf clear {
+            description
+              "Clear interface LLDP statistics";
+            type empty;
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    uses lldp-tools-top;
+  }
+}

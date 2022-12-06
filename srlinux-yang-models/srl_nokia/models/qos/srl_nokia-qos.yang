@@ -15,7 +15,14 @@ module srl_nokia-qos {
   import srl_nokia-features {
     prefix srl-feat;
   }
+  import srl_nokia-qos-policers {
+    prefix srl_nokia-qos-policers;
+  }
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -81,17 +88,17 @@ module srl_nokia-qos {
       "The various drop probability classifications that can apply to an ECN slope";
     type enumeration {
       enum low {
-        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
+        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
         description
           "Traffic that should be dropped last when there is congestion. Internally this is traffic that is colored green.";
       }
       enum medium {
-        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
+        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
         description
           "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
       }
       enum high {
-        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
+        if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
         description
           "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
       }
@@ -99,6 +106,56 @@ module srl_nokia-qos {
         if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
         description
           "All traffic, consisting of traffic marked low, medium and high drop-probability.";
+      }
+    }
+  }
+
+  typedef fp5c-cbs-size {
+    description
+      "Output-queue CBS values on FP5-c chipset.";
+    type enumeration {
+      enum default {
+        description
+          "Default CBS value";
+      }
+      enum alt-1 {
+        description
+          "CBS value corresponding to ALT-1 configuration";
+      }
+      enum alt-2 {
+        description
+          "CBS value corresponding to ALT-2 configuration";
+      }
+      enum alt-3 {
+        description
+          "CBS value corresponding to ALT-3 configuration";
+      }
+    }
+  }
+
+  typedef rewrite-profile {
+    description
+      "Profile-names for different profiles used during egress re-marking";
+    type enumeration {
+      enum in-plus {
+        if-feature "srl-feat:future-0-0";
+        description
+          "The highest priority profile";
+      }
+      enum in {
+        if-feature "srl-feat:future-0-0";
+        description
+          "The second level priority profile";
+      }
+      enum out {
+        if-feature "srl-feat:future-0-0";
+        description
+          "The lowest level priotity profile";
+      }
+      enum exceed {
+        if-feature "srl-feat:future-0-0";
+        description
+          "The third level priority profile";
       }
     }
   }
@@ -119,6 +176,15 @@ module srl_nokia-qos {
     }
   }
 
+  typedef queue-type {
+    description
+      "Type of traffic serviced by a queue.";
+    type enumeration {
+      enum unicast;
+      enum multicast;
+    }
+  }
+
   grouping qos-top {
     description
       "Top-level grouping for QoS model";
@@ -127,17 +193,278 @@ module srl_nokia-qos {
       if-feature "not srl-feat:platform-7220-d1";
       description
         "Top-level container for QoS data";
-      uses ecn-top {
-        if-feature "not srl-feat:monterey";
+      uses ecn-top;
+      uses queue-names-config;
+      uses forwarding-classes-config;
+      uses out-class-map-config {
+        if-feature "srl-feat:future-0-0";
       }
-      uses queue-templates-top;
+      uses srl_nokia-qos-policers:policers-top {
+        if-feature "srl-feat:future-0-0";
+      }
+      uses fp5c-global-tables {
+        if-feature "srl-feat:future-0-0";
+      }
+      uses srl_nokia-qos-policers:policer-templates-top {
+        if-feature "srl-feat:ingress-subif-policing";
+      }
+      uses queue-templates-top {
+        if-feature "not srl-feat:future-0-0";
+      }
       uses qos-classifier-top;
       uses qos-rewrite-top;
+      uses scheduler-policies-top {
+        if-feature "srl-feat:scheduler-policies";
+      }
+    }
+  }
+
+  grouping queue-names-config {
+    container queues {
+      description
+        "Enclosing container for the list of user-defined queue names";
+      list queue {
+        key "name";
+        description
+          "List of user-defined queues";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "User-defined name of the queue
+
+             The following queue names are the system-reserved default queue names on 7250 IXR systems:
+             unicast-0
+             unicast-1
+             unicast-2
+             unicast-3
+             unicast-4
+             unicast-5
+             unicast-6
+             unicast-7
+
+             The following queue names are the system-reserved default queue names on FP5-c chipset based systems:
+             queue-0
+             queue-1
+             queue-2
+             queue-3
+             queue-4
+             queue-5
+             queue-6
+             queue-7
+             queue-8
+             queue-9
+             queue-10
+             queue-11
+             queue-12
+             queue-13
+             queue-14
+             queue-15";
+          must "not (re-match(.,'unicast-[0-7]') or re-match(.,'multicast-[0-7]'))" {
+              error-message "queue name reserved";
+          }
+
+        }
+        leaf queue-index {
+          if-feature "srl-feat:future-0-0";
+          mandatory true;
+          type uint16 {
+            range "0..15";
+          }
+          description
+            "The queue index (offset). If this value is not specified it is derived from the forwarding-class mapping (based on the forwarding-class-index).";
+        }
+      }
+    }
+  }
+
+  grouping forwarding-classes-config {
+    container forwarding-classes {
+      description
+        "Enclosing container for list of user-defined forwarding class names";
+      list forwarding-class {
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "User-defined name of the forwarding class
+
+             The following forwarding-class names are the system-reserved default FC names on 7250 IXR systems:
+             fc0
+             fc1
+             fc2
+             fc3
+             fc4
+             fc5
+             fc6
+             fc7
+
+             In addition to fc0-fc7, the following forwarding-class names are also system-reserved default FC names on FP5-c based platforms
+             fc8
+             fc9
+             fc10
+             fc11
+             fc12
+             fc13
+             fc14
+             fc15";
+          must "not (re-match(.,'fc[0-7]'))" {
+              error-message "forwaring-class name reserved";
+          }
+
+        }
+        leaf forwarding-class-index {
+          if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+          mandatory true;
+          type uint8 {
+            range "0..15";
+          }
+          description
+            "Associates the forwarding class name with an index representing the forwarding-class-index. Forwarding classes with a higher forwarding-class-index are generally (subject to scheduler configuration) serviced more preferentially than forwarding classes with a lower forwarding-class-index.
+
+             For the system-reserved default forwarding classes:
+             fc0 -> forwarding-class-index = 0
+             fc1 -> forwarding-class-index = 1
+             fc2 -> forwarding-class-index = 2
+             fc3 -> forwarding-class-index = 3
+             fc4 -> forwarding-class-index = 4
+             fc5 -> forwarding-class-index = 5
+             fc6 -> forwarding-class-index = 6
+             fc7 -> forwarding-class-index = 7
+             fc8 -> forwarding-class-index = 8
+             fc9 -> forwarding-class-index = 9
+             fc10 -> forwarding-class-index = 10
+             fc11 -> forwarding-class-index = 11
+             fc12 -> forwarding-class-index = 12
+             fc13 -> forwarding-class-index = 13
+             fc14 -> forwarding-class-index = 14
+             fc15 -> forwarding-class-index = 15";
+        }
+        container input {
+          if-feature "srl-feat:future-0-0";
+          leaf unicast-policer {
+            type leafref {
+              path "../../../../policers/policer/name";
+            }
+          }
+          leaf unknown-unicast-policer {
+            type leafref {
+              path "../../../../policers/policer/name";
+            }
+          }
+          leaf broadcast-policer {
+            type leafref {
+              path "../../../../policers/policer/name";
+            }
+          }
+          leaf multicast-policer {
+            type leafref {
+              path "../../../../policers/policer/name";
+            }
+          }
+        }
+        container output {
+          if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+          leaf queue {
+            if-feature "srl-feat:future-0-0";
+            mandatory true;
+            type leafref {
+              path "../../../../queues/queue/name";
+            }
+            description
+              "Output queue for this forwarding class.";
+          }
+          leaf unicast-queue {
+            if-feature "not srl-feat:future-0-0";
+            must '. != ../multicast-queue';
+            mandatory true;
+            type leafref {
+              path "../../../../queues/queue/name";
+            }
+            description
+              "Output queue for unicast packets within this forwarding class
+
+               For the system-reserved default forwarding classes:
+               fc0 -> unicast-queue = unicast-queue0
+               fc1 -> unicast-queue = unicast-queue1
+               fc2 -> unicast-queue = unicast-queue2
+               fc3 -> unicast-queue = unicast-queue3
+               fc4 -> unicast-queue = unicast-queue4
+               fc5 -> unicast-queue = unicast-queue5
+               fc6 -> unicast-queue = unicast-queue6
+               fc7 -> unicast-queue = unicast-queue7";
+          }
+          leaf multicast-queue {
+            if-feature "not srl-feat:future-0-0";
+            mandatory true;
+            type leafref {
+              path "../../../../queues/queue/name";
+            }
+            description
+              "Output queue for multicast packets within this forwarding class.";
+          }
+        }
+      }
+    }
+  }
+
+  grouping out-class-map-config {
+    list out-class-map {
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "User defined out-class-map name";
+      }
+      list forwarding-class {
+        key "name";
+        leaf name {
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
+        }
+        container queue {
+          choice local-or-remote {
+            case local {
+              leaf queue-name {
+                type union {
+                  type leafref {
+                    path "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue/srl_nokia-qos:name";
+                  }
+                  type srl_nokia-comm:default-queue-name;
+                }
+                description
+                  "The output-queue name";
+                must "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue[srl_nokia-qos:name=current()]/srl_nokia-qos:name = current() or
+                       re-match(.,'queue-[0-7]')" {
+                  error-message "queue doesn't exist";
+                }
+              }
+            }
+            case remote {
+              leaf re-direct-to {
+                type enumeration {
+                  enum interface-queue;
+                }
+                description
+                  "The re-direction to interface level queue";
+              }
+            }
+          }
+        }
+      }
     }
   }
 
   grouping ecn-top {
     container explicit-congestion-notification {
+      if-feature "not srl-feat:future-0-0";
       srl_nokia-ext:first-released "20.12.1";
       presence "When present ECN marking is enabled globally (on all interfaces)";
       leaf ecn-dscp-policy {
@@ -154,9 +481,137 @@ module srl_nokia-qos {
     }
   }
 
+  grouping fp5c-global-tables {
+    container cbs-size-table {
+      leaf default-size {
+        type uint64;
+        description
+          "Default cbs-size";
+      }
+      leaf alt-1 {
+        type uint64;
+        description
+          "ALT-1 cbs-size";
+      }
+      leaf alt-2 {
+        type uint64;
+        description
+          "ALT-2 cbs-size";
+      }
+      leaf alt-3 {
+        type uint64;
+        description
+          "ALT-3 cbs-size";
+      }
+    }
+    container resource-management {
+      container resource-priority {
+        description
+          "Defines priority per forwarding-class and per profile to be used for access to shared chipset resources";
+        list forwarding-class {
+          key "name";
+          leaf name {
+            type union {
+              type leafref {
+                path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+              }
+              type srl_nokia-comm:default-forwarding-class;
+            }
+            must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                  re-match(.,'fc[0-7]')" {
+              error-message "forwarding-class doesn't exist";
+            }
+          }
+          list profile {
+            key "profile-name";
+            leaf profile-name {
+              type srl_nokia-comm:classify-profile;
+            }
+            leaf unicast-resource-priority {
+              type uint8 {
+                range "0..3";
+              }
+            }
+            leaf multicast-resource-priority {
+              type uint8 {
+                range "0..3";
+              }
+            }
+          }
+        }
+      }
+      container drop-levels {
+        list unicast {
+          key "index";
+          leaf index {
+            type uint8 {
+              range "0..3";
+            }
+          }
+          leaf segment {
+            type uint8 {
+              range "0..3";
+            }
+          }
+          leaf vpid {
+            type uint8 {
+              range "0..3";
+            }
+          }
+          leaf header {
+            type uint8 {
+              range "0..15";
+            }
+          }
+        }
+        list multicast {
+          key "index";
+          leaf index {
+            type uint8 {
+              range "0..3";
+            }
+          }
+          leaf segment {
+            type uint8 {
+              range "0..3";
+            }
+          }
+          leaf vpid {
+            type uint8 {
+              range "0..3";
+            }
+          }
+          leaf header {
+            type uint8 {
+              range "0..15";
+            }
+          }
+        }
+      }
+      container untilization-levels {
+        container segment-congestion {
+          list level {
+            key "index";
+            leaf index {
+              type uint8 {
+                range "0..3";
+              }
+            }
+            leaf threshold {
+              type uint8 {
+                range "0..127";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   grouping queue-templates-top {
     container queue-templates {
       srl_nokia-ext:first-released "20.12.1";
+      if-feature "not srl-feat:future-0-0";
       list queue-template {
         max-elements 64;
         description
@@ -184,17 +639,6 @@ module srl_nokia-qos {
                On 7220-D2/D3/D5/H2/H3 this parameter applies to an egress queue and the default value of zero instructs the forwarding chip to apply its own limit based on 'alpha'. A non-zero value disables 'alpha'. The alpha value  is 5 (0.25 multiplier of shared buffer space) for unicast queues and 4 (0.125 multiplier of shared buffer space) for multicast queues.
 
                Must be non-zero/non-default in order to add the active-queue-management presence container.";
-          }
-          leaf committed-burst-size {
-            if-feature "srl-feat:monterey";
-            type uint32;
-            must '. <= ../maximum-burst-size';
-            units "bytes";
-            default "0";
-            description
-              "Committed queue depth in bytes.
-
-               On SAS systems this parameter applies to an egress queue and the default is 0.";
           }
           leaf high-threshold-bytes {
             if-feature "not srl-feat:platform-7220-d5";
@@ -230,12 +674,12 @@ module srl_nokia-qos {
                 "The traffic type to which the WRED slope applies.";
               type enumeration {
                 enum tcp {
-                  if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl or srl-feat:monterey";
+                  if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
                   description
                     "Refers to IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
                 }
                 enum non-tcp {
-                  if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl or srl-feat:monterey";
+                  if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
                   description
                     "Refers to all packets that are not IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
                 }
@@ -278,7 +722,6 @@ module srl_nokia-qos {
             }
           }
           list ecn-slope {
-            if-feature "not srl-feat:monterey";
             description
               "List of ECN slopes.";
             key "ecn-drop-probability";
@@ -320,34 +763,97 @@ module srl_nokia-qos {
     }
   }
 
+  grouping scheduler-policies-top {
+    container scheduler-policies {
+      description
+        "Container for the list of configured scheduler policies.";
+      list scheduler-policy {
+        key "name";
+        description
+          "List of scheduler policies. A scheduler policy is a set of schedulers that are to be applied together. Each scheduler within a scheduler policy takes an input, and outputs it according to a scheduling discipline that is specified within it.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Name for the scheduler policy.";
+        }
+        list scheduler {
+          key "sequence";
+          description
+            "List of defined QoS traffic schedulers.";
+          leaf sequence {
+            type uint32 {
+              range "0..1";
+            }
+            description
+              "Sequence number for the scheduler within the scheduler policy. Schedulers are processed from lowest sequence to highest.";
+          }
+          leaf priority {
+            type enumeration {
+              enum strict {
+                description
+                  "This scheduler term is considered as a strict priority term - such that packets that arrive in the queue are immediately serviced.";
+              }
+            }
+            description
+              "Priority of the scheduler within the scheduler policy.";
+          }
+          list input {
+            key "id";
+            description
+              "List of input sources for the scheduler.";
+            leaf id {
+              type string;
+              description
+                "User-defined identifier for the scheduler input";
+            }
+            leaf queue {
+              mandatory true;
+              description
+                "The queue that is the input to the scheduler";
+              type union {
+                type leafref {
+                  path "../../../../../queues/queue/name";
+                }
+                type srl_nokia-comm:default-queue-name;
+              }
+            }
+            leaf weight {
+              type uint8;
+              description
+                "For weighted round-robin schedulers, this leaf indicates the weight of the corresponding input.";
+            }
+          }
+        }
+      }
+    }
+  }
+
   grouping qos-classifier-top {
     description
       "Top-level grouping for classifier data";
     container classifiers {
       srl_nokia-ext:first-released "19.11.1";
-      uses dscp-classifier;
+      uses vxlan-classifier {
+        if-feature "not srl-feat:future-0-0";
+      }
+      uses ip-classifier;
       uses mpls-tc-classifier;
-      uses dot1p-classifier;
+      uses ethernet-classifier;
+      uses egress-reclassification {
+        if-feature "srl-feat:future-0-0";
+      }
     }
   }
 
-  grouping dscp-classifier {
-    leaf vxlan-default {
-      if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-vsrl";
-      type leafref {
-        path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/name";
-      }
+  grouping egress-reclassification {
+    list dscp-reclassify-policy {
       description
-        "Reference to the name of a DSCP classifier policy that applies to terminating VXLAN packets.";
-    }
-    list dscp-policy {
+        "Egress DSCP reclassification policy.";
       key "name";
       leaf name {
         type srl_nokia-comm:name;
         description
-          "User-configured name for a DSCP classification policy
-
-           The name 'default' is reserved for the system default DSCP classifier.";
+          "Name of egress dscp-reclassifier policy.";
       }
       list dscp {
         key "value";
@@ -355,51 +861,111 @@ module srl_nokia-qos {
           type srl_nokia-comm:dscp-value;
         }
         leaf forwarding-class {
-          type srl_nokia-comm:forwarding-class;
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
           description
             "The forwarding class to which the DSCP value is mapped";
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
+        }
+        leaf profile {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:classify-profile;
+          description
+            "The profile to which the DSCP value is mapped";
+        }
+      }
+    }
+  }
+
+  grouping vxlan-classifier {
+    leaf vxlan-default {
+      if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5";
+      type leafref {
+        path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/name";
+      }
+      description
+        "Reference to the name of a DSCP mapping policy that applies to terminating VXLAN packets.";
+    }
+  }
+
+  grouping ip-classifier {
+    list dscp-policy {
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "User-configured name for a DSCP mapping policy
+
+           The name 'default' is reserved for the system default DSCP mapping policy.";
+      }
+      list dscp {
+        key "value";
+        leaf value {
+          type srl_nokia-comm:dscp-value;
+        }
+        leaf forwarding-class {
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
+          description
+            "The forwarding class to which the DSCP value is mapped";
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
         }
         leaf drop-probability {
           srl_nokia-ext:first-released "20.12.1";
+          if-feature "not srl-feat:future-0-0";
           type drop-probability;
           description
             "The drop probability to which the DSCP value is mapped";
+        }
+        leaf profile {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:classify-profile;
+          description
+            "The profile to which the DSCP value is mapped";
+        }
+        leaf de-out-profile {
+          if-feature "srl-feat:future-0-0";
+          type boolean;
+          default "true";
+          description
+            "The discard-eligibility to which the DSCP value is mapped";
+        }
+        leaf ip-remark-policy {
+          if-feature "srl-feat:future-0-0";
+          description
+            "The ip-remark-policy to be used for this dscp-value";
+          type leafref {
+            path "../../../../rewrite-rules/ip-remark-policy/name";
+          }
         }
       }
     }
   }
 
   grouping mpls-tc-classifier {
-    container mpls {
-      if-feature "srl-feat:monterey";
-      list traffic-class {
-        key "value";
-        leaf value {
-          type traffic-class;
-          description
-            "A single traffic-class value";
-        }
-        leaf forwarding-class {
-          type srl_nokia-comm:forwarding-class;
-          description
-            "The forwarding class to which the traffic-class value is mapped";
-        }
-        leaf drop-probability {
-          type drop-probability;
-          description
-            "The drop probability to which the traffic-class value is mapped";
-        }
-      }
-    }
     list mpls-traffic-class-policy {
-      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:future-0-0";
       key "name";
       leaf name {
         type srl_nokia-comm:name;
         description
-          "User-configured name for an MPLS traffic-class classification policy
+          "User-configured name for an MPLS traffic-class mapping policy
 
-           The name 'default' is reserved for the system default MPLS TC classifier.";
+           The name 'default' is reserved for the system default MPLS TC mapping policy.";
       }
       list traffic-class {
         key "value";
@@ -409,30 +975,61 @@ module srl_nokia-qos {
             "A single traffic-class value";
         }
         leaf forwarding-class {
-          type srl_nokia-comm:forwarding-class;
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
           description
-            "The forwarding class to which the traffic-class value is mapped";
+            "The forwarding class to which the MPLS traffic-class value is mapped";
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
         }
         leaf drop-probability {
           srl_nokia-ext:first-released "21.6.3";
+          if-feature "not srl-feat:future-0-0";
           type drop-probability;
           description
             "The drop probability to which the traffic-class value is mapped";
+        }
+        leaf profile {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:classify-profile;
+          description
+            "The profile to which the DSCP value is mapped";
+        }
+        leaf de-out-profile {
+          if-feature "srl-feat:future-0-0";
+          type boolean;
+          default "true";
+          description
+            "The discard-eligibility to which the DSCP value is mapped";
+        }
+        leaf ip-remark-policy {
+          if-feature "srl-feat:future-0-0";
+          description
+            "The ip-remark-policy to be used for this dscp-value";
+          type leafref {
+            path "../../../../rewrite-rules/ip-remark-policy/name";
+          }
         }
       }
     }
   }
 
-  grouping dot1p-classifier {
+  grouping ethernet-classifier {
     list dot1p-policy {
       if-feature "srl-feat:dot1p-classifier-rewrite";
       key "name";
       leaf name {
         type srl_nokia-comm:name;
         description
-          "User-configured name for a 802.1p prioriy code point classification policy
+          "User-configured name for a 802.1p prioriy code point mapping policy
 
-           The name 'default' is reserved for the system default DSCP classifier.";
+           The name 'default' is reserved for the system default dot1p mapping policy.";
       }
       list dot1p {
         key "value";
@@ -440,14 +1037,45 @@ module srl_nokia-qos {
           type dot1p-value;
         }
         leaf forwarding-class {
-          type srl_nokia-comm:forwarding-class;
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
           description
             "The forwarding class to which the dot1p value is mapped";
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
         }
         leaf drop-probability {
+          if-feature "not srl-feat:future-0-0";
           type drop-probability;
           description
             "The drop probability to which the dot1p value is mapped";
+        }
+        leaf profile {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:classify-profile;
+          description
+            "The profile to which the DSCP value is mapped";
+        }
+        leaf de-out-profile {
+          if-feature "srl-feat:future-0-0";
+          type boolean;
+          default "true";
+          description
+            "The discard-eligibility to which the DSCP value is mapped";
+        }
+        leaf ip-remark-policy {
+          if-feature "srl-feat:future-0-0";
+          description
+            "The ip-remark-policy to be used for this dscp-value";
+          type leafref {
+            path "../../../../rewrite-rules/ip-remark-policy/name";
+          }
         }
       }
     }
@@ -461,6 +1089,9 @@ module srl_nokia-qos {
       uses dscp-rewrite;
       uses mpls-tc-rewrite;
       uses dot1p-rewrite;
+      uses ip-remark {
+        if-feature "srl-feat:future-0-0";
+      }
     }
   }
 
@@ -475,12 +1106,22 @@ module srl_nokia-qos {
       list map {
         key "forwarding-class";
         leaf forwarding-class {
-          type srl_nokia-comm:forwarding-class;
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
           description
-            "The forwarding-class value";
+            "The forwarding class name";
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
         }
         list drop-probability {
           srl_nokia-ext:first-released "20.12.1";
+          if-feature "not srl-feat:future-0-0";
           key "drop-probability";
           leaf drop-probability {
             type drop-probability;
@@ -494,11 +1135,117 @@ module srl_nokia-qos {
               "The DSCP marking to be used for this specific drop-probability";
           }
         }
+        list profile {
+          if-feature "srl-feat:future-0-0";
+          key "profile";
+          leaf profile {
+            type rewrite-profile;
+            description
+              "A packet profile within the FC for which a different remarking is desired.";
+          }
+          leaf dscp {
+            mandatory true;
+            type srl_nokia-comm:dscp;
+            description
+              "The DSCP marking to be used for this specific profile";
+          }
+        }
         leaf dscp {
           mandatory true;
           type srl_nokia-comm:dscp;
           description
-            "The DSCP marking to be used for all packets associated with the FC, except those with a drop-probability-specific override.";
+            "The DSCP marking to be used for all packets associated with the FC, except those with a drop-probability-specific or profile-specific override.";
+        }
+      }
+    }
+  }
+
+  grouping ip-remark {
+    list ip-remark-policy {
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "User defined ip-remark-policy name";
+      }
+      container in-plus {
+        choice dscp-or-precedence {
+          case dscp {
+            leaf dscp {
+              type srl_nokia-comm:dscp;
+              description
+                "The DSCP marking to be used for this specific profile";
+            }
+          }
+          case precedence {
+            leaf precedence {
+              description
+                "The ip-precedence marking to be used for this specific profile";
+              type uint8 {
+                range "0..7";
+              }
+            }
+          }
+        }
+      }
+      container in {
+        choice dscp-or-precedence {
+          case dscp {
+            leaf dscp {
+              type srl_nokia-comm:dscp;
+              description
+                "The DSCP marking to be used for this specific profile";
+            }
+          }
+          case precedence {
+            leaf precedence {
+              description
+                "The ip-precedence marking to be used for this specific profile";
+              type uint8 {
+                range "0..7";
+              }
+            }
+          }
+        }
+      }
+      container out {
+        choice dscp-or-precedence {
+          case dscp {
+            leaf dscp {
+              type srl_nokia-comm:dscp;
+              description
+                "The DSCP marking to be used for this specific profile";
+            }
+          }
+          case precedence {
+            leaf precedence {
+              description
+                "The ip-precedence marking to be used for this specific profile";
+              type uint8 {
+                range "0..7";
+              }
+            }
+          }
+        }
+      }
+      container exceed {
+        choice dscp-or-precedence {
+          case dscp {
+            leaf dscp {
+              type srl_nokia-comm:dscp;
+              description
+                "The DSCP marking to be used for this specific profile";
+            }
+          }
+          case precedence {
+            leaf precedence {
+              description
+                "The ip-precedence marking to be used for this specific profile";
+              type uint8 {
+                range "0..7";
+              }
+            }
+          }
         }
       }
     }
@@ -506,7 +1253,7 @@ module srl_nokia-qos {
 
   grouping mpls-tc-rewrite {
     list mpls-traffic-class-policy {
-      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:monterey";
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:future-0-0";
       key "name";
       leaf name {
         type srl_nokia-comm:name;
@@ -516,12 +1263,22 @@ module srl_nokia-qos {
       list map {
         key "forwarding-class";
         leaf forwarding-class {
-          type srl_nokia-comm:forwarding-class;
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
           description
-            "The forwarding-class value";
+            "The forwarding class name";
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
         }
         list drop-probability {
           srl_nokia-ext:first-released "21.6.1";
+          if-feature "not srl-feat:future-0-0";
           key "drop-probability";
           leaf drop-probability {
             type drop-probability;
@@ -535,11 +1292,26 @@ module srl_nokia-qos {
               "The MPLS traffic class marking to be used for this specific drop-probability";
           }
         }
+        list profile {
+          if-feature "srl-feat:future-0-0";
+          key "profile";
+          leaf profile {
+            type rewrite-profile;
+            description
+              "A packet profile within the FC for which a different remarking is desired.";
+          }
+          leaf traffic-class {
+            mandatory true;
+            type traffic-class;
+            description
+              "The MPLS traffic class marking to be used for this specific profile";
+          }
+        }
         leaf traffic-class {
           mandatory true;
           type traffic-class;
           description
-            "The MPLS traffic class marking to be used for all packets associated with the FC, except those with a drop-probability-specific override.";
+            "The MPLS traffic class marking to be used for all packets associated with the FC, except those with a drop-probability-specific or profile-specific override.";
         }
       }
     }
@@ -557,12 +1329,22 @@ module srl_nokia-qos {
       list map {
         key "forwarding-class";
         leaf forwarding-class {
-          type srl_nokia-comm:forwarding-class;
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-forwarding-class;
+          }
           description
-            "The forwarding-class value";
+            "The forwarding class name";
+          must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                re-match(.,'fc[0-7]')" {
+            error-message "forwarding-class doesn't exist";
+          }
         }
         list drop-probability {
           srl_nokia-ext:first-released "20.12.1";
+          if-feature "not srl-feat:future-0-0";
           key "drop-probability";
           leaf drop-probability {
             type drop-probability;
@@ -576,11 +1358,65 @@ module srl_nokia-qos {
               "The dot1p marking to be used for this specific drop-probability";
           }
         }
+        list profile {
+          if-feature "srl-feat:future-0-0";
+          key "profile";
+          leaf profile {
+            type rewrite-profile;
+            description
+              "A packet profile within the FC for which a different remarking is desired.";
+          }
+          leaf inner-dot1p {
+            type dot1p-value;
+            description
+              "The inner-dot1p marking to be used for this specific profile";
+          }
+          leaf outer-dot1p {
+            type dot1p-value;
+            description
+              "The outer-dot1p marking to be used for this specific profile";
+          }
+        }
         leaf dot1p {
+          if-feature "not srl-feat:future-0-0";
           mandatory true;
           type dot1p-value;
           description
-            "The dot1p marking to be used for all packets associated with the FC, except those with a drop-probability-specific override.";
+            "The dot1p marking to be used for all packets associated with the FC, except those with a drop-probability-specific or profile-specific override.";
+        }
+        leaf inner-dot1p {
+          if-feature "srl-feat:future-0-0";
+          type dot1p-value;
+          description
+            "The inner-dot1p marking to be used for all packets associated with the FC, except those with a profile-specific override.";
+        }
+        leaf outer-dot1p {
+          if-feature "srl-feat:future-0-0";
+          type dot1p-value;
+          description
+            "The outer-dot1p marking to be used for all packets associated with the FC, except those with a profile-specific override.";
+        }
+        container inner-de-mark {
+          if-feature "srl-feat:future-0-0";
+          presence "inner-de-mark";
+          description
+            "Re-marking inner-vlan discard-eligibility bit for respecitve forwarding-class";
+          leaf force {
+            type boolean;
+            description
+              "Forcing the discard-eligibility bit to a given value.";
+          }
+        }
+        container outer-de-mark {
+          if-feature "srl-feat:future-0-0";
+          presence "outer-de-mark";
+          description
+            "Re-marking outer-vlan discard-eligibility bit for respecitve forwarding-class";
+          leaf force {
+            type boolean;
+            description
+              "Forcing the discard-eligibility bit to a given value.";
+          }
         }
       }
     }
@@ -602,64 +1438,87 @@ module srl_nokia-qos {
           "Container for QoS configuration that applies to outbound traffic through the port or LAG";
         container scheduler {
           srl_nokia-ext:first-released "20.12.1";
+          if-feature "not srl-feat:future-0-0";
           description
             "Output traffic scheduler options";
-          list tier {
-            max-elements 1;
-            description
-              "List of output traffic scheduler tiers or levels";
-            key "level";
-            leaf level {
-              type scheduler-level;
-              must '. = 1' {
-                error-message "Only one scheduler level supported";
+          choice policy-or-nodes {
+            case policy {
+              leaf scheduler-policy {
+                if-feature "srl-feat:scheduler-policies";
+                description
+                  "Reference to a scheduler policy to apply to output traffic through the port.";
+                type leafref {
+                  path "/srl_nokia-qos:qos/srl_nokia-qos:scheduler-policies/srl_nokia-qos:scheduler-policy/srl_nokia-qos:name";
+                }
               }
             }
-            list node {
-              max-elements 12;
-              description
-                "List of scheduler nodes at the specified scheduler level";
-              key "node-number";
-              leaf node-number {
+            case nodes {
+              list tier {
+                max-elements 1;
                 description
-                  "An identifier of the scheduler node. Within a scheduler tier, higher-numbered nodes are served before lower-numbererd nodes.";
-                type scheduler-node-id;
-              }
-              leaf strict-priority {
-                description
-                  "A true value configures the node for strict priority scheduling, whether or not a weight is also configured.  When set to false the node is serviced using DWRR, even if the node does not have a configured weight; in this case the default weight value of 1 is used.";
-                type boolean;
-              }
-              leaf weight {
-                description
-                  "The DWRR weight assigned to the scheduler node";
-                type uint8 {
-                  range "1..127";
+                  "List of output traffic scheduler tiers or levels";
+                key "level";
+                leaf level {
+                  type scheduler-level;
+                  must '. = 1' {
+                    error-message "Only one scheduler level supported";
+                  }
                 }
-                default "1";
+                list node {
+                  max-elements 12;
+                  description
+                    "List of scheduler nodes at the specified scheduler level";
+                  key "node-number";
+                  leaf node-number {
+                    description
+                      "An identifier of the scheduler node. Within a scheduler tier, higher-numbered nodes are served before lower-numbererd nodes.";
+                    type scheduler-node-id;
+                  }
+                  leaf strict-priority {
+                    description
+                      "A true value configures the node for strict priority scheduling, whether or not a weight is also configured.  When set to false the node is serviced using DWRR, even if the node does not have a configured weight; in this case the default weight value of 1 is used.";
+                    type boolean;
+                  }
+                  leaf weight {
+                    description
+                      "The DWRR weight assigned to the scheduler node";
+                    type uint8 {
+                      range "1..127";
+                    }
+                    default "1";
+                  }
+                }
               }
             }
           }
         }
-        list unicast-queue {
+        list queue {
           srl_nokia-ext:first-released "19.11.1";
           description
-            "List of unicast queues";
-          key "queue-id";
-          leaf queue-id {
-            type srl_nokia-comm:queue-index;
+            "List of queues";
+          key "queue-name";
+          leaf queue-name {
+            type union {
+              type leafref {
+                path "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue/srl_nokia-qos:name";
+              }
+              type srl_nokia-comm:default-queue-name;
+            }
             description
-              "The queue identifier
-
-               For unicast traffic on all platforms there is a one-to-one mapping between queue-id and forwarding class. fc0 traffic always use queue-id 0, fc1 traffic always uses queue-id 1, etc.";
+              "The queue name";
+            must "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue[srl_nokia-qos:name=current()]/srl_nokia-qos:name = current() or
+                  re-match(.,'unicast-[0-7]') or re-match(.,'multicast-[0-7]')" {
+              error-message "queue doesn't exist";
+            }
           }
           leaf-list forwarding-class {
             config false;
-            type srl_nokia-comm:forwarding-class;
+            type string;
             description
               "The list of forwarding classes that map to this queue.";
           }
           container active-queue-management {
+            if-feature "not srl-feat:future-0-0";
             config false;
             srl_nokia-ext:first-released "20.12.1";
             list wred-slope {
@@ -717,7 +1576,6 @@ module srl_nokia-qos {
               }
             }
             list ecn-slope {
-              if-feature "not srl-feat:monterey";
               description
                 "List of ECN slopes.";
               key "ecn-drop-probability";
@@ -764,20 +1622,20 @@ module srl_nokia-qos {
                 "Maximum queue depth in bytes.";
             }
             leaf committed-burst-size {
-              if-feature "srl-feat:monterey";
+              if-feature "srl-feat:future-0-0";
               type uint32;
               units "bytes";
               description
-                "Committed queue depth in bytes.";
+                "Committed queue lengt in bytes";
             }
             leaf last-high-threshold-time {
-              if-feature "not srl-feat:platform-7220-d5";
+              if-feature "not (srl-feat:platform-7220-d5 or srl-feat:future-0-0)";
               description
                 "The last time the queue depth exceeded the high-threshold in a rising direction.";
               type srl_nokia-comm:date-and-time;
             }
             leaf high-threshold-bytes {
-              if-feature "not srl-feat:platform-7220-d5";
+              if-feature "not (srl-feat:platform-7220-d5 or srl-feat:future-0-0)";
               type uint32;
               units "bytes";
               description
@@ -794,7 +1652,7 @@ module srl_nokia-qos {
               }
               default "100";
               description
-                "The maximum percentage of port bandwidth that is available to the traffic in this unicast queue during the PIR scheduling loop. The default is 100.";
+                "The maximum percentage of port bandwidth that is available to the traffic in this queue during the PIR scheduling loop. The default is 100.";
             }
             leaf peak-rate-bps {
               srl_nokia-ext:first-released "20.6.1";
@@ -803,28 +1661,14 @@ module srl_nokia-qos {
               description
                 "The actual/operational peak rate in bits per second.";
             }
-            leaf committed-rate-percent {
-              if-feature "srl-feat:monterey";
-              type uint8 {
-                range "0..99";
-              }
-              default "0";
-              description
-                "The percentage of port bandwidth that should be reserved for traffic in this unicast queue during the CIR scheduling loop. The default is 0.";
-            }
-            leaf committed-rate-bps {
-              config false;
-              if-feature "srl-feat:monterey";
-              type uint64;
-              description
-                "The actual/operational committed rate in bits per second.";
-            }
             leaf strict-priority {
               if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
               type boolean;
-              default "true";
               description
-                "When set to true the unicast queue is serviced as a strict priority queue, regardless of whether a weight is configured or its value. When set to false the unicast queue is serviced using WRR, even if the queue does not have a configured weight; in this case the default weight value of 1 is used.";
+                "When set to true the queue is serviced as a strict priority queue, regardless of whether a weight is configured or its value. When set to false the queue is serviced using WRR, even if the queue does not have a configured weight; in this case the default weight value of 1 is used.
+
+                 For unicast queues the implicit default value is true";
+              must 'not(../../../scheduler/scheduler-policy)';
             }
             leaf weight {
               srl_nokia-ext:first-released "20.6.1";
@@ -832,38 +1676,41 @@ module srl_nokia-qos {
               type uint8 {
                 range "1..255";
               }
-              default "1";
               description
-                "Configures the relative weight of a DWRR queue.";
+                "Configures the relative weight of a DWRR queue.
+
+                 For unicast queues the implicit default value is 1";
+              must 'not(../../../scheduler/scheduler-policy)';
             }
             leaf scheduler-node {
               srl_nokia-ext:first-released "20.12.1";
+              if-feature "not srl-feat:future-0-0";
               config false;
               description
-                "The scheduler node to which the unicast queue is connected. The mappings are fixed and not user-configurable.
+                "The scheduler node to which the queue is connected. The mappings are fixed and not user-configurable.
 
                  J2:
-                 queue-id 0-7 -> node 1
+                 unicast-0..unicast-7 -> node 1
+                 multicast-0..multicast-7 -> node 0
 
-                 TD3 (D2/D3):
-                 queue-id 0 -> node 0
-                 queue-id 1 -> node 1
-                 queue-id 2 -> node 2
-                 queue-id 3 -> node 3
-                 queue-id 4 -> node 4
-                 queue-id 5 -> node 5
-                 queue-id 6 -> node 6
-                 queue-id 7 -> node 7
+                 TD3 (D2/D3/D5):
+                 unicast-x -> node x
+                 multicast-x -> node x
 
                  TH3:
-                 queue-id 0 -> node 1
-                 queue-id 1 -> node 2
-                 queue-id 2 -> node 4
-                 queue-id 3 -> node 5
-                 queue-id 4 -> node 7
-                 queue-id 5 -> node 8
-                 queue-id 6 -> node 10
-                 queue-id 7 -> node 11";
+                 unicast-0 -> node 1
+                 unicast-1 -> node 2
+                 unicast-2 -> node 4
+                 unicast-3 -> node 5
+                 unicast-4 -> node 7
+                 unicast-5 -> node 8
+                 unicast-6 -> node 10
+                 unicast-7 -> node 11
+                 multicast-0 -> node 0
+                 multicast-1 -> node 3
+                 multicast-2 -> node 6
+                 multicast-3 -> node 9
+                ";
               type leafref {
                 path "../../../scheduler/tier/node/node-number";
               }
@@ -871,17 +1718,19 @@ module srl_nokia-qos {
           }
           leaf template {
             srl_nokia-ext:first-released "20.12.1";
-            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl or srl-feat:monterey";
+            if-feature "not srl-feat:future-0-0";
+            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:queue-templates/srl_nokia-qos:queue-template/srl_nokia-qos:name";
             }
             description
-              "The name of a queue-template to apply to the unicast queue.
+              "The name of a queue-template to apply to the queue.
 
                If a queue has no queue-template, the default queue-template is applied. The user cannot modify the default queue-template.";
           }
           leaf voq-template {
             srl_nokia-ext:first-released "20.12.1";
+            if-feature "not srl-feat:future-0-0";
             if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:queue-templates/srl_nokia-qos:queue-template/srl_nokia-qos:name";
@@ -890,106 +1739,6 @@ module srl_nokia-qos {
               "The name of a queue-template to apply to the set of associated VOQs.
 
                If a queue has no voq-template, the default queue-template is applied";
-          }
-        }
-        list multicast-queue {
-          srl_nokia-ext:first-released "20.12.1";
-          description
-            "List of multicast queues";
-          key "queue-id";
-          leaf queue-id {
-            type srl_nokia-comm:queue-index;
-            description
-              "The queue identifier
-
-               For J2 and TD3 there is a one-to-one mapping between queue-id and forwarding class. fc0 traffic always use queue-id 0, fc1 traffic always uses queue-id 1, etc.
-
-               For TH3 the multicast queue-id range is limited to 0-3 and the mapping is as follows:
-               fc0+1 -> queue-id 0
-               fc2+3 -> queue-id 1
-               fc4+5 -> queue-id 2
-               fc6+7 -> queue-id 3";
-          }
-          leaf-list forwarding-class {
-            config false;
-            type srl_nokia-comm:forwarding-class;
-            description
-              "The list of forwarding classes that map to this queue.";
-          }
-          container queue-depth {
-            config false;
-            leaf maximum-burst-size {
-              type uint32;
-              units "bytes";
-              description
-                "Maximum queue depth in bytes.";
-            }
-            leaf committed-burst-size {
-              if-feature "srl-feat:monterey";
-              type uint32;
-              units "bytes";
-              description
-                "Committed queue depth in bytes.";
-            }
-            leaf last-high-threshold-time {
-              description
-                "The last time the queue depth exceeded the high-threshold in a rising direction.";
-              type srl_nokia-comm:date-and-time;
-            }
-          }
-          container scheduling {
-            description
-              "Container for queue scheduling parameters";
-            leaf peak-rate-percent {
-              if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-vsrl";
-              type uint8 {
-                range "1..100";
-              }
-              default "100";
-              description
-                "The maximum percentage of port bandwidth that is available to the traffic in this multicast queue. The default is 100.";
-            }
-            leaf peak-rate-bps {
-              config false;
-              type uint64;
-              description
-                "The actual/operational peak rate in bits per second.";
-            }
-            leaf scheduler-node {
-              config false;
-              description
-                "The scheduler node to which the multicast queue is connected. The mappings are fixed and not user-configurable.
-
-                 J2:
-                 queue-id 0-7 -> node 0
-
-                 TD3 (D2/D3):
-                 queue-id 0 -> node 0
-                 queue-id 1 -> node 1
-                 queue-id 2 -> node 2
-                 queue-id 3 -> node 3
-                 queue-id 4 -> node 4
-                 queue-id 5 -> node 5
-                 queue-id 6 -> node 6
-                 queue-id 7 -> node 7
-
-                 TH3:
-                 queue-id 4 -> node 0
-                 queue-id 5 -> node 3
-                 queue-id 6 -> node 6
-                 queue-id 7 -> node 9";
-              type leafref {
-                path "../../../scheduler/tier/node/node-number";
-              }
-            }
-          }
-          leaf template {
-            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:platform-vsrl or srl-feat:monterey";
-            type leafref {
-              path "/srl_nokia-qos:qos/srl_nokia-qos:queue-templates/srl_nokia-qos:queue-template/srl_nokia-qos:name";
-            }
-            description
-              "The name of a queue-template to apply to the multicast queue. The active-queue-management container must not be present in order to apply the template. Also the high-threshold-bytes configuration in this template is ignored.";
           }
         }
       }
@@ -1001,43 +1750,54 @@ module srl_nokia-qos {
       srl_nokia-ext:first-released "19.11.1";
       if-feature "not srl-feat:platform-7220-d1";
       config false;
-      list unicast-queue {
+      list queue {
         description
-          "List of unicast queues.";
-        key "queue-id";
-        leaf queue-id {
-          type srl_nokia-comm:queue-index;
+          "List of  queues.";
+        key "queue-name";
+        leaf queue-name {
+          type union {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue/srl_nokia-qos:name";
+            }
+            type srl_nokia-comm:default-queue-name;
+          }
           description
-            "The queue identifier
-
-             For unicast traffic on all platforms there is a one-to-one mapping between queue-id and forwarding class. fc0 traffic always use queue-id 0, fc1 traffic always uses queue-id 1, etc.";
+            "The queue name";
         }
         leaf last-clear {
           type srl_nokia-comm:date-and-time-delta;
           description
-            "Timestamp of the last time the statistics associated with this unicast queue were cleared";
+            "Timestamp of the last time the statistics associated with this queue were cleared";
         }
         leaf transmitted-packets {
+          if-feature "not srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of packets transmitted by the unicast queue, including transit traffic and locally originated traffic.";
+            "Number of packets transmitted by the queue, including transit traffic and locally originated traffic.";
         }
         leaf transmitted-octets {
+          if-feature "not srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of octets transmitted by the unicast queue.";
+            "Number of octets transmitted by the queue.
+
+             Note that on IXR-6/10 this count is based on the ingress packet size including received MPLS labels plus the Ethernet encapsulation that was present at ingress; popped and pushed MPLS labels are not accounted for and neither is the difference, if any, between ingress and egress Ethernet encapsulation size.
+
+             Note that on IXR-6e/10e this count is based on the ingress packet size minus terminated/popped MPLS labels minus the Ethernet encapsulation; pushed MPLS labels are not accounted for and neither is the egress Ethernet encapsulation.";
         }
         leaf final-dropped-packets {
+          if-feature "not srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of packets dropped by the unicast queue.
+            "Number of packets dropped by the queue.
 
              On 7250-IXR (Jericho2-based) systems unicast packet drops related to egress port congestion should show up in the VOQ stats and not in this statistic.";
         }
         leaf final-dropped-octets {
+          if-feature "not srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of octets dropped by the unicast queue.
+            "Number of octets dropped by the queue.
 
              On 7250-IXR (Jericho2-based) systems unicast packet drops related to egress port congestion should show up in the VOQ stats and not in this statistic.";
         }
@@ -1141,48 +1901,101 @@ module srl_nokia-qos {
             }
           }
         }
-      }
-      list multicast-queue {
-        description
-          "List of multicast queues.";
-        key "queue-id";
-        leaf queue-id {
-          type srl_nokia-comm:queue-index;
-          description
-            "The queue identifier
-
-             For J2 and TD3 there is a one-to-one mapping between queue-id and forwarding class. fc0 traffic always use queue-id 0, fc1 traffic always uses queue-id 1, etc.
-
-             For TH3 the multicast queue-id range is limited to 0-3 and the mapping is as follows:
-             fc0+1 -> queue-id 0
-             fc2+3 -> queue-id 1
-             fc4+5 -> queue-id 2
-             fc6+7 -> queue-id 3";
-        }
-        leaf last-clear {
-          type srl_nokia-comm:date-and-time-delta;
-          description
-            "Timestamp of the last time the statistics associated with this multicast queue were cleared";
-        }
-        leaf transmitted-packets {
+        leaf transmitted-in-packets {
+          if-feature "srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of packets transmitted by the multicast queue.";
+            "Number of packets marked with In or InPlus profile transmitted by the queue, including transit traffic and locally originated traffic.";
         }
-        leaf transmitted-octets {
+        leaf transmitted-in-octets {
+          if-feature "srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of octets transmitted by the multicast queue.";
+            "Number of octets marked with In or InPlus profile transmitted by the queue, including transit traffic and locally originated traffic.";
         }
-        leaf final-dropped-packets {
+        leaf dropped-in-packets {
+          if-feature "srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of packets dropped by the multicast queue.";
+            "Number of packets marked with In or InPlus profile transmitted by the queue dropped by the queue.";
         }
-        leaf final-dropped-octets {
+        leaf dropped-in-octets {
+          if-feature "srl-feat:future-0-0";
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Number of octets dropped by the multicast queue.";
+            "Number of octets marked with In or InPlus profile transmitted by the queue dropped by the queue.";
+        }
+        leaf transmitted-inplus-packets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of packets marked with In or InPlus profile transmitted by the queue, including transit traffic and locally originated traffic.";
+        }
+        leaf transmitted-inplus-octets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of octets marked with In or InPlus profile transmitted by the queue, including transit traffic and locally originated traffic.";
+        }
+        leaf dropped-inplus-packets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of packets marked with In or InPlus profile transmitted by the queue dropped by the queue.";
+        }
+        leaf dropped-inplus-octets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of octets marked with In or InPlus profile transmitted by the queue dropped by the queue.";
+        }
+        leaf transmitted-out-packets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of packets marked with Out profile transmitted by the queue, including transit traffic and locally originated traffic.";
+        }
+        leaf transmitted-out-octets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of octets marked with Out profile transmitted by the queue, including transit traffic and locally originated traffic.";
+        }
+        leaf dropped-out-packets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of packets marked with Out profile transmitted by the queue dropped by the queue.";
+        }
+        leaf dropped-out-octets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of octets marked with Out profile transmitted by the queue dropped by the queue.";
+        }
+        leaf transmitted-exceed-packets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of packets marked with Exceed profile transmitted by the queue, including transit traffic and locally originated traffic.";
+        }
+        leaf transmitted-exceed-octets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of octets marked with Exceed profile transmitted by the queue, including transit traffic and locally originated traffic.";
+        }
+        leaf dropped-exceed-packets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of packets marked with Exceed profile transmitted by the queue dropped by the queue.";
+        }
+        leaf dropped-exceed-octets {
+          if-feature "srl-feat:future-0-0";
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Number of octets marked with Out profile transmitted by the queue dropped by the queue.";
         }
       }
     }
@@ -1193,59 +2006,240 @@ module srl_nokia-qos {
       srl_nokia-ext:first-released "19.11.1";
       if-feature "not srl-feat:platform-7220-d1";
       container input {
+        container policers {
+          if-feature "srl-feat:ingress-subif-policing";
+          description
+            "Container with information about the policers applied to input traffic on the subinterface.";
+          leaf policer-template {
+            must "not(starts-with(../../../../../srl_nokia-if:name,'irb'))" {
+              error-message "Not supported on IRB interfaces";
+            }
+            must "../../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
+              error-message "policer not allowed on subinterface with type local-mirror-dest";
+            }
+            description
+              "The name of the policer template applied to input traffic on the subinterface
+
+               If this is configured but no value is displayed in state information then there were insufficient resources to completely apply the template.";
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:policer-templates/srl_nokia-qos:policer-template/srl_nokia-qos:name";
+            }
+          }
+          list policer {
+            config false;
+            description
+              "The list of policer instances belonging to the template definition.";
+            key "sequence-id";
+            leaf sequence-id {
+              type uint32 {
+                range "1..65535";
+              }
+              description
+                "Policer sequeunce-id";
+            }
+            uses srl_nokia-qos-policers:policer-instance-state;
+          }
+        }
         container classifiers {
-          leaf ipv4-dscp {
+          leaf default-forwarding-class {
+            description
+              "The default forwarding class for packets arriving on this subinterface that do not match any classification rule.";
+            type union {
+              type leafref {
+                path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+              }
+              type srl_nokia-comm:default-forwarding-class;
+            }
+            must "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class[srl_nokia-qos:name = current()]/srl_nokia-qos:name = current() or
+                  re-match(.,'fc[0-7]')" {
+              error-message "forwarding-class doesn't exist";
+            }
+            must "../../../../srl_nokia-if:type = 'srl_nokia-if:bridged'" {
+              error-message "default-forwarding-class allowed with type bridged only";
+              srl_nokia-ext:if-feature "not srl_nokia-features:fp5-c";
+            }
+          }
+          leaf default-drop-probability {
+            if-feature "not srl-feat:future-0-0";
+            description
+              "The default drop-probability for packets arriving on this subinterface that do not match any classification rule.";
+            type drop-probability;
+            must "../../../../srl_nokia-if:type = 'srl_nokia-if:bridged'" {
+              error-message "default-drop-probability allowed with type bridged only";
+            }
+          }
+          leaf default-profile {
+            if-feature "srl-feat:future-0-0";
+            description
+              "The default profile for packets arriving on this subinterface that do not match any classification rule.";
+            type srl_nokia-comm:classify-profile;
+          }
+          leaf ipv4-dscp-policy {
             if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
             }
             description
-              "Reference to the name of a DSCP classifier policy that applies only to IPv4 traffic.";
+              "Reference to the name of a DSCP mapping policy that applies only to IPv4 traffic.";
           }
-          leaf ipv6-dscp {
+          leaf ipv6-dscp-policy {
             if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
             }
             description
-              "Reference to the name of a DSCP classifier policy that applies only to IPv6 traffic.";
+              "Reference to the name of a DSCP mapping policy that applies only to IPv6 traffic.";
           }
-          leaf dscp {
+          leaf dscp-policy {
             srl_nokia-ext:first-released "20.6.1";
-            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:monterey";
+            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:tomahawk4 or srl-feat:tomahawk4 or srl-feat:future-0-0";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
             }
             description
-              "Reference to the name of a DSCP classifier policy that applies to both IPv4 and IPv6 traffic.";
+              "Reference to the name of a DSCP mapping policy that applies to both IPv4 and IPv6 traffic.";
           }
-          leaf dot1p {
+          leaf dot1p-policy {
             srl_nokia-ext:first-released "22.6.1";
             if-feature "srl-feat:dot1p-classifier-rewrite";
-            if-feature "srl-feat:monterey or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dot1p-policy/srl_nokia-qos:name";
             }
             description
-              "Reference to the name of a dot1p classifier policy.";
+              "Reference to the name of a dot1p mapping policy.";
             must "../../../../srl_nokia-if:type = 'srl_nokia-if:bridged'" {
               error-message "dot1p classifiers allowed with type bridged only";
             }
           }
-          leaf mpls-traffic-class {
-            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+          leaf mpls-traffic-class-policy {
+            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:future-0-0";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:mpls-traffic-class-policy/name";
             }
             description
-              "Reference to the name of an MPLS traffic-class classifier policy";
+              "Reference to the name of an MPLS traffic-class mapping policy";
+          }
+          leaf ler-use-dscp {
+            if-feature "srl-feat:future-0-0";
+            description
+              "Enables short-pipe model for all lsp-bindings terminated on the subinterface";
+            type boolean;
+            default "false";
+          }
+          leaf match-qinq-dot1p {
+            if-feature "srl-feat:future-0-0";
+            description
+              "Defines which dot1p bits will be used for dot1p-classification in case of QinQ encapsulation.";
+            type enumeration {
+              enum top;
+              enum bottom;
+            }
+            default "top";
+          }
+          leaf tos-marking-state {
+            if-feature "srl-feat:future-0-0";
+            description
+              "Defines whether given subinterface is considered as trusted/untrusted for remarking purpose.";
+            type enumeration {
+              enum trusted;
+              enum untrusted;
+            }
+            default "trusted";
           }
         }
       }
       container output {
         srl_nokia-ext:first-released "19.11.1";
+        leaf dscp-reclassify-policy {
+          if-feature "srl-feat:future-0-0";
+          type leafref {
+            path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-qos:dscp-reclassify-policy/srl_nokia-qos:name";
+          }
+          description
+            "Reference to egress dscp-reclassification policy.";
+        }
+        leaf out-class-map {
+          if-feature "srl-feat:future-0-0";
+          type leafref {
+            path "/srl_nokia-qos:qos/srl_nokia-qos:out-class-map/srl_nokia-qos:name";
+          }
+          description
+            "Reference to the name of out-class-map that applies to subinterface";
+        }
+        container queues {
+          if-feature "srl-feat:future-0-0";
+          config false;
+          description
+            "Container dispaying state information related to output queues at subinterface level";
+          list queue {
+            description
+              "List of output-queues";
+            key "queue-name";
+            leaf queue-name {
+              type union {
+                type leafref {
+                  path "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue/srl_nokia-qos:name";
+                }
+                type srl_nokia-comm:default-queue-name;
+              }
+              description
+                "The output queue-name";
+            }
+            leaf-list forwarding-class {
+              config false;
+              type string;
+              description
+                "The list of forwarding classes that map to this queue.";
+            }
+            container queue-depth {
+              description
+                "Container for output-queue depth parameters";
+              leaf committed-burst-size-bytes {
+                config false;
+                type uint32;
+                units "bytes";
+                description
+                  "Operational committed queue depth in bytes.";
+              }
+              leaf maximum-burst-size-bytes {
+                config false;
+                type uint32;
+                units "bytes";
+                description
+                  "Operational maximum queue depth in bytes.";
+              }
+            }
+            container scheduling {
+              description
+                "Container for queue scheduling parameters";
+              leaf peak-rate-bps {
+                config false;
+                type uint64;
+                description
+                  "The actual/operational peak rate in bits per second.";
+              }
+              leaf scheduling-class {
+                config false;
+                description
+                  "The scheduling-class for output-queue";
+                type uint8 {
+                  range "0..7";
+                }
+              }
+              leaf weight {
+                config false;
+                type uint8 {
+                  range "1..127";
+                }
+                description
+                  "Configures the relative weight of output-queue.";
+              }
+            }
+          }
+          uses queue-stats;
+        }
         container rewrite-rules {
-          leaf ipv4-dscp {
+          leaf ipv4-dscp-policy {
             if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
@@ -1253,7 +2247,7 @@ module srl_nokia-qos {
             description
               "Reference to the name of a DSCP rewrite-rule policy that applies only to IPv4 traffic.";
           }
-          leaf ipv6-dscp {
+          leaf ipv6-dscp-policy {
             if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
@@ -1261,9 +2255,9 @@ module srl_nokia-qos {
             description
               "Reference to the name of a DSCP rewrite-rule policy that applies only to IPv6 traffic.";
           }
-          leaf dscp {
+          leaf dscp-policy {
             srl_nokia-ext:first-released "20.6.1";
-            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:monterey";
+            if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d5 or srl-feat:tomahawk3 or srl-feat:tomahawk4 or srl-feat:tomahawk4 or srl-feat:future-0-0";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dscp-policy/srl_nokia-qos:name";
             }
@@ -1273,30 +2267,45 @@ module srl_nokia-qos {
               error-message "rewrite-rules not allowed with type bridged";
             }
           }
-          leaf dot1p {
+          leaf dot1p-policy {
             srl_nokia-ext:first-released "22.6.1";
             if-feature "srl-feat:dot1p-classifier-rewrite";
-            if-feature "srl-feat:monterey or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:dot1p-policy/srl_nokia-qos:name";
             }
             description
               "Reference to the name of a dot1p rewrite policy.";
-            must "../../../../../srl_nokia-if:vlan-tagging = true()" {
+            must '../../../../../srl_nokia-if:vlan-tagging = true()' {
               error-message "rewrite-rules not allowed on untagged subinterface ";
             }
             must "not(starts-with(../../../../../srl_nokia-if:name,'lo'))" {
               error-message "rewrite-rules not allowed on loopback subinterface";
             }
-
           }
-          leaf mpls-traffic-class {
-            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:monterey";
+          leaf mpls-traffic-class-policy {
+            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:future-0-0";
             type leafref {
               path "/srl_nokia-qos:qos/srl_nokia-qos:rewrite-rules/srl_nokia-qos:mpls-traffic-class-policy/name";
             }
             description
-              "Reference to the name of an MPLS traffic-class rewrite-rule policy";
+              "Reference to the name of an MPLS traffic-class rewrite-rule policy.";
+          }
+          container remarking {
+            if-feature "srl-feat:future-0-0";
+            presence "remarking";
+            leaf force-remark-trusted {
+              type boolean;
+              default "false";
+              description
+                "Enables remarking packets incomming on trusted interfaces.";
+            }
+          }
+          leaf qinq-mark-top-only {
+            if-feature "srl-feat:future-0-0";
+            type boolean;
+            default "true";
+            description
+              "Enables remarking only outer-dot1p bits";
           }
         }
       }

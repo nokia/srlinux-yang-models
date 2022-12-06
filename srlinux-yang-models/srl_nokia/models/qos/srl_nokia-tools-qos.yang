@@ -1,7 +1,7 @@
 module srl_nokia-tools-qos {
   yang-version 1.1;
   namespace "urn:srl_nokia/tools-qos";
-  prefix srl-qos;
+  prefix srl_nokia-tools-qos;
 
   import srl_nokia-common {
     prefix srl_nokia-comm;
@@ -13,6 +13,10 @@ module srl_nokia-tools-qos {
     prefix srl-feat;
   }
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -36,27 +40,21 @@ module srl_nokia-tools-qos {
 
   augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:statistics" {
     container queue-statistics {
-      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7220-d5 or srl-feat:platform-7210-sas24g or srl-feat:platform-7210-sas24";
+      if-feature "not srl-feat:platform-7220-d1";
       leaf clear {
         type empty;
       }
-      list unicast-queue {
-        key "queue-id";
-        leaf queue-id {
-          type srl_nokia-comm:queue-index;
+      list queue {
+        description
+          "List of queues";
+        key "queue-name";
+        leaf queue-name {
+          type union {
+            type srl_nokia-comm:default-queue-name;
+            type string;
+          }
           description
-            "Queue number: 0-7";
-        }
-        leaf clear {
-          type empty;
-        }
-      }
-      list multicast-queue {
-        key "queue-id";
-        leaf queue-id {
-          type srl_nokia-comm:queue-index;
-          description
-            "Queue number: 0-7";
+            "The queue name";
         }
         leaf clear {
           type empty;

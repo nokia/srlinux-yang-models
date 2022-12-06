@@ -16,6 +16,10 @@ module srl_nokia-tools-tls {
   description
     "This module defines operational commands related to TLS.";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -76,6 +80,55 @@ module srl_nokia-tools-tls {
       description
         "The organization unit to use for the certificate signing request";
       type srl-comm:name;
+    }
+    leaf key-type {
+      description
+        "The type of private key to generate for the certificate signing request";
+      type enumeration {
+        enum rsa;
+      }
+      default "rsa";
+    }
+    leaf key-size {
+      description
+        "The size of the private key to generate for the certificate signing request";
+      default "4096";
+      type uint32 {
+        range "1024..16384";
+      }
+    }
+    leaf type {
+      description
+        "The type of certificate to use for the certificate signing request";
+      type enumeration {
+        enum x509;
+      }
+      default "x509";
+    }
+    leaf spiffe-id {
+      type string {
+        pattern 'spiffe://.*';
+      }
+      description
+        "A SPIFFE ID to use for the certificate signing request
+
+         This ID is in URI form, including the leading 'spiffe://', for example 'spiffe://srlinux.dev/sa/user'.";
+    }
+    leaf-list ip-addresses {
+      max-elements 32;
+      type srl-comm:ip-address;
+      description
+        "IP addresses to add to the SubjectAlternativeName field within the certificate signing request
+
+         These addresses are encoded as IP:<ip> within the certificate SAN.";
+    }
+    leaf-list domain-names {
+      max-elements 32;
+      type srl-comm:domain-name;
+      description
+        "Domain names to add to the SubjectAlternativeName field within the certificate signing request
+
+         These names are encoeded as DNS:<name> within the certificate SAN.";
     }
   }
 
