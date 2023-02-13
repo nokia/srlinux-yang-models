@@ -267,6 +267,8 @@ module srl_nokia-interfaces {
 
          The default value for ethernet-x interfaces is taken from /system/mtu/default-port-mtu. For the mgmt0 and mgmt0-standby interfaces the default is 1514 bytes, but the value can be changed for each interface individually. Port MTU is not configurable for loopback interfaces.
 
+         The max mtu for the mgmt0 and mgmt0-standby interfaces is 9216.
+
          The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum port MTU of 9412 bytes and minimum of 1500 bytes.
 
          The VSRL system supports a maximum port MTU of 9500 and minimum of 1450 bytes.
@@ -279,6 +281,9 @@ module srl_nokia-interfaces {
       }
       must 'starts-with(../srl_nokia-if:name, "lif") or starts-with(../srl_nokia-if:name, "vhn") or (. >= 1500)' {
         error-message "minimum mtu is 1500 for this interface type";
+      }
+      must "(not (starts-with(../srl_nokia-if:name, 'mgmt'))) or (. <= 9216)" {
+        error-message "mtu max is 9216 for mgmt interface";
       }
     }
     leaf loopback-mode {
