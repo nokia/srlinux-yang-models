@@ -1,0 +1,108 @@
+module srl_nokia-aaa-radius {
+  yang-version 1.1;
+
+  // namespace
+
+  namespace "urn:srl_nokia/aaa-radius";
+  prefix srl-aaa-radius;
+
+  import srl_nokia-aaa-types {
+    prefix srl-aaa-types;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  description
+    "This module defines configuration and operational state data
+    related to the RADIUS protocol for authentication,
+    authorization, and accounting.";
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+
+  // grouping statements
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping aaa-radius-server-config {
+    description
+      "Configuration data for a RADIUS server";
+
+    leaf auth-port {
+      type srl-comm:port-number;
+      default "1812";
+      must '. = 1812 or ../../../type = "srl-aaa-types:radius"' {
+        error-message "RADIUS auth-port configuration supported for 'radius' server type only";
+      }
+      description
+        "Port number for authentication requests";
+    }
+
+    leaf acct-port {
+      type srl-comm:port-number;
+      default "1813";
+      must '. = 1813 or ../../../type = "srl-aaa-types:radius"' {
+        error-message "RADIUS acct-port configuration supported for 'radius' server type only";
+      }
+      description
+        "Port number for accounting requests";
+    }
+
+    leaf secret-key {
+      type srl-comm:routing-password;
+      must '../../../type = "srl-aaa-types:radius"' {
+        error-message "RADIUS secret-key configuration supported for 'radius' server type only";
+      }
+      description
+        "The unencrypted shared key used between the authentication
+        server and the device.";
+    }
+
+//    leaf source-address {
+//      type oc-inet:ip-address;
+//      description
+//        "Source IP address to use in messages to the RADIUS server";
+//    }
+
+    leaf retransmit-attempts {
+      type uint8;
+      default "3";
+      must '. = 3 or ../../../type = "srl-aaa-types:radius"' {
+        error-message "RADIUS retransmit-attempts configuration supported for 'radius' server type only";
+      }
+      description
+        "Number of times the system may resend a request to the
+        RADIUS server when it is unresponsive";
+    }
+  }
+
+  grouping aaa-radius-server-top {
+    description
+      "Top-level grouping for RADIUS server data";
+
+    container radius {
+      description
+        "Top-level container for RADIUS server data";
+
+        uses aaa-radius-server-config;
+    }
+  }
+}

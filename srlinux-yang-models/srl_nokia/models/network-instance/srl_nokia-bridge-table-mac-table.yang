@@ -1,17 +1,21 @@
 module srl_nokia-bridge-table-mac-table {
-  yang-version 1.1;
-  namespace "urn:srl_nokia/network-instance/bridge-table/mac-table";
-  prefix srl_nokia-bridge-table-mac-table;
 
-  import srl_nokia-common {
-    prefix srl_nokia-comm;
-  }
-  import srl_nokia-network-instance {
-    prefix srl_nokia-netinst;
-  }
-  import srl_nokia-extensions {
-    prefix srl_nokia-ext;
-  }
+  yang-version "1.1";
+
+  // namespace
+  namespace "urn:srl_nokia/network-instance/bridge-table/mac-table";
+
+  prefix "srl_nokia-bridge-table-mac-table";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
 
   description
     "This yang file gives a description of bridge table configuration.";
@@ -34,44 +38,48 @@ module srl_nokia-bridge-table-mac-table {
       config false;
       list mac {
         key "address";
-        description
-          "macs learnt on the bridging instance";
+        description "macs learnt on the bridging instance";
         leaf address {
           type srl_nokia-comm:mac-address;
         }
+
         leaf destination-type {
-          type srl_nokia-comm:destination-type;
+          type srl_nokia-comm:destination-type ;
           srl_nokia-ext:show-importance "high";
           description
             "the type of the destination the mac installed against in the fdb.";
         }
+
         leaf destination-index {
           type uint64;
           srl_nokia-ext:show-importance "high";
           description
             "A system-wide unique identifier of a subinterface object (system allocated).";
         }
+
         leaf type {
           type srl_nokia-comm:mac-type;
           srl_nokia-ext:show-importance "high";
           description
             "the type of the mac installed in the fib.";
         }
+
         leaf last-update {
           type srl_nokia-comm:date-and-time-delta;
           srl_nokia-ext:show-importance "high";
           description
             "The date and time of the last update of this mac";
         }
+
         leaf not-programmed-reason {
           type enumeration {
-            enum mac-limit;
-            enum failed-on-slots;
-            enum no-destination-index;
-            enum reserved;
+            enum "mac-limit";
+            enum "failed-on-slots";
+            enum "no-destination-index";
+            enum "reserved";
           }
-          description
-            "The reason why the mac is not programmed";
+          description 
+             "The reason why the mac is not programmed";
         }
         leaf-list failed-slots {
           type uint8 {
@@ -85,7 +93,7 @@ module srl_nokia-bridge-table-mac-table {
           srl_nokia-ext:show-importance "high";
           description
             "the name of the destination where the mac is programmed against.";
-        }
+        }  
         leaf is-protected {
           type boolean;
           srl_nokia-ext:show-importance "high";
@@ -93,7 +101,7 @@ module srl_nokia-bridge-table-mac-table {
             "Indicates if the mac is protected in the hardware.";
         }
       }
-    }
+    }  
   }
 
   grouping mac-table-statistics {

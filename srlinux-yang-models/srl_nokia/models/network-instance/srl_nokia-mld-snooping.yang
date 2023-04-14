@@ -3,9 +3,6 @@ module srl_nokia-mld-snooping {
   namespace "urn:srl_nokia/mld-snooping";
   prefix srl_nokia-mld-snooping;
 
-  import ietf-yang-types {
-    prefix yang;
-  }
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
@@ -24,10 +21,26 @@ module srl_nokia-mld-snooping {
   import srl_nokia-extensions {
     prefix srl_nokia-ext;
   }
+  import srl_nokia-tunnel-interfaces {
+    prefix srl_nokia-tunnel-if;
+  }
+  import srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-multicast-destinations {
+    prefix srl_nokia-tunnel-if-mcast-dest;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
 
   description
     "This yang file models configuration and state of the mld snooping protocol on mac-vrf";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -61,9 +74,7 @@ module srl_nokia-mld-snooping {
     leaf interface-name {
       description
         "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
-      type leafref {
-        path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
-      }
+      type srl_nokia-comm:subinterface-all;
     }
   }
 
@@ -76,7 +87,7 @@ module srl_nokia-mld-snooping {
         error-message "Not a valid IPv6 multicast address";
       }
       must "not (re-match(.,'[f]{2}[0-9a-f][0-3].*') or re-match(.,'[f]{2}[0-9a-f][f].*'))" {
-        error-message "Not a valid IPv6 multicast addres scope";
+        error-message "Not a valid IPv6 multicast address scope";
       }
     }
   }
@@ -94,20 +105,18 @@ module srl_nokia-mld-snooping {
             "Trace MLD Packet types";
           list interface {
             description
-              "List of interfaces to trace.";
+              "List of interfaces to trace";
             key "interface-name";
             leaf interface-name {
               description
                 "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
-              type leafref {
-                path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
-              }
+              type srl_nokia-comm:subinterface-all;
             }
             max-elements 8;
           }
           list source-mac {
             description
-              "List of source mac addresses to trace.";
+              "List of source mac addresses to trace";
             key "source-mac";
             leaf source-mac {
               type srl_nokia-comm:mac-address;
@@ -119,17 +128,17 @@ module srl_nokia-mld-snooping {
               enum dropped {
                 value 0;
                 description
-                  "Enable tracing for the packets which are dropped.";
+                  "Enable tracing for the packets which are dropped";
               }
               enum ingress-and-dropped {
                 value 1;
                 description
-                  "Enable tracing for the packets which are sent or received.";
+                  "Enable tracing for the packets which are sent or received";
               }
               enum egress-ingress-and-dropped {
                 value 2;
                 description
-                  "Enable tracing for the packets which are sent, received or dropped.";
+                  "Enable tracing for the packets which are sent, received or dropped";
               }
             }
           }
@@ -142,29 +151,28 @@ module srl_nokia-mld-snooping {
     leaf address {
       config false;
       description
-        "The source IP address used by queries sent out by this multicast router.";
+        "The source IP address used by queries sent out by this multicast router";
       type srl_nokia-comm:ipv6-address;
     }
     leaf version {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "The version of the protocol that is sent by this multicast router.";
+        "The version of the protocol that is sent by this multicast router";
       type mld-version;
     }
     leaf up-time {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "The time since this multicast router has been known in this service.";
-      type uint32;
-      units "seconds";
+        "The time since this multicast router has been known in this service";
+      type srl_nokia-comm:date-and-time-delta;
     }
     leaf expiry-time {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "The time remaining before this multicast router is aged out.";
+        "The time remaining before this multicast router is aged out";
       type uint32;
       units "seconds";
     }
@@ -175,31 +183,29 @@ module srl_nokia-mld-snooping {
       leaf general-query-interval {
         srl_nokia-ext:show-importance "high";
         description
-          "The General Query Interval used by this multicast router.";
+          "The General Query Interval used by this multicast router";
         type uint32;
         units "seconds";
       }
       leaf general-response-interval {
         srl_nokia-ext:show-importance "high";
         description
-          "The General Query Response interval used by this multicast router.";
+          "The General Query Response interval used by this multicast router";
         type uint32;
         units "seconds";
       }
       leaf robust-count {
         srl_nokia-ext:show-importance "high";
         description
-          "The Robust Count value used by this multicast router.";
+          "The Robust Count value used by this multicast router";
         type uint32;
       }
     }
     leaf interface {
       config false;
       description
-        "Interface behind which this multicast router is located.";
-      type leafref {
-        path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
-      }
+        "Interface behind which this multicast router is located";
+      type srl_nokia-comm:subinterface-all;
     }
   }
 
@@ -208,7 +214,7 @@ module srl_nokia-mld-snooping {
       "MLD specific configuration.";
     leaf admin-state {
       description
-        "Administratively enable or disable the MLD instance.";
+        "Administratively enable or disable the MLD instance";
       type srl_nokia-comm:admin-state;
       default "disable";
     }
@@ -222,7 +228,7 @@ module srl_nokia-mld-snooping {
     }
     leaf robust-count {
       description
-        "Configures the MLD robustness to allow for the expected MLD packet loss.
+        "Configures the MLD robustness to allow for the expected MLD packet loss
 
          The robust-count variable allows tuning for the expected packet
          loss on a subnet. If a subnet anticipates losses, the robust-count
@@ -236,23 +242,16 @@ module srl_nokia-mld-snooping {
       type srl_nokia-comm:ipv6-address;
       description
         "Source IP address used when generating MLD queries";
+      must ".='::' or starts-with(.,'fe80::')" {
+        error-message "Not a link-local unicast IPv6 address";
+      }
     }
     leaf report-source-address {
       type srl_nokia-comm:ipv6-address;
       description
         "Source IP address used when generating MLD reports";
-    }
-    container evpn-proxy {
-      description
-        "BGP-EVPN proxy information.";
-      reference
-        "draft-ietf-bess-evpn-igmp-mld-proxy";
-      leaf admin-state {
-        description
-          "Used to administratively enable or disable the use of EVPN to
-           create multicast state.";
-        type srl_nokia-comm:admin-state;
-        default "disable";
+      must ".='::' or starts-with(.,'fe80::')" {
+        error-message "Not a link-local unicast IPv6 address";
       }
     }
   }
@@ -262,17 +261,18 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Used to report operational state of the MLD instance.";
-      type srl_nokia-comm:admin-state;
+        "Used to report operational state of the MLD instance";
+      type srl_nokia-comm:oper-state;
     }
     leaf transmitted-bgp-smet-routes {
       config false;
       srl_nokia-ext:show-importance "high";
       description
         "Transmitted BGP SMET routes";
-      type yang:counter32;
+      type srl_nokia-comm:counter32;
     }
     container querier {
+      config false;
       description
         "Enter the querier context";
       uses mld-snooping-mrouter-state;
@@ -287,13 +287,13 @@ module srl_nokia-mld-snooping {
     leaf proxy-membership-group-count {
       config false;
       description
-        "The number of multicast groups which have been learned.";
+        "The number of multicast groups which have been learned";
       type uint32;
     }
     container proxy-membership-groups {
       config false;
       description
-        "Proxy Database created for the network-instance.
+        "Proxy Database created for the network-instance
 
          The content of this table is used by the router to proxy the
          reports towards the Querier, when the Querier is attached to a
@@ -302,7 +302,7 @@ module srl_nokia-mld-snooping {
         key "group";
         config false;
         description
-          "Multicast group membership.";
+          "Multicast group membership";
         leaf group {
           type srl_nokia-comm:ipv6-address;
           description
@@ -317,27 +317,25 @@ module srl_nokia-mld-snooping {
           config false;
           srl_nokia-ext:show-importance "high";
           description
-            "The time elapsed since this entry was created.";
-          type uint32;
-          units "seconds";
+            "The time elapsed since this entry was created";
+          type srl_nokia-comm:date-and-time-delta;
         }
         list source {
           config false;
           key "source";
           description
-            "Source addresses of multicast.";
+            "Source addresses of multicast";
           leaf source {
             type srl_nokia-comm:ipv6-address;
             description
-              "Source address of multicast.";
+              "Source address of multicast";
           }
           leaf up-time {
             config false;
             srl_nokia-ext:show-importance "high";
             description
-              "The time elapsed since this entry was created.";
-            type uint32;
-            units "seconds";
+              "The time elapsed since this entry was created";
+            type srl_nokia-comm:date-and-time-delta;
           }
         }
       }
@@ -345,20 +343,20 @@ module srl_nokia-mld-snooping {
     container proxy-evpn-membership-groups {
       config false;
       description
-        "EVPN Proxy Database created for the network-instance.
+        "EVPN Proxy Database created for the network-instance
 
          The content of this table is used by the router to proxy the
          reports towards the remote PEs via BGP EVPN SMET (Selective
-         Multicast Ethernet Tag) routes .";
+         Multicast Ethernet Tag) routes.";
       list group {
         key "group";
         config false;
         description
-          "Multicast group membership.";
+          "Multicast group membership";
         leaf group {
           type srl_nokia-comm:ipv6-address;
           description
-            "Multicast address.";
+            "Multicast address";
         }
         leaf filter-mode {
           config false;
@@ -369,41 +367,39 @@ module srl_nokia-mld-snooping {
           config false;
           srl_nokia-ext:show-importance "high";
           description
-            "The time elapsed since this entry was created.";
-          type uint32;
-          units "seconds";
+            "The time elapsed since this entry was created";
+          type srl_nokia-comm:date-and-time-delta;
         }
         leaf v1-support {
           config false;
           srl_nokia-ext:show-importance "high";
           description
-            "MLD Version 1 is supported.";
+            "MLD Version 1 is supported";
           type boolean;
         }
         leaf v2-support {
           config false;
           srl_nokia-ext:show-importance "high";
           description
-            "MLD Version 2 is supported.";
+            "MLD Version 2 is supported";
           type boolean;
         }
         list source {
           config false;
           key "source";
           description
-            "Source addresses of multicast.";
+            "Source addresses of multicast";
           leaf source {
             type srl_nokia-comm:ipv6-address;
             description
-              "Source address of multicast.";
+              "Source address of multicast";
           }
           leaf up-time {
             config false;
             srl_nokia-ext:show-importance "high";
             description
-              "The time elapsed since this entry was created.";
-            type uint32;
-            units "seconds";
+              "The time elapsed since this entry was created";
+            type srl_nokia-comm:date-and-time-delta;
           }
         }
       }
@@ -413,7 +409,7 @@ module srl_nokia-mld-snooping {
   grouping mld-snooping-interface-config {
     leaf router-alert-check {
       description
-        "Enable or disable router alert checking for MLD messages received on this interface.";
+        "Enable or disable router alert checking for MLD messages received on this interface";
       type boolean;
       default "true";
     }
@@ -425,21 +421,21 @@ module srl_nokia-mld-snooping {
     }
     leaf maximum-number-groups {
       description
-        "Maximum number of MLD Groups for this interface.";
+        "Maximum number of MLD Groups for this interface";
       type uint32 {
         range "1..4096";
       }
     }
     leaf maximum-number-sources {
       description
-        "Maximum number of MLD sources per group for this interface.";
+        "Maximum number of MLD sources per group for this interface";
       type uint32 {
         range "1..512";
       }
     }
     leaf maximum-number-group-sources {
       description
-        "Maximum number of MLD group/source combinations for this interface.";
+        "Maximum number of MLD group/source combinations for this interface";
       type uint32 {
         range "1..4096";
       }
@@ -462,9 +458,9 @@ module srl_nokia-mld-snooping {
       description
         "Interval at which Group-Specific-Query packets are transmitted";
       type mld-interval-type {
-        range "1..50";
+        range "1..5";
       }
-      default "10";
+      default "1";
     }
     leaf query-response-interval {
       description
@@ -476,7 +472,7 @@ module srl_nokia-mld-snooping {
     }
     leaf robust-count {
       description
-        "Tune MLD robustness to allow for expected packet loss.
+        "Tune MLD robustness to allow for expected packet loss
 
          The robust-count variable allows tuning for the expected packet
          loss on a subnet. If a subnet anticipates losses, the robust-count
@@ -484,7 +480,6 @@ module srl_nokia-mld-snooping {
       type uint32 {
         range "2..10";
       }
-      default "2";
     }
     leaf fast-leave {
       description
@@ -505,12 +500,13 @@ module srl_nokia-mld-snooping {
       description
         "Generate MLD general queries";
       type boolean;
-      default "false";
       must 'not(. = true() and ../mrouter-port = true())' {
         error-message "mrouter-port and send-queries are mutually exclusive";
       }
+      default "false";
     }
     leaf import-policy {
+      if-feature "srl_nokia-feat:mcast-route-policy";
       description
         "Apply an import policy. The lenght of the policy name should not exceed 32 charachters.";
       type leafref {
@@ -519,7 +515,7 @@ module srl_nokia-mld-snooping {
     }
     container static-membership-groups {
       description
-        "Container to configure static <S,G>s for this interface.";
+        "Container to configure static <S,G>s for this interface";
       list group {
         key "group";
         uses mld-group-key;
@@ -528,14 +524,14 @@ module srl_nokia-mld-snooping {
           case source {
             list source {
               description
-                "Multicast source address list.";
+                "Multicast source address list";
               key "source";
               leaf source {
                 type srl_nokia-comm:ipv6-address;
                 description
                   "Multicast source address.";
                 must "not(.='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
-                  error-message "Not a valid IPv6 unicast addres";
+                  error-message "Not a global unicast IPv6 address";
                 }
               }
             }
@@ -557,43 +553,50 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "General Queries.";
-      type yang:zero-based-counter32;
+        "General Queries";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf group-queries {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Group Specific Queries.";
-      type yang:zero-based-counter32;
+        "Group Specific Queries";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf group-source-queries {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Group and Source Specific Queries.";
-      type yang:zero-based-counter32;
+        "Group and Source Specific Queries";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf v1-reports {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "V1 Reports.";
-      type yang:zero-based-counter32;
+        "V1 Reports";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf v2-reports {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "V2 Reports.";
-      type yang:zero-based-counter32;
+        "V2 Reports";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf v3-reports {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "V3 Reports";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf leave-messages {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Leave messages.";
-      type yang:zero-based-counter32;
+        "Leave messages";
+      type srl_nokia-comm:zero-based-counter32;
     }
   }
 
@@ -603,8 +606,8 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Total number of discarded MLD packets.";
-      type yang:zero-based-counter32;
+        "Total number of discarded MLD packets";
+      type srl_nokia-comm:zero-based-counter32;
     }
   }
 
@@ -614,8 +617,8 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Transmission error MLD packets.";
-      type yang:zero-based-counter32;
+        "Transmission error MLD packets";
+      type srl_nokia-comm:zero-based-counter32;
     }
   }
 
@@ -625,15 +628,15 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Unknown MLD types.";
-      type yang:zero-based-counter32;
+        "Unknown MLD types";
+      type srl_nokia-comm:zero-based-counter32;
     }
-    leaf errors {
+    leaf error-packets {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Forwarding Errors.";
-      type yang:zero-based-counter32;
+        "Forwarding Errors";
+      type srl_nokia-comm:zero-based-counter32;
     }
   }
 
@@ -642,104 +645,120 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Bad length.";
-      type yang:zero-based-counter32;
+        "Bad length";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf unknown-type {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Unknown type.";
-      type yang:zero-based-counter32;
+        "Unknown type";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf wrong-version {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Wrong version.";
-      type yang:zero-based-counter32;
+        "Wrong version";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf import-policy-drops {
+      if-feature "srl_nokia-feat:mcast-route-policy";
       config false;
       srl_nokia-ext:show-importance "high";
       description
         "Number of times the host IP address or group or
-         source IP addresses specified in the import policy are matched.";
-      type yang:zero-based-counter32;
+         source IP addresses specified in the import policy are matched";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf missing-router-alert {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Router alert flag is not set.";
-      type yang:zero-based-counter32;
+        "Router alert flag is not set";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf bad-encoding {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Badly encoded packets.";
-      type yang:zero-based-counter32;
+        "Badly encoded packets";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf local-scope {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Link-local scope multicast group address.";
-      type yang:zero-based-counter32;
+        "Link-local scope multicast group address";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf reached-maximum-number-groups {
       config false;
       srl_nokia-ext:show-importance "high";
       description
         "Number of times a join is discarded because the maximum number of
-         groups is reached.";
-      type yang:zero-based-counter32;
+         groups is reached";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf reached-maximum-number-group-sources {
       config false;
       srl_nokia-ext:show-importance "high";
       description
         "Number of times a join is discarded because the maximum number of
-         group-source combinations is reached.";
-      type yang:zero-based-counter32;
+         group-source combinations is reached";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf reached-maximum-number-sources {
       config false;
       srl_nokia-ext:show-importance "high";
       description
         "Number of times a join is discarded because the maximum number of
-         sources per group is reached.";
-      type yang:zero-based-counter32;
+         sources per group is reached";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf out-of-memory-discarded-packets {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Number of times a join is discarded because the router ran out of memory.";
-      type yang:zero-based-counter32;
+        "Number of times a join is discarded because the router ran out of memory";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf bad-mld-checksum {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Number of times a packet is discarded because of a bad MLD header checksum.";
-      type yang:zero-based-counter32;
+        "Number of times a packet is discarded because of a bad MLD header checksum";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf zero-source-ip-address {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Number of times a packet is discarded because it has a zero source IP address.";
-      type yang:zero-based-counter32;
+        "Number of times a packet is discarded because it has a zero source IP address";
+      type srl_nokia-comm:zero-based-counter32;
     }
     leaf send-query-configured-discarded-packets {
       config false;
       srl_nokia-ext:show-importance "high";
       description
         "Number of times a query is discarded because send-queries is configured in the
-         sub-interface.";
-      type yang:zero-based-counter32;
+         sub-interface";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping mld-snooping-multicast-state {
+    leaf star-group-entries {
+      config false;
+      description
+        "The number of (*,G)s";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf source-group-entries {
+      config false;
+      description
+        "The number of (S,G)s";
+      type srl_nokia-comm:zero-based-counter32;
     }
   }
 
@@ -748,41 +767,35 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Received message statistics.";
+        "Received message statistics";
       uses mld-snooping-msg-rx-stats;
     }
     container transmitted {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Transmit message statistics.";
+        "Transmit message statistics";
       uses mld-snooping-msg-tx-stats;
     }
     container forwarded {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Forward message statistics.";
+        "Forward message statistics";
       uses mld-snooping-msg-fwd-stats;
     }
     container error {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Error message statistics.";
+        "Error message statistics";
       uses mld-snooping-msg-error-stats;
     }
-    leaf star-g {
+    container multicast-states {
       config false;
       description
-        "The number of (*,G)s";
-      type yang:counter32;
-    }
-    leaf sg {
-      config false;
-      description
-        "The number of (S,G)s";
-      type yang:counter32;
+        "Multicast state count for this network instance";
+      uses mld-snooping-multicast-state;
     }
   }
 
@@ -796,22 +809,21 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "Traffic forwardeding state on this port.";
+        "Traffic forwardeding state on this port";
       type srl_nokia-igmp-types:forwarding-state;
     }
     leaf up-time {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "The time elapsed since this entry was created.";
-      type uint32;
-      units "seconds";
+        "The time elapsed since this entry was created";
+      type srl_nokia-comm:date-and-time-delta;
     }
     leaf expiry-time {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "The time left before multicast group timeout.";
+        "The time left before multicast group timeout";
       type uint32;
       units "seconds";
     }
@@ -819,7 +831,7 @@ module srl_nokia-mld-snooping {
 
   grouping mld-snooping-interface-group-state {
     description
-      "MLD membership state.";
+      "MLD membership state";
     leaf group-type {
       config false;
       srl_nokia-ext:show-importance "high";
@@ -834,7 +846,7 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "The time left before multicast group timeout.";
+        "The time left before multicast group timeout";
       type uint32;
       units "seconds";
     }
@@ -842,59 +854,66 @@ module srl_nokia-mld-snooping {
       config false;
       srl_nokia-ext:show-importance "high";
       description
-        "The time elapsed since this entry was created.";
-      type uint32;
-      units "seconds";
+        "The time elapsed since this entry was created";
+      type srl_nokia-comm:date-and-time-delta;
     }
     leaf v1-host-timer {
       config false;
       description
         "The time remaining until the local router will assume that
-         there are no longer any version 1 members.";
+         there are no longer any version 1 members";
+      type uint32;
+      units "seconds";
+    }
+    leaf v2-host-timer {
+      config false;
+      description
+        "The time remaining until the local router will assume that
+         there are no longer any version 2 members";
       type uint32;
       units "seconds";
     }
     leaf mld-compatibility-mode {
       config false;
       description
-        "Compatibility with older version routers.";
+        "Compatibility with older version routers";
       type srl_nokia-igmp-types:mld-version;
     }
   }
 
-  grouping mld-snooping-membership {
+  grouping mld-snooping-interface-membership {
     description
-      "MLD membership information.";
+      "MLD membership information";
     leaf membership-group-count {
       config false;
       description
-        "The number of multicast groups which have been learned.";
+        "The number of multicast groups which have been learned";
       type uint32;
     }
     container membership-groups {
       config false;
       description
-        "List of MLD Membership information.";
+        "List of MLD Membership information";
       list group {
         key "group";
         config false;
         description
-          "Multicast group membership.";
+          "Multicast group membership";
         leaf group {
-          type srl_nokia-comm:ipv6-address;
+          type srl_nokia-comm:ipv4-address;
           description
-            "Multicast address.";
+            "Multicast address";
         }
         uses mld-snooping-interface-group-state;
         list source {
           config false;
           key "source";
           description
-            "Source addresses of multicast.";
+            "Source addresses of multicast";
           leaf source {
-            type srl_nokia-comm:ipv6-address;
+            type srl_nokia-comm:ipv4-address;
             description
-              "Source address of multicast.";
+              "Source address of multicast";
           }
           uses mld-snooping-interface-group-source-state;
         }
@@ -903,12 +922,127 @@ module srl_nokia-mld-snooping {
   }
 
   grouping mld-snooping-interface-state {
-    uses mld-snooping-membership;
+    uses mld-snooping-interface-membership;
     container statistics {
       config false;
       description
-        "MLD sub-interface statistics.";
+        "MLD sub-interface statistics";
       uses mld-snooping-statistics-state;
+    }
+    leaf is-mrouter-port {
+      config false;
+      description
+        "Interface Is a multicast router port";
+      type boolean;
+    }
+  }
+
+  grouping mld-snooping-bgp-route-stats {
+    container received {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Received bgp route statistics";
+      leaf smet {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of received smet routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf join-sync {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of received join sync routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf leave-sync {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of received leave-sync smet routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    container transmitted {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Transmitted bgp route statistics";
+      leaf join-sync {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of transmitted join sync routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf leave-sync {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of transmitted leave-sync smet routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    container error {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Error bgp route statistics.";
+      leaf discarded-smet {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of discarded smet routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf discarded-join-sync {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of discarded join sync routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf discarded-leave-sync {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Total number of discarded leave-sync smet routes";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+  }
+
+  grouping mld-snooping-evpn-interface-state {
+    container mld-snooping {
+      if-feature "srl_nokia-feat:mld-snooping";
+      config false;
+      leaf is-mrouter-port {
+        config false;
+        description
+          "vxlan-interface is a multicast router port";
+        type boolean;
+      }
+      leaf is-evpn-proxy {
+        config false;
+        description
+          "vxlan-interface supports evpn-proxy";
+        type boolean;
+      }
+      leaf is-sbd {
+        config false;
+        description
+          "";
+        type boolean;
+      }
+      uses mld-snooping-interface-membership;
+      container statistics {
+        config false;
+        description
+          "vxlan-interface statistics";
+        uses mld-snooping-bgp-route-stats;
+      }
     }
   }
 
@@ -935,5 +1069,11 @@ module srl_nokia-mld-snooping {
 
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
     uses mld-snooping-top;
+  }
+
+  augment "/srl_nokia-tunnel-if:tunnel-interface/srl_nokia-tunnel-if:vxlan-interface/srl_nokia-tunnel-if:bridge-table/srl_nokia-tunnel-if-mcast-dest:multicast-destinations/srl_nokia-tunnel-if-mcast-dest:destination" {
+    description
+      "MLD-snooping state";
+    uses mld-snooping-evpn-interface-state;
   }
 }

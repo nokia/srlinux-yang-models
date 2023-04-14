@@ -19,6 +19,12 @@ module srl_nokia-event-handler {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data related to the event handler";
 
@@ -38,60 +44,46 @@ module srl_nokia-event-handler {
   typedef eh-instance-oper-reason {
     type enumeration {
       enum admin-disabled {
-        description
-          "Event handler instance is admin-disabled";
+        description "Event handler instance is admin-disabled";
       }
       enum failed-to-compile {
-        description
-          "Event handler failed to compile the script, indicating that the script likely has a syntax error";
+        description "Event handler failed to compile the script, indicating that the script likely has a syntax error";
       }
       enum exception {
-        description
-          "Event handler caught an exception in the last execution of the script";
+        description "Event handler caught an exception in the last execution of the script";
       }
       enum timeout {
-        description
-          "The last execution of the script did not complete before a timeout occurred";
+        description "The last execution of the script did not complete before a timeout occurred";
       }
       enum subscription-failed {
-        description
-          "Event handler was unable to subscribe to the provided paths";
+        description "Event handler was unable to subscribe to the provided paths";
       }
       enum script-unavailable {
-        description
-          "Event handler was unable to find the script on the filesystem";
+        description "Event handler was unable to find the script on the filesystem";
       }
       enum script-error {
-        description
-          "The script returned something invalid";
+        description "The script returned something invalid";
       }
       enum missing-function {
-        description
-          "Event handler was unable to find a function named event_handler_main() in the provided script";
+        description "Event handler was unable to find a function named event_handler_main() in the provided script";
       }
       enum system-error {
-        description
-          "There was a failure in setting up the python environment";
+        description "There was a failure in setting up the python environment";
       }
       enum ephemeral-action-failed {
-        description
-          "Event handler was unable to perform a ephemeral-path action in the previous execution";
+        description "Event handler was unable to perform a ephemeral-path action in the previous execution";
       }
       enum cfg-action-failed {
-        description
-          "Event handler was unable to perform a cfg-path action in the previous execution";
+        description "Event handler was unable to perform a cfg-path action in the previous execution";
       }
       enum tools-action-failed {
-        description
-          "Event handler was unable to perform a tools-path action in the previous execution";
+        description "Event handler was unable to perform a tools-path action in the previous execution";
       }
       enum state-action-failed {
-        description
-          "Event handler was unable to perform a state-path action in the previous execution";
+        description "Event handler was unable to perform a state-path action in the previous execution";
       }
       enum script-action-failed {
-        description
-          "Event handler was unable to perform a script action in the previous execution";
+        description "Event handler was unable to perform a script action in the previous execution";
       }
     }
   }
@@ -128,6 +120,7 @@ module srl_nokia-event-handler {
           "Indicates the total number of errors in executions of this script";
       }
     }
+
   }
 
   grouping eh-execution-state {
@@ -155,8 +148,8 @@ module srl_nokia-event-handler {
       srl-ext:show-importance "high";
       description
         "The time this instance last finished execution
-
-         This timestamp includes any actions provided as output from the execution";
+        
+        This timestamp includes any actions provided as output from the execution";
     }
     leaf upython-duration {
       type uint64;
@@ -173,8 +166,8 @@ module srl_nokia-event-handler {
       type string;
       description
         "The output received from the script
-
-         If empty, no response was received.";
+        
+        If empty, no response was received.";
     }
     leaf stdout-stderr {
       type string;
@@ -197,6 +190,7 @@ module srl_nokia-event-handler {
         "Operational state of the last execution of this instance";
       uses eh-execution-state;
     }
+
     container last-errored-execution {
       config false;
       description
@@ -213,8 +207,8 @@ module srl_nokia-event-handler {
       leaf run-as-user {
         description
           "The user to run event handler instances as
-
-           If no user is configured, scripts are executed as the 'admin' user.";
+          
+          If no user is configured, scripts are executed as the 'admin' user.";
         type leafref {
           path "/srl-system:system/srl-aaa:aaa/srl-aaa:authentication/srl-aaa:user/srl-aaa:username";
         }
@@ -223,9 +217,9 @@ module srl_nokia-event-handler {
         max-elements 20;
         description
           "List of all event handler instances
-
-           An event handler instance consists of a set of paths to be monitored for changes, and a Python script to execute if changes occur.";
-        key "name";
+          
+          An event handler instance consists of a set of paths to be monitored for changes, and a Python script to execute if changes occur.";
+        key name;
         leaf name {
           type srl-comm:name;
           description
@@ -243,12 +237,12 @@ module srl_nokia-event-handler {
           srl-ext:no-globbing;
           description
             "List of valid YANG paths in CLI notation to monitor for changes
+            
+            If any events are received on any of the provided paths, the configured script will be executed.
 
-             If any events are received on any of the provided paths, the configured script will be executed.
+            This path may include keys, wildcards, ranges, and other management server supported constructs.
 
-             This path may include keys, wildcards, ranges, and other management server supported constructs.
-
-             E.g.
+            E.g. 
                  \"interface * oper-state\"
                  \"acl ipv4-filter foo* description\"";
           type string {
@@ -259,7 +253,7 @@ module srl_nokia-event-handler {
           description
             "Options to be passed on each execution of the script";
           list object {
-            key "name";
+            key name;
             leaf name {
               type srl-comm:name;
               description
@@ -285,9 +279,9 @@ module srl_nokia-event-handler {
         leaf upython-script {
           description
             "File name of a MicroPython script, including .py suffix
-
-             This script should exist in /etc/opt/srlinux/eventmgr or /opt/srlinux/eventmgr already.
-             Explicit paths outside of these two directories are not permitted.";
+            
+            This script should exist in /etc/opt/srlinux/eventmgr or /opt/srlinux/eventmgr already.
+            Explicit paths outside of these two directories are not permitted.";
           type string {
             pattern '([^./][^/]*)|(\.[^\./]+)|(\.\.[^/])+';
           }
@@ -295,12 +289,13 @@ module srl_nokia-event-handler {
         uses eh-state-top;
         uses eh-statistics-top;
       }
+
     }
   }
 
   augment "/srl-system:system" {
     srl-ext:first-released "22.3.1";
-    if-feature "srl-feat:event-handler";
+    if-feature srl-feat:event-handler;
     uses eh-top;
   }
 }

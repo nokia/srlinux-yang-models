@@ -22,6 +22,12 @@ module srl_nokia-lldp {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data
      for the LLDP protocol.";
@@ -175,7 +181,7 @@ module srl_nokia-lldp {
       leaf subinterface {
         type srl-comm:subinterface-all;
         must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]" {
-          error-message "Must be an existing subinterface name";
+            error-message "Must be an existing subinterface name";
         }
         description
           "Reference to the subinterface to source management addresses";
@@ -359,7 +365,7 @@ module srl_nokia-lldp {
       "Operational state data for LLDP capabilities";
     leaf name {
       type identityref {
-        base nokia-lldp-types:LLDP_SYSTEM_CAPABILITY;
+         base nokia-lldp-types:LLDP_SYSTEM_CAPABILITY;
       }
       description
         "Name of the system capability advertised by the neighbor
@@ -426,6 +432,7 @@ module srl_nokia-lldp {
          The organizationally defined subtype field shall contain a
          unique subtype value assigned by the defining organization.";
     }
+    // TODO: consider making this string type
     leaf value {
       type binary;
       description
@@ -623,6 +630,19 @@ module srl_nokia-lldp {
          to define the TTL TLV in outgoing LLDPDUs.";
     }
     uses lldp-bgp-auto-discovery-top;
+    /* - Phase 2 features.
+    leaf-list suppress-tlv-advertisement {
+        type identityref {
+            base nokia-lldp-types:LLDP_TLV;
+        }
+        description
+            "Indicates whether the local system should suppress the
+            advertisement of particular TLVs with the LLDP PDUs that it
+            transmits. Where a TLV type is specified within this list, it
+            should not be included in any LLDP PDU transmitted by the
+            local agent.";
+    }
+     */
   }
 
   grouping lldp-state {

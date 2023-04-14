@@ -22,9 +22,19 @@ module srl_nokia-platform-acl {
     prefix srl_feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state related to ACL resources in the system";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -60,14 +70,14 @@ module srl_nokia-platform-acl {
   }
 
   identity input-ipv4-filter-instances {
-    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3 or srl_feat:tomahawk4";
     base acl-resources;
     description
       "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on the forwarding complex. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every subinterface using the IPv4 filter.";
   }
 
   identity input-ipv4-qos-multifield-instances {
-    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
+    if-feature "srl_feat:ip-qos-multifield and (srl_feat:jericho2 or srl_feat:jericho2cp)";
     base acl-resources;
     description
       "This resource is used every time an IPv4 multifield classifier policy is applied to ingress traffic on a subinterface.";
@@ -88,14 +98,14 @@ module srl_nokia-platform-acl {
   }
 
   identity input-ipv6-filter-instances {
-    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3";
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3 or srl_feat:tomahawk4";
     base acl-resources;
     description
       "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on the forwarding complex. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every subinterface using the IPv6 filter.";
   }
 
   identity input-ipv6-qos-multifield-instances {
-    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
+    if-feature "srl_feat:ip-qos-multifield and (srl_feat:jericho2 or srl_feat:jericho2cp)";
     base acl-resources;
     description
       "This resource is used every time an IPv6 multifield classifier policy is applied to ingress traffic on a subinterface.";
@@ -149,12 +159,12 @@ module srl_nokia-platform-acl {
     description
       "Resource pool of stats entries shared by egress IPv4/IPv6/MAC TCAM entries, and CPM-filter IPv4/IPv6/MAC TCAM entries
 
-       Egress Ipv4 -> uses single stat counter
-       Egress Ipv6 -> uses single stat counter
-       Egress MAC -> uses single stat counter
-       Cpm Ipv4 -> uses two stat counters
-       Cpm Ipv6 -> uses two stat counters
-       Cpm MAC -> uses two stat counters";
+      Egress Ipv4 -> uses single stat counter
+      Egress Ipv6 -> uses single stat counter
+      Egress MAC -> uses single stat counter
+      Cpm Ipv4 -> uses two stat counters
+      Cpm Ipv6 -> uses two stat counters
+      Cpm MAC -> uses two stat counters";
   }
 
   grouping acl-resource-monitoring {

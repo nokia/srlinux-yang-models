@@ -1,5 +1,8 @@
 module srl_nokia-platform-lc {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/platform-lc";
   prefix srl_nokia-platform-lc;
 
@@ -19,9 +22,19 @@ module srl_nokia-platform-lc {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data related to line cards.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -93,6 +106,9 @@ module srl_nokia-platform-lc {
         if-feature "srl-feat:chassis";
       }
       uses srl-platform:component-common-state-top;
+      uses srl-platform:component-delayed-reboot-state {
+        if-feature "srl-feat:chassis";
+      }
       leaf type {
         config false;
         type string;
@@ -108,7 +124,7 @@ module srl_nokia-platform-lc {
           type enumeration {
             enum 0;
             enum 1 {
-              if-feature "srl-feat:platform-7250-ixr-e";
+              if-feature "srl-feat:platform-7250-ixr-e or srl-feat:platform-fx1-sdd";
             }
           }
           description
@@ -133,15 +149,13 @@ module srl_nokia-platform-lc {
                 range "0..7";
               }
               type enumeration {
-                enum egress {
+                enum "egress" {
                   if-feature "srl-feat:oc-extracted-cpm-traffic-stats";
-                  description
-                    "Applicable to J2 and J2C+ systems only";
+                  description "Applicable to J2 and J2C+ systems only";
                 }
-                enum ingress {
+                enum "ingress" {
                   if-feature "srl-feat:oc-extracted-cpm-traffic-stats";
-                  description
-                    "Applicable to J2 and J2C+ systems only";
+                  description "Applicable to J2 and J2C+ systems only";
                 }
               }
             }

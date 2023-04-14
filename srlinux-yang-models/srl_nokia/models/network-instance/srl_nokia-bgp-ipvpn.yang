@@ -1,0 +1,118 @@
+module srl_nokia-bgp-ipvpn {
+
+  yang-version 1.1;
+
+  namespace "urn:srl_nokia/network-instance/protocols/bgp-ipvpn";
+
+  prefix "srl_nokia-bgp-ipvpn";
+
+    import srl_nokia-common { prefix srl_nokia-comm; }
+    import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+    import srl_nokia-extensions { prefix srl_nokia-ext; }
+    import srl_nokia-bgp-vpn { prefix srl_bgp-vpn; }
+    import srl_nokia-policy-types { prefix srl_nokia-pol-types; }
+    import srl_nokia-features { prefix srl-feat; }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+    description
+      "This yang file models configuration and state of the bgp-ipvpn protocol";
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping next-hop-resolution {
+    description
+      "Options for controlling next-hop resolution procedures for VPN families";
+    container next-hop-resolution {
+      description 
+        "Options related to the resolution of IPv4 or IPv6 BGP next-hops to Tunnels";
+      leaf-list allowed-tunnel-types {
+        type identityref {
+          base srl_nokia-comm:tunnel-type;
+        }
+        must ".='sr-policy-mpls-colored' or 'sr-policy-mpls-uncolored' or .='sr-isis'" {
+          error-message "tunnel-type not supported";
+        }
+        description
+          "list of allowed tunnel types";
+      }
+    }
+  }
+  grouping bgp-ipvpn-top {
+    description
+      "Top-level grouping containing the bgp-ipvpn configuration and state.";
+    list bgp-instance {
+      key "id";
+      max-elements 1;
+      description "bgp ipvpn instances configured in net-instance";
+      leaf id {
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_bgp-vpn:bgp-vpn/srl_bgp-vpn:bgp-instance/srl_bgp-vpn:id";
+        }
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "Configurable state of the bgp ipvpn instance.";
+      }
+      leaf encapsulation-type {
+        type enumeration {
+          enum mpls {
+            value 1;
+          }
+        }
+        description
+          "encap type of the bgp ipvpn instance.";
+        default "mpls";
+      }
+      leaf ecmp {
+        type uint8 {
+          range "1..8";
+        }
+        default 1;
+        description 
+          "The supported range of ECMP values.";
+      }
+      leaf oper-state {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        type srl_nokia-comm:oper-state;
+        description
+          "This leaf contains the operational state of bgp-instance.";
+      }
+      leaf oper-down-reason {
+        config false;
+        srl_nokia-ext:show-importance "high";
+        type enumeration {
+          enum "admin-disabled";
+          enum "no-nexthop-address";
+          enum "network-instance-oper-down";
+          enum "bgp-vpn-instance-oper-down";
+          enum "no-mpls-label";
+        }
+        description
+          "The reason for the bgp-instance being down";
+      }
+      container mpls {
+        presence "Configure IPVPN-MPLS and enables the resolution of BGP-IPVPN route next-hops to tunnels in TTM";
+        if-feature "srl-feat:ipvpn";
+        must "../encapsulation-type = 'mpls'" {
+          error-message "supported only when encapsulation is mpls";
+        }
+        uses next-hop-resolution;        
+      }
+    } 
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-netinst:bgp-ipvpn" {
+    uses bgp-ipvpn-top;
+  }
+}

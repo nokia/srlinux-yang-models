@@ -1,7 +1,12 @@
 module srl_nokia-interfaces-nbr {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/interfaces/ip/nbr";
   prefix srl_nokia-if-ip-nbr;
+
+  // import some basic types
 
   import srl_nokia-interfaces {
     prefix srl_nokia-if;
@@ -16,9 +21,19 @@ module srl_nokia-interfaces-nbr {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "Model for managing ARP and IPv6 neighbor discovery on IP subinterfaces.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -54,6 +69,7 @@ module srl_nokia-interfaces-nbr {
     }
     description
       "The origin of the neighbor entry.";
+    // see RFC 7277.
   }
 
   grouping datapath-programming-status {
@@ -65,17 +81,14 @@ module srl_nokia-interfaces-nbr {
         description
           "The status of the ARP or neighbor entry with respect to datapath programming";
         type enumeration {
-          enum success {
-            description
-              "All linecard complexes have reported that the entry was programmed successfully";
+          enum "success" {
+            description "All linecard complexes have reported that the entry was programmed successfully";
           }
-          enum failed {
-            description
-              "At least one linecard complex reported that the entry was not programmed successfully or else this entry was not even provided to the datapath for programming because the system limit on the number of IPv4 ARP and IPv6 neighbor entries was exceeded";
+          enum "failed" {
+            description "At least one linecard complex reported that the entry was not programmed successfully or else this entry was not even provided to the datapath for programming because the system limit on the number of IPv4 ARP and IPv6 neighbor entries was exceeded";
           }
-          enum pending {
-            description
-              "The ARP or neighbor entry was provided to the datapath for programming but at least one linecard complex has not provided a status yet.";
+          enum "pending" {
+            description "The ARP or neighbor entry was provided to the datapath for programming but at least one linecard complex has not provided a status yet.";
           }
         }
       }
@@ -106,12 +119,11 @@ module srl_nokia-interfaces-nbr {
         }
       }
     }
-    leaf admin-tag {
+    leaf datapath-programming {
+      if-feature "srl-feat:arp-nd-datapath-programming";
+      type boolean;
       description
-        "Configure tag to use with the host route generated from an ARP or ND entry.";
-      type uint32 {
-        range "1..255";
-      }
+        "When set to true, the host route is programmed in the datapath";
     }
   }
 
@@ -182,6 +194,7 @@ module srl_nokia-interfaces-nbr {
           type neighbor-origin;
           description
             "The origin of the ARP entry";
+          // Refer to RFC 7277.
         }
         leaf expiration-time {
           config false;
@@ -300,12 +313,14 @@ module srl_nokia-interfaces-nbr {
           type neighbor-origin;
           description
             "The origin of the neighbor cache entry.";
+          // Refer to RFC 7277.
         }
         leaf is-router {
           config false;
           type boolean;
           description
             "Indicates that the neighbor node claims to be a router (R bit in the Neighbor Advertisement message)";
+          // Refer to RFC 7277.
         }
         leaf current-state {
           config false;

@@ -13,6 +13,16 @@ module srl_nokia-tools-qos {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -38,38 +48,64 @@ module srl_nokia-tools-qos {
       "SRLinux 19.11.1";
   }
 
-  augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:statistics" {
-    container queue-statistics {
-      if-feature "not srl-feat:platform-7220-d1";
-      leaf clear {
-        type empty;
-      }
-      list queue {
-        description
-          "List of queues";
-        key "queue-name";
-        leaf queue-name {
-          type union {
-            type srl_nokia-comm:default-queue-name;
-            type string;
+  grouping tools-qos-intf-top {
+    container qos {
+      container output {
+        container queue-statistics {
+          if-feature "not srl-feat:platform-7220-d1";
+          leaf clear {
+            type empty;
           }
-          description
-            "The queue name";
-        }
-        leaf clear {
-          type empty;
+          list queue {
+            description
+              "List of queues";
+            key "queue-name";
+            leaf queue-name {
+              type string;
+              description
+                "The queue name";
+            }
+            leaf clear {
+              type empty;
+            }
+          }
         }
       }
     }
   }
 
-  grouping tools-qos-top {
+  grouping tools-qos-subif-top {
     container qos {
       container input;
+      container output {
+        container queue-statistics {
+          if-feature "srl-feat:future-0-0";
+          leaf clear {
+            type empty;
+          }
+          list queue {
+            description
+              "List of queues";
+            key "queue-name";
+            leaf queue-name {
+              type string;
+              description
+                "The queue name";
+            }
+            leaf clear {
+              type empty;
+            }
+          }
+        } //queue-statistics
+      }
     }
   }
 
   augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface" {
-    uses tools-qos-top;
+    uses tools-qos-subif-top;
+  }
+
+  augment "/srl_nokia-tools-if:interface" {
+    uses tools-qos-intf-top;
   }
 }

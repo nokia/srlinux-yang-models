@@ -1,23 +1,20 @@
 module srl_nokia-mpls-route-tables {
   yang-version 1.1;
+
   namespace "urn:srl_nokia/mpls-route-tables";
   prefix srl_nokia-mpls-route-tables;
 
-  import srl_nokia-common {
-    prefix srl_nokia-comm;
-  }
-  import srl_nokia-extensions {
-    prefix srl_nokia-ext;
-  }
-  import srl_nokia-network-instance {
-    prefix srl_nokia-netinst;
-  }
-  import srl_nokia-ip-route-tables {
-    prefix srl_nokia-ip-tables;
-  }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-ip-route-tables { prefix srl_nokia-ip-tables; }
+  import srl_nokia-features { prefix srl-feat; }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
 
   description
     "A model describing the MPLS routing tables of a network instance.";
@@ -34,8 +31,8 @@ module srl_nokia-mpls-route-tables {
   grouping mpls-entry-common-fields {
     leaf operation {
       type enumeration {
-        enum pop;
-        enum swap;
+        enum "pop";
+        enum "swap";
       }
       srl_nokia-ext:show-importance "high";
       description
@@ -58,8 +55,7 @@ module srl_nokia-mpls-route-tables {
       type leafref {
         path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table/srl_nokia-ip-tables:next-hop-group/srl_nokia-ip-tables:index";
       }
-      description
-        "The next-hop-group indirection object used by this route. Applicable only if the operation is SWAP.";
+      description "The next-hop-group indirection object used by this route. Applicable only if the operation is SWAP.";
     }
     leaf next-network-instance {
       type leafref {
@@ -85,7 +81,7 @@ module srl_nokia-mpls-route-tables {
       description
         "The container for the MPLS routing table of the network instance.";
       list label-entry {
-        key "label-value";
+        key label-value;
         leaf label-value {
           type srl_nokia-comm:mpls-label-non-reserved;
           description

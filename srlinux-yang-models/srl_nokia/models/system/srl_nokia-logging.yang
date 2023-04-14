@@ -13,9 +13,19 @@ module srl_nokia-logging {
     prefix srl-netinst;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module describes a YANG model for system logging.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -88,12 +98,10 @@ module srl_nokia-logging {
         enum json;
         enum lag;
         enum ldp;
-        enum license;
+        enum license;        
         enum linux;
         enum lldp;
         enum log;
-        enum macsec;
-        enum mfib;
         enum mgmt;
         enum mirror;
         enum mld;
@@ -101,6 +109,7 @@ module srl_nokia-logging {
         enum netinst;
         enum ospf;
         enum p4rt;
+        enum pcc;
         enum pim;
         enum platform;
         enum policy;
@@ -166,6 +175,7 @@ module srl_nokia-logging {
     }
 
     typedef restricted-file-name-type {
+      // Disallows (a) one single period character, (b) a pair of period characters, and (c) anything with slashes
       type string {
         pattern '([^./][^/]*)|(\.[^\./]+)|(\.\.[^/])+';
       }
@@ -266,6 +276,25 @@ module srl_nokia-logging {
       }
     }
 
+/*    grouping usage-configuration {
+      leaf configured-use {
+        type usage-capacity-size-type;
+        description
+          "Details the upperbound usage this log may occupy
+
+          This value is the combination of the size of each individual
+          output file, and the number of files that may be kept.";
+      }
+    }
+
+    grouping usage-common {
+      leaf in-use {
+        type usage-capacity-size-type;
+        description
+          "Details the amount of space currently used by this log";
+      }
+    }*/
+
     container logging {
       description
         "System logging provides the interface to syslog services
@@ -341,6 +370,11 @@ module srl_nokia-logging {
         uses facility-grouping;
         uses subsystem-grouping;
         uses filter-reference-grouping;
+/*        container usage {
+          config false;
+          uses usage-common;
+          uses usage-configuration;
+        }*/
       }
       list file {
         key "file-name";
@@ -365,7 +399,64 @@ module srl_nokia-logging {
         uses facility-grouping;
         uses subsystem-grouping;
         uses filter-reference-grouping;
+/*        container usage {
+          srl_nokia-ext:delivery-node-override true;
+          srl_nokia-ext:stream-mode sample=5;
+          config false;
+          uses usage-common;
+          uses usage-configuration;
+        }*/
       }
+/*      container orphans {
+        description
+          "Top-level container for orphaned files
+
+          Orphaned files are files that have been deleted from configuration but still have logs on the system. These are periodically cleaned based on the retention-period parameter.";
+        leaf retention-period {
+          type uint8;
+          units hours;
+          default 24;
+          description
+            "The time in hours to retain orphaned logs in the system
+
+            After this period has elapsed the files are automatically deleted. Setting this field to 0 will result in no cleanup taking place.";
+        }
+        list file {
+          config false;
+          key "file-name";
+          description
+            "List of files that are currently orphans";
+          leaf file-name {
+            type restricted-file-name-type;
+            description
+              "Base name of the file(s) to be stored on disk";
+          }
+          leaf directory {
+            type directory-name-type;
+            description
+              "Fully qualified path of a directory where the log file(s) shall be maintained";
+          }
+          container usage {
+            uses usage-common;
+          }
+        }
+        list buffer {
+          key "buffer-name";
+          config false;
+          description
+            "Log files maintained in memory, non-persistent across system reboots
+
+            These files are stored at directory /var/log/srlinux/buffer.  Rotation into multiple files is available.";
+          leaf buffer-name {
+            type restricted-file-name-type;
+            description
+              "Base name of the file(s) to be stored in memory";
+          }
+          container usage {
+            uses usage-common;
+          }
+        }
+      }*/
       list remote-server {
         key "host";
         description
@@ -409,6 +500,61 @@ module srl_nokia-logging {
 
            This network-instance will be used as a source for requests to remote syslog servers.";
       }
+/*      container usage {
+        config false;
+        description
+          "Runtime state updated every 10 minutes.";
+        container buffer {
+          description
+            "Runtime usage by all buffer log files in memory, and their potential maximum by configuration
+            Capacity is the space reserved in memory.";
+          leaf capacity {
+            type usage-capacity-size-type;
+            description
+              "The amount of memory allocated for buffered logs";
+          }
+          leaf in-use {
+            type usage-capacity-size-type;
+            description
+              "The amount of memory current in use by buffered logs";
+          }
+          leaf configured-use {
+            type usage-capacity-size-type;
+            description
+              "The amount of memory buffered logs may occupy with current configuration";
+          }
+        }
+        container file {
+          description
+            "Runtime usage by all output log files on disk, and their potential maximum by configuration";
+          leaf in-use {
+            type usage-capacity-size-type;
+            description
+              "The amount of disk space in use by persistent logs";
+          }
+          leaf configured-use {
+            type usage-capacity-size-type;
+            description
+              "The amount of disk space persistent logs may occupy with current configuration";
+          }
+        }
+        container orphans {
+          container file {
+            leaf in-use {
+              type usage-capacity-size-type;
+              description
+                "The amount of disk space in use by orphaned logs";
+            }
+          }
+          container buffer {
+            leaf in-use {
+              type usage-capacity-size-type;
+              description
+                "The amount of memory in use by orphaned buffered logs";
+            }
+          }
+        }
+      }*/
     }
   }
 

@@ -1,7 +1,12 @@
 module srl_nokia-interfaces-nbr-virtual-ip-discovery {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/interfaces/ip/nbr/virtual-ip-discovery";
-  prefix srl_nokia-if-ip-nbr-virtual-ip-discovery;
+  prefix "srl_nokia-if-ip-nbr-virtual-ip-discovery";
+
+  // import some basic types
 
   import srl_nokia-interfaces {
     prefix srl_nokia-if;
@@ -19,9 +24,19 @@ module srl_nokia-interfaces-nbr-virtual-ip-discovery {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "Model for managing virtual ip discovery on IP subinterfaces.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -47,7 +62,6 @@ module srl_nokia-interfaces-nbr-virtual-ip-discovery {
       }
     }
   }
-
   grouping virtual-ip-discovery-statistics {
     container statistics {
       config false;
@@ -60,7 +74,6 @@ module srl_nokia-interfaces-nbr-virtual-ip-discovery {
       }
     }
   }
-
   grouping virtual-ipv4-discovery-top {
     description
       "Top-level configuration and state for virtual IPv4 discovery";
@@ -110,9 +123,7 @@ module srl_nokia-interfaces-nbr-virtual-ip-discovery {
         }
         leaf-list probe-bridged-subinterfaces {
           max-elements 10;
-          type leafref {
-            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:interface/srl_nokia-netinst:name";
-          }
+          type srl_nokia-comm:subinterface-all;
           description
             "Configure the list of bridged sub-interfaces on the associated MAC-VRF to which the ARP
              probes are sent.";
@@ -134,7 +145,7 @@ module srl_nokia-interfaces-nbr-virtual-ip-discovery {
       presence "Enable Virtual IPv6 discovery on the subinterface";
       description
         "Enable Virtual IPv6 discovery on the subinterface and configure associated parameters
-
+        
          When enabled, the system will attempt to discover the configured virtual IPv6
          addresses on the listed bridged subinterfaces.";
       list address {
@@ -160,7 +171,7 @@ module srl_nokia-interfaces-nbr-virtual-ip-discovery {
           default "0";
           units "seconds";
           description
-            "Configure the probe interval at which the system sends a Neighbor Solicitation (NS) for
+            "Configure the probe interval at which the system sends a Neighbor Solicitation (NS) for 
              the virtual IPv6 address.
 
              The default value of zero determines that the system sends a NS for the
@@ -172,9 +183,7 @@ module srl_nokia-interfaces-nbr-virtual-ip-discovery {
         }
         leaf-list probe-bridged-subinterfaces {
           max-elements 10;
-          type leafref {
-            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:interface/srl_nokia-netinst:name";
-          }
+          type srl_nokia-comm:subinterface-all;
           description
             "Configure the list of bridged sub-interfaces on the associated MAC-VRF to which the NS
              probes are sent.";

@@ -13,6 +13,12 @@ module srl_nokia-tls {
     prefix srl-ext;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module defines TLS configuration";
 
@@ -246,7 +252,8 @@ module srl_nokia-tls {
       leaf name {
         srl-ext:show-importance "high";
         type srl-comm:name {
-          length "1..247";
+            // 8 chars are kept for .key.pem suffix (Linux supports only up to 255 charater long filenames)
+            length 1..247;
         }
         description
           "Name of the TLS server-profile";
@@ -292,8 +299,9 @@ module srl_nokia-tls {
         type identityref {
           base cipher-type;
         }
-        default "ecdhe-rsa-aes128-gcm-sha256";
-        default "ecdhe-rsa-aes256-gcm-sha384";
+        default ecdhe-rsa-aes128-gcm-sha256;
+        default ecdhe-rsa-aes256-gcm-sha384;
+
         description
           "List of ciphers to use when negotiating TLS with clients";
       }

@@ -3,9 +3,6 @@
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp",
       "srlinux": "/network-instance/protocols/bgp",
-      // nokia bgp is created with ipv4-unicast admin-state enable
-      // We do not want that, so this finalize will make sure we pass admin-state disable
-      "finalize-transform":"oc-bgp-afi-safi-create-default",
       "state-request-from-here": true,
       "deviations": {
         "add": {
@@ -58,8 +55,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/default-route-distance",
-      "srlinux": ""
-      // no need to explicitly map on container "srlinux": "/network-instance/protocols/bgp/preference"
+      "srlinux": "/network-instance/protocols/bgp/preference"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/default-route-distance/{config,state}",
@@ -109,8 +105,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/graceful-restart/{config,state}/stale-routes-time",
-      "srlinux": "/network-instance/protocols/bgp/graceful-restart/stale-routes-time",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/graceful-restart/stale-routes-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/graceful-restart/{config,state}/helper-only",
@@ -160,15 +155,16 @@
     // },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/route-selection-options",
-      "supported": false
+      "srlinux": "/network-instance/protocols/bgp/best-path-selection",
+      "feature-flagged": true
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/route-selection-options/{config,state}",
-      "supported": false
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/route-selection-options/{config,state}/always-compare-med",
-      "supported": false
+      "srlinux": "/network-instance/protocols/bgp/best-path-selection/always-compare-med"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/route-selection-options/{config,state}/ignore-as-path-length",
@@ -192,77 +188,56 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis",
-      "pretranslate-transform":"oc-bgp-glb-afi-safi-transform"
+       "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi",
-      "pretranslate-transform":"oc-bgp-glb-afi-safi-transform"
+      "srlinux": "/network-instance/protocols/bgp/afi-safi"
       // "special-handling": "specific-list-items-need-to-create-containers-and-others-rejected"
     },
-    // This is handled by oc-bgp-glb-afi-safi-transform
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/afi-safi-name",
-    //   "srlinux": ""
-    // },
-    { 
-      "srlinux": "/network-instance/protocols/bgp/ipv4-unicast",
-      "pretranslate-transform":"srl-bgp-glb-afi-safi-transform",
-      "add-to-cache": true
-    },
     {
-      "srlinux": "/network-instance/protocols/bgp/ipv6-unicast",
-      "pretranslate-transform": "srl-bgp-glb-afi-safi-transform",
-      "add-to-cache": true
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/afi-safi-name",
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/afi-safi-name",
+      "mapping": [
+        {"IPV4_UNICAST" : "ipv4-unicast"},
+        {"IPV6_UNICAST" : "ipv6-unicast"},
+        {"<clear>"   : "evpn"}
+      ]
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/{config,state}",
-      "pretranslate-transform":"oc-bgp-glb-afi-safi-transform"
+      "srlinux": ""
     },
-    // This is handled by oc-bgp-glb-afi-safi-transform
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/{config,state}/afi-safi-name",
-    //   "srlinux": ""
-    //   "special-handling": "case-and-underscore-to-dash-conversions"
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/{config,state}/afi-safi-name",
+      "srlinux": ""
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/{config,state}/enabled",
-      "srlinux": "",
-      // putting this to always true because i cannot make the difference with whether it is populated or just disabled
-      "deviations": {
-        "add": {
-          "must": [
-           {
-              "expression": ". = true()"
-           }
-           ]
-        }
-      }
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/admin-state",
+      "transform": "bool-to-admin-state"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/state/total-paths",
-      "srlinux": ""
-      // Covered by srl-bgp-glb-afi-safi-transform
-      // "srlinux": "/network-instance/protocols/bgp/{ipv4-unicast,ipv6-unicast}/active-routes"
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/active-routes"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/state/total-prefixes",
-      "srlinux": ""
-      // Covered by srl-bgp-glb-afi-safi-transform
-      // "srlinux": "/network-instance/protocols/bgp/{afi-safi-name}/received-routes"
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/received-routes"
     },
     
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/graceful-restart",
       "supported": false
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/graceful-restart/{config,state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/graceful-restart/{config,state}/enabled",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/graceful-restart/{config,state}",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/graceful-restart/{config,state}/enabled",
+      "supported": false
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/route-selection-options",
       "supported": false
@@ -297,7 +272,7 @@
     // },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/use-multiple-paths",
-      "srlinux": ""
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/multipath"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/use-multiple-paths/{config,state}",
@@ -315,27 +290,15 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}",
-      "pretranslate-transform":"oc-bgp-glob-afisafi-multipath-transform"
-    },
-    {
-      "srlinux": "/network-instance/protocols/bgp/ipv4-unicast/multipath",
-      "pretranslate-transform":"srl-bgp-glob-ipvx-multipath-transform"
-    },
-    {
-      "srlinux": "/network-instance/protocols/bgp/ipv6-unicast/multipath",
-      "pretranslate-transform":"srl-bgp-glob-ipvx-multipath-transform"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}/allow-multiple-as",
-      "srlinux": ""
-      // covered by oc-bgp-glob-afisafi-multipath-transform
-      // "srlinux": "/network-instance/protocols/bgp/{afi-safi-name}/multipath/allow-multiple-as"
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/multipath/allow-multiple-as"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}/maximum-paths",
-      "srlinux": ""
-      // covered by oc-bgp-glob-afisafi-multipath-transform
-      // "srlinux": "/network-instance/protocols/bgp/{afi-safi-name}/multipath/max-paths-level-1"
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/multipath/max-paths-level-1"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/use-multiple-paths/ibgp",
@@ -351,118 +314,89 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths",
-      "supported": false
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/add-paths"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/receive",
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/add-paths/receive"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/send",
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/add-paths/send"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/send-max",
+      "srlinux": "/network-instance/protocols/bgp/afi-safi/add-paths/send-max"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/eligible-prefix-policy",
       "supported": false
     },
-//    {
-//      "srlinux": "/network-instance/protocols/bgp/ipv4-unicast/add-paths",
-//      "pretranslate-transform":"srl-bgp-add-paths"
-//    },
-//    {
-//      "srlinux": "/network-instance/protocols/bgp/ipv6-unicast/add-paths",
-//      "pretranslate-transform":"srl-bgp-add-paths"
-//    },
-//    {
-//      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/receive",
-//      "srlinux": ""
-      // covered by pretranslate-transform
-      // "srlinux": "/bgp/{address-family}/add-paths/receive"
-//    },
-//    {
-//      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/send",
-//      "srlinux": ""
-//      // covered by pretranslate-transform
-//      // "srlinux": "/bgp/{address-family}/add-paths/send"
-//    },
-//    {
-//      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/send-max",
-//      "srlinux": ""
-      // covered by pretranslate-transform
-      // "srlinux": "/bgp/{address-family}/add-paths/send-max"
-//    },
-//    {
-//      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/add-paths/{config,state}/eligible-prefix-policy",
-//      "supported": false
-//    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast",
       "supported": false
-      // "srlinux": "/network-instance/protocols/bgp/ipv4-unicast"
+      // "srlinux": "/network-instance/protocols/bgp/afi-safi/ipv4-unicast"
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit",
-    //   "supported": false
-    //   not supported on global, only peer-group and neighbor
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/max-prefixes",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/prevent-teardown",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/warning-threshold-pct",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/restart-timer",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/{config,state}",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/{config,state}/send-default-route",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit",
+      "supported": false
+      // not supported on global, only peer-group and neighbor
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/max-prefixes",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/prevent-teardown",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/warning-threshold-pct",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/restart-timer",
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/prefix-limit-received",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/{config,state}",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/{config,state}/send-default-route",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv4-unicast/{config,state}/extended-next-hop-encoding",
+      "supported": false
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast",
       "supported": false
-      // "srlinux": "/network-instance/protocols/bgp/ipv6-unicast"
+      // "srlinux": "/network-instance/protocols/bgp/afi-safi/ipv6-unicast"
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit",
-    //   "supported": false
-    //   not supported on global, only peer-group and neighbor
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/max-prefixes",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/prevent-teardown",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/warning-threshold-pct",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/restart-timer",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/{config,state}",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/{config,state}/send-default-route",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit",
+      "supported": false
+      // not supported on global, only peer-group and neighbor
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/max-prefixes",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/prevent-teardown",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/warning-threshold-pct",
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/prefix-limit-received",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/{config,state}",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/{config,state}/send-default-route",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/global/afi-safis/afi-safi/ipv6-unicast/{config,state}/extended-next-hop-encoding",
+      "supported": false
+    },
     //
     //
     // These are not supported afi-safis
@@ -559,6 +493,10 @@
       "type": "srl_nokia-common:ip-address-with-zone"
     },
     {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/{config,state}/neighbor-port",
+      "supported": false
+    },
+    {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/{config,state}/enabled",
       "srlinux": "/network-instance/protocols/bgp/neighbor/admin-state",
       "transform": "bool-to-admin-state"
@@ -569,11 +507,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/{config,state}/local-as",
-      "supported": false
-      // jjac todo DTS417424
-      //"srlinux":
-      //"/network-instance/protocols/bgp/neighbor/local-as/as-number",
-      //"special-handling": "convert-leaf-to-list-with-one-element"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/local-as/as-number"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/{config,state}/peer-type",
@@ -581,10 +515,9 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/{config,state}/auth-password",
-      "supported": false
-      // not supported at this time
-      //"/network-instance/protocols/bgp/neighbor/authentication/keychain",
-      //"special-handling": "auto-create-keychain"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/authentication/password",
+      "type": "srl_nokia-common:routing-password",
+      "feature-flagged": true
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/{config,state}/remove-private-as",
@@ -715,7 +648,7 @@
        {"INVALID_NETWORK_FIELD" : "Invalid Network Field"}, 
        {"MALFORMED_AS_PATH" : "Malformed AS_PATH"}, 
        {"MAX_NUM_PREFIXES_REACHED" : "Maximum Number of Prefixes Reached" },
-       {"ADMINISTRATIVE_SHUTDOWN" : "CEASE_SUBCODE"}, 
+       {"ADMINISTRATIVE_SHUTDOWN" : "Administrative Shutdown"}, 
        {"PEER_DE_CONFIGURED" : "Peer De-configured"}, 
        {"ADMINISTRATIVE_RESET" :  "Administrative Reset"},
        {"CONNECTION_REJECTED" :  "Connection Rejected" },
@@ -776,7 +709,7 @@
       {"INVALID_NETWORK_FIELD" : "Invalid Network Field"}, 
       {"MALFORMED_AS_PATH" : "Malformed AS_PATH"}, 
       {"MAX_NUM_PREFIXES_REACHED" : "Maximum Number of Prefixes Reached" },
-      {"ADMINISTRATIVE_SHUTDOWN" : "CEASE_SUBCODE"}, 
+      {"ADMINISTRATIVE_SHUTDOWN" : "Administrative Shutdown"}, 
       {"PEER_DE_CONFIGURED" : "Peer De-configured"}, 
       {"ADMINISTRATIVE_RESET" :  "Administrative Reset"},
       {"CONNECTION_REJECTED" :  "Connection Rejected" },
@@ -802,8 +735,12 @@
       "srlinux": "/network-instance/protocols/bgp/neighbor/dynamic-neighbor"
     },
     {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/state/last-prefix-limit-exceeded",
+      "supported": false
+    },
+    {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers",
-      "srlinux": ""
+      "srlinux": "/network-instance/protocols/bgp/neighbor/timers"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/{config,state}",
@@ -811,28 +748,31 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/{config,state}/connect-retry",
-      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/connect-retry",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/connect-retry"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/{config,state}/hold-time",
-      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/hold-time",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/hold-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/{config,state}/keepalive-interval",
-      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/keepalive-interval",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/keepalive-interval"
     },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/state/keepalive-interval",
+//      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/negotiated-keepalive-interval"
+//    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/{config,state}/minimum-advertisement-interval",
-      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/minimum-advertisement-interval",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/minimum-advertisement-interval"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/{config,state}/restart-time",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/prefix-limit-restart-timer"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/timers/state/negotiated-hold-time",
-      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/negotiated-hold-time",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/timers/negotiated-hold-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/transport",
@@ -907,12 +847,11 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/graceful-restart/{config,state}/restart-time",
-      "supported": false
+      "srlinux": "/network-instance/protocols/bgp/neighbor/graceful-restart/requested-restart-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/graceful-restart/{config,state}/stale-routes-time",
-      "srlinux": "/network-instance/protocols/bgp/neighbor/graceful-restart/stale-routes-time",
-	  "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/graceful-restart/stale-routes-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/graceful-restart/{config,state}/helper-only",
@@ -923,8 +862,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/graceful-restart/state/peer-restart-time",
-      "srlinux": "/network-instance/protocols/bgp/neighbor/graceful-restart/last-restart-time",
-      "transform": "timeticks-uint16-to-timestamp"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/graceful-restart/neighbor-capability/restart-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/graceful-restart/state/peer-restarting",
@@ -1032,9 +970,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/apply-policy",
-      "supported": false
-      // need policies to be active for this 
-      // "srlinux": ""
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/apply-policy/{config,state}",
@@ -1042,10 +978,8 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/apply-policy/{config,state}/import-policy",
-      "supported": false
-       //"srlinux": "/network-instance/protocols/bgp/neighbor/import-policy"
-      //"srlinux": "",
-      //"pretranslate-transform":"oc-bgp-policy-transform"
+      "srlinux": "",
+      "pretranslate-transform":"oc-bgp-policy-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/apply-policy/{config,state}/default-import-policy",
@@ -1053,106 +987,86 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/apply-policy/{config,state}/export-policy",
-      "supported": false
-       //"srlinux": "/network-instance/protocols/bgp/neighbor/export-policy"
-      //"srlinux": "",
-      //"pretranslate-transform":"oc-bgp-policy-transform"
+      "srlinux": "",
+      "pretranslate-transform":"oc-bgp-policy-transform"
     },
-    //{
-    //  "oc": "",
-    //  "srlinux": "/network-instance/protocols/bgp/neighbor/import-policy",
-    //  "pretranslate-transform":"srl-bgp-policy-transform"
-    //},
-    //{
-    // "oc": "",
-    // "srlinux": "/network-instance/protocols/bgp/neighbor/export-policy",
-    // "pretranslate-transform":"srl-bgp-policy-transform"
-    //},
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/import-policy",
+      "pretranslate-transform":"srl-bgp-policy-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/export-policy",
+      "pretranslate-transform":"srl-bgp-policy-transform"
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/apply-policy/{config,state}/default-export-policy",
       "supported": false
     },
     {
       "oc":   "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis",
-      "pretranslate-transform":"oc-bgp-neighbor-afi-safi-transform"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi",
-      "pretranslate-transform":"oc-bgp-neighbor-afi-safi-transform"
-      // "special-handling": "specific-list-items-need-to-create-containers-and-others-rejected"
-    },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/afi-safi-name",
-    //   "srlinux": ""
-    // },
-    { 
-      "srlinux": "/network-instance/protocols/bgp/neighbor/ipv4-unicast",
-      "pretranslate-transform":"srl-bgp-neighbor-afi-safi-transform",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi",
       "add-to-cache": true
+      // add-to-cache is needed for /prefixes/received
+      // "special-handling": "specific-list-items-need-to-create-containers-and-others-rejected"  jjac todo add must? 
     },
     {
-      "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast",
-      "pretranslate-transform": "srl-bgp-neighbor-afi-safi-transform",
-      "add-to-cache": true
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/afi-safi-name",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/afi-safi-name",
+      "mapping": [
+        {"IPV4_UNICAST" : "ipv4-unicast"},
+        {"IPV6_UNICAST" : "ipv6-unicast"},
+        {"<clear>"   : "evpn"}
+      ]
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/{config,state}",
-      "pretranslate-transform": "oc-bgp-neighbor-afi-safi-transform"
+      "srlinux": ""
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/{config,state}/afi-safi-name",
-    //   "srlinux": "",
-    //   "special-handling": "case-and-underscore-to-dash-conversions"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/{config,state}/enabled",
-    //   "srlinux": "/network-instance/protocols/bgp/neighbor/{afi-safi-name}/admin-state",
-    //   "special-handling": "bool-to-admin-state"
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/{config,state}/afi-safi-name",
+      "srlinux": ""
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/{config,state}/enabled",
-      "srlinux": "",
-      // putting this to always true because i cannot make the difference with whether it is populated or just disabled
-      "deviations": {
-        "add": {
-          "must": [
-           {
-              "expression": ". = true()"
-           }
-           ]
-        }
-      }
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/admin-state",
+      "transform": "bool-to-admin-state"
     },
 
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/active",
-      "srlinux": ""
-      // Covered by srl-bgp-neighbor-afi-safi-transform
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/{afi-safi-name}/oper-state"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/oper-state",
+      "transform": "bool-to-oper-state"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes",
-      "pretranslate-transform": "oc-bgp-neighbor-afi-safi-transform"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received",
-      "srlinux": ""
-      //"special-handling": "calculate-as-received-minus-rejected"
+      "pretranslate-transform":"oc-bgp-neighbor-afi-safi-prefixes-rcvd-transform"
+      // "special-handling": "calculate-as-received-minus-rejected"
+    },
+    {
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/rejected-routes",
+      "pretranslate-transform":"srl-bgp-neighbor-afi-safi-prefixes-rcvd-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/received-pre-policy",
-      "srlinux": ""
-      //"srlinux": "/network-instance/protocols/bgp/neighbor/{afi-safi-name}/received-routes"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/received-routes"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/sent",
-      "srlinux": ""
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/{afi-safi-name}/sent-routes"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/sent-routes"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/state/prefixes/installed",
-      "srlinux": ""
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/{afi-safi-name}/active-routes"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/active-routes"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/graceful-restart",
@@ -1166,7 +1080,6 @@
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/graceful-restart/state",
       "pretranslate-transform": "oc-bgp-neighbor-restart-state"
-      //"srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/graceful-restart/{config,state}/enabled",
@@ -1198,37 +1111,23 @@
     //},
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/add-paths",
-      "supported": false
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/add-paths"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/add-paths/{config,state}",
-      "supported": false
+      "srlinux": ""
     },
-//    {
-//      "srlinux": "/network-instance/protocols/bgp/neighbor/ipv4-unicast/add-paths",
-//      "pretranslate-transform":"srl-bgp-add-paths"
-//    },
-//    {
-//      "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast/add-paths",
-//      "pretranslate-transform":"srl-bgp-add-paths"
-//    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/add-paths/{config,state}/receive",
-      "supported": false
-      // convered by oc-bgp-add-paths
-      // "srlinux": "bgp/neighbor/{address-family}/add-paths/receive"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/add-paths/receive"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/add-paths/{config,state}/send",
-      "supported": false
-      // convered by oc-bgp-add-paths
-      // "srlinux": "bgp/neighbor/{address-family}/add-paths/send"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/add-paths/send"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/add-paths/{config,state}/send-max",
-      "supported": false
-      // convered by oc-bgp-add-paths
-      // "srlinux": "bgp/neighbor/{address-family}/add-paths/send-max"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/add-paths/send-max"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/add-paths/{config,state}/eligible-prefix-policy",
@@ -1237,46 +1136,27 @@
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/apply-policy",
       "supported": false
-    },
-    // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/apply-policy/{config,state}",
-    //   "supported": false
-    // },
-    // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/apply-policy/{config,state}/import-policy",
-    //   "supported": false
-    // },
-    // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/apply-policy/{config,state}/default-import-policy",
-    //   "supported": false
-    // },
-    // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/apply-policy/{config,state}/export-policy",
-    //   "supported": false
-    // },
-    // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/apply-policy/{config,state}/default-export-policy",
-    //   "supported": false
-    // },
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast",
-      "srlinux": ""
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv4-unicast"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit",
-      "srlinux": ""
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv4-unicast/prefix-limit"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}",
-      "pretranslate-transform":"oc-bgp-ipvx-prefix-limit"
-    },
-    {
-      "srlinux": "/network-instance/protocols/bgp/neighbor/ipv4-unicast/prefix-limit",
-      "pretranslate-transform":"srl-bgp-ipvx-prefix-limit"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/max-prefixes",
-      "srlinux": "",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv4-unicast/prefix-limit/max-received-routes",
       "deviations": {
         "add": {
           "must": [
@@ -1286,18 +1166,11 @@
            ]
         }
       }
-      // covered by oc-bgp-ipvx-prefix-limit    
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv4-unicast/prefix-limit/max-received-routes"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/prevent-teardown",
-      "supported": false
-      // covered by oc-bgp-ipvx-prefix-limit    
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv4-unicast/prefix-limit/prevent-teardown"
-    },
-    {
-      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/warning-threshold-pct",
-      "srlinux": "",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv4-unicast/prefix-limit/prevent-teardown",
+      "feature-flagged": true,
       "deviations": {
         "add": {
           "must": [
@@ -1307,14 +1180,27 @@
            ]
         }
       }
-      // covered by oc-bgp-ipvx-prefix-limit    
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv4-unicast/prefix-limit/warning-threshold-pct"
     },
     {
-      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/restart-timer",
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/warning-threshold-pct",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv4-unicast/prefix-limit/warning-threshold-pct",
+      "deviations": {
+        "add": {
+          "must": [
+           {
+             "expression": "../../../../config/afi-safi-name = 'IPV4_UNICAST'"
+           }
+           ]
+        }
+      }
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit/state/prefix-limit-exceeded",
       "supported": false
-      // covered by oc-bgp-ipvx-prefix-limit    
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv4-unicast/prefix-limit/restart-timer"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/prefix-limit-received",
+      "supported": false
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/{config,state}",
@@ -1335,6 +1221,10 @@
       // "srlinux": "/network-instance/protocols/bgp/neighbor/send-default-route/ipv4-unicast"
     },
     {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/{config,state}/extended-next-hop-encoding",
+      "supported": false
+    },
+    {
       "srlinux": "/network-instance/protocols/bgp/neighbor/send-default-route",
       "pretranslate-transform":"srl-bgp-pg-afi-safi-send-default-route-transform"
       // "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv4-unicast/{config,state}/send-default-route",
@@ -1342,25 +1232,19 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast",
-      "srlinux": ""
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv6-unicast"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit",
-      "srlinux": ""
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast/prefix-limit"
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv6-unicast/prefix-limit"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}",
-      "pretranslate-transform":"oc-bgp-ipvx-prefix-limit"
-    },
-    {
-      "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast/prefix-limit",
-      "pretranslate-transform":"srl-bgp-ipvx-prefix-limit"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/max-prefixes",
-      "srlinux": "",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv6-unicast/prefix-limit/max-received-routes",
       "deviations": {
         "add": {
           "must": [
@@ -1370,18 +1254,11 @@
            ]
         }
       }
-      // covered by oc-bgp-ipvx-prefix-limit 
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast/prefix-limit/max-received-routes"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/prevent-teardown",
-      "supported": false
-      // covered by oc-bgp-ipvx-prefix-limit 
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast/prefix-limit/prevent-teardown"
-    },
-    {
-      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/warning-threshold-pct",
-      "srlinux": "",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv6-unicast/prefix-limit/prevent-teardown",
+      "feature-flagged": true,
       "deviations": {
         "add": {
           "must": [
@@ -1391,15 +1268,29 @@
            ]
         }
       }
-      // covered by oc-bgp-ipvx-prefix-limit 
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast/prefix-limit/warning-threshold-pct"
     },
     {
-      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/restart-timer",
-      "supported": false
-      // covered by oc-bgp-ipvx-prefix-limit 
-      // "srlinux": "/network-instance/protocols/bgp/neighbor/ipv6-unicast/prefix-limit/restart-timer"
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/warning-threshold-pct",
+      "srlinux": "/network-instance/protocols/bgp/neighbor/afi-safi/ipv6-unicast/prefix-limit/warning-threshold-pct",
+      "deviations": {
+        "add": {
+          "must": [
+           {
+             "expression": "../../../../config/afi-safi-name = 'IPV6_UNICAST'"
+           }
+           ]
+        }
+      }
     },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit/state/prefix-limit-exceeded",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/prefix-limit-received",
+      "supported": false
+    },
+
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/neighbors/neighbor/afi-safis/afi-safi/ipv6-unicast/{config,state}",
       "srlinux": ""
@@ -1529,10 +1420,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/{config,state}/local-as",
-      "supported": false
-      // jjac todo DTS417424
-       //"srlinux": "/network-instance/protocols/bgp/group/local-as/as-number",
-       //"special-handling": "convert-leaf-to-list-with-one-element"
+      "srlinux": "/network-instance/protocols/bgp/group/local-as/as-number"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/{config,state}/peer-type",
@@ -1541,10 +1429,9 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/{config,state}/auth-password",
-      "supported": false
-      // not supported at this time
-      // "srlinux": "/network-instance/protocols/bgp/group/authentication/keychain",
-      // "special-handling": "auto-create-keychain"
+      "srlinux": "/network-instance/protocols/bgp/group/authentication/password",
+      "type": "srl_nokia-common:routing-password",
+      "feature-flagged": true
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/{config,state}/remove-private-as",
@@ -1592,23 +1479,23 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/timers/{config,state}/connect-retry",
-      "srlinux": "/network-instance/protocols/bgp/group/timers/connect-retry",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/group/timers/connect-retry"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/timers/{config,state}/hold-time",
-      "srlinux": "/network-instance/protocols/bgp/group/timers/hold-time",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/group/timers/hold-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/timers/{config,state}/keepalive-interval",
-      "srlinux": "/network-instance/protocols/bgp/group/timers/keepalive-interval",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/group/timers/keepalive-interval"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/timers/{config,state}/minimum-advertisement-interval",
-      "srlinux": "/network-instance/protocols/bgp/group/timers/minimum-advertisement-interval",
-      "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/group/timers/minimum-advertisement-interval"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/timers/{config,state}/restart-time",
+      "srlinux": "/network-instance/protocols/bgp/group/timers/prefix-limit-restart-timer"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/transport",
@@ -1674,12 +1561,11 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/graceful-restart/{config,state}/restart-time",
-      "supported": false
+      "srlinux": "/network-instance/protocols/bgp/group/graceful-restart/requested-restart-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/graceful-restart/{config,state}/stale-routes-time",
-      "srlinux": "/network-instance/protocols/bgp/group/graceful-restart/stale-routes-time",
-	  "transform": "decimal-to-integer"
+      "srlinux": "/network-instance/protocols/bgp/group/graceful-restart/stale-routes-time"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/graceful-restart/{config,state}/helper-only",
@@ -1795,9 +1681,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/apply-policy",
-      "supported": false
-      // need policies to be active for this 
-      // "srlinux": ""
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/apply-policy/{config,state}",
@@ -1805,10 +1689,8 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/apply-policy/{config,state}/import-policy",
-      //"srlinux": "/network-instance/protocols/bgp/group/import-policy"
-      "supported": false
-      //"srlinux": "",
-      //"pretranslate-transform":"oc-bgp-peer-group-policy-transform"
+      "srlinux": "",
+      "pretranslate-transform":"oc-bgp-peer-group-policy-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/apply-policy/{config,state}/default-import-policy",
@@ -1816,70 +1698,53 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/apply-policy/{config,state}/export-policy",
-      "supported": false
-      //"srlinux": "/network-instance/protocols/bgp/group/export-policy"
-      //"srlinux": "",
-      //"pretranslate-transform":"oc-bgp-peer-group-policy-transform"
+      "srlinux": "",
+      "pretranslate-transform":"oc-bgp-peer-group-policy-transform"
     },
-    //{
-    // "oc": "",
-    // "srlinux": "/network-instance/protocols/bgp/group/import-policy",
-    // "pretranslate-transform":"srl-bgp-group-policy-transform"
-    //},
-    //{
-    // "oc": "",
-    // "srlinux": "/network-instance/protocols/bgp/group/export-policy",
-    // "pretranslate-transform":"srl-bgp-group-policy-transform"
-    //},
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/bgp/group/import-policy",
+      "pretranslate-transform":"srl-bgp-group-policy-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/bgp/group/export-policy",
+      "pretranslate-transform":"srl-bgp-group-policy-transform"
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/apply-policy/{config,state}/default-export-policy",
       "supported": false
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis",
-      "pretranslate-transform":"oc-bgp-pg-afi-safi-transform"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi",
-      "pretranslate-transform":"oc-bgp-pg-afi-safi-transform"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi",
+      "add-to-cache": true
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/afi-safi-name",
-      "srlinux": "",
-      "transform":"oc-bgp-pg-afi-safi-name-transform"
-    },
-    { 
-      "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast",
-      "pretranslate-transform":"srl-bgp-pg-afi-safi-transform",
-      "add-to-cache": true
-    },
-    {
-      "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast",
-      "pretranslate-transform": "srl-bgp-pg-afi-safi-transform",
-      "add-to-cache": true
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/afi-safi-name",
+      "mapping": [
+        {"IPV4_UNICAST" : "ipv4-unicast"},
+        {"IPV6_UNICAST" : "ipv6-unicast"},
+        {"<clear>"   : "evpn"}
+      ]
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/{config,state}",
-      "pretranslate-transform":"oc-bgp-pg-afi-safi-transform"
+      "srlinux": ""
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/{config,state}/afi-safi-name",
-    //   "srlinux": "",
-    //   "special-handling": "case-and-underscore-to-dash-conversions"
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/{config,state}/afi-safi-name",
+      "srlinux": ""
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/{config,state}/enabled",
-      "srlinux": "",
-      // putting this to always true because i cannot make the difference with whether it is populated or just disabled
-      "deviations": {
-        "add": {
-          "must": [
-           {
-              "expression": ". = true()"
-           }
-           ]
-        }
-      }
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/admin-state",
+      "transform": "bool-to-admin-state"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/graceful-restart",
@@ -1895,37 +1760,23 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/add-paths",
-      "supported": false
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/add-paths"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/add-paths/{config,state}",
-      "supported": false
+      "srlinux": ""
     },
-//    {
-//      "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast/add-paths",
-//      "pretranslate-transform":"srl-bgp-add-paths"
-//    },
-//    {
-//      "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast/add-paths",
-//      "pretranslate-transform":"srl-bgp-add-paths"
-//    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/add-paths/{config,state}/receive",
-      "supported": false
-      // convered by oc-bgp-add-paths
-      // "srlinux": "bgp/group/{address-family}/add-paths/receive"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/add-paths/receive"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/add-paths/{config,state}/send",
-      "supported": false
-      // convered by oc-bgp-add-paths
-      // "srlinux": "bgp/group/{address-family}/add-paths/send"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/add-paths/send"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/add-paths/{config,state}/send-max",
-      "supported": false
-      // convered by oc-bgp-add-paths
-      // "srlinux": "bgp/group/{address-family}/add-paths/send-max"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/add-paths/send-max"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/add-paths/{config,state}/eligible-prefix-policy",
@@ -1933,127 +1784,85 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/{config,state}",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/{config,state}/enabled",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}/allow-multiple-as",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}/maximum-paths",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ibgp",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ibgp/{config,state}",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ibgp/{config,state}/maximum-paths",
       "supported": false
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/{config,state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/{config,state}/enabled",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}/allow-multiple-as",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ebgp/{config,state}/maximum-paths",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ibgp",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ibgp/{config,state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/use-multiple-paths/ibgp/{config,state}/maximum-paths",
-    //   "supported": false
-    // },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/import-policy",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/default-import-policy",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/export-policy",
+      // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/default-export-policy",
       "supported": false
-      // "srlinux": "TBD"
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/import-policy",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/default-import-policy",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/export-policy",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/apply-policy/{config,state}/default-export-policy",
-    //   "supported": false
-    // },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast",
-      "srlinux": ""
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv4-unicast"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit",
-      "srlinux": ""
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast/prefix-limit"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv4-unicast/prefix-limit"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}",
-      "pretranslate-transform":"oc-bgp-ipvx-prefix-limit"
-    },
-    {
-       "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast/prefix-limit",
-       "pretranslate-transform":"srl-bgp-ipvx-prefix-limit"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/max-prefixes",
-      "srlinux": "",
-      "deviations": {
-        "add": {
-          "must": [
-           {
-             "expression": "../../../../config/afi-safi-name = 'IPV4_UNICAST'"
-           }
-           ]
-        }
-      }
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast/prefix-limit/max-received-routes"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv4-unicast/prefix-limit/max-received-routes"
+  //    "deviations": {
+  //      "add": {
+  //        "must": [
+  //         {
+  //           "expression": "../../../../config/afi-safi-name = 'IPV4_UNICAST'"
+  //         }
+  //         ]
+  //      }
+  //    }
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/prevent-teardown",
-      "supported": false
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast/prefix-limit/prevent-teardown"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv4-unicast/prefix-limit/prevent-teardown",
+      "feature-flagged": true
+  //    "deviations": {
+  //      "add": {
+  //        "must": [
+  //         {
+  //           "expression": "../../../../config/afi-safi-name = 'IPV4_UNICAST'"
+  //         }
+  //         ]
+  //      }
+  //    }
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/warning-threshold-pct",
-      "srlinux": "",
-      "deviations": {
-        "add": {
-          "must": [
-           {
-             "expression": "../../../../config/afi-safi-name = 'IPV4_UNICAST'"
-           }
-           ]
-        }
-      }
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast/prefix-limit/warning-threshold-pct"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv4-unicast/prefix-limit/warning-threshold-pct"
+  //    "deviations": {
+  //      "add": {
+  //        "must": [
+  //         {
+  //           "expression": "../../../../config/afi-safi-name = 'IPV4_UNICAST'"
+  //         }
+  //         ]
+  //      }
+  //    }
     },
     {
-      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit/{config,state}/restart-timer",
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit/state/prefix-limit-exceeded",
       "supported": false
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv4-unicast/prefix-limit/restart-timer"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/prefix-limit-received",
+      "supported": false
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/{config,state}",
@@ -2074,6 +1883,10 @@
       // "srlinux": "/network-instance/protocols/bgp/group/send-default-route/ipv4-unicast"
     },
     {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/{config,state}/extended-next-hop-encoding",
+      "supported": false
+    },
+    {
       "srlinux": "/network-instance/protocols/bgp/group/send-default-route",
       "pretranslate-transform":"srl-bgp-pg-afi-safi-send-default-route-transform"
       // "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv4-unicast/{config,state}/send-default-route",
@@ -2082,62 +1895,63 @@
     
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast",
-      "srlinux": ""
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv6-unicast"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit",
-      "srlinux": ""
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast/prefix-limit"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv6-unicast/prefix-limit"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}",
-      "pretranslate-transform":"oc-bgp-ipvx-prefix-limit"
-    },
-    {
-       "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast/prefix-limit",
-       "pretranslate-transform":"srl-bgp-ipvx-prefix-limit"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/max-prefixes",
-      "srlinux": "",
-      "deviations": {
-        "add": {
-          "must": [
-           {
-             "expression": "../../../../config/afi-safi-name = 'IPV6_UNICAST'"
-           }
-           ]
-        }
-      }
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast/prefix-limit/max-received-routes"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv6-unicast/prefix-limit/max-received-routes"
+//      "deviations": {
+//        "add": {
+//          "must": [
+//           {
+//             "expression": "../../../../config/afi-safi-name = 'IPV6_UNICAST'"
+//           }
+//           ]
+//        }
+//      }
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/prevent-teardown",
-      "supported": false
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast/prefix-limit/prevent-teardown"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv6-unicast/prefix-limit/prevent-teardown",
+      "feature-flagged": true
+//      "deviations": {
+//        "add": {
+//          "must": [
+//           {
+//             "expression": "../../../../config/afi-safi-name = 'IPV6_UNICAST'"
+//           }
+//           ]
+//        }
+//      }
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/warning-threshold-pct",
-      "srlinux": "",
-      "deviations": {
-        "add": {
-          "must": [
-           {
-             "expression": "../../../../config/afi-safi-name = 'IPV6_UNICAST'"
-           }
-           ]
-        }
-      }
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast/prefix-limit/warning-threshold-pct"
+      "srlinux": "/network-instance/protocols/bgp/group/afi-safi/ipv6-unicast/prefix-limit/warning-threshold-pct"
+//      "deviations": {
+//        "add": {
+//          "must": [
+//           {
+//             "expression": "../../../../config/afi-safi-name = 'IPV6_UNICAST'"
+//           }
+//           ]
+//        }
+//      }
     },
     {
-      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit/{config,state}/restart-timer",
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit/state/prefix-limit-exceeded",
       "supported": false
-      // covered by oc-bgp-peer-group-ipvx-prefix-limit
-      // "srlinux": "/network-instance/protocols/bgp/group/ipv6-unicast/prefix-limit/restart-timer"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/prefix-limit-received",
+      "supported": false
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/peer-groups/peer-group/afi-safis/afi-safi/ipv6-unicast/{config,state}",
@@ -2219,11 +2033,1581 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib",
-      "supported": false
+      "srlinux": "/network-instance/bgp-rib",
+      "state-request-from-here": true
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets",
+      "srlinux": ""
+      //"srlinux": "/network-instance/bgp-rib/attr-sets"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/index",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/index"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/index",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/origin",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/origin",
+      "mapping": [
+          {"IGP" : "igp" },
+          {"EGP" : "egp"},
+          {"INCOMPLETE" : "incomplete"}
+          ]
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/atomic-aggregate",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/atomic-aggregate"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/next-hop",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/next-hop",
+      "type": "srl_nokia-common:ip-address-with-zone"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/med",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/med"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/local-pref",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/local-pref"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/originator-id",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/originator-id"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/cluster-list",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/cluster-list",
+      "type": "srl_nokia-common:ip-address"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/cluster-list/cluster-list",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/cluster-list/cluster-list"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/state/aigp",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/aigp"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/aggregator",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/aggregator"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/aggregator/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/aggregator/state/as",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/aggregator/as-number"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/aggregator/state/as4",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/aggregator/state/address",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/aggregator/address"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as-path",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/as-path"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as-path/as-segment",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/as-path/segment"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as-path/as-segment/as-path-index",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/as-path/segment/as-path-index"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as-path/as-segment/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as-path/as-segment/state/type",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/as-path/segment/type",
+      "mapping": [
+        {"AS_SEQ" : "as-sequence"},
+        {"AS_SET" : "as-set"},
+        {"AS_CONFED_SEQUENCE" : "as-confed-sequence"},
+        {"AS_CONFED_SET" : "as-confed-set"}
+      ]
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as-path/as-segment/state/member",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/as-path/segment/member"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as-path/as-segment/state/member/member",
+      "srlinux": "/network-instance/bgp-rib/attr-sets/attr-set/as-path/segment/member/member"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as4-path",
+      "supported": false
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as4-path/as4-segment",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as4-path/as4-segment/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as4-path/as4-segment/state/type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/as4-path/as4-segment/state/member",
+    //   "srlinux": "TBD"
+    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation",
+      "supported": false
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/state/type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/state/type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/state/colors",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/state/preference",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/state/binding-sid",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/remote-endpoints",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/remote-endpoints/remote-endpoint",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/remote-endpoints/remote-endpoint/endpoint",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/remote-endpoints/remote-endpoint/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/remote-endpoints/remote-endpoint/state/as",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/remote-endpoints/remote-endpoint/state/endpoint",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/instance-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/state/instance-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/state/weight",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/sid",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/mpls-tc",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/mpls-bos",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/mpls-ttl",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/remote-ipv4-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/local-ipv4-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/remote-ipv6-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/local-ipv6-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/attr-sets/attr-set/tunnel-encapsulation/tunnels/tunnel/subtlvs/subtlv/segment-lists/segment-list/segments/segment/state/local-interface-id",
+    //   "srlinux": "TBD"
+    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/communities",
+      "supported": false
+      // "srlinux": "TBD"
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/communities/community",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/communities/community/index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/communities/community/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/communities/community/state/index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/communities/community/state/community",
+    //   "srlinux": "TBD"
+    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/ext-communities",
+      "supported": false
+      // "srlinux": "TBD"
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/ext-communities/ext-community",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/ext-communities/ext-community/index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/ext-communities/ext-community/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/ext-communities/ext-community/state/index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/ext-communities/ext-community/state/ext-community",
+    //   "srlinux": "TBD"
+    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis",
+      "srlinux": "",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi",
+      "srlinux": "/network-instance/bgp-rib/afi-safi",
+      "state-request-from-here": true,
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/afi-safi-name",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/afi-safi-name",
+      "mapping": [
+       {"IPV4_UNICAST" : "ipv4-unicast"},
+       {"IPV6_UNICAST" : "ipv6-unicast"}
+      ],
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/state/afi-safi-name",
+      "srlinux": "",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast",
+      "srlinux": "",
+      // "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib",
+      "srlinux": "",
+      // "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes",
+      "feature-flagged": true
+    },
+    // key needs translation
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/prefix",
+      "transform": "oc-bgp-route-key-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/origin",
+      "transform": "oc-bgp-route-key-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/path-id",
+      "transform": "oc-bgp-route-key-transform"
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/prefix",
+      "transform": "unused-key-transform"      
+      // for state the transform in this direction is not used 
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/neighbor",
+      "transform": "unused-key-transform"      
+      // for state the transform in this direction is not used 
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/origin-protocol",
+      "transform": "unused-key-transform"      
+      // for state the transform in this direction is not used 
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/path-id",
+      "transform": "unused-key-transform",
+      "feature-flagged": true
+      // for state the transform in this direction is not used 
+    },
+    // end of key translation
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/prefix",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/origin",
+      "srlinux": "",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/path-id",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/attr-index",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/attr-id",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/community-index",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/ext-community-index",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/last-modified",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/last-modified",
+      "transform": "timeticks-to-timestamp",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/valid-route",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/valid-route",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/state/invalid-reason",
+      "pretranslate-transform":"oc-bgp-rib-route-invalid-reason"
+      // for state the transform in this direction is not used 
+      // maps on node "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/invalid-reason"
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv4-unicast/local-rib/routes/invalid-reason",
+      "pretranslate-transform":"srl-bgp-rib-route-invalid-reason"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes",
+      "supported": false
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors",
+      "supported": false
+    //   "srlinux": "TBD"
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/neighbor-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/state/neighbor-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/best-path",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast",
+      "srlinux": "",
+      // "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib",
+      "srlinux": "",
+      // "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes",
+      "feature-flagged": true
+    },
+    // key needs translation
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/prefix",
+      "transform": "oc-bgp-route-key-transform"       
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/origin",
+      "transform": "oc-bgp-route-key-transform"       
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/path-id",
+      "transform": "oc-bgp-route-key-transform"       
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/prefix",
+      "transform": "unused-key-transform"      
+      // for state the transform in this direction is not used 
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/neighbor",
+      "transform": "unused-key-transform"      
+      // for state the transform in this direction is not used 
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/origin-protocol",
+      "transform": "unused-key-transform"      
+      // for state the transform in this direction is not used 
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/path-id",
+      "transform": "unused-key-transform",
+      "feature-flagged": true
+      // for state the transform in this direction is not used 
+    },
+    // end of key translation
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/prefix",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/origin",
+      "srlinux": "",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/path-id",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/attr-index",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/attr-id",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/community-index",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/ext-community-index",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/last-modified",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/last-modified",
+      "transform": "timeticks-to-timestamp",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/valid-route",
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/valid-route",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/state/invalid-reason",
+      "pretranslate-transform":"oc-bgp-rib-route-invalid-reason"
+      // maps on node "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/invalid-reason"
+    },
+    {
+      "srlinux": "/network-instance/bgp-rib/afi-safi/ipv6-unicast/local-rib/routes/invalid-reason",
+      "pretranslate-transform":"srl-bgp-rib-route-invalid-reason"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes",
+      "supported": false
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/loc-rib/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors",
+      "supported": false
+    },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/neighbor-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/state/neighbor-address",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/state/best-path",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-in-post/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-pre/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/prefix",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/path-id",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/attr-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/ext-community-index",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/last-modified",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/valid-route",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/state/invalid-reason",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/optional",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/transitive",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/partial",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/extended",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/attr-type",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/attr-len",
+    //   "srlinux": "TBD"
+    // },
+    // {
+    //   "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-unicast/neighbors/neighbor/adj-rib-out-post/routes/route/unknown-attributes/unknown-attribute/state/attr-value",
+    //   "srlinux": "TBD"
+    // },
+    //
+    // unsupported afi-safis
+    //
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv4-srte-policy",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/ipv6-srte-policy",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/bgp/rib/afi-safis/afi-safi/l2vpn-evpn",
       "supported": false
     }
+    //
+    // end of unsupported afi-safis
+    //
   ]
 }

@@ -1,8 +1,9 @@
 module srl_nokia-twamp {
   yang-version 1.1;
-  namespace "urn:srl_nokia/twamp";
-  prefix srl_nokia-twamp;
 
+  namespace "urn:srl_nokia/twamp";
+  prefix "srl_nokia-twamp";
+  
   import srl_nokia-common {
     prefix srl-comm;
   }
@@ -18,6 +19,18 @@ module srl_nokia-twamp {
   import srl_nokia-oam {
     prefix srl_nokia-oam;
   }
+
+  /* 
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  description
+    "This module defines configuration and operational state data related to the twamp protocol.";
+  */
 
   revision 2022-06-30 {
     description
@@ -143,7 +156,8 @@ module srl_nokia-twamp {
     }
   }
 
-  grouping twamp-server-common-config {
+  grouping twamp-server-common-config
+  {
     leaf admin-state {
       description
         "Indicates whether the device is allowed to operate
@@ -152,6 +166,7 @@ module srl_nokia-twamp {
       srl-ext:show-importance "high";
       default "disable";
     }
+
     leaf oper-state {
       description
         "Details if the twamp is operationally available";
@@ -159,6 +174,7 @@ module srl_nokia-twamp {
       type srl-comm:oper-state;
       srl-ext:show-importance "high";
     }
+
     leaf servwait {
       description
         "TWAMP-Control (TCP) session timeout, in seconds.
@@ -170,9 +186,10 @@ module srl_nokia-twamp {
       type uint32 {
         range "1..604800";
       }
-      units "seconds";
-      default "900";
+      units seconds;
+      default 900;
     }
+
     leaf control-packet-dscp {
       description
         "The DSCP value to be placed in the IP header of
@@ -182,286 +199,345 @@ module srl_nokia-twamp {
       reference
         "Section 3.1 of RFC 5357.";
       type srl-comm:dscp-name;
+      //type srl-comm:dscp-val;
       default "CS7";
     }
+
     leaf modes {
-      config false;
+      config false; 
       description
         "The bit mask of TWAMP Modes this Server instance
          is willing to support.";
       type twamp-modes;
     }
+
     leaf max-conn-server {
       description
-        "The system wide maximum number of concurrent TWAMP server
-         control connections that this Server instance is willing
+        "The system wide maximum number of concurrent TWAMP server 
+         control connections that this Server instance is willing 
          to support.";
       type uint32 {
-        range "1..64";
+          range "1..64";
       }
-      default "32";
-    }
+      default 32;
+    }  
+
     leaf max-sess-server {
       description
-        "The system wide maximum number of concurrent TWAMP test
+        "The system wide maximum number of concurrent TWAMP test 
          sessions that this Server instance is willing to support.";
       type uint32 {
         range "1..128";
       }
-      default "32";
+      default 32;
     }
   }
 
-  grouping twamp-server-error-statistics {
-    container dropped-connection-statistics {
+  grouping twamp-server-error-statistics
+  {
+    container dropped-connection-statistics
+    {
       config false;
       description
         "Per reason code error statistics for connection drops.";
+
       leaf tcp-connection-closed {
         description
           "TCP Connection Closed Errors.";
         type uint32;
       }
+
       leaf tcp-connection-fatal-error {
         description
           "TCP Connection Errors.";
         type uint32;
       }
+
       leaf unexpected-event {
         description
           "Connection Failures due to unexpected events.";
         type uint32;
       }
+
       leaf message-send-error {
         description
           "Connection failure due to server message send error.";
         type uint32;
       }
+
       leaf message-wait-error {
         description
           "Connection failure due to initial read error.";
         type uint32;
       }
+
       leaf no-prefix-match {
         description
           "Connection failures due to no prefix match.";
         type uint32;
       }
+
       leaf max-global-limit-exceed {
         description
           "Connection failures due to global connection limit exceeds.";
         type uint32;
       }
+
       leaf max-prefix-limit-exceed {
         description
           "Connection failures due to per prefix connection limit exceeds.";
         type uint32;
       }
+
       leaf unspecified-mode {
         description
           "Connection failures due to unspecified mode.";
         type uint32;
       }
+
       leaf unsupported-mode {
         description
           "Connection failures due to unsupported mode.";
         type uint32;
       }
+
       leaf invalid-command {
         description
           "Connection drops due to invalid command.";
         type uint32;
       }
+
       leaf bad-session-count {
         description
           "Stop-sessions with bad session count.";
         type uint32;
       }
+
       leaf connection-timeout {
         description
-          "Connection timeout errors.";
+           "Connection timeout errors.";
         type uint32;
       }
+
       leaf no-internal-resource {
         description
           "Connection failures due to internal resource exhaustion.";
         type uint32;
       }
+
       leaf invalid-sid {
         description
           "Connection failure due to invalid zero SID.";
         type uint32;
       }
+
       leaf invalid-invalid-hmac {
         description
           "Invalid HMAC errors.";
         type uint32;
       }
     }
-    container dropped-connection-states {
+
+    container dropped-connection-states
+    {
       config false;
       description
         "Error Statistics on a per state basis.";
+
       leaf idle {
         description
           "Count of twamp connection failures in idle state.";
         type uint32;
       }
+
       leaf setup-wait {
         description
           "Count of twamp connection failures in set-up-wait state.";
         type uint32;
       }
+
       leaf started {
         description
           "Count of twamp connection failures in server-started state.";
         type uint32;
       }
+
       leaf active {
         description
           "Count of twamp connection failures in test active state.";
         type uint32;
       }
+
       leaf process-started {
         description
           "Count of twamp connection failures in process-session-start state.";
         type uint32;
       }
+
       leaf process-stop {
         description
           "Count of twamp connection failures in process-session-stop state.";
         type uint32;
       }
+
       leaf process-tw-session {
         description
           "Count of twamp connection failures in process-session-req state.";
         type uint32;
       }
     }
-    container rejected-session-statistics {
+
+    container rejected-session-statistics
+    {
       config false;
       description
         "Per reason code error statistics for test session rejection.";
+
       leaf invalid-address-version {
         description
           "Sessions rejected due to bad IP version.";
         type uint32;
       }
+
       leaf non-local-destination {
         description
           "Sessions rejected due to non local IP address.";
         type uint32;
       }
+
       leaf bad-type-p {
         description
           "Sessions rejected because of non-DSCP type-p.";
         type uint32;
       }
+
       leaf padding-too-big {
         description
           "Sessions rejected as padding length requested is too large.";
         type uint32;
       }
+
       leaf non-zero-mbz-value {
         description
           "Sessions rejected because MBZ session parameter is not zero.";
         type uint32;
       }
+
       leaf non-zero-sid {
         description
           "Sessions rejected because SID is not zero.";
         type uint32;
       }
+
       leaf timeout-too-large {
         description
           "Sessions rejected because timeout advertised is too large.";
         type uint32;
       }
+
       leaf max-global-session-exceed {
         description
           "Sessions rejected due to global session limit exceeded.";
         type uint32;
       }
+
       leaf max-prefix-session-exceed {
         description
           "Sessions rejected due to prefix session limit exceeded.";
         type uint32;
       }
+
       leaf max-hw-session-exceed {
         description
           "Sessions rejected due to hw session limit exceeded.";
         type uint32;
       }
+
       leaf socket-error {
         description
           "Session creation failure due to socket error.";
         type uint32;
       }
+
       leaf source-unreachable {
         description
-          "Session creation failure because client ip not reachable.";
+          "Session creation failure because client ip not reachable."; 
         type uint32;
       }
+
       leaf port-in-use {
         description
           "Sessions rejected because UDP Port is being used.";
         type uint32;
       }
+
       leaf duplicate-session {
         description
           "Sessions rejected as duplicate session already exists.";
         type uint32;
       }
+
       leaf no-internal-resource {
         description
           "Sessions rejected because of internal resource exhaustion";
         type uint32;
       }
+
       leaf refwait-timeout {
         description
           "Sessions dropped because reflector wait is elapsed.";
         type uint32;
       }
     }
-    container dropped-test-packet-statistics {
+
+    container dropped-test-packet-statistics
+    {
       config false;
       description
         "Per reason code error statistics for test packet drops.";
+
       leaf incorrect-packet-size {
         description
           "Test packets dropped because of unexpected packet size.";
         type uint32;
       }
+
       leaf incorrect-source-address {
         description
           "Test packets dropped due to unexpected source address.";
         type uint32;
       }
-      leaf arrived-before-start-time {
+
+      leaf arrived-before-start-time  {
         description
-          "Test packets dropped due to arrival before start time.";
+          "Test packets dropped due to arrival before start time."; 
         type uint32;
       }
+
       leaf no-start-sessions {
         description
           "Test packets dropped due to arrival before start-sessions message.";
         type uint32;
       }
+
       leaf invalid-error-estimate {
         description
           "Test request packets dropped due to invalid error estimate.";
         type uint32;
       }
+
       leaf reply-error {
         description
           "Test Reply Send Errors.";
         type uint32;
       }
+
       leaf invalid-server-octets {
         description
           "Test messages dropped due to invalid server octets.";
         type uint32;
       }
+
       leaf invalid-symmetric-mbz {
         description
           "Test requests dropped because of invalid mbz symmetric padding.";
@@ -470,30 +546,36 @@ module srl_nokia-twamp {
     }
   }
 
-  grouping twamp-server-prefix-config {
-    list client-connection {
+  grouping twamp-server-prefix-config
+  {
+    list client-connection
+    {
       description
-        "List of TWAMP Client Prefixes that are allowed.";
-      key "client-ip";
+          "List of TWAMP Client Prefixes that are allowed.";
+
+      key client-ip;
+
       leaf client-ip {
         description
           "A client IP prefix from which the server will
            accept twamp connections.";
         type srl-comm:ip-prefix;
       }
+
       leaf max-conn-server {
         description
-          "The system wide maximum number of concurrent TWAMP server
+          "The system wide maximum number of concurrent TWAMP server 
            control connections that can be supported for this
            client ip prefix.";
         type uint32 {
           range "1..64";
         }
       }
+
       leaf max-sess-server {
         description
-          "The system wide maximum number of concurrent TWAMP test
-           sessions that can be supported for this client
+          "The system wide maximum number of concurrent TWAMP test 
+           sessions that can be supported for this client 
            ip prefix.";
         type uint32 {
           range "1..128";
@@ -502,12 +584,16 @@ module srl_nokia-twamp {
     }
   }
 
-  grouping twamp-control-connection-state {
-    list ctrl-connection {
+  grouping twamp-control-connection-state
+  {
+    list ctrl-connection
+    {  
       config false;
       description
         "List of all incoming TWAMP-Control (TCP) connections.";
+
       key "client-ip client-tcp-port server-ip server-tcp-port";
+
       leaf client-ip {
         description
           "The IP address on the remote Control-Client device,
@@ -516,12 +602,14 @@ module srl_nokia-twamp {
            connection.";
         type srl-comm:ip-address;
       }
+
       leaf client-tcp-port {
         description
           "The source TCP port number used in the TWAMP-Control
            (TCP) packets belonging to this control connection.";
         type srl-comm:port-number;
       }
+
       leaf server-ip {
         description
           "The IP address of the local Server device, which is
@@ -530,6 +618,7 @@ module srl_nokia-twamp {
            connection.";
         type srl-comm:ip-address;
       }
+
       leaf server-tcp-port {
         description
           "The destination TCP port number used in the
@@ -543,11 +632,13 @@ module srl_nokia-twamp {
            actually in use for this control connection.";
         type srl-comm:port-number;
       }
+
       leaf state {
         description
           "Indicates the Server TWAMP-Control connection state.";
         type twamp-server-ctrl-connection-state;
       }
+
       leaf control-packet-dscp {
         description
           "The DSCP value used in the IP header of the
@@ -561,7 +652,9 @@ module srl_nokia-twamp {
            value will show the actual dscp value in use by this
            TWAMP-Control connection.";
         type srl-comm:dscp-name;
+        //type dscp-val;
       }
+
       leaf selected-mode {
         description
           "The Mode that was chosen for this TWAMP-Control
@@ -572,7 +665,8 @@ module srl_nokia-twamp {
     }
   }
 
-  grouping twamp-session-reflector-config {
+  grouping twamp-session-reflector-config
+  {
     leaf refwait {
       description
         "The Session-Reflector MAY discontinue any session that
@@ -584,30 +678,34 @@ module srl_nokia-twamp {
       type uint32 {
         range "1..604800";
       }
-      units "seconds";
-      default "900";
+      units seconds;
+      default 900;
     }
   }
 
-  grouping twamp-test-session-statistics {
+  grouping twamp-test-session-statistics
+  {
     leaf sent-packets {
       config false;
       description
         "Indicates the number of packets sent.";
       type uint32;
     }
+
     leaf rcv-packets {
       config false;
       description
         "Indicates the number of packets received.";
       type uint32;
     }
+
     leaf last-sent-seq {
       config false;
       description
         "Indicates the last sent sequence number.";
       type uint32;
     }
+
     leaf last-rcv-seq {
       config false;
       description
@@ -615,8 +713,9 @@ module srl_nokia-twamp {
       type uint32;
     }
   }
-
-  grouping twamp-test-session-state {
+ 
+  grouping twamp-test-session-state
+  {
     leaf sender-ip {
       description
         "The IP address on the remote device, which is the
@@ -624,12 +723,14 @@ module srl_nokia-twamp {
          belonging to this test session.";
       type srl-comm:ip-address;
     }
+
     leaf sender-udp-port {
       description
         "The source UDP port used in the TWAMP-Test packets
          belonging to this test session.";
       type srl-comm:port-number;
     }
+
     leaf reflector-ip {
       description
         "The IP address of the local Session-Reflector
@@ -638,6 +739,7 @@ module srl_nokia-twamp {
          session.";
       type srl-comm:ip-address;
     }
+
     leaf reflector-udp-port {
       description
         "The destination UDP port number used in the
@@ -647,6 +749,7 @@ module srl_nokia-twamp {
         range "862 | 49152..65535";
       }
     }
+
     leaf sid {
       description
         "An auto-allocated identifier for this TWAMP-Test
@@ -657,6 +760,7 @@ module srl_nokia-twamp {
          Accept-Session message.";
       type string;
     }
+
     leaf parent-connection-client-ip {
       description
         "The IP address on the Control-Client device, which
@@ -665,6 +769,7 @@ module srl_nokia-twamp {
          connection that negotiated this test session.";
       type srl-comm:ip-address;
     }
+
     leaf parent-connection-client-tcp-port {
       description
         "The source TCP port number used in the TWAMP-Control
@@ -672,6 +777,7 @@ module srl_nokia-twamp {
          connection that negotiated this test session.";
       type srl-comm:port-number;
     }
+
     leaf parent-connection-server-ip {
       description
         "The IP address of the Server device, which is the
@@ -680,6 +786,7 @@ module srl_nokia-twamp {
          connection that negotiated this test session.";
       type srl-comm:ip-address;
     }
+
     leaf parent-connection-server-tcp-port {
       description
         "The destination TCP port number used in the
@@ -688,69 +795,92 @@ module srl_nokia-twamp {
          session.";
       type srl-comm:port-number;
     }
+
     leaf test-packet-dscp {
       description
         "The DSCP value present in the IP header of
          TWAMP-Test (UDP) packets belonging to this session.";
+      //type srl-comm:dscp-name;
       type dscp-val;
     }
+
     uses twamp-test-session-statistics;
   }
 
-  grouping twamp-session-reflector-config-state {
-    container session-reflector {
+  grouping twamp-session-reflector-config-state
+  {
+    container session-reflector 
+    {
       description
         "Configuration of the TWAMP Session-Reflector logical
          entity";
+
       uses twamp-session-reflector-config;
+
       list test-session {
-        config false;
-        description
-          "TWAMP Session-Reflector test sessions.";
-        key "sender-ip sender-udp-port
-             reflector-ip reflector-udp-port";
-        uses twamp-test-session-state;
+          config false;
+          description
+            "TWAMP Session-Reflector test sessions.";
+
+          key "sender-ip sender-udp-port
+               reflector-ip reflector-udp-port";
+
+          uses twamp-test-session-state;
       }
     }
   }
 
-  grouping twamp-top {
-    container twamp {
-      if-feature "srl-feat:twamp";
-      presence "Configure TWAMP.";
-      description
-        "TWAMP logical entity configuration grouping of models
-         which correspond to the TWAMP logical entities
-         Server and Session-Reflector.";
-      list server {
-        description
-          "Configuration of the TWAMP Server logical entity.
-           In future, we may allow configuration of a twamp
-           server for each network instance.
-           Currently, we support this only in default
-           network instance.";
-        max-elements 1;
-        key "network-instance-name";
-        leaf network-instance-name {
+  grouping twamp-top
+  {
+      container twamp 
+      {
+          if-feature srl-feat:twamp;
+
+          presence "Configure TWAMP.";
+
           description
-            "The name of the TWAMP Server network instance";
-          type leafref {
-            path "/srl-netinst:network-instance/srl-netinst:name";
+            "TWAMP logical entity configuration grouping of models
+             which correspond to the TWAMP logical entities
+             Server and Session-Reflector.";
+
+          list server
+          {
+            description
+              "Configuration of the TWAMP Server logical entity.
+               In future, we may allow configuration of a twamp 
+               server for each network instance. 
+               Currently, we support this only in default 
+               network instance.";
+
+            max-elements 1;
+
+            key "network-instance-name";
+            leaf network-instance-name {
+              description
+                "The name of the TWAMP Server network instance";
+              type leafref {
+                  path "/srl-netinst:network-instance/srl-netinst:name";
+              }
+              must "/srl-netinst:network-instance[srl-netinst:name = current()]/srl-netinst:type = 'srl-netinst:default'" {
+                  error-message "TWAMP is currently supported only on default network instance."; 
+              }
+              //type srl-comm:name;
+            }
+
+            uses twamp-server-common-config;
+
+            uses twamp-server-prefix-config;
+
+            uses twamp-control-connection-state;
+
+            uses twamp-session-reflector-config-state;
+
+            uses twamp-server-error-statistics;
           }
-          must "/srl-netinst:network-instance[srl-netinst:name = current()]/srl-netinst:type = 'srl-netinst:default'" {
-            error-message "TWAMP is currently supported only on default network instance.";
-          }
-        }
-        uses twamp-server-common-config;
-        uses twamp-server-prefix-config;
-        uses twamp-control-connection-state;
-        uses twamp-session-reflector-config-state;
-        uses twamp-server-error-statistics;
       }
-    }
   }
 
   augment "/srl_nokia-oam:oam" {
-    uses twamp-top;
+      uses twamp-top;
   }
 }

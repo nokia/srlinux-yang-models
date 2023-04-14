@@ -107,6 +107,10 @@
             "transform": "timeticks-to-timestamp"
         },
         {
+            "oc": "/interfaces/interface/{config,state}/id",
+            "srlinux": "/interface/p4rt/id"
+        },
+        {
             "oc": "/interfaces/interface/state/logical",
             "supported": false
             // FUTURE: we could set these on create
@@ -114,9 +118,7 @@
         },
         {
             "oc": "/interfaces/interface/state/management",
-            "supported": false
-            // FUTURE: we could set these on create
-            // "special-handling": "true-for-mgmt-interfaces"
+            "finalize-transform": "oc-interface-management"
         },
         {
             "oc": "/interfaces/interface/state/cpu",
@@ -134,9 +136,7 @@
         },
         {
             "oc": "/interfaces/interface/state/counters/in-pkts",
-            "srlinux": ""
-            // TODO
-            // "special-handling": "new-field-needed-in-our-model"
+            "srlinux": "/interface/statistics/in-packets"
         },
         {
             "oc": "/interfaces/interface/state/counters/in-unicast-pkts",
@@ -173,9 +173,7 @@
         },
         {
             "oc": "/interfaces/interface/state/counters/out-pkts",
-            "srlinux": ""
-            // TODO
-            // "special-handling": "new-field-needed-in-our-model"
+            "srlinux": "/interface/statistics/out-packets"
         },
         {
             "oc": "/interfaces/interface/state/counters/out-unicast-pkts",
@@ -671,7 +669,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:{config,state}/oc-ip:enabled",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/admin-state",
+            "transform":"bool-to-admin-state"
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/{config,state}/oc-ip:mtu",
@@ -702,7 +701,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-octets",
@@ -724,11 +724,13 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-octets",
@@ -750,7 +752,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6",
@@ -991,7 +994,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}/oc-ip:enabled",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/admin-state",
+            "transform":"bool-to-admin-state"
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:config/oc-ip:mtu",
@@ -1031,7 +1035,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-octets",
@@ -1053,11 +1058,13 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-octets",
@@ -1079,7 +1086,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip-ext:autoconf",
@@ -1141,6 +1149,10 @@
         {
             "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:enable-flow-control",
             // srlinux has two values for this - /interface/ethernet/flow-control/{receive,transmit}"
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:fec-mode",
             "supported": false
         },
         {

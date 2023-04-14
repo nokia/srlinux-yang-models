@@ -3,12 +3,20 @@ module srl_nokia-tools-bfd {
   namespace "urn:srl_nokia/tools-bfd";
   prefix srl_nokia-tools-bfd;
 
+  // import some basic types
+
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
   import srl_nokia-features {
     prefix srl_nokia-feat;
   }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
 
   description
     "Model for operational commands on BFD sessions and statstics";
@@ -66,8 +74,10 @@ module srl_nokia-tools-bfd {
           }
         }
       }
+      // tools commands for micro-bfd
       container micro-bfd-sessions {
         if-feature "srl_nokia-feat:lag";
+        // tools bfd micro-bfd-sessions lag-interface <lagX> member-interface <interface> clear 
         list lag-interface {
           key "name";
           description
@@ -102,7 +112,8 @@ module srl_nokia-tools-bfd {
                  Clearing a micro-BFD sessions causes the associated  sessions to transition to a Down state";
             }
           }
-        }
+        } // end lag-interface
+        //tools bfd micro-bfd-sessions statistics lag-interface <lagX> member-interface <interface> clear 
         container statistics {
           list lag-interface {
             key "name";
@@ -136,8 +147,8 @@ module srl_nokia-tools-bfd {
                   "Clear the BFD statistics associated with the micro-BFD sessions";
               }
             }
-          }
-        }
+          } // end lag-interface
+        } //end statistics
       }
     }
   }

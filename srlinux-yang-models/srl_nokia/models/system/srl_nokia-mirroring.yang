@@ -1,33 +1,32 @@
 module srl_nokia-mirroring {
-  yang-version 1.1;
-  namespace "urn:srl_nokia/system/mirroring";
-  prefix srl_nokia-mirroring;
 
-  import srl_nokia-common {
-    prefix srl-comm;
-  }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
-  import srl_nokia-system {
-    prefix srl-system;
-  }
-  import srl_nokia-extensions {
-    prefix srl-ext;
-  }
-  import srl_nokia-interfaces {
-    prefix srl_nokia-if;
-  }
-  import srl_nokia-network-instance {
-    prefix srl-netinst;
-  }
-  import srl_nokia-acl {
-    prefix srl-acl;
-  }
+  yang-version 1.1;
+
+  // namespace
+  namespace "urn:srl_nokia/system/mirroring";
+  prefix "srl_nokia-mirroring";
+
+  import srl_nokia-common { prefix srl-comm; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-system { prefix srl-system;}
+  import srl_nokia-extensions { prefix srl-ext;}
+  import srl_nokia-interfaces { prefix srl_nokia-if;}
+  import srl_nokia-network-instance { prefix srl-netinst; }
+  import srl_nokia-acl { prefix srl-acl;}
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
 
   description
     "This module defines configuration and operational state data for mirroring (SPAN/ERSPAN).";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -75,47 +74,52 @@ module srl_nokia-mirroring {
       "The direction of traffic to be mirrored";
   }
 
-  grouping mirroring-instance-top {
+  grouping mirroring-instance-top {      
     description
       "Top-level grouping containing a list of mirroring instances.";
+
     list mirroring-instance {
       max-elements 8;
       key "name";
-      description
-        "Mirroring instances configured on the local system";
+      description "Mirroring instances configured on the local system";
       leaf name {
         type srl-comm:name;
         description
           "A unique name identifying the mirroring instance";
       }
+
       leaf admin-state {
         type srl-comm:admin-state;
         default "enable";
         description
           "This leaf contains the configured, desired state of the mirroring instance.";
       }
+
       leaf oper-state {
         config false;
         type srl-comm:oper-state;
         description
           "This leaf contains the operational state of the mirroring instance.";
       }
+
       leaf description {
         type srl-comm:description;
         description
           "A user-entered description of this mirroring instance.";
       }
+
       leaf oper-down-reason {
         config false;
         type enumeration {
-          enum mirror-inst-admin-down;
-          enum no-mirror-source;
-          enum local-mirror-subif-down;
-          enum remote-mirror-dst-unreachable;
+        enum "mirror-inst-admin-down";
+        enum "no-mirror-source";
+        enum "local-mirror-subif-down";
+        enum "remote-mirror-dst-unreachable";
         }
         description
           "The reason for the mirroring instance being operational down";
       }
+
       uses mirror-source-top;
       uses mirror-destination-top;
     }
@@ -125,31 +129,27 @@ module srl_nokia-mirroring {
     description
       "Top-level grouping containing a list of mirror sources.";
     container mirror-source {
-      description
-        "Configure mirror source(s)";
+      description "Configure mirror source(s)";
       list interface {
-        if-feature "not srl-feat:platform-7250-ixr-e";
-        description
-          "List of interfaces used as mirror source";
+        if-feature "not srl-feat:jericho2cp";
+        description "List of interfaces used as mirror source";
         key "name";
         leaf name {
           type mirroring-instance-intf-ref;
-          must '/srl_nokia-if:interface[srl_nokia-if:name=.]' {
+          must "/srl_nokia-if:interface[srl_nokia-if:name=.]" {
             error-message "Must be an existing interface name";
           }
         }
         leaf direction {
           type direction;
-          default "egress-only";
-          description
-            "The direction of traffic to be mirrored";
+          default egress-only;
+          description "The direction of traffic to be mirrored";
         }
-        max-elements 128;
       }
+
       list subinterface {
-        if-feature "not srl-feat:platform-7250-ixr-e";
-        description
-          "List of subinterfaces used as mirror source";
+        if-feature "not srl-feat:jericho2cp";
+        description "List of subinterfaces used as mirror source";
         key "name";
         leaf name {
           type mirroring-instance-subintf-ref;
@@ -159,22 +159,20 @@ module srl_nokia-mirroring {
         }
         leaf direction {
           type direction;
-          default "egress-only";
-          description
-            "The direction of traffic to be mirrored";
+          default egress-only;
+          description "The direction of traffic to be mirrored";
         }
-        max-elements 128;
       }
       container acl {
         list ipv4-filter {
-          key "name";
+          key name;
           leaf name {
             type leafref {
-              path "/srl-acl:acl/srl-acl:ipv4-filter/srl-acl:name";
+                path "/srl-acl:acl/srl-acl:ipv4-filter/srl-acl:name";
             }
           }
           list entry {
-            key "sequence-id";
+            key sequence-id;
             leaf sequence-id {
               type leafref {
                 path "/srl-acl:acl/srl-acl:ipv4-filter[srl-acl:name=current()/../../srl_nokia-mirroring:name]/srl-acl:entry/srl-acl:sequence-id";
@@ -183,51 +181,54 @@ module srl_nokia-mirroring {
           }
         }
         list ipv6-filter {
-          key "name";
+          key name;
           leaf name {
             type leafref {
-              path "/srl-acl:acl/srl-acl:ipv6-filter/srl-acl:name";
+                path "/srl-acl:acl/srl-acl:ipv6-filter/srl-acl:name";
             }
           }
           list entry {
-            key "sequence-id";
-            leaf sequence-id {
-              type leafref {
-                path "/srl-acl:acl/srl-acl:ipv6-filter[srl-acl:name=current()/../../srl_nokia-mirroring:name]/srl-acl:entry/srl-acl:sequence-id";
+              key sequence-id;
+              leaf sequence-id {
+                  type leafref {
+                      path "/srl-acl:acl/srl-acl:ipv6-filter[srl-acl:name=current()/../../srl_nokia-mirroring:name]/srl-acl:entry/srl-acl:sequence-id";
+                  }
               }
-            }
           }
         }
       }
     }
   }
 
-  grouping mirror-destination-top {
-    description
-      "Top-level grouping containing local/remote mirror destination";
+  grouping mirror-destination-top {      
+    description "Top-level grouping containing local/remote mirror destination";
     container mirror-destination {
-      description
-        "Configure mirror destination";
+      description "Configure mirror destination";
+      // mirror destination can be either local or remote within the same mirror-instance
       leaf local {
-        if-feature "not srl-feat:platform-7250-ixr-e";
-        description
-          "subinterface of type local-mirror-dest used as local mirror destination";
+        if-feature "not srl-feat:jericho2cp";
+        description "subinterface of type local-mirror-dest used as local mirror destination";
         type mirroring-instance-subintf-ref;
         must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]/srl_nokia-if:type = 'local-mirror-dest'" {
           error-message "local-mirror-destination is only allowed on subinterfaces with type local-mirror-dest";
-        }
+          }
       }
       container remote {
         presence "configure remote mirror destination";
-        must 'current() and not(../local)' {
+        must "current() and not(../local)" {
           error-message "mirror destination can be either local or remote within the same mirror-instance";
         }
-        must '(tunnel-end-points/src-ipv4 and tunnel-end-points/dst-ipv4) or (tunnel-end-points/src-ipv6 and tunnel-end-points/dst-ipv6)' {
+        must "(tunnel-end-points/src-ipv4 and tunnel-end-points/dst-ipv4) or (tunnel-end-points/src-ipv6 and tunnel-end-points/dst-ipv6)" {
           error-message "tunnel src-ip and dst-ip must be specified";
         }
         leaf encap {
           type enumeration {
-            enum l2ogre;
+            enum "l2ogre" {
+              if-feature "srl-feat:trident3 or srl-feat:trident4";
+            }
+            enum "l3ogre" { 
+              if-feature "srl-feat:jericho2cp";
+            }
           }
           mandatory true;
           srl-ext:show-importance "high";
@@ -238,8 +239,8 @@ module srl_nokia-mirroring {
           type leafref {
             path "/srl-netinst:network-instance/srl-netinst:name";
           }
-          must "(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = \"srl-netinst:ip-vrf\" or
-                                 /srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = \"srl-netinst:default\")" {
+          must '(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:ip-vrf" or
+                 /srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:default")' {
             error-message "remote mirror tunnel can only be initiated in a network-instance of type 'ip-vrf' or 'default'";
           }
           srl-ext:show-importance "high";
@@ -251,7 +252,8 @@ module srl_nokia-mirroring {
             srl-ext:show-importance "high";
             description
               "remote mirror tunnel source endpoint IPv4 address";
-            must 'not(../src-ipv6)' {
+            // must be an exiting sub-interface or loopback address within the referenced network instance
+            must "not(../src-ipv6)" {
               error-message "src-ipv4 and src-ipv6 cannot be specified together";
             }
           }
@@ -260,7 +262,7 @@ module srl_nokia-mirroring {
             srl-ext:show-importance "high";
             description
               "remote mirror tunnel destination endpoint IPv4 address";
-            must 'not(../dst-ipv6)' {
+            must "not(../dst-ipv6)" {
               error-message "dst-ipv4 and dst-ipv6 cannot be specified together";
             }
           }
@@ -269,6 +271,7 @@ module srl_nokia-mirroring {
             srl-ext:show-importance "high";
             description
               "remote mirror tunnel source endpoint IPv6 address";
+            // must be an exiting sub-interface or loopback address within the referenced network instance
           }
           leaf dst-ipv6 {
             type srl-comm:ipv6-address;
@@ -293,14 +296,13 @@ module srl_nokia-mirroring {
         }
       }
     }
-  }
-
+  }  
+  
   grouping mirroring-top {
     container mirroring {
       presence "presence top level container for system mirroring";
-      if-feature "srl-feat:mirroring";
-      description
-        "Top level container for configuration and operational state for mirroring";
+      if-feature srl-feat:mirroring;
+      description "Top level container for configuration and operational state for mirroring";
       uses mirroring-instance-top;
     }
   }
@@ -309,4 +311,5 @@ module srl_nokia-mirroring {
     srl-ext:first-released "21.6.1";
     uses mirroring-top;
   }
+
 }

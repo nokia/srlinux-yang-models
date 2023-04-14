@@ -70,6 +70,10 @@
       "supported": false
     },
     {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/global/{config,state}/csnp-enable-on-p2p-links",
+      "srlinux": "/network-instance/protocols/isis/instance/enable-csnp-on-p2p-links"
+    },
+    {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/{config,state}/hello-padding",
       "srlinux": "/network-instance/protocols/isis/instance/hello-padding",
       "mapping" : [
@@ -187,21 +191,38 @@
     // },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart",
-      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart"
+      "pretranslate-transform":"oc-isis-gres-transform"
+//      "add-to-cache": true
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart/{config,state}",
-      "srlinux": ""
+      "pretranslate-transform":"oc-isis-gres-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart/{config,state}/enabled",
-      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart/helper-mode"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart/{config,state}/helper-only",
-      "supported": false
-    //  "srlinux": "",
-    //   "special-handling": "only-true-can-be-accepted-and-returned"
+      "srlinux": ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/non-stop-forwarding",
+      "pretranslate-transform":"srl-isis-gres-transform"
+//      "add-to-cache": true
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/non-stop-forwarding/admin-state",
+      "oc" : ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart",
+      "pretranslate-transform":"srl-isis-gres-transform"
+//      "add-to-cache": true
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart/helper-mode",
+      "oc": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/timers",
@@ -4483,18 +4504,9 @@
        "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/auth-mode",
        "srlinux": "/network-instance/protocols/isis/instance/level/authentication/key/crypto-algorithm",
        "mapping" : [
-         {"TEXT" : "cleartext"}
-       ],
-       "deviations": {
-         "add": {
-             "must": [
-               {
-                   "expression": "../auth-mode = 'TEXT'",
-                   "error-message": "auth-mode other than TEXT are not allowed"
-               }
-             ]
-         }
-       }
+         {"TEXT" : "cleartext"},
+         {"MD5" : "hmacmd5"}
+       ]
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/keychain",
@@ -4534,8 +4546,7 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/{config,state}/interface-id",
-      "srlinux": "",
-      "type": "srl_nokia-common:subinterface-name"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/{config,state}/passive",
@@ -4639,18 +4650,9 @@
        "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config,state}/auth-mode",
        "srlinux": "/network-instance/protocols/isis/instance/interface/authentication/key/crypto-algorithm",
        "mapping" : [
-         {"TEXT" : "cleartext"}
-       ],
-       "deviations": {
-         "add": {
-             "must": [
-               {
-                  "expression": "../auth-mode = 'TEXT'",
-                  "error-message": "auth-mode other than TEXT are not allowed"
-               }
-             ]
-         }
-       }
+         {"TEXT" : "cleartext"},
+         {"MD5" : "hmacmd5"}
+       ]
     },
     {
       "oc": "",
@@ -5069,8 +5071,7 @@
     //},
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/up-timestamp",
-      "supported": false
-    //   "srlinux": "",
+      "srlinux": ""
     //   "special-handling": "calculate-from-last-up-down-transition-timestamp"
     },
     {
@@ -5293,18 +5294,9 @@
        "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config,state}/auth-mode",
        "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/key/crypto-algorithm",
        "mapping" : [
-         {"TEXT" : "cleartext"}
-       ],
-       "deviations": {
-         "add": {
-             "must": [
-               {
-                  "expression": "../auth-mode = 'TEXT'",
-                  "error-message": "auth-mode other than TEXT are not allowed"
-               }
-             ]
-         }
-       }
+         {"TEXT" : "cleartext"},
+         {"MD5" : "hmacmd5"}
+       ]
     },
     {
       "oc": "",
