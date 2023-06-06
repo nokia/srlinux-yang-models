@@ -1,5 +1,8 @@
 module srl_nokia-platform-fabric {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/platform-fabric";
   prefix srl_nokia-platform-fabric;
 
@@ -13,9 +16,19 @@ module srl_nokia-platform-fabric {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data related to fabric modules.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
   revision 2020-06-30 {
     description
       "SRLinux 20.6.1";
@@ -53,6 +66,9 @@ module srl_nokia-platform-fabric {
         "Top-level container for fabric configuration and state";
       uses fabric-state-top;
       uses srl-platform:component-common-top;
+      uses srl-platform:component-delayed-reboot-state {
+        if-feature "srl-feat:chassis";
+      }
       uses srl-platform:component-locator;
       uses srl-platform:component-power-state-top;
       uses srl-platform:component-temperature-state-top;

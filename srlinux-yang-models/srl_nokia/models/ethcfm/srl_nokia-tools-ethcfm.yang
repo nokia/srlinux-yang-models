@@ -1,23 +1,20 @@
 module srl_nokia-tools-ethcfm {
-  yang-version 1.1;
-  namespace "urn:srl_nokia/tools-ethcfm";
-  prefix srl_nokia-tools-ethcfm;
+    yang-version 1.1;
+    namespace "urn:srl_nokia/tools-ethcfm";
+    prefix "srl_nokia-tools-ethcfm";
+    import ietf-yang-types            { prefix "yang"; }
+    import srl_nokia-features         { prefix srl_nokia-feat; }
+    import srl_nokia-ethcfm-types     { prefix "srl_nokia-ethcfm-types"; }
+    import srl_nokia-tools-oam        { prefix "srl_nokia-tools-oam"; }
 
-  import ietf-yang-types {
-    prefix yang;
-  }
-  import srl_nokia-features {
-    prefix srl_nokia-feat;
-  }
-  import srl_nokia-ethcfm-types {
-    prefix srl_nokia-ethcfm-types;
-  }
-  import srl_nokia-tools-oam {
-    prefix srl_nokia-tools-oam;
-  }
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
 
-  description
-    "This module defines the commands to start Ethernet CFM on-demand tests.";
+    description
+        "This module defines the commands to start Ethernet CFM on-demand tests.";
 
   revision 2022-06-30 {
     description
@@ -32,239 +29,232 @@ module srl_nokia-tools-ethcfm {
       "SRLinux 21.11.1";
   }
 
-  grouping eth-cfm-test-target {
-    leaf target {
-      description
-        "Target MAC address for the test.";
-      type union {
-        type yang:mac-address;
-        type enumeration {
-          enum multicast;
-        }
-      }
-      mandatory true;
-    }
-  }
-
-  grouping eth-cfm-test-target-unicast {
-    leaf target {
-      description
-        "Target MAC address for the test.";
-      type yang:mac-address;
-      mandatory true;
-    }
-  }
-
-  grouping eth-cfm-loopback {
-    leaf send-count {
-      description
-        "The number of Loopback messages to be transmitted";
-      type uint32 {
-        range "1..1024";
-      }
-      default "3";
-    }
-    leaf size {
-      description
-        "An arbitrary amount of data to be included in the data tlv,
-         if the data tlv is selected to be sent";
-      type uint32 {
-        range "0..9502";
-      }
-      default "0";
-      units "bytes";
-    }
-    leaf priority {
-      description
-        "3 bit value to be used in the VLAN tag, if present
-         in the transmitted frame
-         If not specified, the default is the priority of CCM and LTM messages
-         transmitted by the MEP.";
-      type srl_nokia-ethcfm-types:priority-type;
-    }
-  }
-
-  grouping eth-cfm-linktrace {
-    leaf ttl {
-      description
-        "Time to live value encoded into the CFM PDU";
-      type uint32 {
-        range "0..255";
-      }
-      default "64";
-    }
-  }
-
-  grouping eth-cfm-one-way-dm-test {
-    leaf size {
-      description
-        "An arbitrary amount of data to be included in the data tlv,
-         if the data tlv is selected to be sent";
-      type uint32 {
-        range "64..9612";
-      }
-      default "64";
-      units "bytes";
-    }
-    leaf priority {
-      description
-        "The priority used in generating one-way-delay-test frames";
-      type srl_nokia-ethcfm-types:priority-type;
-      default "7";
-    }
-  }
-
-  grouping eth-cfm-two-way-dm-test {
-    leaf size {
-      description
-        "An arbitrary amount of data to be included in the data tlv,
-         if the data tlv is selected to be sent";
-      type uint32 {
-        range "64..9612";
-      }
-      default "64";
-      units "bytes";
-    }
-    leaf priority {
-      description
-        "The priority used in generating two-way-delay-test frames";
-      type srl_nokia-ethcfm-types:priority-type;
-      default "7";
-    }
-  }
-
-  grouping eth-cfm-two-way-slm-test {
-    leaf priority {
-      description
-        "The priority used in the generated test frame for the two-way SLM test";
-      type srl_nokia-ethcfm-types:priority-type;
-      default "7";
-    }
-    leaf send-count {
-      description
-        "The number of SLM packets to send during the two-way SLM test";
-      type uint32 {
-        range "1..100";
-      }
-      default "1";
-    }
-    leaf size {
-      description
-        "The data size, in bytes, contained in the padding TLV for the two-way SLM test.";
-      type uint32 {
-        range "64..9612";
-      }
-      default "64";
-      units "bytes";
-    }
-    leaf interval {
-      description
-        "The interval between SLM messages sent by the two-way SLM test.";
-      type srl_nokia-ethcfm-types:interval-type;
-      default "1s";
-    }
-  }
-
-  grouping eth-cfm-pmon-session {
-    list session {
-      key "session-id";
-      leaf session-id {
-        type string;
-      }
-      list measurement-result {
-        key "mi-type";
-        leaf mi-type {
-          type string;
-        }
-        list interval {
-          key "interval-id";
-          leaf interval-id {
-            type uint8;
-          }
-          leaf clear {
-            type empty;
-          }
-        }
-        leaf clear {
-          type empty;
-        }
-      }
-      leaf clear {
-        type empty;
-      }
-    }
-  }
-
-  augment "/srl_nokia-tools-oam:oam" {
-    if-feature "srl_nokia-feat:ethcfm";
-    container ethcfm {
-      description
-        "Enter Eth-CFM tests context";
-      list domain {
-        key "id";
-        leaf id {
-          type string;
-        }
-        list association {
-          key "id";
-          leaf id {
-            type string;
-          }
-          list mep {
-            key "mep-id";
-            leaf mep-id {
-              type uint16;
+    grouping eth-cfm-test-target {
+        leaf target {
+            description
+                "Target MAC address for the test.";
+            type union {
+                type yang:mac-address;
+                type enumeration {
+                    enum 'multicast';
+                }
             }
-            container on-demand {
-              choice type {
-                container loopback {
-                  description
-                    "Perform an Eth-CFM loopback test";
-                  uses eth-cfm-test-target;
-                  uses eth-cfm-loopback;
-                }
-                container linktrace {
-                  description
-                    "Perform an Eth-CFM linktrace test";
-                  uses eth-cfm-test-target-unicast;
-                  uses eth-cfm-linktrace;
-                }
-                container one-way-dm {
-                  description
-                    "Perform an Eth-CFM one-way delay test";
-                  uses eth-cfm-test-target-unicast;
-                  uses eth-cfm-one-way-dm-test;
-                }
-                container two-way-dm {
-                  description
-                    "Perform an Eth-CFM two-way delay test";
-                  uses eth-cfm-test-target-unicast;
-                  uses eth-cfm-two-way-dm-test;
-                }
-                container two-way-slm {
-                  description
-                    "Perform an Eth-CFM two-way synthetic loss measurement test";
-                  uses eth-cfm-test-target-unicast;
-                  uses eth-cfm-two-way-slm-test;
-                }
-              }
-            }
-            container pmon {
-              choice type {
-                container one-way-dm {
-                  uses eth-cfm-pmon-session;
-                }
-                container two-way-dm {
-                  uses eth-cfm-pmon-session;
-                }
-                container two-way-slm {
-                  uses eth-cfm-pmon-session;
-                }
-              }
-            }
-          }
+            mandatory true;
         }
-      }
     }
-  }
+    grouping eth-cfm-test-target-unicast {
+        leaf target {
+            description
+                "Target MAC address for the test.";
+            type yang:mac-address;
+            mandatory true;
+        }
+    }
+    grouping eth-cfm-loopback {
+        leaf send-count {
+            description
+                "The number of Loopback messages to be transmitted";
+            type uint32 {
+                range "1..1024";
+            }
+            default 3;
+        }
+        leaf size {
+            description
+                "An arbitrary amount of data to be included in the data tlv,
+                if the data tlv is selected to be sent";
+            type uint32 {
+                range "0..9502";
+            }
+            default 0;
+            units "bytes";
+        }
+        leaf priority {
+            description
+                "3 bit value to be used in the VLAN tag, if present
+                in the transmitted frame
+                If not specified, the default is the priority of CCM and LTM messages
+                transmitted by the MEP.";
+            type srl_nokia-ethcfm-types:priority-type;
+        }
+    }
+    grouping eth-cfm-linktrace {
+        leaf ttl {
+            description
+                "Time to live value encoded into the CFM PDU";
+            type uint32 {
+                range 0..255;
+            }
+            default 64;
+        }
+    }
+    grouping eth-cfm-one-way-dm-test {
+        leaf size {
+            description
+                "An arbitrary amount of data to be included in the data tlv,
+                if the data tlv is selected to be sent";
+            type uint32 {
+                range "64..9612";
+            }
+            default 64;
+            units "bytes";
+        }
+        leaf priority {
+            description
+                "The priority used in generating one-way-delay-test frames";
+            type srl_nokia-ethcfm-types:priority-type;
+            default 7;
+        }
+    }
+    grouping eth-cfm-two-way-dm-test {
+        leaf size {
+            description
+                "An arbitrary amount of data to be included in the data tlv,
+                if the data tlv is selected to be sent";
+            type uint32 {
+                range "64..9612";
+            }
+            default 64;
+            units "bytes";
+        }
+        leaf priority {
+            description
+                "The priority used in generating two-way-delay-test frames";
+            type srl_nokia-ethcfm-types:priority-type;
+            default 7;
+        }
+    }
+    grouping eth-cfm-two-way-slm-test {
+        leaf priority {
+            description
+                "The priority used in the generated test frame for the two-way SLM test";
+            type srl_nokia-ethcfm-types:priority-type;
+            default 7;
+        }
+        leaf send-count {
+            description
+                "The number of SLM packets to send during the two-way SLM test";
+            type uint32 {
+                range "1..100";
+            }
+            default 1;
+        }
+        leaf size {
+            description
+                "The data size, in bytes, contained in the padding TLV for the two-way SLM test.";
+            type uint32 {
+                range "64..9612";
+            }
+            default 64;
+            units "bytes";
+        }
+        leaf interval {
+            description
+                "The interval between SLM messages sent by the two-way SLM test.";
+            type srl_nokia-ethcfm-types:interval-type;
+            default '1s';
+        }
+    }
+    grouping eth-cfm-pmon-session {
+        list session {
+            key session-id;
+            leaf session-id {
+                type string;
+            }
+            list measurement-result {
+                key mi-type;
+                leaf mi-type {
+                    type string;
+                }
+                list interval {
+                    key interval-id;
+                    leaf interval-id {
+                        type uint8;
+                    }
+                    leaf clear {
+                        type empty;
+                    }
+                }
+                leaf clear {
+                    type empty;
+                }
+            }
+            leaf clear {
+                type empty;
+            }
+        }
+    }
+
+    augment "/srl_nokia-tools-oam:oam" {
+        if-feature srl_nokia-feat:ethcfm;
+        container ethcfm {
+            description
+                "Enter Eth-CFM tests context";
+            list domain {
+                key id;
+                leaf id {
+                    type string;
+                }
+                list association {
+                    key id;
+                    leaf id {
+                        type string;
+                    }
+                    list mep {
+                        key mep-id;
+                        leaf mep-id {
+                            type uint16;
+                        }
+                        container on-demand {
+                            choice type {
+                                container loopback {
+                                    description
+                                        "Perform an Eth-CFM loopback test";
+                                    uses eth-cfm-test-target;
+                                    uses eth-cfm-loopback;
+                                }
+                                container linktrace {
+                                    description
+                                        "Perform an Eth-CFM linktrace test";
+                                    uses eth-cfm-test-target-unicast;
+                                    uses eth-cfm-linktrace;
+                                }
+                                container one-way-dm {
+                                    description
+                                        "Perform an Eth-CFM one-way delay test";
+                                    uses eth-cfm-test-target-unicast;
+                                    uses eth-cfm-one-way-dm-test;
+                                }
+                                container two-way-dm {
+                                    description
+                                        "Perform an Eth-CFM two-way delay test";
+                                    uses eth-cfm-test-target-unicast;
+                                    uses eth-cfm-two-way-dm-test;
+                                }
+                                container two-way-slm {
+                                    description
+                                        "Perform an Eth-CFM two-way synthetic loss measurement test";
+                                    uses eth-cfm-test-target-unicast;
+                                    uses eth-cfm-two-way-slm-test;
+                                }
+                            }
+                        }
+                        container pmon {
+                            choice type {
+                                container one-way-dm {
+                                    uses eth-cfm-pmon-session;
+                                }
+                                container two-way-dm {
+                                    uses eth-cfm-pmon-session;
+                                }
+                                container two-way-slm {
+                                    uses eth-cfm-pmon-session;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

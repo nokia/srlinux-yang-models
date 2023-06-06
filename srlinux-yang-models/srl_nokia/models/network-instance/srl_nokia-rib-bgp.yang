@@ -1,18 +1,38 @@
 module srl_nokia-rib-bgp {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/bgp-rib";
   prefix srl_nokia-rib-bgp-routes;
 
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
   import srl_nokia-network-instance {
     prefix srl_nokia-netinst;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This yang file models the state held by the BGP RIB databases.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -42,6 +62,35 @@ module srl_nokia-rib-bgp {
       description
         "If the route was learned from a BGP neighbor, this is the IPv4 or IPv6 address of that neighbor.";
       type srl_nokia-comm:ip-address-with-zone;
+    }
+
+    leaf path-id {
+      description
+        "Path identifier of the BGP route";
+      type uint32;
+    }
+  }
+
+  grouping state-common-local-rib-key {
+    leaf prefix {
+      type srl_nokia-comm:ip-prefix;
+    }
+    leaf neighbor {
+      description
+        "If the route was learned from a BGP neighbor, this is the IPv4 or IPv6 address of that neighbor.";
+      type srl_nokia-comm:ip-address-with-zone;
+    }
+    leaf origin-protocol {
+      description
+        "If the route was imported from another protocol, this is the protocol name.";
+      type identityref {
+        base srl_nokia-comm:ip-route-type;
+      }
+    }
+    leaf path-id {
+      description
+        "Path identifier of the BGP route";
+      type uint32;
     }
   }
 
@@ -418,7 +467,356 @@ module srl_nokia-rib-bgp {
       config false;
       description
         "Container for BGP RIB state.";
+      list afi-safi {
+        if-feature srl-feat:bgp-rib-afi-safi-list;
+
+        key "afi-safi-name";
+        description
+          "List of address families with routes in the BGP RIB";
+        leaf afi-safi-name {
+          type identityref {
+            base srl_nokia-comm:bgp-address-family;
+          }
+          description "The name of the address family";
+        }
+        container ipv4-unicast {
+          config false;
+          description
+            "Container for RIB state of IPv4-unicast routes.";
+          container local-rib {
+            config false;
+            description
+              "Container for local RIB, containing all imported routes
+               from other protocols plus the post-import-policy version of all IPv4
+               routes learned from all BGP neighbors.";
+            list routes {
+              config false;
+              key "prefix neighbor origin-protocol path-id";
+              description
+                "List of IPv4 routes in the local RIB.";
+              uses state-common-local-rib-key;
+              uses state-routes-common;
+              leaf attr-id {
+                description
+                  "Leaf reference to networkinstance/bgp-rib/
+                   attr-sets/attr-set/index";
+                type leafref {
+                  path "../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                }
+              }
+            }
+          }
+          container rib-in-out {
+            config false;
+            description
+              "Container for BGP routes learned and advertised to BGP neighbors.";
+            container rib-in-pre {
+              config false;
+              description
+                "Container for the pre-import-policy version of BGP
+                 routes learned from BGP neighbors.";
+              list routes {
+                config false;
+                key "prefix neighbor path-id";
+                description
+                  "List of IPv4 routes.";
+                uses state-common-key;
+                leaf attr-id {
+                  description
+                    "Leaf reference to networkinstance/protocols/bgp/rib/
+                     attr-sets/attr-set/index.";
+                  type leafref {
+                    path "../../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                  }
+                }
+              }
+            }
+            container rib-in-post {
+              config false;
+              description
+                "Container for the post-import-policy version of BGP routes
+                 learned from BGP neighbors.";
+              list routes {
+                config false;
+                description
+                  "List of IPv4 routes";
+                key "prefix neighbor path-id";
+                uses state-common-key;
+                uses state-routes-common;
+                leaf attr-id {
+                  description
+                    "Leaf reference to networkinstance/protocols/bgp/rib/
+                     attr-sets/attr-set/index.";
+                  type leafref {
+                    path "../../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                  }
+                }
+              }
+            }
+            container rib-out-post {
+              config false;
+              description
+                "Container for the post-export-policy version of BGP routes
+                 advertised to BGP neighbors.";
+              list routes {
+                config false;
+                key "prefix neighbor path-id";
+                description
+                  "List of IPv4 routes.";
+                uses state-common-key;
+                leaf attr-id {
+                  description
+                    "Leaf reference to networkinstance/protocols/bgp/rib/
+                     attr-sets/attr-set/index.";
+                  type leafref {
+                    path "../../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                  }
+                }
+              }
+            }
+          }
+        }
+        container ipv6-unicast {
+          config false;
+          description
+            "Container for RIB state of IPv6-unicast routes.";
+          container local-rib {
+            config false;
+            description
+              "Container for local RIB, containing all imported routes
+               from other protocols plus the post-import-policy version of all IPv4
+               routes learned from all BGP neighbors.";
+            list routes {
+              config false;
+              key "prefix neighbor origin-protocol path-id";
+              description
+                "List of IPv6 routes in the local RIB.";
+              uses state-common-local-rib-key;
+              uses state-routes-common;
+              leaf attr-id {
+                description
+                  "Leaf reference to networkinstance/protocols/bgp/rib/
+                   attr-sets/attr-set/index";
+                type leafref {
+                  path "../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                }
+              }
+            }
+          }
+          container rib-in-out {
+            config false;
+            description
+              "Container for BGP routes learned and advertised to BGP neighbors.";
+            container rib-in-pre {
+              config false;
+              description
+                "Container for the pre-import-policy version of BGP
+                 routes learned from BGP neighbors.";
+              list routes {
+                config false;
+                key "prefix neighbor path-id";
+                description
+                  "List of IPv6 routes.";
+                uses state-common-key;
+                leaf attr-id {
+                  description
+                    "Leaf reference to networkinstance/protocols/bgp/rib/
+                     attr-sets/attr-set/index.";
+                  type leafref {
+                    path "../../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                  }
+                }
+              }
+            }
+            container rib-in-post {
+              config false;
+              description
+                "Container for the post-import-policy version of BGP routes
+                 learned from BGP neighbors.";
+              list routes {
+                config false;
+                description
+                  "List of IPv6 routes";
+                key "prefix neighbor path-id";
+                uses state-common-key;
+                uses state-routes-common;
+                leaf attr-id {
+                  description
+                    "Leaf reference to networkinstance/protocols/bgp/rib/
+                     attr-sets/attr-set/index.";
+                  type leafref {
+                    path "../../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                  }
+                }
+              }
+            }
+            container rib-out-post {
+              config false;
+              description
+                "Container for the post-export-policy version of BGP routes
+                 advertised to BGP neighbors.";
+              list routes {
+                config false;
+                key "prefix neighbor path-id";
+                description
+                  "List of IPv6 routes.";
+                uses state-common-key;
+                leaf attr-id {
+                  description
+                    "Leaf reference to networkinstance/protocols/bgp/rib/
+                     attr-sets/attr-set/index.";
+                  type leafref {
+                    path "../../../../../../srl_nokia-rib-bgp-routes:attr-sets/srl_nokia-rib-bgp-routes:attr-set/srl_nokia-rib-bgp-routes:index";
+                  }
+                }
+              }
+            }
+          }
+        }
+        container evpn {
+        if-feature srl-feat:bgp-rib-afi-safi-list-for-evpn;
+          description
+            "Container for RIB state of EVPN routes.";
+          container rib-in-out {
+            description
+              "Container for BGP routes learned and advertised to BGP neighbors.";
+            container rib-in-pre {
+              description
+                "Container for the pre-import-policy version of BGP routes learned from BGP neighbors.";
+              list ethernet-ad-routes {
+                description
+                  "List of Ethernet AD (Auto-Discovery) routes";
+                key "route-distinguisher esi ethernet-tag-id neighbor";
+                uses evpn-ethernet-ad-common;
+              }
+              list mac-ip-routes {
+                description
+                  "List of Mac/IP Advertisement routes";
+                key "route-distinguisher mac-length mac-address ip-address ethernet-tag-id neighbor";
+                uses evpn-mac-ip-common;
+              }
+              list imet-routes {
+                description
+                  "List of Inclusive Multicast Ethernet Tag routes";
+                key "route-distinguisher originating-router ethernet-tag-id neighbor";
+                uses evpn-imet-common;
+              }
+              list ethernet-segment-routes {
+                description
+                  "List of Ethernet Segment routes";
+                key "route-distinguisher esi originating-router neighbor";
+                uses evpn-es-common;
+              }
+              list ip-prefix-routes {
+                description
+                  "List of IP prefix routes";
+                key "route-distinguisher ethernet-tag-id ip-prefix-length ip-prefix neighbor";
+                uses evpn-ip-common;
+              }
+            }
+            container rib-in-post {
+              description
+                "Container for the post-import-policy version of BGP routes learned from BGP neighbors.";
+              list ethernet-ad-routes {
+                description
+                  "List of Ethernet AD (Auto-Discovery) routes";
+                key "route-distinguisher esi ethernet-tag-id neighbor";
+                uses evpn-ethernet-ad-common;
+                uses state-routes-common;
+              }
+              list mac-ip-routes {
+                description
+                  "List of Mac/IP Advertisement routes";
+                key "route-distinguisher mac-length mac-address ip-address ethernet-tag-id neighbor";
+                uses evpn-mac-ip-common;
+                uses state-routes-common;
+              }
+              list imet-routes {
+                description
+                  "List of Inclusive Multicast Ethernet Tag routes";
+                key "route-distinguisher originating-router ethernet-tag-id neighbor";
+                uses evpn-imet-common;
+                uses state-routes-common;
+              }
+              list ethernet-segment-routes {
+                description
+                  "List of Ethernet Segment routes";
+                key "route-distinguisher esi originating-router neighbor";
+                uses evpn-es-common;
+                uses state-routes-common;
+              }
+              list ip-prefix-routes {
+                description
+                  "List of IP prefix routes";
+                key "route-distinguisher ethernet-tag-id ip-prefix-length ip-prefix neighbor";
+                uses evpn-ip-common;
+                uses state-routes-common;
+              }
+            }
+            container rib-out-post {
+              description
+                "Container for the post-export-policy version of BGP routes advertised to BGP neighbors.";
+              list ethernet-ad-routes {
+                description
+                  "List of Ethernet AD (Auto-Discovery) routes";
+                key "route-distinguisher esi ethernet-tag-id neighbor";
+                uses evpn-ethernet-ad-common;
+                leaf next-hop {
+                  description
+                    "The advertised BGP next-hop address.";
+                  type srl_nokia-comm:ip-address;
+                }
+              }
+              list mac-ip-routes {
+                description
+                  "List of Mac/IP Advertisement routes";
+                key "route-distinguisher mac-length mac-address ip-address ethernet-tag-id neighbor";
+                uses evpn-mac-ip-common;
+                leaf next-hop {
+                  description
+                    "The advertised BGP next-hop address.";
+                  type srl_nokia-comm:ip-address;
+                }
+              }
+              list imet-routes {
+                description
+                  "List of Inclusive Multicast Ethernet Tag routes";
+                key "route-distinguisher originating-router ethernet-tag-id neighbor";
+                uses evpn-imet-common;
+                leaf next-hop {
+                  description
+                    "The advertised BGP next-hop address.";
+                  type srl_nokia-comm:ip-address;
+                }
+              }
+              list ethernet-segment-routes {
+                description
+                  "List of Ethernet Segment routes";
+                key "route-distinguisher esi originating-router neighbor";
+                uses evpn-es-common;
+                leaf next-hop {
+                  description
+                    "The advertised BGP next-hop address.";
+                  type srl_nokia-comm:ip-address;
+                }
+              }
+              list ip-prefix-routes {
+                description
+                  "List of IP prefix routes";
+                key "route-distinguisher ethernet-tag-id ip-prefix-length ip-prefix neighbor";
+                uses evpn-ip-common;
+                leaf next-hop {
+                  description
+                    "The advertised BGP next-hop address.";
+                  type srl_nokia-comm:ip-address;
+                }
+              }
+            }
+          }
+        }
+      }
       container ipv4-unicast {
+        if-feature "not srl-feat:bgp-rib-afi-safi-list";
         config false;
         description
           "Container for RIB state of IPv4-unicast routes.";
@@ -430,7 +828,7 @@ module srl_nokia-rib-bgp {
              routes learned from all BGP neighbors.";
           list routes {
             config false;
-            key "prefix neighbor origin-protocol";
+            key "prefix neighbor origin-protocol path-id";
             description
               "List of IPv4 routes in the local RIB.";
             uses state-common-key;
@@ -463,7 +861,7 @@ module srl_nokia-rib-bgp {
                routes learned from BGP neighbors.";
             list routes {
               config false;
-              key "prefix neighbor";
+              key "prefix neighbor path-id";
               description
                 "List of IPv4 routes.";
               uses state-common-key;
@@ -486,7 +884,7 @@ module srl_nokia-rib-bgp {
               config false;
               description
                 "List of IPv4 routes";
-              key "prefix neighbor";
+              key "prefix neighbor path-id";
               uses state-common-key;
               uses state-routes-common;
               leaf attr-id {
@@ -506,7 +904,7 @@ module srl_nokia-rib-bgp {
                advertised to BGP neighbors.";
             list routes {
               config false;
-              key "prefix neighbor";
+              key "prefix neighbor path-id";
               description
                 "List of IPv4 routes.";
               uses state-common-key;
@@ -523,6 +921,7 @@ module srl_nokia-rib-bgp {
         }
       }
       container ipv6-unicast {
+        if-feature "not srl-feat:bgp-rib-afi-safi-list";
         config false;
         description
           "Container for RIB state of IPv6-unicast routes.";
@@ -534,7 +933,7 @@ module srl_nokia-rib-bgp {
              routes learned from all BGP neighbors.";
           list routes {
             config false;
-            key "prefix neighbor origin-protocol";
+            key "prefix neighbor origin-protocol path-id";
             description
               "List of IPv6 routes in the local RIB.";
             uses state-common-key;
@@ -567,7 +966,7 @@ module srl_nokia-rib-bgp {
                routes learned from BGP neighbors.";
             list routes {
               config false;
-              key "prefix neighbor";
+              key "prefix neighbor path-id";
               description
                 "List of IPv6 routes.";
               uses state-common-key;
@@ -590,7 +989,7 @@ module srl_nokia-rib-bgp {
               config false;
               description
                 "List of IPv6 routes";
-              key "prefix neighbor";
+              key "prefix neighbor path-id";
               uses state-common-key;
               uses state-routes-common;
               leaf attr-id {
@@ -610,7 +1009,7 @@ module srl_nokia-rib-bgp {
                advertised to BGP neighbors.";
             list routes {
               config false;
-              key "prefix neighbor";
+              key "prefix neighbor path-id";
               description
                 "List of IPv6 routes.";
               uses state-common-key;
@@ -627,6 +1026,7 @@ module srl_nokia-rib-bgp {
         }
       }
       container evpn {
+        if-feature "not srl-feat:bgp-rib-afi-safi-list-for-evpn";
         description
           "Container for RIB state of EVPN routes.";
         container rib-in-out {
@@ -775,21 +1175,7 @@ module srl_nokia-rib-bgp {
           config false;
           description
             "List of attribute sets.";
-          key "attr-set-type index";
-          leaf attr-set-type {
-            description
-              "The type of the attribute-set. RIB-IN attribute sets can only be referenced by
-               BGP routes in the RIB-IN. RIB-OUT attribute sets can only be referenced by
-               BGP routes in the RIB-OUT.";
-            type enumeration {
-              enum rib-in {
-                value 1;
-              }
-              enum rib-out {
-                value 2;
-              }
-            }
-          }
+          key index;
           leaf index {
             description
               "A unique internal identifier of the attribute set.";
@@ -825,9 +1211,7 @@ module srl_nokia-rib-bgp {
                 description
                   "A list of AS numbers (each of which is a 2byte-ASN or a 4byte-ASN) that belong
                    to the AS path segment.";
-                type uint32 {
-                  range "1..4294967295";
-                }
+                type uint32;
                 ordered-by user;
               }
             }

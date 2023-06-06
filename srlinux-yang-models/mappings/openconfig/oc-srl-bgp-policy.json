@@ -30,12 +30,12 @@
     },
     {
       "oc": "/routing-policy/defined-sets/bgp-defined-sets/community-sets/community-set/{config,state}/match-set-options",
-      "srlinux": "",
-      "special-handling": "only-ANY-enum-is-supported"
+      "supported": false
     },
     {
       "oc": "/routing-policy/defined-sets/bgp-defined-sets/community-sets/community-set/{config,state}/community-member/community-member",
-      "srlinux": "/routing-policy/community-set/member/member"
+      "srlinux": "/routing-policy/community-set/member/member",
+      "transform": "bgp-policy-community-member-transform"
     },
     {
       "oc": "/routing-policy/defined-sets/bgp-defined-sets/ext-community-sets",
@@ -71,7 +71,9 @@
     },
     {
       "oc": "/routing-policy/defined-sets/bgp-defined-sets/as-path-sets/as-path-set",
-      "srlinux": "/routing-policy/as-path-set"
+      "srlinux": "/routing-policy/as-path-set",
+      "pretranslate-transform":"routing-policy-as-path-set-transform",
+      "add-to-cache": true
     },
     {
       "oc": "/routing-policy/defined-sets/bgp-defined-sets/as-path-sets/as-path-set/as-path-set-name",
@@ -87,7 +89,13 @@
     },
     {
       "oc": "/routing-policy/defined-sets/bgp-defined-sets/as-path-sets/as-path-set/{config,state}/as-path-set-member",
-      "srlinux": "/routing-policy/as-path-set/expression",
+      "srlinux": "",
+      "pretranslate-transform":"routing-policy-as-path-set-transform",
+      "special-handling": "concatenation-of-leaf-list-members-into-one-string"
+    },
+    {
+      "oc": "/routing-policy/defined-sets/bgp-defined-sets/as-path-sets/as-path-set/{config,state}/as-path-set-member/as-path-set-member",
+      "srlinux": "",
       "special-handling": "concatenation-of-leaf-list-members-into-one-string"
     },
     {
@@ -114,6 +122,15 @@
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions/bgp-conditions/{config,state}/afi-safi-in",
       "srlinux": "/routing-policy/policy/statement/match/family",
       "special-handling": "not-all-values-supported-and-string-conversion-needed"
+    },
+    {
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions/bgp-conditions/{config,state}/afi-safi-in/afi-safi-in",
+      "srlinux": "/routing-policy/policy/statement/match/family/family",
+      "mapping": [
+        {"IPV4_UNICAST": "ipv4-unicast"},
+        {"IPV6_UNICAST": "ipv6-unicast"},
+        {"L2VPN_EVPN"  : "evpn"}
+      ]
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions/bgp-conditions/{config,state}/local-pref-eq",
@@ -166,7 +183,17 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions/bgp-conditions/as-path-length/{config,state}/value",
-      "srlinux": "/routing-policy/policy/statement/match/bgp/as-path-length/value"
+      "srlinux": "/routing-policy/policy/statement/match/bgp/as-path-length/value",
+      "deviations": {
+        "add": {
+            "must": [
+            {
+                "expression": ". <= 255",
+                "error-message": "max supported is 255"
+            }
+            ]
+        }
+      }
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions/bgp-conditions/match-as-path-set",
@@ -186,7 +213,7 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp"
+      "srlinux": "/routing-policy/policy/statement/action/bgp"
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/{config,state}",
@@ -194,11 +221,16 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/{config,state}/set-route-origin",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp/origin/set"
+      "srlinux": "/routing-policy/policy/statement/action/bgp/origin/set",
+      "mapping": [
+        {"EGP": "egp"},
+        {"IGP": "igp"},
+        {"INCOMPLETE": "incomplete"}
+      ]
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/{config,state}/set-local-pref",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp/local-preference/set"
+      "srlinux": "/routing-policy/policy/statement/action/bgp/local-preference/set"
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/{config,state}/set-next-hop",
@@ -207,48 +239,91 @@
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/{config,state}/set-med",
       "supported": false
+      //"srlinux": "/routing-policy/policy/statement/action/bgp/med/set",
+      //"transform" : "bgp-policy-action-med" // Support linked to feature flag routing_policy_bgp_med
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-as-path-prepend",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp/as-path/prepend"
+      "srlinux": ""
+    },
+    {
+      "oc": "",
+      "srlinux": "/routing-policy/policy/statement/action/bgp/as-path/prepend",
+      "pretranslate-transform":"routing-policy-as-path-prepend-transform"
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-as-path-prepend/{config,state}",
-      "srlinux": ""
+      "srlinux": "",
+      "pretranslate-transform":"routing-policy-as-path-prepend-transform"
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-as-path-prepend/{config,state}/repeat-n",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp/as-path/prepend/repeat-n"
-    },
-    {
-      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-as-path-prepend/{config,state}/asn",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp/as-path/prepend/as-number"
-    },
-    {
-      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp/communities"
-    },
-    {
-      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/{config,state}",
-      "srlinux": ""
-    },
-    {
-      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/{config,state}/method",
       "srlinux": "",
-      "special-handling": "only-REFERENCE-can-be-accepted",
       "deviations": {
         "add": {
             "must": [
-              {
-                  "expression": ". = 'REFERENCE'"
-              }
+            {
+                "expression": ". <= 50",
+                "error-message": "max supported is 50"
+            }
             ]
         }
       }
     },
     {
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-as-path-prepend/{config,state}/asn",
+      "srlinux": "",
+      "deviations": {
+        "add": {
+            "must": [
+            {
+                "expression": ". != 0",
+                "error-message": "asn zero is not supported"
+            }
+            ]
+        }
+      }
+    },
+    {
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community",
+      "srlinux": ""
+    },
+    {
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/config",
+      "srlinux": ""
+    },
+    {
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/state",
+      "srlinux": "",
+      "pretranslate-transform":"routing-policy-community-action-node-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/routing-policy/policy/statement/action/bgp/communities"
+    },
+    {
+      "oc": "",
+      "srlinux": "/routing-policy/policy/statement/action/bgp/communities/add",
+      "pretranslate-transform":"routing-policy-community-action-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/routing-policy/policy/statement/action/bgp/communities/remove",
+      "pretranslate-transform":"routing-policy-community-action-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/routing-policy/policy/statement/action/bgp/communities/replace",
+      "pretranslate-transform":"routing-policy-community-action-transform"
+    },
+    {
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/{config,state}/method",
+      "supported": false
+    },
+    {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/{config,state}/options",
       "srlinux": "",
+      "pretranslate-transform":"routing-policy-community-action-transform",
       "special-handling": "enum-determines-srlinux-leaf"
     },
     {
@@ -268,12 +343,18 @@
       "srlinux": ""
     },
     {
-      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/reference/{config,state}",
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/reference/config",
       "srlinux": ""
     },
     {
+      "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/reference/state",
+      "srlinux": "",
+      "pretranslate-transform":"routing-policy-community-action-node-transform"
+    },
+    {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-community/reference/{config,state}/community-set-ref",
-      "srlinux": "/routing-policy/policy/statement/action/accept/bgp/communities/{leaf-from-enum}"
+      "srlinux": "",
+      "pretranslate-transform":"routing-policy-community-action-transform"
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-ext-community",

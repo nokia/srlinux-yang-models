@@ -10,10 +10,24 @@ module srl_nokia-common {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module contains a set of Internet address related
      types for use in OpenConfig modules.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -52,6 +66,8 @@ module srl_nokia-common {
        consider the type of regular expressions that are to be
        supported. An initial proposal is POSIX compatible.";
   }
+
+  // Address and prefix types
 
   typedef as-number {
     type uint32 {
@@ -110,6 +126,37 @@ module srl_nokia-common {
       "A DiffServ Code Point represented numerically.";
     type uint8 {
       range "0..63";
+    }
+  }
+  typedef interface-ptp {
+    description
+      "These interfaces are candidates for PTP ports
+      
+       These are generally physical ethernet interfaces. 
+       The sync0 interface designation covers both sync0 and sync0-standby under the PTP port configuration.
+       gnss is not included since it does not need to be explicitly configured under ptp.  Simply enabling 
+       sync/gnss implies it is used as an input to ptp.";
+    type interface-name {
+      length "3..20";  // based on the pattern below
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
+            + 'sync0)';
+    }
+  }
+
+  typedef interface-freq {
+    description
+      "These interfaces are candidates for input references to the central frequency clock  
+      
+       These are generally physical ethernet interfaces. 
+       The sync0 interface designation covers both sync0 and sync0-standby under the configuration.
+       The gnss interfaces designation covers both the gnss and gnss-standby under the clock configuration.
+       The ptp interface refers to the internal ptp frequency recovery engine.";
+    type interface-name {
+      length "3..20";  // based on the pattern below
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
+            + 'sync0|' 
+            + 'gnss|' 
+            + 'ptp)';
     }
   }
 
@@ -188,47 +235,208 @@ module srl_nokia-common {
     }
   }
 
-  typedef forwarding-class {
+  typedef default-forwarding-class {
+    description
+      "System default forwarding-class names that always exist.";
     type enumeration {
-      enum fc0;
-      enum fc1;
-      enum fc2;
-      enum fc3;
-      enum fc4;
-      enum fc5;
-      enum fc6;
-      enum fc7;
+      enum "fc0" {
+          description "System default forwarding-class name for the FC with index 0";
+          value 0;
+      }
+      enum "fc1" {
+          description "System default forwarding-class name for the FC with index 1";
+          value 1;
+      }
+      enum "fc2" {
+          description "System default forwarding-class name for the FC with index 2";
+          value 2;
+      }
+      enum "fc3" {
+          description "System default forwarding-class name for the FC with index 3";
+          value 3;
+      }
+      enum "fc4" {
+          description "System default forwarding-class name for the FC with index 4";
+          value 4;
+      }
+      enum "fc5" {
+          description "System default forwarding-class name for the FC with index 5";
+          value 5;
+      }
+      enum "fc6" {
+          description "System default forwarding-class name for the FC with index 6";
+          value 6;
+      }
+      enum "fc7" {
+          description "System default forwarding-class name for the FC with index 7";
+          value 7;
+      }
+      enum "fc8" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 8";
+          value 8;
+      }
+      enum "fc9" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 9";
+          value 9;
+      }
+      enum "fc10" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 10";
+          value 10;
+      }
+      enum "fc11" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 11";
+          value 11;
+      }
+      enum "fc12" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 12";
+          value 12;
+      }
+      enum "fc13" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 13";
+          value 13;
+      }
+      enum "fc14" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 14";
+          value 14;
+      }
+      enum "fc15" {
+          if-feature "srl-feat:future-0-0";
+          description "System default forwarding-class name for the FC with index 15";
+          value 15;
+      }
+    }
+  }
+
+  typedef default-queue-name {
+    description
+      "System default queue names that always exist.";
+    type enumeration {
+      enum "unicast-0" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "unicast-1" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "unicast-2" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "unicast-3" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "unicast-4" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "unicast-5" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "unicast-6" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "unicast-7" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-0" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-1" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-2" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-3" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-4" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-5" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-6" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "multicast-7" {
+          if-feature "not srl-feat:future-0-0";
+      }
+      enum "queue-0" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-1" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-2" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-3" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-4" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-5" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-6" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-7" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-8" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-9" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-10" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-11" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-12" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-13" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-14" {
+          if-feature "srl-feat:future-0-0";
+      }
+      enum "queue-15" {
+          if-feature "srl-feat:future-0-0";
+      }
     }
   }
 
   typedef ipv4-address {
+    // db-class IpAddress
     srl_nokia-ext:generated-class-name "IpAddress";
+    srl_nokia-ext:generated-class-variant "v4";
     type string {
       pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'
             + '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4]'
             + '[0-9]|25[0-5])';
-    }
-    description
-      "An IPv4 address in dotted quad notation.";
-  }
-
-  typedef ipv4-address-excluding-all-zero {
-    srl_nokia-ext:generated-class-name "IpAddress";
-    type string {
-      pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'
-            + '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4]'
-            + '[0-9]|25[0-5])';
-      pattern '0.0.0.0' {
-        modifier "invert-match";
-      }
     }
     description
       "An IPv4 address in dotted quad notation.";
   }
 
   typedef ipv6-address {
+    // db-class IpAddress
     srl_nokia-ext:generated-class-name "IpAddress";
+    srl_nokia-ext:generated-class-variant "v6";
     type string {
+      // Must support compression through different lengths
+      // therefore this regexp is complex.
       pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
             + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
             + '(((25[0-5]|2[0-4][0-9]|[01]?[0-9]?[0-9])\.){3}'
@@ -239,31 +447,23 @@ module srl_nokia-common {
        or mixed-shortened formats.";
   }
 
-  typedef ipv6-address-excluding-all-zero {
-    srl_nokia-ext:generated-class-name "IpAddress";
+  typedef ipv4-address-with-zone {
+    // db-class IpAddressWithZone
+    srl_nokia-ext:generated-class-name IpAddressWithZone;
+    srl_nokia-ext:generated-class-variant "v4";
     type string {
-      pattern '(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|'
-            + '([0-9a-fA-F]{1,4}:){1,7}:|'
-            + '([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|'
-            + '([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|'
-            + '([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|'
-            + '([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|'
-            + '([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|'
-            + '[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|'
-            + ':((:[0-9a-fA-F]{1,4}){1,7}|:)'
-            + ')';
-      pattern '0:0:0:0:0:0:0:0 |'
-            + '::' {
-        modifier "invert-match";
-      }
+      pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'        +
+              '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4]'  +
+              '[0-9]|25[0-5])';
     }
     description
-      "An IPv6 address represented as either a full address; shortened
-       or mixed-shortened formats.";
+        "The ipv4-address-with-zone type represents an IPv4 address in dotted quad notation (added only for symmetry)";
   }
 
   typedef ipv6-address-with-zone {
+    // db-class IpAddressWithZone
     srl_nokia-ext:generated-class-name "IpAddressWithZone";
+    srl_nokia-ext:generated-class-variant "v6";
     type string {
       pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
             + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
@@ -273,6 +473,7 @@ module srl_nokia-common {
       pattern '(([^:]+:){6}(([^:]+:[^:]+)|(.*\..*)))|'
             + '((([^:]+:)*[^:]+)?::(([^:]+:)*[^:]+)?)'
             + '(%.+)?';
+      // subinterface-all pattern
       pattern '([^%]+)(%'
             + '(mgmt0\.0|'
             + 'system0\.0|'
@@ -281,10 +482,8 @@ module srl_nokia-common {
             + 'vhn-.*\.(0|[1-9](\d){0,3})|'
             + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]\.(0|[1-9](\d){0,3})|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
-            + 'ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3})|'
-            + 'otc-1/([1-8])\.([0]|[1-9](\d){0,3}))'
+            + 'lag(([1-9](\d){0,2})|(1000))\.(0|[1-9](\d){0,3}))'
             + ')?';
     }
     description
@@ -302,7 +501,9 @@ module srl_nokia-common {
   }
 
   typedef ipv4-prefix {
+    // db-class IpPrefix
     srl_nokia-ext:generated-class-name "IpPrefix";
+    srl_nokia-ext:generated-class-variant "v4";
     type string {
       pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'
             + '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4]'
@@ -314,7 +515,9 @@ module srl_nokia-common {
   }
 
   typedef ipv6-prefix {
+    // db-class IpPrefix
     srl_nokia-ext:generated-class-name "IpPrefix";
+    srl_nokia-ext:generated-class-variant "v6";
     type string {
       pattern '((:|[0-9a-fA-F]{0,4}):)([0-9a-fA-F]{0,4}:){0,5}'
             + '((([0-9a-fA-F]{0,4}:)?(:|[0-9a-fA-F]{0,4}))|'
@@ -329,7 +532,6 @@ module srl_nokia-common {
   }
 
   typedef ip-address {
-    srl_nokia-ext:generated-class-name "IpAddress";
     type union {
       type ipv4-address;
       type ipv6-address;
@@ -338,8 +540,19 @@ module srl_nokia-common {
       "An IPv4 or IPv6 address with no prefix specified.";
   }
 
+  typedef ipv4-address-excluding-all-zero {
+    type ipv4-address {
+      pattern '.*[1-9].*';
+    }
+  }
+
+  typedef ipv6-address-excluding-all-zero {
+    type ipv6-address {
+      pattern '.*[1-9a-fA-F].*';
+    }
+  }
+
   typedef ip-address-excluding-all-zero {
-    srl_nokia-ext:generated-class-name "IpAddress";
     type union {
       type ipv4-address-excluding-all-zero;
       type ipv6-address-excluding-all-zero;
@@ -348,8 +561,16 @@ module srl_nokia-common {
       "An IPv4 or IPv6 address with no prefix specified, excluding all zero addresses";
   }
 
+  typedef ip-address-with-zone {
+    type union {
+      type ipv4-address-with-zone;
+      type ipv6-address-with-zone;
+    }
+    description
+      "An IPv4 or IPv6 address with zone with no prefix specified.";
+  }
+
   typedef ip-prefix {
-    srl_nokia-ext:generated-class-name "IpPrefix";
     type union {
       type ipv4-prefix;
       type ipv6-prefix;
@@ -358,38 +579,31 @@ module srl_nokia-common {
       "An IPv4 or IPv6 prefix.";
   }
 
-  typedef ip-address-with-zone {
-    srl_nokia-ext:generated-class-name "IpAddressWithZone";
-    type union {
-      type ipv4-address;
-      type ipv6-address-with-zone;
-    }
-    description
-      "An IPv4 or IPv6 address with zone with no prefix specified.";
-  }
-
   typedef ipv4-prefix-with-host-bits {
-    srl_nokia-ext:generated-class-name "IpPrefix";
+    srl_nokia-ext:generated-class-variant "v4-with-host-bits";
     type ipv4-prefix;
     description
       "An IPv4 prefix with host bits.";
   }
 
   typedef ipv6-prefix-with-host-bits {
-    srl_nokia-ext:generated-class-name "IpPrefix";
+    srl_nokia-ext:generated-class-variant "v6-with-host-bits";
     type ipv6-prefix;
     description
       "An IPv6 prefix with host bits.";
   }
 
   typedef ip-prefix-with-host-bits {
-    srl_nokia-ext:generated-class-name "IpPrefix";
-    type ip-prefix;
+    type union {
+      type ipv4-prefix-with-host-bits;
+      type ipv6-prefix-with-host-bits;
+    }
     description
       "An IPv4 or IPv6 prefix with host bits.";
   }
 
   typedef mac-address {
+    // db-class MacAddress
     srl_nokia-ext:generated-class-name "MacAddress";
     type string {
       pattern '[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}';
@@ -407,8 +621,7 @@ module srl_nokia-common {
   }
 
   typedef unicast-mac-address {
-    srl_nokia-ext:generated-class-name "MacAddress";
-    type string {
+    type mac-address {
       pattern '([0-9a-fA-F][02468aceACE])(:[0-9a-fA-F]{2}){5}';
       pattern '.*[1-9a-fA-F].*';
     }
@@ -418,6 +631,8 @@ module srl_nokia-common {
        The least significant bit of a MAC address first octet
        is never set. The value 00:00:00:00:00:00 is not valid.";
   }
+
+  // Name types
 
   typedef domain-name {
     type string {
@@ -505,18 +720,23 @@ module srl_nokia-common {
   }
 
   typedef interface-name {
+    // db-class InterfaceName
     srl_nokia-ext:generated-class-name "InterfaceName";
     type string;
   }
 
   typedef subinterface-name {
+    // db-class SubinterfaceName
     srl_nokia-ext:generated-class-name "SubinterfaceName";
     type string;
   }
 
+  // !!! NOTE !!! be sure to update the below subinterface types when updating the interface-all type
+
   typedef interface-all {
+    // shortest interface is lo0
     type interface-name {
-      length "3..20";
+      length "3..20"; // based on the pattern below
       pattern '(mgmt0|'
             + 'mgmt0-standby|'
             + 'system0|'
@@ -525,25 +745,32 @@ module srl_nokia-common {
             + 'vhn-.*|'
             + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
-            + 'ethernet-1/x[1-4](/[1-4])?|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))|'
-            + 'otc-1/([1-8]))';
+            + 'lag(([1-9](\d){0,2})|(1000)))';
     }
   }
 
   typedef interface-eth-lag {
     type interface-name {
-      length "3..20";
+      length "3..20"; // based on the pattern below
       pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
-            + 'ethernet-1/x[1-4](/[1-4])?|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))';
+            + 'lag(([1-9](\d){0,2})|(1000)))';
     }
   }
 
+  typedef interface-eth {
+    type interface-name {
+      length "3..20"; // based on the pattern below
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))))';
+    }
+  }
+
+  // mgmt0-standby not listed as mgmt0-standby does not support subinterfaces
+
   typedef subinterface-all {
+    // shortest subinterface is lo0.0
     type subinterface-name {
-      length "5..25";
+      length "5..25"; // based on the pattern below
       pattern '(mgmt0\.0|'
             + 'system0\.0|'
             + 'lo(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
@@ -551,35 +778,41 @@ module srl_nokia-common {
             + 'vhn-.*\.(0|[1-9](\d){0,3})|'
             + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]\.(0|[1-9](\d){0,3})|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
-            + 'ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3})|'
-            + 'otc-1/([1-8])\.([0]|[1-9](\d){0,3}))';
+            + 'lag(([1-9](\d){0,2})|(1000))\.(0|[1-9](\d){0,3}))';
     }
   }
 
   typedef subinterface-eth-lag {
     type subinterface-name {
-      length "5..25";
-      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3}))';
+      length "5..25"; // based on the pattern below
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|lag(([1-9](\d){0,2})|(1000))\.(0|[1-9](\d){0,3}))';
     }
   }
 
   typedef subinterface-no-mgmt {
+    // shortest subinterface is lo0.0
     type subinterface-name {
-      length "5..25";
+      length "5..25"; // based on the pattern below
       pattern '(system0\.0|'
             + 'lo(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
             + 'lif-.*\.(0|[1-9](\d){0,3})|'
             + 'vhn-.*\.(0|[1-9](\d){0,3})|'
             + 'enp(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])s(0|[1-9]|[1-2][0-9]|3[0-1])f[0-7]\.(0|[1-9](\d){0,3})|'
             + 'ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|'
-            + 'ethernet-1/x[1-4](/[1-4])?\.([0]|[1-9](\d){0,3})|'
             + 'irb(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,3})|'
-            + 'lag(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8]))\.(0|[1-9](\d){0,3})|'
-            + 'otc-1/([1-8])\.([0]|[1-9](\d){0,3}))';
+            + 'lag(([1-9](\d){0,2})|(1000))\.(0|[1-9](\d){0,3}))';
     }
   }
+
+  typedef subinterface-eth {
+    type subinterface-name {
+      length "5..25"; // based on the pattern below
+      pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))\.([0]|[1-9](\d){0,3})|lag(([1-9](\d){0,2})|(1000))\.(0|[1-9](\d){0,3}))';
+    }
+  }
+
+  // Oper and admin state types
 
   typedef admin-state {
     type enumeration {
@@ -716,6 +949,8 @@ module srl_nokia-common {
     }
   }
 
+  // Counters, gauges, and date types
+
   typedef counter32 {
     type uint32;
     description
@@ -840,6 +1075,20 @@ module srl_nokia-common {
       "RFC 6991: Common YANG Data Types.";
   }
 
+  typedef ieeefloat32 {
+    type binary {
+      length "4";
+    }
+    description
+      "An IEEE 32-bit floating point number. The format of this number
+      is of the form:
+        1-bit  sign
+        8-bit  exponent
+        23-bit fraction
+      The floating point value is calculated using:
+        (-1)**S * 2**(Exponent-127) * (1+Fraction)";
+  }
+
   typedef gauge32 {
     type uint32;
     description
@@ -960,8 +1209,11 @@ module srl_nokia-common {
        number of  hours, mm is the number of  minutes and ss is the number of seconds.";
   }
 
+  // String types
+
   typedef alphanumeric {
     type string {
+      // Add all accepted characters here
       pattern "[A-Za-z0-9!@#$%^&()|+=`~.,'/_:;?-][A-Za-z0-9 !@#$%^&()|+=`~.,'/_:;?-]*";
     }
     description
@@ -984,6 +1236,15 @@ module srl_nokia-common {
       "A user provided name";
   }
 
+ typedef restricted-name {
+    type string {
+      pattern "[A-Za-z0-9!@#$%^&()|+=`~.,'_:;?-][A-Za-z0-9 !@#$%^&()|+=`~.,'_:;?-]*";
+      length "1..247";
+    }
+    description
+      "A simple, one-line string that does not contain any control characters, and is Linux-safe.";
+  }
+  
   typedef username {
     type name {
       srl_nokia-ext:preferred-column-width "16";
@@ -1039,6 +1300,8 @@ module srl_nokia-common {
   typedef local-file {
     type string {
       pattern '(/[0-9A-Za-z_\-\.]+)+';
+      // current pattern requires a path, e.g. at least one /, if path is not required, use:
+      // pattern '((/[0-9A-Za-z_\-\.]+)+)|([0-9A-Za-z_\-\.]+)';
     }
     description
       "A regular expression matching a local file";
@@ -1053,33 +1316,60 @@ module srl_nokia-common {
       "A regular expression matching a local file without a path";
   }
 
-  typedef route-distinguisher {
+  typedef route-distinguisher-type-0 {
+    // db-class RouteDistinguisher
     srl_nokia-ext:generated-class-name "RouteDistinguisher";
+    // type 0: <2-byte administrator>:<4-byte assigned number>
+    type string {
+      pattern '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])'
+      + ':'
+      + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}'
+      + '|4294[0-8][0-9]{5}|429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|[1-9][0-9]{1,8}|[0-9])';
+    }
+  }
+
+  typedef route-distinguisher-type-1 {
+    // db-class RouteDistinguisher
+    srl_nokia-ext:generated-class-name "RouteDistinguisher";
+    // type 1: <ip-address>:<2-byte assigned number>
+    type string {
+      pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
+      + ':'
+      + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
+    }
+  }
+
+  typedef route-distinguisher-type-2 {
+    // db-class RouteDistinguisher
+    srl_nokia-ext:generated-class-name "RouteDistinguisher";
+    // type 2: <4-byte as-number>:<2-byte assigned number>
+    type string {
+      pattern '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}'
+      + '|4294[0-8][0-9]{5}|429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|[1-9][0-9]{1,8}|[0-9])'
+      + ':'
+      + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
+    }
+  }
+
+  typedef route-distinguisher-type-2b {
+    // db-class RouteDistinguisher
+    srl_nokia-ext:generated-class-name "RouteDistinguisher";
+    // type 2 alternative: <4-byte as-number in x.y format>:<2-byte assigned number>
+    type string {
+      pattern '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])'
+      + '.'
+      + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])'
+      + ':'
+      + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
+    }
+  }
+
+  typedef route-distinguisher {
     type union {
-      type string {
-        pattern '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])'
-              + ':'
-              + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}'
-              + '|4294[0-8][0-9]{5}|429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|[1-9][0-9]{1,8}|[0-9])';
-      }
-      type string {
-        pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])'
-              + ':'
-              + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
-      }
-      type string {
-        pattern '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}'
-              + '|4294[0-8][0-9]{5}|429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|[1-9][0-9]{1,8}|[0-9])'
-              + ':'
-              + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
-      }
-      type string {
-        pattern '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])'
-              + '.'
-              + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])'
-              + ':'
-              + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
-      }
+      type route-distinguisher-type-0;
+      type route-distinguisher-type-1;
+      type route-distinguisher-type-2;
+      type route-distinguisher-type-2b;
     }
     description
       "A route distinguisher value";
@@ -1093,6 +1383,10 @@ module srl_nokia-common {
         enum use-system-ipv4-address {
           value 0;
         }
+        /* enum "use-system-ipv6-address" {
+          value 1;
+        }
+         */
       }
       type srl_nokia-comm:ip-address;
     }
@@ -1127,6 +1421,8 @@ module srl_nokia-common {
 
   identity bgp {
     base ip-route-type;
+    // base mpls-label-entry-type;
+    // base tunnel-type;
     description
       "Border Gateway Protocol version 4";
     reference
@@ -1157,6 +1453,12 @@ module srl_nokia-common {
       "A host route";
   }
 
+  identity ip-in-ip {
+    base tunnel-type;
+    description
+      "Tunnels with IP-in-IP encapsulation";
+  }
+
   identity isis {
     base ip-route-type;
     description
@@ -1174,6 +1476,7 @@ module srl_nokia-common {
   identity ldp {
     base mpls-label-entry-type;
     base tunnel-type;
+    // base ip-route-type;
     description
       "Label distribution protocol";
   }
@@ -1186,12 +1489,14 @@ module srl_nokia-common {
 
   identity ndk1 {
     base ip-route-type;
+    // base mpls-label-entry-type;
     description
       "Route added by an agent application using the NDK";
   }
 
   identity ndk2 {
     base ip-route-type;
+    // base mpls-label-entry-type;
     description
       "Route added by an agent application using the NDK";
   }
@@ -1233,18 +1538,25 @@ module srl_nokia-common {
   }
 
   identity sr-mpls {
-    if-feature "srl-feat:future-0-0";
     base mpls-label-entry-type;
     description
       "Segment routing using MPLS dataplane, programmed by segment routing manager.";
   }
 
-  identity sr-policy-mpls {
+  identity sr-policy-mpls-colored {
     if-feature "srl-feat:future-0-0";
-    base mpls-label-entry-type;
     base tunnel-type;
+    base mpls-label-entry-type;
     description
-      "Tunnels setup using SR-POLICY.";
+      "Tunnel setup using TE-POLICY.";
+  }
+
+  identity sr-policy-mpls-uncolored {
+    if-feature "srl-feat:future-0-0";
+    base tunnel-type;
+    base mpls-label-entry-type;
+    description
+      "Tunnel setup using TE-POLICY.";
   }
 
   identity static {
@@ -1255,6 +1567,7 @@ module srl_nokia-common {
 
   identity static-mpls {
     base mpls-label-entry-type;
+    // base tunnel-type;
     description
       "Locally configured static MPLS route.";
   }
@@ -1387,22 +1700,27 @@ module srl_nokia-common {
       "multicast type of destination in the system";
   }
 
+  typedef user-password {
+      type string {
+        srl_nokia-ext:generated-class-name "PasswordHash";
+        srl_nokia-ext:hash-algorithm "ar2";
+      }
+      description
+          "The password can be supplied either as cleartext or as a hashed value
+
+          If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+          If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+  }
+
   typedef routing-password {
     type string;
     srl_nokia-ext:generated-class-name "SecretKey";
     description
-      "This type is indicative of a password that is used within
-       a routing protocol which can be returned in plain text to the
-       NMS by the local system. Such passwords are typically stored
-       as encrypted strings. Since the encryption used is generally
-       well known, it is possible to extract the original value from
-       the string - and hence this format is not considered secure.
-       Leaves specified with this type should not be modified by
-       the system, and should be returned to the end-user in plain
-       text. This type exists to differentiate passwords, which
-       may be sensitive, from other string leaves. It could, for
-       example, be used by the NMS to censor this data when
-       viewed by particular users.";
+      "This type is used for passwords that are typically used to authenticate routing protocol messages. The system stores these passwords in encrypted form and always returns the encrypted string when management server reads a leaf of this type.
+
+       When configuring a leaf of this type, the entered string can be a cleartext password or an encrypted/hashed password. An encrypted password is recognized when the string starts with a '$' character and has two further '$' characters to separate the encoding of the algorithm and the encoding of the salt from the actual encrypted data. Any other text string is interpreted as cleartext.
+
+       The system automatically truncates cleartext passwords to the first 20 characters. Characters beyond this length are not used in the encryption process.";
   }
 
   typedef crypt-password-type {
@@ -1428,10 +1746,82 @@ module srl_nokia-common {
   }
 
   typedef evi {
-    description
+    description 
       "The supported range of EVPN Instances.";
     type uint32 {
       range "1..65535";
     }
   }
+
+  typedef classify-profile {
+    description
+      "Profile-names for different profiles used during classification";
+    type enumeration {
+      enum "in" {
+        value 1;
+        description
+          "Defines packet profile as an input for colour-aware policing at ingress";
+      }
+      enum "out" {
+        value 2;
+        description
+          "Defines packet profile as an input for colour-aware policing at ingress";
+      }
+      enum "exceed" {
+        value 3;
+        description
+          "Defines packet profile as an input for colour-aware policing at ingress";
+      }
+      enum "in-plus" {
+        value 4;
+        description
+          "Defines packet profile as an input for colour-aware policing at ingress";
+      }
+      enum "in-low" {
+        value 5;
+        description
+          "Defines packet profile as an input for colour-blind policing at ingress";
+      }
+      enum "out-low" {
+        value 6;
+        description
+          "Defines packet profile as an input for colour-blind policing at ingress";
+      }
+    }    
+  }
+
+  typedef rewrite-profile {
+    description
+      "Profile-names for different profiles used during egress re-marking";
+    type enumeration {
+      enum "in" {
+        value 1;
+        description
+          "The second level priority profile";
+      }
+      enum "out" {
+        value 2;
+        description
+          "The lowest level priotity profile";
+      }
+      enum "exceed" {
+        value 3;
+        description
+          "The third level priority profile";
+      }
+      enum "in-plus" {
+        value 4;
+        description
+          "The highest priority profile";
+      }
+    }
+  }
+  typedef pcr {
+    type uint8 {
+      range "0..31";
+    }
+    description
+      "Valid index number for a PCR. A TPM2.0 compliant PCR index extends from 0-31.";
+  }
 }
+

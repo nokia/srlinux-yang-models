@@ -70,6 +70,20 @@
       "supported": false
     },
     {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/global/{config,state}/csnp-enable-on-p2p-links",
+      "srlinux": "/network-instance/protocols/isis/instance/enable-csnp-on-p2p-links"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/global/{config,state}/hello-padding",
+      "srlinux": "/network-instance/protocols/isis/instance/hello-padding",
+      "mapping" : [
+        {"STRICT" : "strict"},
+        {"LOOSE" : "loose"},
+        {"ADAPTIVE" : "adaptive"},
+        {"DISABLE" : "disable"}
+      ]
+    },
+    {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/lsp-bit",
       "srlinux": ""
     },
@@ -150,7 +164,18 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/reference-bandwidth/{config,state}/reference-bandwidth",
-      "srlinux": "/network-instance/protocols/isis/instance/auto-cost/reference-bandwidth"
+      "srlinux": "/network-instance/protocols/isis/instance/auto-cost/reference-bandwidth",
+      "transform":"mbps-to-kbps",
+      "deviations": {
+        "add": {
+            "must": [
+              {
+                  "expression": ". >= 0 and . <= 8000000",
+                  "error-message": "reference bandwidth value should be between 1mbps and 8000000mbps"
+              }
+            ]
+        }
+      }
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/nsr",
@@ -166,21 +191,38 @@
     // },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart",
-      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart"
+      "pretranslate-transform":"oc-isis-gres-transform"
+//      "add-to-cache": true
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart/{config,state}",
-      "srlinux": ""
+      "pretranslate-transform":"oc-isis-gres-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart/{config,state}/enabled",
-      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart/helper-mode"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/graceful-restart/{config,state}/helper-only",
-      "supported": false
-    //  "srlinux": "",
-    //   "special-handling": "only-true-can-be-accepted-and-returned"
+      "srlinux": ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/non-stop-forwarding",
+      "pretranslate-transform":"srl-isis-gres-transform"
+//      "add-to-cache": true
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/non-stop-forwarding/admin-state",
+      "oc" : ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart",
+      "pretranslate-transform":"srl-isis-gres-transform"
+//      "add-to-cache": true
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/graceful-restart/helper-mode",
+      "oc": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/global/timers",
@@ -349,7 +391,8 @@
         "add": {
             "must": [
               {
-                  "expression": ". = true()"
+                  "expression": ". = true()",
+                  "error-message": "enabled must always be set to true"
               }
             ]
         }
@@ -483,72 +526,68 @@
 
     },
     {
-      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/{config,state}/authentication-check",
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/corrupted-lsps",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/corrupted-lsps"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/database-overloads",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/database-overloads"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/manual-address-drop-from-areas",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/manual-address-drop-from-area"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/exceed-max-seq-nums",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/exceeded-max-sequence-number"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/seq-num-skips",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/sequence-number-skips"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/own-lsp-purges",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/own-lsp-purges"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/id-len-mismatch",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/system-id-length-mismatches"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/part-changes",
       "supported": false
     },
     {
-      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters",
-      "supported": false
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/max-area-address-mismatches",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/max-area-address-mismatches"
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/corrupted-lsps",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/database-overloads",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/manual-address-drop-from-areas",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/exceed-max-seq-nums",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/seq-num-skips",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/own-lsp-purges",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/id-len-mismatch",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/part-changes",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/max-area-address-mismatches",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/auth-fails",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/spf-runs",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/auth-type-fails",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/lsp-errors",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/auth-fails",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/authentication-failures"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/spf-runs",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/spf-runs"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/auth-type-fails",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/authentication-type-failures"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/system-level-counters/state/lsp-errors",
+      "srlinux": "/network-instance/protocols/isis/instance/level/statistics/lsp-errors"
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database",
-       "srlinux": ""
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp",
@@ -576,24 +615,27 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/version",
-      "supported": false
-//      "srlinux": "/network-instance/protocols/isis/instance/level-database/pkt-version"
+      "srlinux" : ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/version2",
-      "supported": false
-//      "srlinux": "/network-instance/protocols/isis/instance/level-database/pkt-version"
+      "srlinux" : ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/pkt-version",
+      "pretranslate-transform":"srl-isis-lsp-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/id-length",
-      "supported": false
-//      "srlinux": "/network-instance/protocols/isis/instance/level-database/system-id-length"
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/system-id-len"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/pdu-type",
-      "supported": false
-      // "srlinux": "",
-      // "special-handling": "return-LEVEL_1-or-LEVEL_2-based-on-oc-path"
+      "srlinux": ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/pdu-type",
+      "pretranslate-transform":"srl-isis-lsp-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/remaining-lifetime",
@@ -601,20 +643,23 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/sequence-number",
-      "supported": false
-//      "srlinux": "/network-instance/protocols/isis/instance/level-database/sequence-number"
-// needs hex-string -> number
-},
+      "srlinux": ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/sequence-number",
+      "pretranslate-transform":"srl-isis-lsp-transform"
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/checksum",
-      "supported": false
-//      "srlinux": "/network-instance/protocols/isis/instance/level-database/checksum"
-// needs hex-string -> number
+      "srlinux": ""
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/checksum",
+      "pretranslate-transform":"srl-isis-lsp-transform"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/pdu-length",
-      "supported": false
-//      "srlinux": "/network-instance/protocols/isis/instance/level-database/lsp-pdu-length"
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/pdu-length"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/flags",
@@ -623,33 +668,28 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/state/is-type",
-      "supported": false
-//      "srlinux": "/network-instance/protocols/isis/instance/level-database[level-number=from-path]*-is-type"
+      "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs",
-      "supported": false
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs"
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database[level-number=from-path]/defined-tlvs",
-    //   "special-handling": "required-srl-key-is-from-oc-path"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/type",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/state/type",
-    //   "srlinux": "",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/type",
+      "srlinux": "",
+      "transform": "oc-set-lsp-tlv-key"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/state/type",
+      "srlinux": ""
     //   "mapping": [
     //     {"AREA_ADDRESSES": ""},
     //     {"IIS_NEIGHBORS": ""},
@@ -679,25 +719,27 @@
     //     {"MT_IPV6_REACHABILITY": ""},
     //     {"ROUTER_CAPABILITY": "/network-instance/protocols/isis/instance/level-database/router-capability"}
     //   ]
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/area-address",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-area-addresses-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/area-address/state",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-area-addresses-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/area-address/state/address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/area-addresses"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/lsp-buffer-size",
-    //   "supported": false
-    // },
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/area-address",
+      "srlinux": ""
+    },
+   {
+     "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/area-address/state",
+     "srlinux": ""
+   },
+   {
+     "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/area-address/state/address",
+     "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/area-addresses"
+   },
+   {
+     "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/area-address/state/address/address",
+     "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/area-addresses/area-addresses"
+   },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/lsp-buffer-size",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/lsp-buffer-size/state",
     //   "supported": false
@@ -706,69 +748,83 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/lsp-buffer-size/state/size",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/nlpid",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-nlpid-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/nlpid/state",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-nlpid-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/nlpid/state/nlpid",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/nlpid",
-    //   "special-handling": "minor-case-changes-and-clns-cannot-be-represented"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/hostname",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-hostname-leaf-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/hostname/state",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-hostname-leaf-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/hostname/state/hostname",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/hostname",
-    //   "special-handling": "leaf-populates-first-entry-of-leaf-list"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-interface-addresses",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-ipv4-interface-addresses-leaflist-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-interface-addresses/state",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-ipv4-interface-addresses-leaflist-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-interface-addresses/state/address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv4-interface-addresses"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-interface-addresses",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-ipv6-interface-addresses-leaflist-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-interface-addresses/state",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-ipv6-interface-addresses-leaflist-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-interface-addresses/state/address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-interface-addresses"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-te-router-id",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/nlpid",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/nlpid/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/nlpid/state/nlpid",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/nlpid"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/nlpid/state/nlpid/nlpid",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/nlpid/nlpid",
+      "mapping" : [
+         {"IPV4": "IPv4"},
+         {"IPV6": "IPv6"}
+      ]
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/hostname",
+      "supported": false
+//      "srlinux": ""
+    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/hostname/state",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/hostname/state/hostname",
+//      "srlinux": ""
+//    },
+//    {
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/hostname",
+//      "pretranslate-transform":"srl-isis-lsp-transform"
+//    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-interface-addresses",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-interface-addresses/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-interface-addresses/state/address",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv4-interface-addresses",
+      "type": "srl_nokia-common:ip-address"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-interface-addresses/state/address/address",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv4-interface-addresses/ipv4-interface-addresses"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-interface-addresses",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-interface-addresses/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-interface-addresses/state/address",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv6-interface-addresses",
+      "type": "srl_nokia-common:ip-address"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-interface-addresses/state/address/address",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv6-interface-addresses/ipv6-interface-addresses"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-te-router-id",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-te-router-id-leaf-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-te-router-id/state",
     //   "srlinux": "",
@@ -778,11 +834,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-te-router-id/state/router-id",
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/te-router-id"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-te-router-id",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-te-router-id",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-ipv6-te-router-id-leaf-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-te-router-id/state",
     //   "srlinux": "",
@@ -792,11 +849,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-te-router-id/state/router-id",
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-te-router-id"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/instance-ids",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/instance-ids",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-instance-id-leaf-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/instance-ids/instance-id",
     //   "srlinux": "",
@@ -820,11 +878,11 @@
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/instance-ids/instance-id/state/topology-id",
     //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-srlgs",
-    //   "supported": false
-    // },
+    //},
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-srlgs",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-srlgs/ipv4-srlg",
     //   "supported": false
@@ -865,10 +923,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-srlgs/ipv4-srlg/state/srlg-value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-srlgs",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-srlgs",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-srlgs/ipv6-srlg",
     //   "supported": false
@@ -909,11 +967,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-srlgs/ipv6-srlg/state/srlg-value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/purge-oi",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/purge-oi",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-purge-oi-leaf-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/purge-oi/state",
     //   "srlinux": "",
@@ -931,10 +990,11 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/purge-oi/state/received-system-id",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/router-capabilities",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/router-capabilities",
+      "supported": false
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/router-capability"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/router-capabilities/capability",
     //   "srlinux": "",
@@ -1061,11 +1121,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/router-capabilities/capability/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-reachability",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-reachability",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "auto-create-container-when-list-of-is-reachability-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-reachability/neighbors",
     //   "srlinux": ""
@@ -1153,11 +1214,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-reachability/neighbors/neighbor/error-metric/state/flags",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-internal-reachability",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-internal-reachability",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "auto-create-container-when-list-of-ipv4-internal-reachability-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-internal-reachability/prefixes",
     //   "srlinux": "",
@@ -1249,11 +1311,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-internal-reachability/prefixes/prefix/error-metric/state/flags",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-external-reachability",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-external-reachability",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "auto-create-container-when-list-of-ipv4-external-reachability-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-external-reachability/prefixes",
     //   "srlinux": "",
@@ -1345,10 +1408,11 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv4-external-reachability/prefixes/prefix/error-metric/state/flags",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/authentication",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/authentication",
+      "supported": false
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/authentication"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/authentication/state",
     //   "srlinux": ""
@@ -1361,99 +1425,106 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/authentication/state/authentication-key",
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/auth-data"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-extended-is-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-extended-is-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/system-id",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/state/system-id",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/neighbor",
-    //   "special-handling": "extract-from-first-6-bytes-of-neighbor"
-
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-extended-is-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance",
-    //   "srlinux": "",
-    //   "special-handling": "auto-populate-key-with-value-1"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/id",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/state/id",
-    //   "srlinux": "",
-    //   "special-handling": "auto-populate-key-with-value-1"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/state/metric",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/default-metric"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv",
-    //   "srlinux": "",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/system-id",
+      "transform": "oc-set-neighbor-key"
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/neighbor",
+      "transform": "unused-key-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/state/system-id",
+      "srlinux": ""
+   },
+   {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances",
+      "supported": false
+//      "srlinux": ""
+    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/id",
+//      "srlinux": "",
+//      "transform": "oc-set-lsp-is-tlv-instance-key"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/state",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/state/id",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/state/metric",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/default-metric"
+//      "srlinux": ""
+//    },
+//    {
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/default-metric",
+//      "pretranslate-transform":"srl-is-reachaibility-metric-transform"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs",
+//      "supported": false
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv",
+//      "srlinux": ""
     //   "special-handling": "auto-create-list-with-one-element"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/type",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/state/type",
-    //   "srlinux": "",
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/type",
+//      "srlinux": "",
+//      "transform": "null-key-transform"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/state",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/state/type",
+//      "srlinux": ""
     //   "special-handling": "auto-populate-this-with-the-value-IS_REACHABILITY_SUBTLVS_TYPE"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/admin-group",
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/admin-group",
+//      "supported": false
     //   "srlinux": ""
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/admin-group/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/admin-group/state/admin-group",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/admin-group"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/admin-group"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-id",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-id",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-id/state",
     //   "supported": false
@@ -1466,46 +1537,49 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-id/state/remote",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-interface-address",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-interface-address",
+//      "supported": false
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-interface-address/state",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-interface-address/state/address",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/ipv4-interface-address"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-neighbor-address",
+//      "supported": false
     //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-interface-address/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-interface-address/state/address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/ipv4-interface-address"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-neighbor-address",
-    //   "srlinux": ""
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-neighbor-address/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv4-neighbor-address/state/address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/ipv4-neighbor-address"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/ipv4-neighbor-address"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-link-bandwidth",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-link-bandwidth",
+//      "supported": false
     //   "srlinux": ""
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-link-bandwidth/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-link-bandwidth/state/bandwidth",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/maximum-link-bandwidth"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/maximum-link-bandwidth"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-reservable-link-bandwidth",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-reservable-link-bandwidth",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-reservable-link-bandwidth/state",
     //   "supported": false
@@ -1514,10 +1588,11 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/max-reservable-link-bandwidth/state/bandwidth",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unreserved-bandwidth",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unreserved-bandwidth",
+//      "supported": false
     //   "supported": false
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unreserved-bandwidth/setup-priority",
     //   "supported": false
@@ -1538,33 +1613,35 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unreserved-bandwidth/setup-priority/state/bandwidth",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-interface-address"
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-interface-address",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-interface-address/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-interface-address/state/address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/ipv6-interface-address"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/ipv6-interface-address"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-neighbor-address",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-neighbor-address",
+//      "supported": false
     //   "srlinux": ""
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-neighbor-address/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/ipv6-neighbor-address/state/address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/ipv6-neighbor-address"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/ipv6-neighbor-address"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/extended-admin-group",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/extended-admin-group",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/extended-admin-group/state",
     //   "supported": false
@@ -1573,22 +1650,23 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/extended-admin-group/state/extended-admin-group",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/te-default-metric",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/te-default-metric",
+//      "supported": false
     //   "srlinux": ""
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/te-default-metric/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/te-default-metric/state/metric",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/te-default-metric"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/te-default-metric"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-attributes",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-attributes",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-attributes/state",
     //   "supported": false
@@ -1597,10 +1675,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-attributes/state/local-protection",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-protection-type",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-protection-type",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-protection-type/state",
     //   "supported": false
@@ -1609,10 +1687,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-protection-type/state/type",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/bandwidth-constraints",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/bandwidth-constraints",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/bandwidth-constraints/bandwidth-constraint",
     //   "supported": false
@@ -1653,10 +1731,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/bandwidth-constraints/bandwidth-constraint/constraints/constraint/state/bandwidth",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unconstrained-lsp",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unconstrained-lsp",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unconstrained-lsp/state",
     //   "supported": false
@@ -1669,14 +1747,15 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/unconstrained-lsp/state/count",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/adjacency-sids",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/adjacency-sids",
+//      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-segment-routing-adjacency-sid-list-is-non-empty"
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/adjacency-sids/adjacency-sid",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/segment-routing-adjacency-sid"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/segment-routing-adjacency-sid"
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/adjacency-sids/adjacency-sid/value",
@@ -1688,7 +1767,7 @@
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/adjacency-sids/adjacency-sid/state/value",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/segment-routing-adjacency-sid/sr-index-or-label"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/segment-routing-adjacency-sid/sr-index-or-label"
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/adjacency-sids/adjacency-sid/state/flags",
@@ -1704,17 +1783,19 @@
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/adjacency-sids/adjacency-sid/state/weight",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/segment-routing-adjacency-sid/weight"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/segment-routing-adjacency-sid/weight"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids",
+//      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-segment-routing-lan-adjacency-sid-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids/lan-adjacency-sid",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid"
-    // },
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids/lan-adjacency-sid",
+//      "supported": false
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid"
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids/lan-adjacency-sid/value",
     //   "srlinux": ""
@@ -1725,7 +1806,7 @@
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids/lan-adjacency-sid/state/value",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid/sr-index-or-label"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid/sr-index-or-label"
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids/lan-adjacency-sid/state/flags",
@@ -1741,16 +1822,16 @@
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids/lan-adjacency-sid/state/weight",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid/weight"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid/weight"
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/lan-adjacency-sids/lan-adjacency-sid/state/neighbor-id",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid/neighbor-system-id"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/segment-routing-lan-adjacency-sid/neighbor-system-id"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay/state",
     //   "supported": false
@@ -1763,30 +1844,31 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay/state/delay",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/min-max-link-delay",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay"
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/min-max-link-delay",
+//      "supported": false
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay"
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/min-max-link-delay/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/min-max-link-delay/state/a-bit",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay/anomolous"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay/anomolous"
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/min-max-link-delay/state/min-delay",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay/min-delay"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay/min-delay"
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/min-max-link-delay/state/max-delay",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay/max-delay"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/min-max-unidirectional-link-delay/max-delay"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay-variation",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay-variation",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay-variation/state",
     //   "supported": false
@@ -1795,10 +1877,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-delay-variation/state/delay",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-loss",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-loss",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-loss/state",
     //   "supported": false
@@ -1811,10 +1893,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-loss/state/link-loss",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/residual-bandwidth",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/residual-bandwidth",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/residual-bandwidth/state",
     //   "supported": false
@@ -1823,14 +1905,14 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/residual-bandwidth/state/bandwidth",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/available-bandwidth",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/available-bandwidth/state",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/available-bandwidth",
+//      "supported": false
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/available-bandwidth/state",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/available-bandwidth/state/type",
     //   "supported": false
@@ -1839,10 +1921,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/available-bandwidth/state/bandwidth",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/utilized-bandwidth",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/utilized-bandwidth",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/utilized-bandwidth/state",
     //   "supported": false
@@ -1855,10 +1937,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/subtlvs/subtlv/utilized-bandwidth/state/bandwidth",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/undefined-subtlvs",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/undefined-subtlvs",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/undefined-subtlvs/undefined-subtlv",
     //   "supported": false
@@ -1883,83 +1965,91 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-is-reachability/neighbors/neighbor/instances/instance/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-extended-ipv4-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-extended-ipv4-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/prefix",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/up-down",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/down"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/s-bit",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability",
+       "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-ipv4-reachability"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/prefix",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-ipv4-reachability/ipv4-prefix"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/up-down",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-ipv4-reachability/down"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/s-bit",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "set-to-true-if-there-is-any-data-under-the-sub-tlvs-container"
-    // },
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/prefix",
+      "srlinux": "",
+      "type": "srl_nokia-common:ip-prefix"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/metric",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-ipv4-reachability/metric"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs",
+      "supported": false
+//      "srlinux" : ""
+    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv",
+//      "supported": false
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-ipv4-reachability/sub-tlvs"
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/type",
+//      "supported": false
+//      "srlinux": "",
+//      "transform": "oc-set-lsp-sub-tlv-key"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/state",
+//      "supported": false
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/state/type",
+//      "supported": false
+//       "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag",
+//      "supported": false
+//       "srlinux": ""
+//    },
     // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/prefix",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/ipv4-prefix"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/state/metric",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/metric"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/sub-tlvs"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv",
-    //   "srlinux": "",
-    //   "special-handling": "auto-create-list-with-one-element"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/type",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/state/type",
-    //   "srlinux": "",
-    //   "special-handling": "auto-populate-this-with-the-value-IP_REACHABILITY_SUBTLVS_TYPE"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag/state",
+    //  "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag/state",
     //   "srlinux": ""
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag/state/tag32",
+    //   "supported": false
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/sub-tlvs/route-tag-32bit"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag64",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag64",
+//      "supported": false
     //   "srlinux": ""
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag64/state",
     //   "srlinux": ""
@@ -1968,10 +2058,11 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/tag64/state/tag64",
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/sub-tlvs/route-tag-64bit"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/flags",
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/flags",
+//      "supported": false
     //   "srlinux": ""
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/flags/state",
     //   "srlinux": ""
@@ -1986,10 +2077,10 @@
     //   "srlinux": "",
     //   "special-handling": "add-EXTERNAL_FLAG-enum-to-leaf-list-when-external-prefix-is-true-and-add-READVERTISEMENT_FLAG-to-leaf-list-when-re-advertised-is-true-and-add-NODE_FLAG-to-leaf-list-when-node-identifier-is-true"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv4-source-router-id",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv4-source-router-id",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv4-source-router-id/state",
     //   "supported": false
@@ -2002,10 +2093,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv4-source-router-id/state/router-id",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv6-source-router-id",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv6-source-router-id",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv6-source-router-id/state",
     //   "supported": false
@@ -2018,10 +2109,11 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/ipv6-source-router-id/state/router-id",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/prefix-sids",
-    //   "srlinux": ""
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/prefix-sids",
+//      "supported": false
+    ///  "srlinux": ""
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/subtlvs/subtlv/prefix-sids/prefix-sid",
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/sub-tlvs/segment-routing-prefix-sid",
@@ -2049,10 +2141,10 @@
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-ipv4-reachability/sub-tlvs/segment-routing-prefix-sid/algorithm",
     //   "special-handling": "spf-maps-to-0-and-strict-spf-maps-to-1"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/undefined-subtlvs",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/undefined-subtlvs",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/undefined-subtlvs/undefined-subtlv",
     //   "supported": false
@@ -2077,53 +2169,54 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/extended-ipv4-reachability/prefixes/prefix/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-ipv6-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-ipv6-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-reachability"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/prefix",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/up-down",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-reachability/down"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/x-bit",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-reachability/external"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/s-bit",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability",
+       "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv6-reachability"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/prefix",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv6-reachability/ipv6-prefix"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/up-down",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv6-reachability/down"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/x-bit",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv6-reachability/external"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/s-bit",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "set-to-true-if-there-is-any-data-under-the-sub-tlvs-container"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/prefix",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-reachability/ipv6-prefix"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/metric",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-reachability/metric"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/subtlvs",
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/prefix",
+      "srlinux": "",
+      "type": "srl_nokia-common:ip-prefix"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/state/metric",
+      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/ipv6-reachability/metric"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/subtlvs",
+      "supported": false
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-reachability/sub-tlvs"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/subtlvs/subtlv",
     //   "srlinux": "",
@@ -2247,10 +2340,10 @@
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/ipv6-reachability/sub-tlvs/segment-routing-prefix-sid/algorithm",
     //   "special-handling": "spf-maps-to-0-and-strict-spf-maps-to-1"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/undefined-subtlvs",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/undefined-subtlvs",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/undefined-subtlvs/undefined-subtlv",
     //   "supported": false
@@ -2275,10 +2368,11 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/ipv6-reachability/prefixes/prefix/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/multi-topology",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/multi-topology",
+      "supported": false
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/multi-topology"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/multi-topology/topologies",
     //   "srlinux": ""
@@ -2305,10 +2399,10 @@
     //   "special-handling": "set-leaf-to-overload-if-overload-is-true-or-if-attached-is-true"
     //   // OC has an problem here
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/isis-neighbor-attribute",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/isis-neighbor-attribute",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/isis-neighbor-attribute/neighbors",
     //   "supported": false
@@ -2801,10 +2895,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/isis-neighbor-attribute/neighbors/neighbor/instances/instance/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-alias-id",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-alias-id",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-alias-id/state",
     //   "supported": false
@@ -2813,11 +2907,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/is-alias-id/state/alias-id",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isn",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isn",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-mt-is-reachability-list-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isn/neighbors",
     //   "srlinux": "",
@@ -3043,7 +3138,7 @@
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isn/neighbors/neighbor/instances/instance/subtlvs/subtlv/te-default-metric/state/metric",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/extended-is-reachability/sub-tlvs/te-default-metric"
+    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/extended-is-reachability/sub-tlvs/te-default-metric"
     // },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isn/neighbors/neighbor/instances/instance/subtlvs/subtlv/link-attributes",
@@ -3343,10 +3438,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isn/neighbors/neighbor/instances/instance/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isis-neighbor-attribute",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isis-neighbor-attribute",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isis-neighbor-attribute/neighbors",
     //   "supported": false
@@ -3847,11 +3942,12 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-isis-neighbor-attribute/neighbors/neighbor/instances/instance/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv4-reachability",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv4-reachability",
+      "supported": false
     //   "srlinux": "",
     //   "special-handling": "container-must-be-created-when-mt-ipv4-reachability-list-is-non-empty"
-    // },
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv4-reachability/prefixes",
     //   "srlinux": "",
@@ -4049,61 +4145,62 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv4-reachability/prefixes/prefix/undefined-subtlvs/undefined-subtlv/state/value",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-mt-ipv6-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes",
-    //   "srlinux": "",
-    //   "special-handling": "container-must-be-created-when-mt-ipv6-reachability-list-is-non-empty"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/prefix",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/mt-id",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/up-down",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability/down"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/x-bit",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability/external"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/s-bit",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability",
+      "supported": false
+//       "srlinux": ""
+    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/mt-ipv6-reachability"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/prefix",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/mt-ipv6-reachability/ipv6-prefix"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/mt-id",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/mt-ipv6-reachability/mt-id"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/up-down",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/mt-ipv6-reachability/down"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/x-bit",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/mt-ipv6-reachability/external"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/s-bit",
+//      "supported": false
     //   "srlinux": "",
     //   "special-handling": "set-to-true-if-there-is-any-data-under-the-sub-tlvs-container"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/prefix",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability/ipv6-prefix"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/metric",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability/metric"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/mt-id",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability/mt-id"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/subtlvs",
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/prefix",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/metric",
+//      "srlinux": "/network-instance/protocols/isis/instance/level-database/defined-tlvs/mt-ipv6-reachability/metric"
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/state/mt-id",
+//      "srlinux": ""
+//    },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/subtlvs",
+//      "supported": false
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability/sub-tlvs"
-    // },
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/subtlvs/subtlv",
     //   "srlinux": "",
@@ -4227,10 +4324,10 @@
     //   "srlinux": "/network-instance/protocols/isis/instance/level-database/mt-ipv6-reachability/sub-tlvs/segment-routing-prefix-sid/algorithm",
     //   "special-handling": "spf-maps-to-0-and-strict-spf-maps-to-1"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/undefined-subtlvs",
-    //   "supported": false
-    // },
+//    {
+//      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/undefined-subtlvs",
+//      "supported": false
+//    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/link-state-database/lsp/tlvs/tlv/mt-ipv6-reachability/prefixes/prefix/undefined-subtlvs/undefined-subtlv",
     //   "supported": false
@@ -4315,58 +4412,124 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/route-preference/{config,state}/external-route-preference",
-      "srlinux": "/network-instance/protocols/isis/instance/level/route-preference/external"
+      "srlinux": "/network-instance/protocols/isis/instance/level/route-preference/external",
+      "deviations": {
+          "add": {
+              "must": [
+              {
+                  "expression": ". <= 255"
+              }
+              ]
+          }
+      }
+
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/route-preference/{config,state}/internal-route-preference",
-      "srlinux": "/network-instance/protocols/isis/instance/level/route-preference/internal"
+      "srlinux": "/network-instance/protocols/isis/instance/level/route-preference/internal",
+      "deviations": {
+          "add": {
+              "must": [
+              {
+                  "expression": ". <= 255"
+              }
+              ]
+          }
+      }
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication",
-      "supported": false
-    //   "srlinux": "/network-instance/protocols/isis/instance/level/authentication"
+      "pretranslate-transform":"oc-isis-level-auth",
+      "state-request-from-here": true
     },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level/authentication",
+      "pretranslate-transform":"srl-isis-level-auth"
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level/authentication/csnp-authentication",
+      "pretranslate-transform":"srl-isis-level-auth"
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level/authentication/psnp-authentication",
+      "pretranslate-transform":"srl-isis-level-auth"
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/level/authentication/lsp-authentication",
+      "pretranslate-transform":"srl-isis-level-auth"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}",
+      "pretranslate-transform":"oc-isis-level-auth"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/{config,state}/authentication-check",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/auth-type",
+      "srlinux": "",
+      "deviations": {
+          "add": {
+              "must": [
+              {
+                  "expression": "boolean(../auth-password) or boolean(../keychain)",
+                  "error-message": "auth-password or keychain must be configured"
+              }
+              ]
+          }
+      }
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/isis/instance/level/authentication/key",
+      "pretranslate-transform":"srl-isis-auth-key"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/auth-password",
+      "srlinux": "/network-instance/protocols/isis/instance/level/authentication/key/auth-password",
+      "type": "srl_nokia-common:routing-password",
+      "deviations": {
+        "add": {
+            "must": [
+              {
+                  "expression": "../auth-type = 'SIMPLE_KEY'",
+                  "error-message": "auth-type other than SIMPLE_KEY are not allowed"
+              }
+            ]
+        }
+      }
+    },
+    {
+       "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/auth-mode",
+       "srlinux": "/network-instance/protocols/isis/instance/level/authentication/key/crypto-algorithm",
+       "mapping" : [
+         {"TEXT" : "cleartext"},
+         {"MD5" : "hmacmd5"}
+       ]
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/keychain",
+      //"srlinux": "/network-instance/protocols/isis/instance/level/authentication/keychain",
+      "supported": false
+      //"deviations": {
+      //  "add": {
+      //      "must": [
     // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/csnp-authentication",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level/authentication/csnp-authentication"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/psnp-authentication",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level/authentication/psnp-authentication"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/{config,state}/lsp-authentication",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/key",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/key/{config,state}",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/key/{config,state}/auth-password",
-    //   "srlinux": "",
-    //   "special-handling": "auto-create-keychain-with-a-single-key"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/levels/level/authentication/keychain",
-    //   "srlinux": "/network-instance/protocols/isis/instance/level/authentication/keychain"
-    // },
-
+      //            "expression": "../auth-type = 'KEYCHAIN'"
+      //        }
+      //      ]
+      //  }
+      //}
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces",
       "srlinux": ""
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface",
-      "srlinux": "/network-instance/protocols/isis/instance/interface"
+      "srlinux": "/network-instance/protocols/isis/instance/interface",
+      "finalize-transform":"oc-isis-interface-af-safi-create-default"
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/interface-id",
@@ -4409,77 +4572,122 @@
     },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/adj-changes",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/adjacency-changes"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/init-fails",
       "supported": false
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/adj-changes",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/init-fails",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/rejected-adj",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/id-field-len-mismatches",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/max-area-address-mismatches",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/auth-type-fails",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/auth-fails",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/lan-dis-changes",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/adj-number",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/rejected-adj",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/rejected-adjacencies"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/id-field-len-mismatches",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/system-id-length-mismatches"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/max-area-address-mismatches",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/max-area-address-mismatches"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/auth-type-fails",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/authentication-type-failures"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/auth-fails",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/authentication-failures"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/lan-dis-changes",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/designated-is-changes"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/circuit-counters/state/adj-number",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/statistics/adjacency-number"
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication",
-      "supported": false
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/authentication"
+      "pretranslate-transform":"oc-isis-intf-auth",
+      "state-request-from-here": true
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config, state}",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config, state}/hello-authentication",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/authentication/hello-authentication"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/key",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/key/{config, state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/key/{config, state}/auth-password",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/keychain",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/authentication/keychain"
-    // },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/interface/authentication",
+      "pretranslate-transform":"srl-isis-intf-auth"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config,state}",
+      "pretranslate-transform":"oc-isis-intf-auth"
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/interface/authentication/hello-authentication",
+      "pretranslate-transform":"srl-isis-intf-auth"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config,state}/auth-password",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/authentication/key/auth-password",
+      "type": "srl_nokia-common:routing-password",
+      "deviations": {
+        "add": {
+            "must": [
+              {
+                  "expression": "../auth-type = 'SIMPLE_KEY'",
+                  "error-message": "auth-type other than SIMPLE_KEY are not allowed"
+              }
+            ]
+        }
+      }
+    },
+    {
+       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config,state}/auth-mode",
+       "srlinux": "/network-instance/protocols/isis/instance/interface/authentication/key/crypto-algorithm",
+       "mapping" : [
+         {"TEXT" : "cleartext"},
+         {"MD5" : "hmacmd5"}
+       ]
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/authentication/key",
+      "pretranslate-transform":"srl-isis-auth-key"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config,state}/auth-type",
+      "srlinux": "",
+      "deviations": {
+          "add": {
+              "must": [
+              {
+                  "expression": "boolean(../auth-password) or boolean(../keychain)",
+                  "error-message": "auth-password or keychain must be configured"
+              }
+              ]
+          }
+      }
+
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/authentication/{config,state}/keychain",
+      //"srlinux": "/network-instance/protocols/isis/instance/interface/authentication/keychain",
+      "supported": false
+      //"deviations": {
+      //  "add": {
+      //      "must": [
+      //        {
+      //            "expression": "../auth-type = 'KEYCHAIN'"
+      //        }
+      //      ]
+      //  }
+      //}
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/afi-safi",
       "pretranslate-transform":"oc-isis-intf-afi-safi-transform"
@@ -4519,7 +4727,8 @@
         "add": {
             "must": [
               {
-                  "expression": ". = true()"
+                  "expression": ". = true()",
+                  "error-message": "enabled must always be set to true"
               }
             ]
         }
@@ -4569,70 +4778,83 @@
           {"false": "true"}
       ]
     },
+//    {
+//      "oc": "",
+//      "srlinux": "/network-instance/protocols/isis/instance/interface/level/statistics",
+//      "pretranslate-transform":"srl-isis-packet-counter-transform"
+//    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/level/statistics/pdu",
+      "pretranslate-transform":"srl-isis-packet-counter-transform"
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters",
+      "pretranslate-transform": "oc-isis-packet-counter-transform",
+      "state-request-from-here": true
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/received",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/processed",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/dropped",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/sent",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/retransmit",
+        //      "srlinux": ""
       "supported": false
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/received",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/processed",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/dropped",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/sent",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/lsp/state/retransmit",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/received",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/processed",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/dropped",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/sent",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/retransmit",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/ish",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/received",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/processed",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/dropped",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/sent",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/iih/state/retransmit",
+        //      "srlinux": ""
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/ish",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/ish/state",
     //   "supported": false
@@ -4657,10 +4879,10 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/ish/state/retransmit",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/esh",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/esh",
+      "supported": false
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/esh/state",
     //   "supported": false
@@ -4685,182 +4907,209 @@
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/esh/state/retransmit",
     //   "supported": false
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/received",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/processed",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/dropped",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/sent",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/retransmit",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/received",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/processed",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/dropped",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/sent",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/retransmit",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/received",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/processed",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/dropped",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/sent",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/retransmit",
-    //   "supported": false
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/received",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/processed",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/dropped",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/sent",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/psnp/state/retransmit",
+      "supported": false
+//      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/received",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/processed",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/dropped",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/sent",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/csnp/state/retransmit",
+      "supported": false
+        //"srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state",
+      "pretranslate-transform": "oc-isis-packet-counter-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/received",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/processed",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/dropped",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/sent",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/packet-counters/unknown/state/retransmit",
+      "srlinux": ""
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies",
-      "supported": false
-    //   "srlinux": ""
+      "srlinux": ""
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]"
-    // },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency",
+      "pretranslate-transform":"oc-isis-adjacency-transform"
+    },
     // {
     //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/system-id",
     //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-system-id"
     // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-ipv4-address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-ipv4"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-ipv6-address",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-ipv6"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-snpa",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-snpa"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/local-extended-circuit-id",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/circuit-id"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-extended-circuit-id",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/priority",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-priority"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/dis-system-id",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-circuit-type",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-circuit-type"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-type",
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state",
+      "pretranslate-transform":"oc-isis-adjacency-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/adjacency",
+      "pretranslate-transform":"srl-isis-adjacency-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/adjacency/area-address",
+      "pretranslate-transform":"srl-isis-adjacency-transform"
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/adjacency/nlpid",
+      "pretranslate-transform":"srl-isis-adjacency-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-ipv4-address",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-ipv6-address",
+     "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-snpa",
+      "srlinux": ""
+    },
+    {
+        "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/local-extended-circuit-id",
+        "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-extended-circuit-id",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/priority",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/dis-system-id",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/neighbor-circuit-type",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-type",
     //   "srlinux": "",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-state",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/state",
-    //   "special-handling": "lowercase-to-uppercase-enum-translations"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/remaining-hold-time",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/remaining-hold-time"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/up-time",
-    //   "srlinux": "",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/adjacency-state",
+      "srlinux": ""
+    },
+    //{
+    //  "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/remaining-hold-time",
+    //  "srlinux": ""
+    //},
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/up-timestamp",
+      "srlinux": ""
     //   "special-handling": "calculate-from-last-up-down-transition-timestamp"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/multi-topology",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/topology",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/restart-support",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-restart-capable"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/restart-suppress",
-    //   "suppported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/restart-status",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/adjacencies/adjacency[adjacency-level = from-oc-path]/neighbor-restart-status"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/area-address",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/nlpid",
-    //   "supported": false
-    // },
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/multi-topology",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/topology",
+      "supported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/restart-support",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/restart-suppress",
+      "suppported": false
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/restart-status",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/area-address",
+      "pretranslate-transform":"oc-isis-adjacency-transform"
+    },
+    {
+        "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/area-address/area-address",
+        "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/nlpid",
+      "pretranslate-transform":"oc-isis-adjacency-transform"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/adjacencies/adjacency/state/nlpid/nlpid",
+      "srlinux": ""
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/timers",
       "srlinux": "/network-instance/protocols/isis/instance/interface/level/timers"
@@ -5011,33 +5260,77 @@
     // },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication",
-      "supported": false
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication"
+      "pretranslate-transform":"oc-isis-intf-level-auth",
+      "state-request-from-here": true
     },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config, state}",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config, state}/hello-authentication",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/hello-authentication"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/key",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/key/{config, state}",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/key/{config, state}/auth-password",
-    //   "supported": false
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/keychain",
-    //   "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/hello-authentication/keychain"
-    // },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication",
+      "pretranslate-transform":"srl-isis-intf-level-auth"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config,state}",
+      "pretranslate-transform":"oc-isis-intf-level-auth"
+    },
+    {
+      "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/hello-authentication",
+      "pretranslate-transform":"srl-isis-intf-level-auth"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config,state}/auth-password",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/key/auth-password",
+      "type": "srl_nokia-common:routing-password",
+      "deviations": {
+        "add": {
+            "must": [
+              {
+                  "expression": "../auth-type = 'SIMPLE_KEY'",
+                  "error-message": "auth-type other than SIMPLE_KEY are not allowed"
+              }
+            ]
+        }
+      }
+    },
+    {
+       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config,state}/auth-mode",
+       "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/key/crypto-algorithm",
+       "mapping" : [
+         {"TEXT" : "cleartext"},
+         {"MD5" : "hmacmd5"}
+       ]
+    },
+    {
+      "oc": "",
+      "srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/key",
+      "pretranslate-transform":"srl-isis-auth-key"
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config,state}/auth-type",
+      "srlinux": "",
+      "deviations": {
+          "add": {
+              "must": [
+              {
+                  "expression": "boolean(../auth-password) or boolean(../keychain)",
+                  "error-message": "auth-password or keychain must be configured"
+              }
+              ]
+          }
+      }
+    },
+    {
+      "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/levels/level/hello-authentication/{config,state}/keychain",
+      //"srlinux": "/network-instance/protocols/isis/instance/interface/level/authentication/keychain",
+      "supported": false
+      //"deviations": {
+      //  "add": {
+      //      "must": [
+      //        {
+      //            "expression": "../auth-type = 'KEYCHAIN'"
+      //        }
+      //      ]
+      //  }
+      //}
+    },
     {
       "oc": "/network-instances/network-instance/protocols/protocol/isis/interfaces/interface/timers",
       "srlinux": "/network-instance/protocols/isis/instance/interface/timers"

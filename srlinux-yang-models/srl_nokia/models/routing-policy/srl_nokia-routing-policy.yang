@@ -19,9 +19,23 @@ module srl_nokia-routing-policy {
     prefix srl_nokia-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "YANG model for route policies. It supports widely used constructs for managing how routes are imported, exported, and modified across different routing protocols.";
 
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -185,7 +199,7 @@ module srl_nokia-routing-policy {
               "The number of repetitions of the prepended AS number";
           }
         }
-      }
+      } // container as-path
       container communities {
         description
           "Modify BGP communities attached to routes";
@@ -253,24 +267,18 @@ module srl_nokia-routing-policy {
   }
 
   grouping default-action-top {
+    srl_nokia-ext:first-released "19.11.1";
     container default-action {
       description
         "Actions for routes that do not match any policy entry";
-      container reject {
-        presence "Reject routes that do not match any policy entry";
+      leaf policy-result {
+        type srl_nokia-pol-types:policy-result-type;
         description
-          "Reject action";
-        must 'not(../accept)';
+          "Select the final disposition for the route.";
       }
-      container accept {
-        presence "Accept routes that do not match any policy entry";
-        description
-          "Accept action";
-        must 'not(../reject)';
-        uses common-action-top;
-      }
-    }
-  }
+      uses common-action-top;
+    } // container default-action
+  } // grouping default-action-top
 
   grouping match-prefix-set {
     description
@@ -286,6 +294,7 @@ module srl_nokia-routing-policy {
 
   grouping match-bgp-evpn {
     container evpn {
+      //srl_nokia-ext:first-released "20.12.1";
       description
         "Container for match conditions that are specific to BGP EVPN routes.";
       leaf-list route-type {
@@ -351,12 +360,12 @@ module srl_nokia-routing-policy {
   grouping match-general {
     description
       "Configuration for general match criteria applicable to multiple route types";
-    leaf family {
+    leaf-list family {
       type srl_nokia-pol-types:bgp-family-type;
       description
         "The name of an address family
 
-         A route meets this condition if the prefix belongs to the indicated address family.";
+        A route meets this condition if the prefix belongs to one of the indicated address families.";
     }
     leaf protocol {
       type identityref {
@@ -444,23 +453,18 @@ module srl_nokia-routing-policy {
 
   grouping action-top {
     description
-      "Top-level grouping for policy actions";
+       "Top-level grouping for policy actions";
+
     container action {
+      srl_nokia-ext:first-released "19.11.1";
       description
         "Actions for routes that match the policy statement";
-      container reject {
-        presence "Reject routes that match the policy statement";
+      leaf policy-result {
+        type srl_nokia-pol-types:policy-result-type;
         description
-          "Reject routes that match the policy statement";
-        must 'not(../accept)';
+          "Select the final disposition for the route.";
       }
-      container accept {
-        presence "Accept routes that match the policy statement";
-        description
-          "Accept routes that match the policy statement";
-        must 'not(../reject)';
-        uses common-action-top;
-      }
+      uses common-action-top;
     }
   }
 
@@ -468,17 +472,16 @@ module srl_nokia-routing-policy {
     description
       "Top-level grouping for the policy statements list";
     list statement {
-      key "sequence-id";
+      key "name";
+      ordered-by user;
+      // requires a unique id for lists
       description
-        "Policy statements group conditions and actions within a policy definition.  They are evaluated in the order of their sequence id.";
-      leaf sequence-id {
-        type uint32 {
-          range "1..4294967295";
-        }
-        description
-          "Number indicating when this policy statement should be evaluated relative to other policy statements
+        "Policy statements group conditions and actions within a policy definition.  They are evaluated in configuration order.";
 
-           Lower numbered statements are evaluated before higher numbered statements.";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Name given to the policy statement (rule).";
       }
       uses match-top;
       uses action-top;

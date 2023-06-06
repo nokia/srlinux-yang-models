@@ -1,5 +1,8 @@
 module srl_nokia-interfaces-vxdp {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/interfaces-vxdp";
   prefix srl-if-vxdp;
 
@@ -13,9 +16,19 @@ module srl_nokia-interfaces-vxdp {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This model describes configuration and state related to vXDP managed interfaces";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -124,7 +137,7 @@ module srl_nokia-interfaces-vxdp {
       "Configuration and state for vhost-user interfaces";
     container vhost {
       presence "Configure vhost-user interface parameters";
-      must "starts-with(../srl-if:name,'VHN')" {
+      must "starts-with(../srl-if:name,'vhn')" {
         error-message "Configuration valid only for vhn interfaces";
       }
       description
@@ -147,6 +160,7 @@ module srl_nokia-interfaces-vxdp {
         default "client";
       }
       leaf vhost-socket-queues {
+        // "... must not exceed ... " does not require backend enforcement
         description
           "The number of vhost-user queues
 
@@ -166,7 +180,10 @@ module srl_nokia-interfaces-vxdp {
       description
         "The system-generated or user-configured UUID for the interface";
     }
-    uses vhost-interface-top;
+    uses vhost-interface-top {
+      // applies only to new style vhn interface which is not yet supported
+      if-feature "srl-feat:disabled";
+    }
     uses pci-interface-top;
     uses linux-interface-top;
   }

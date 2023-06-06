@@ -22,9 +22,19 @@ module srl_nokia-gribi-server {
     prefix srl-feat;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data related to the gRIBI server";
 
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -111,8 +121,8 @@ module srl_nokia-gribi-server {
         type srl-comm:ip-address;
         description
           "List of IP addresses the gRIBI server will listen on within the network instance
-
-           By default the gRIBI server will listen on all addresses in the network-instance.";
+          
+          By default the gRIBI server will listen on all addresses in the network-instance.";
       }
       leaf port {
         type srl-comm:port-number;
@@ -149,7 +159,6 @@ module srl_nokia-gribi-server {
 
   grouping gribi-server-top {
     container gribi-server {
-      if-feature "srl-feat:gribi";
       description
         "Configures the gRPC Routing Information Base Interface (gRIBI) service";
       presence "Configures the gRPC Routing Information Base Interface (gRIBI) service";
@@ -193,7 +202,7 @@ module srl_nokia-gribi-server {
         description
           "Set a limit on the number of simultaneous active gRIBI sessions
 
-           A session is defined as an individual RPC invocation, which could result in a single client generating multiple sessions.";
+          A session is defined as an individual RPC invocation, which could result in a single client generating multiple sessions.";
       }
       list client {
         config false;
@@ -215,15 +224,13 @@ module srl_nokia-gribi-server {
         }
         leaf persistence-mode {
           type enumeration {
-            enum preserve {
-              description
-                "Entries populated by the client will be persisted during a client disconnect, or control module switchover";
+            enum "preserve" {
+              description "Entries populated by the client will be persisted during a client disconnect, or control module switchover";
             }
-            enum delete {
-              description
-                "Entries populated by the client will be purged on the client disconnecting, or a control module switchover
-
-                 If no persistence mode is signaled, the default is to delete entries.";
+            enum "delete" {
+              description "Entries populated by the client will be purged on the client disconnecting, or a control module switchover
+              
+              If no persistence mode is signaled, the default is to delete entries.";
             }
           }
           srl-ext:show-importance "high";
@@ -266,54 +273,58 @@ module srl_nokia-gribi-server {
 
   grouping gribi-netinst-protocol {
     container gribi {
-      if-feature "srl-feat:gribi";
       presence "Configure the network instance to support gRIBI programming";
       must '(/srl-netinst:network-instance[srl-netinst:name = current()/../../srl-netinst:name]/srl-netinst:type = "srl-netinst:ip-vrf" or /srl-netinst:network-instance[srl-netinst:name = current()/../../srl-netinst:name]/srl-netinst:type = "srl-netinst:default")' {
         error-message "gRIBI programming not supported in network-instance types other than default and ip-vrf";
       }
       description
         "Container for gRIBI configuration and state.";
+
       leaf admin-state {
         type srl-comm:admin-state;
         description
           "Administratively enable or disable gRIBI support.
 
-           When this is set to disable all IP entries and next-hop-groups associated with the network-instance are deleted from the gRIBI server database annd the recovery of this state depends on the gRIBI clients to re-signal all of the deleted entries. While in a disabled state, no entries are accepted for this network-instance. (This is the same behavior when the network-instance does not exist at all.) ";
+          When this is set to disable all IP entries and next-hop-groups associated with the network-instance are deleted from the gRIBI server database annd the recovery of this state depends on the gRIBI clients to re-signal all of the deleted entries. While in a disabled state, no entries are accepted for this network-instance. (This is the same behavior when the network-instance does not exist at all.) ";
         default "disable";
       }
+
       leaf default-metric {
         description
           "Set the route table metric to use for all gRIBI-created IPv4 and IPv6 routes";
         type uint32;
-        default "1";
+        default 1;
       }
+
       leaf default-preference {
         type uint8 {
           range "0..255";
         }
-        default "4";
+        default 6;
         description
           "Lower values indicate a higher degree of preference when deciding the route to use from different protocols.";
       }
+
       leaf max-ecmp-hash-buckets-per-next-hop-group {
         type uint8 {
           range "1..128";
         }
-        default "128";
+        default 128;
         description
           "Specifies the maximum number of ECMP hash buckets per next-hop-group.
+          
+          An error is returned to any gRIBI client that attempts to program more than this number of next-hops in a single next-hop-group.
 
-           An error is returned to any gRIBI client that attempts to program more than this number of next-hops in a single next-hop-group.
-
-           Weighted ECMP weights are normalized based on this number of hash buckets.";
+          Weighted ECMP weights are normalized based on this number of hash buckets.";
       }
+
       leaf maximum-routes {
         type uint32;
-        default "0";
+        default 0;
         description
           "Specifies the maximum number of gRIBI routes (sum of IPv4 and IPv6 entries).
 
-           A value of 0 signifies no limit.";
+          A value of 0 signifies no limit.";
       }
     }
   }

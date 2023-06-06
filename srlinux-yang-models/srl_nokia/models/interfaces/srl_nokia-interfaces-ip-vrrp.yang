@@ -1,5 +1,8 @@
 module srl_nokia-interfaces-ip-vrrp {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/interfaces/ip/vrrp";
   prefix srl_nokia-if-ip-vrrp;
 
@@ -19,6 +22,12 @@ module srl_nokia-interfaces-ip-vrrp {
     prefix srl_nokia-comm;
   }
 
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
   description
     "Model for managing VRRP sessions on IP interfaces.
 
@@ -26,6 +35,12 @@ module srl_nokia-interfaces-ip-vrrp {
      management described by RFC 8347.  The primary differences are
      in the structure of configuration and state data.";
 
+  /* vrrp-state-type identity and its derivatives. */
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -348,6 +363,9 @@ module srl_nokia-interfaces-ip-vrrp {
           description
             "VRRP version for the Instance";
           type uint8;
+          must "(.=3 or .=2)" {
+            error-message "Only version 2 or 3 allowed to be configured";
+          }
         }
       }
     }
@@ -393,11 +411,11 @@ module srl_nokia-interfaces-ip-vrrp {
     }
   }
 
-  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv4" {
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv4/srl_nokia-if:address" {
     uses ipv4-vrrp-top;
   }
 
-  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv6" {
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv6/srl_nokia-if:address" {
     uses ipv6-vrrp-top;
   }
 }

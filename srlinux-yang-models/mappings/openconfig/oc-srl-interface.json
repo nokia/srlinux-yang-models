@@ -18,11 +18,7 @@
             "transform": "direct-key-transform"
         },
         {
-            "oc": "/interfaces/interface/config",
-            "srlinux": ""
-        },
-        {
-            "oc": "/interfaces/interface/{state}",
+            "oc": "/interfaces/interface/{config,state}",
             "srlinux": ""
         },
         {
@@ -33,6 +29,32 @@
         {
             "oc": "/interfaces/interface/{config,state}/mtu",
             "srlinux": "/interface/mtu"
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/type",
+            "finalize-transform": "oc-interface-type",
+            "deviations": {
+                "add": {
+                    "must": [
+                    {
+                        "expression": ". = 'ethernetCsmacd' or not (starts-with(../name,'ethernet') or starts-with(../name,'mgmt'))",
+                        "error-message": "ethernet and mgmt interfaces must be a type of ethernetCsmacd"
+                    },
+                    {
+                        "expression": ". = 'softwareLoopback' or not (starts-with(../name,'lo') or starts-with(../name,'system'))",
+                        "error-message": "loopback and system interfaces must be a type of softwareLoopback"
+                    },
+                    {
+                        "expression": ". = 'ipForward' or not (starts-with(../name,'irb'))",
+                        "error-message": "irb interfaces must be a type of ipForward"
+                    },
+                    {
+                        "expression": ". = 'ieee8023adLag' or not (starts-with(../name,'lag'))",
+                        "error-message": "lag interfaces must be a type of ieee8023adLag"
+                    }
+                    ]
+                }
+            }
         },
         {
             "oc": "/interfaces/interface/{config,state}/loopback-mode",
@@ -85,6 +107,10 @@
             "transform": "timeticks-to-timestamp"
         },
         {
+            "oc": "/interfaces/interface/{config,state}/id",
+            "srlinux": "/interface/p4rt/id"
+        },
+        {
             "oc": "/interfaces/interface/state/logical",
             "supported": false
             // FUTURE: we could set these on create
@@ -92,9 +118,7 @@
         },
         {
             "oc": "/interfaces/interface/state/management",
-            "supported": false
-            // FUTURE: we could set these on create
-            // "special-handling": "true-for-mgmt-interfaces"
+            "finalize-transform": "oc-interface-management"
         },
         {
             "oc": "/interfaces/interface/state/cpu",
@@ -112,9 +136,7 @@
         },
         {
             "oc": "/interfaces/interface/state/counters/in-pkts",
-            "srlinux": ""
-            // TODO
-            // "special-handling": "new-field-needed-in-our-model"
+            "srlinux": "/interface/statistics/in-packets"
         },
         {
             "oc": "/interfaces/interface/state/counters/in-unicast-pkts",
@@ -151,9 +173,7 @@
         },
         {
             "oc": "/interfaces/interface/state/counters/out-pkts",
-            "srlinux": ""
-            // TODO
-            // "special-handling": "new-field-needed-in-our-model"
+            "srlinux": "/interface/statistics/out-packets"
         },
         {
             "oc": "/interfaces/interface/state/counters/out-unicast-pkts",
@@ -603,7 +623,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}/oc-ip:link-layer-address",
-            "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-nbr:arp/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:link-layer-address"
+            "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-nbr:arp/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:link-layer-address",
+            "type": "srl_nokia-common:mac-address"
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor/oc-ip:state/oc-ip:origin",
@@ -648,11 +669,23 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:{config,state}/oc-ip:enabled",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/admin-state",
+            "transform":"bool-to-admin-state"
         },
         {
-            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:{config,state}/oc-ip:mtu",
-            "supported": false
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/{config,state}/oc-ip:mtu",
+            "srlinux": "/interface/subinterface/ip-mtu",
+            "finalize-transform": "oc-set-additional-field{../../ipv6/{config,state}/mtu=mtu}",
+            "deviations": {
+                "add": {
+                    "must": [
+                    {
+                        "expression": ". = ../../../ipv6/config/mtu",
+                        "error-message": "ipv4 and ipv6 mtu values must be the same"
+                    }
+                    ]
+                }
+            }
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:{config,state}/oc-ip:dhcp-client",
@@ -668,7 +701,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-octets",
@@ -690,11 +724,13 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-octets",
@@ -716,7 +752,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6",
@@ -902,7 +939,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}/oc-ip:link-layer-address",
-            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:link-layer-address"
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:link-layer-address",
+            "type": "srl_nokia-common:mac-address"
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:state/oc-ip:origin",
@@ -956,11 +994,28 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}/oc-ip:enabled",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/admin-state",
+            "transform":"bool-to-admin-state"
         },
         {
-            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}/oc-ip:mtu",
-            "supported": false
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:config/oc-ip:mtu",
+            "srlinux": "",
+            "type": "uint16",
+            "deviations": {
+                "add": {
+                    "must": [
+                    {
+                        "expression": ". = ../../../ipv4/config/mtu",
+                        "error-message": "ipv4 and ipv6 mtu values must be the same"
+                    }
+                    ]
+                }
+            }
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:mtu",
+            "srlinux": "",
+            "type": "uint16"
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}/oc-ip:dup-addr-detect-transmits",
@@ -980,7 +1035,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-octets",
@@ -1002,11 +1058,13 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-octets",
@@ -1028,7 +1086,8 @@
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-discarded-pkts",
-            "supported": false
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-discarded-packets",
+            "feature-flagged": true
         },
         {
             "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip-ext:autoconf",
@@ -1044,7 +1103,8 @@
         },
         {
             "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:mac-address",
-            "supported": false
+            "srlinux": "/interface/ethernet/mac-address",
+            "type": "srl_nokia-common:mac-address"
         },
         {
             "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:auto-negotiate",
@@ -1089,6 +1149,10 @@
         {
             "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:enable-flow-control",
             // srlinux has two values for this - /interface/ethernet/flow-control/{receive,transmit}"
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:fec-mode",
             "supported": false
         },
         {
@@ -1299,7 +1363,8 @@
         },
         {
             "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:state/oc-lag:member",
-            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:member"
+            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:member",
+            "state-request-from-here": true
         },
         {
             "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:state/oc-lag:member/member",
@@ -1307,7 +1372,7 @@
         },
         {
             "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:member/name",
-            "transform": "direct-key-transform"
+            "transform": "unused-key-transform" // srl state only
             // also used by /lacp/interfaces/interface/members/member/interface
         },
         {

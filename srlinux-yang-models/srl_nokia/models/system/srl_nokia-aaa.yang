@@ -1,7 +1,12 @@
 module srl_nokia-aaa {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/aaa";
   prefix srl-aaa;
+
+  // imports
 
   import srl_nokia-aaa-types {
     prefix srl-aaa-types;
@@ -27,12 +32,31 @@ module srl_nokia-aaa {
   import srl_nokia-aaa-password {
     prefix srl-aaa-password;
   }
+  import srl_nokia-aaa-radius {
+    prefix srl-aaa-radius;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
 
   description
     "This module defines configuration and operational state data related to authorization, authentication, and accounting (AAA) management.
 
      Portions of this model reuse data definitions or structure from RFC 7317 - A YANG Data Model for System Management";
 
+  // grouping statements
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -60,15 +84,6 @@ module srl_nokia-aaa {
   revision 2019-11-30 {
     description
       "SRLinux 19.11.1";
-  }
-
-  typedef routing-password {
-    srl-ext:first-released "19.11.1";
-    type string;
-    description
-      "This type is indicative of a password that is used within a routing protocol
-
-       This can be returned in plain text to the NMS by the local system. Such passwords are typically stored as encrypted strings. Since the encryption used is generally well known, it is possible to extract the original value from the string - and hence this format is not considered secure. Leaves specified with this type should not be modified by the system, and should be returned to the end-user in plain text. This type exists to differentiate passwords, which may be sensitive, from other string leaves. It could, for example, be used by the NMS to censor this data when viewed by particular users.";
   }
 
   grouping aaa-servergroup-common-config {
@@ -119,8 +134,8 @@ module srl_nokia-aaa {
     list server {
       key "address";
       max-elements 5;
-      must '../type = "srl-aaa-types:tacacs"' {
-        error-message "Server configuration is allowed only for 'tacacs' server type";
+      must '../type = "srl-aaa-types:tacacs" or ../type = "srl-aaa-types:radius"' {
+          error-message "Server configuration is allowed only for 'tacacs' and 'radius' server type";
       }
       description
         "List of AAA servers to use within this server-group
@@ -128,6 +143,7 @@ module srl_nokia-aaa {
          Servers are tried in a round-robin fashion, with the first server always being tried if it is operationally available";
       uses aaa-server-config;
       uses srl-aaa-tacacs:aaa-tacacs-server-top;
+      uses srl-aaa-radius:aaa-radius-server-top;
       uses aaa-server-state;
     }
   }
@@ -137,7 +153,7 @@ module srl_nokia-aaa {
       "Top-level grouping for AAA server groups";
     list server-group {
       key "name";
-      max-elements 2;
+      max-elements 3;
       description
         "List of AAA server-groups in the system
 
@@ -294,6 +310,11 @@ module srl_nokia-aaa {
         description
           "Time the user logged in";
       }
+      leaf-list role {
+        type string;
+        description
+          "List of roles assigned to this user";
+      }
     }
   }
 
@@ -368,14 +389,12 @@ module srl_nokia-aaa {
         "Assigned username for this user";
     }
     leaf password {
-      type string {
-        srl-ext:generated-class-name "PasswordHash";
-        srl-ext:hash-algorithm "ar2";
-      }
+      type srl-comm:user-password;
       description
-        "The user password, supplied as cleartext
+          "The user password, supplied either as cleartext or as a hashed value
 
-         The system will hash the value on input, storing only the hashed value";
+          If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+          If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
     }
     leaf-list ssh-key {
       max-elements 32;
@@ -431,11 +450,9 @@ module srl_nokia-aaa {
       type enumeration {
         enum cli;
         enum gnmi;
-        enum gribi {
-          if-feature "srl-feat:gribi";
-        }
+        enum gribi;
         enum p4rt {
-          if-feature "srl-feat:p4rt";
+            if-feature "srl-feat:p4rt";
         }
         enum json-rpc;
         enum ftp;
@@ -453,10 +470,50 @@ module srl_nokia-aaa {
         description
           "The TACACS+ priv-lvl to map to this role
 
-           All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
+          All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
         type uint8 {
           range "0..15";
         }
+      }
+    }
+    container cli {
+      if-feature "srl-feat:cli-plugin-authorization";
+      srl-ext:first-released "23.3.1";
+      description
+        "Top-level container for cli plugin configuration";
+      leaf load-global-plugins {
+        type boolean;
+        default true;
+        description
+          "Specifies whether cli should load plugins from global plugin directory (from /etc/opt/srlinux/cli/plugins/).";
+      }
+      leaf load-user-plugins {
+        type boolean;
+        default true;
+        description
+          "Specifies whether cli should load plugins from user home directory (from ~/cli/plugins/).";
+      }
+      leaf-list deny-command-list {
+        srl-ext:no-globbing;
+        type string;
+        max-elements 100;
+        description
+            "List of cli commands the are denied for this role
+
+             Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
+             of line). Empty deny-command-list means anything that is not in allow-command-list is denied. If both lists
+             are empty then everything is allowed.";
+      }
+      leaf-list allow-command-list {
+        srl-ext:no-globbing;
+        type string;
+        max-elements 100;
+        description
+            "List of cli commands the are allowed for this role
+
+             Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
+             of line). Empty allow-command-list means anything that is not in deny-command-list is allowed. If both
+             lists are empty then everything is allowed.";
       }
     }
   }
@@ -487,14 +544,13 @@ module srl_nokia-aaa {
         config false;
       }
       leaf password {
-        type string {
-          srl-ext:generated-class-name "PasswordHash";
-          srl-ext:hash-algorithm "ar2";
-        }
+        type srl-comm:user-password;
+        default "$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ==";
         description
-          "The admin password, supplied as cleartext
+          "The admin password, supplied either as cleartext or as a hashed value
 
-           The system will hash the value, storing only the hashed value";
+          If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+          If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
       }
       uses aaa-authentication-user-state;
       uses aaa-authentication-user-lockout;
@@ -519,10 +575,12 @@ module srl_nokia-aaa {
           srl-ext:generated-class-name "PasswordHash";
           srl-ext:hash-algorithm "sha2";
         }
+        default "$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0";
         description
-          "The linuxadmin password, supplied as cleartext
+          "The linuxadmin password, supplied either as cleartext or as a hashed value
 
-           The system will hash the value, storing only the hashed value";
+          If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+          If provided as a hashed value, the value should include any '$' characters, for example '$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0'.";
       }
     }
   }
@@ -632,6 +690,8 @@ module srl_nokia-aaa {
       description
         "Top-level container for authorization configuration and operational state data";
       uses aaa-authorization-role-top;
+      // uses aaa-authorization-methods-config;
+      // uses aaa-authorization-events-top;
     }
   }
 
@@ -676,9 +736,7 @@ module srl_nokia-aaa {
         "Top-level container for global authentication data";
       uses aaa-authentication-config;
       uses aaa-authentication-admin-users;
-      uses aaa-authentication-linuxadmin-users {
-          if-feature "srl-feat:future-22-6-4";
-      }
+      uses aaa-authentication-linuxadmin-users;
       uses aaa-authentication-user-top;
       uses aaa-state-sessions-top;
       uses srl-aaa-password:aaa-password-top;
@@ -709,6 +767,7 @@ module srl_nokia-aaa {
       srl-ext:first-released "19.11.1";
       description
         "Top-level container for AAA services";
+      // uses aaa-traceoptions;
       uses aaa-authentication-top;
       uses aaa-authorization-top;
       uses aaa-accounting-top;
