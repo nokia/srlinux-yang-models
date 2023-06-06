@@ -1,12 +1,7 @@
 module srl_nokia-interfaces-ip-dhcp-relay {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/interfaces/ip/dhcp/relay";
   prefix srl_nokia-if-ip-dhcp-relay;
-
-  // import some basic types
 
   import srl_nokia-interfaces {
     prefix srl_nokia-if;
@@ -18,19 +13,9 @@ module srl_nokia-interfaces-ip-dhcp-relay {
     prefix srl-netinst;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "Model for managing DHCP relay and DHCPv6 relay on IP and IRB subinterfaces";
 
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
-  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -90,32 +75,6 @@ module srl_nokia-interfaces-ip-dhcp-relay {
       "The dhcp-relay-v6-agent-oper-down-reason represents the possible reasons causing DHCPv6 relay agent to go into operational down state";
   }
 
-  grouping dhcp-relay-dns-resolution {
-    list server {
-      key "domain";
-      config false;
-      description
-        "Reports the resolved IP address for server entries using domain names";
-      leaf domain {
-        type srl_nokia-comm:domain-name;
-        description
-          "The server domain name";
-      }
-      leaf resolved-ip-address {
-        type srl_nokia-comm:ip-address;
-        description
-          "The resolved IP address of the server domain name.
-
-           An entry of 0.0.0.0 indicates the server IP cannot be resolved.";
-      }
-      leaf last-update {
-        type srl_nokia-comm:date-and-time-delta;
-        description
-          "The date and time of the last update of the server IP address";
-      }
-    }
-  }
-
   grouping subinterface-dhcpv4-relay {
     container dhcp-relay {
       presence "Performs DHCPv4 relay function";
@@ -128,13 +87,13 @@ module srl_nokia-interfaces-ip-dhcp-relay {
         type srl_nokia-comm:admin-state;
         default "enable";
         description
-          "The configurable state of the dhcp relay agent"; // possible values are enable or disable
+          "The configurable state of the dhcp relay agent";
       }
       leaf oper-state {
         config false;
         type srl_nokia-comm:oper-state;
         description
-          "The operational state of the dhcp relay agent"; // possible values are up or down
+          "The operational state of the dhcp relay agent";
       }
       leaf oper-down-reason {
         config false;
@@ -178,7 +137,6 @@ module srl_nokia-interfaces-ip-dhcp-relay {
       leaf network-instance {
         description
           "network instance to relay dhcp packets to";
-        // if not configured then the default is to relay within the same network-instance
         type leafref {
           path "/srl-netinst:network-instance/srl-netinst:name";
         }
@@ -199,10 +157,6 @@ module srl_nokia-interfaces-ip-dhcp-relay {
           description
             "List of events to trace";
         }
-      }
-      container dns-resolution {
-        config false;
-        uses dhcp-relay-dns-resolution;
       }
       container statistics {
         config false;
@@ -252,13 +206,13 @@ module srl_nokia-interfaces-ip-dhcp-relay {
         type srl_nokia-comm:admin-state;
         default "enable";
         description
-          "The configurable state of the dhcp relay agent"; // possible values are enable or disable
+          "The configurable state of the dhcp relay agent";
       }
       leaf oper-state {
         config false;
         type srl_nokia-comm:oper-state;
         description
-          "The operational state of the dhcp relay agent"; // possible values are up or down
+          "The operational state of the dhcp relay agent";
       }
       leaf oper-down-reason {
         config false;
@@ -300,7 +254,6 @@ module srl_nokia-interfaces-ip-dhcp-relay {
       leaf network-instance {
         description
           "network instance to relay dhcp packets to";
-        // if not configured then the default is to relay within the same network-instance
         type leafref {
           path "/srl-netinst:network-instance/srl-netinst:name";
         }
@@ -321,10 +274,6 @@ module srl_nokia-interfaces-ip-dhcp-relay {
           description
             "List of events to trace";
         }
-      }
-      container dns-resolution {
-        config false;
-        uses dhcp-relay-dns-resolution;
       }
       container statistics {
         config false;

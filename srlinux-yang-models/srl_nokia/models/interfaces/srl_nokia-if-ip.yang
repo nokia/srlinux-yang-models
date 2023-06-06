@@ -1,12 +1,7 @@
 module srl_nokia-if-ip {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/interfaces/ip";
   prefix srl_nokia-if-ip;
-
-  // import some basic types
 
   import srl_nokia-common {
     prefix srl_nokia-comm;
@@ -18,21 +13,9 @@ module srl_nokia-if-ip {
     prefix srl_nokia-ext;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "Model for managing IP subinterfaces";
 
-  // typedef statements
-
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
-  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -74,7 +57,6 @@ module srl_nokia-if-ip {
     }
     description
       "The origin of the IP address";
-    // see RFC 7277.
   }
 
   typedef ipv6-address-status {
@@ -106,7 +88,6 @@ module srl_nokia-if-ip {
     }
     description
       "The IPv6 address status";
-    // see RFC 7277.
   }
 
   typedef ipv4-address-status {
@@ -126,7 +107,6 @@ module srl_nokia-if-ip {
     }
     description
       "The IPv4 address status";
-    // see RFC 5227.
   }
 
   typedef anycast-gw-mac-origin {
@@ -146,19 +126,14 @@ module srl_nokia-if-ip {
     description
       "Top-level configuration and state for IPv4 interfaces";
     container ipv4 {
-      description
-        "IPv4 configuration and state for the subinterface";
-      leaf admin-state {
-        description
-          "Enable/disable IPv4 on the subinterface
-
-          When set to enable, and even before an IPv4 address is configured, the subinterface starts to accept incoming packets with dest-ip 255.255.255.255, which is necessary to support dhcp-client functionality.";
-        type srl_nokia-comm:admin-state;
-        default "disable";
-        must "(. = 'disable' or (../../type != 'bridged' and ../../type != 'local-mirror-dest'))" {
-          error-message "ipv4 configuration not allowed on bridged or local-mirror-dest subinterfaces";
-        }
+      must "(../type != 'bridged') and (../type != 'local-mirror-dest')" {
+        error-message "ipv4 configuration not allowed on bridged or local-mirror-dest subinterfaces";
       }
+      presence "Enable IPv4 on the subinterface";
+      description
+        "Enable IPv4 on the subinterface and configure associated parameters
+
+         When this is present in the running configuration, and even before an IPv4 address is configured, the subinterface starts to accept incoming packets with dest-ip 255.255.255.255, which is necessary to support dhcp-client functionality.";
       list address {
         max-elements 64;
         key "ip-prefix";
@@ -173,9 +148,6 @@ module srl_nokia-if-ip {
           must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
             error-message "Not a valid IPv4 unicast address prefix";
           }
-          must "(../../unnumbered/admin-state != 'enable')" {
-            error-message "Assignment of IPv4 addresses is prohibited when the subinterface is unnumbered";
-          }
         }
         leaf anycast-gw {
           if-feature "srl_feat:anycast-gw";
@@ -183,13 +155,10 @@ module srl_nokia-if-ip {
           must "starts-with(../../../../name,'irb')" {
             error-message "Only supported on IRB subinterfaces";
           }
-          // The extra check on the name not being irb ensures we don't throw this error on non-irb interfaces
-          // as the above error is sufficient in that case
           must ". = false() or (. = true() and ../../../anycast-gw) or not(starts-with(../../../../name,'irb'))" {
             error-message "Only supported if anycast-gw container is configured";
           }
           type boolean;
-          // default false; 
           description
             "This designates the associated IPv4 address as an anycast-gateway IPv4 address of the subinterface.
 
@@ -211,7 +180,6 @@ module srl_nokia-if-ip {
           must "not (starts-with(../../../../name, 'mgmt') or (starts-with(../../../../name, 'system')))" {
             error-message "primary not supported on mgmt or system subinterfaces";
           }
-          // no default since state will populate the value if needed and not configured
           description
             "One of the IPv4 prefixes assigned to the subinterface can be explicitly configured as primary by setting this leaf to true. This designates the associated IPv4 address as a primary IPv4 address of the subinterface. By default, the numerically lowest value IPv4 address is selected as the primary address.
 
@@ -222,7 +190,6 @@ module srl_nokia-if-ip {
           type ipv4-address-status;
           description
             "The status of an IPv4 address";
-          // Refer to RFC 5227.
         }
       }
       leaf allow-directed-broadcast {
@@ -239,69 +206,6 @@ module srl_nokia-if-ip {
 
            If a targeted broadcast packet is received on subinterface X but the matching subnet is associated with subinterface Y, and subinterface Y is configured with allow-directed-broadcasts=true then it is delivered to the CPM and CPM replies to an ICMP echo per above, and CPM also re-broadcasts the packet on subinterface Y.";
       }
-      container unnumbered {
-        if-feature "srl_feat:ipv4-unnumbered";
-        description
-          "Top-level container for configuring unnumbered interfaces";
-        leaf admin-state {
-          type srl_nokia-comm:admin-state;
-          default "disable";
-          description
-            "When enabled, the subinterface should operate in unnumbered mode for IPv4";
-          must "(. = 'disable') or (starts-with(../../../../name, 'ethernet')) or (starts-with(../../../../name, 'lag'))" {
-            error-message "Unnumbered interfaces must be ethernet or LAG";
-          }
-          must "(. = 'disable') or not(boolean(../../dhcp-client))" {
-            error-message "Assignment of dhcp-client prohibited when the subinterface is unnumbered";
-          }
-          must "(. = 'disable') or boolean(../interface)" {
-            error-message "interface is mandatory when unnumbered admin-state is enable";
-          }
-        }
-        leaf interface {
-          type srl_nokia-comm:subinterface-all;
-          description
-            "Reference to the subinterface with the IPv4 address to be borrowed";
-          must "not(starts-with(.,'mgmt'))" {
-            error-message "Cannot borrow IPv4 address from management interfaces";
-          }
-          must "../../../../../../interface[name=substring-before(current(), '.')]/subinterface[index=substring-after(current(), '.')]" {
-            error-message "Cannot borrow IPv4 address from non-existing subinterface";
-          }
-          must "(substring-before(current(), '.') != ../../../../name) or (substring-after(current(), '.') != string(../../../index))" {
-            error-message "Cannot borrow IPv4 address from same interface/subinterface";
-          }
-        }
-        leaf address {
-          config false;
-          type srl_nokia-comm:ipv4-address;
-          description
-            "The operational IPv4 address borrowed from the referenced subinterface";
-        }
-        leaf unavailable-address-reason {
-          config false;
-          description
-            "The reason why there is no operational IPv4 address to use for this subinterface";
-          type enumeration {
-            enum "not-same-network-instance" {
-              description
-                "The referenced subinterface does not belong to the same network instance as the borrowing subinterface";
-            }
-            enum "referenced-interface-is-down" {
-              description
-                "The referenced subinterface is operationally down";
-            }
-            enum "referenced-interface-ipv4-is-down" {
-              description
-                "The referenced subinterface is not enabled for IPv4";
-            }
-            enum "referenced-interface-has-no-ipv4-addresses" {
-              description
-                "The referenced subinterface has no IPv4 addresses assigned to it";
-            }
-          }
-        }
-      }
       uses subinterface-statistics {
         if-feature "srl_feat:subif-stats-per-ipv4-ipv6-container";
       }
@@ -312,23 +216,18 @@ module srl_nokia-if-ip {
     description
       "Top-level configuration and state for IPv6 interfaces";
     container ipv6 {
+      must "(../type != 'bridged') and (../type != 'local-mirror-dest')" {
+        error-message "ipv6 configuration not allowed on bridged or local-mirror-dest subinterfaces";
+      }
+      presence "Enable IPv6 on the subinterface";
       description
-        "IPv6 configuration and state for the subinterface";
-      leaf admin-state {
-        description
-          "Enable/disable IPv6 on the subinterface
+        "Enable IPv6 on the subinterface and configure associated parameters
 
-          When set to enable, and even before a global unicast IPv6 address is configured, chassis manager assigns an IPv6 link-local address to the subinterface, which will appear as a read-only entry in the address list. At this stage, the subinterface can receive IPv6 packets with any of the following destinations:
+         When this is present in the running configuration, and even before a global unicast IPv6 address is configured, chassis manager assigns an IPv6 link-local address to the subinterface, which will appear as a read-only entry in the address list. At this stage, the subinterface can receive IPv6 packets with any of the following destinations:
          -\tIPv6 link-local address
          -\tsolicited-node multicast address for the link-local address
          -\tff02::1 (all IPv6 devices)
          -\tff02::2 (all IPv6 routers)";
-        type srl_nokia-comm:admin-state;
-        default "disable";
-        must "(. = 'disable' or (../../type != 'bridged' and ../../type != 'local-mirror-dest'))" {
-          error-message "ipv6 configuration not allowed on bridged or local-mirror-dest subinterfaces";
-        }
-      }
       list address {
         max-elements 18;
         key "ip-prefix";
@@ -340,7 +239,6 @@ module srl_nokia-if-ip {
             "The IPv6 address and prefix-length in CIDR notation
 
              Up to 16 global unicast IPv6 addresses can be assigned to each subinterface. Global unicast IPv6 address subnets on the same subinterface are allowed to overlap as long as the host bits are different. When a locally originated unicast packet is destined to a host covered by multiple subnets associated with a subinterface, the source address is chosen to be the numerically lowest IP address among all these subnets.";
-          // [adapted from IETF IP model RFC 7277]
           must "not(.='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
             error-message "Not a global unicast IPv6 address prefix";
           }
@@ -350,13 +248,10 @@ module srl_nokia-if-ip {
           must "starts-with(../../../../name,'irb')" {
             error-message "Only supported on IRB subinterfaces";
           }
-          // The extra check on the name not being irb ensures we don't throw this error on non-irb interfaces
-          // as the above error is sufficient in that case
           must ". = false() or (. = true() and ../../../anycast-gw) or not(starts-with(../../../../name,'irb'))" {
             error-message "Only supported if anycast-gw container is configured";
           }
           type boolean;
-          // default false;
           description
             "This designates the associated IPv6 address as an anycast-gateway IPv6 address of the subinterface.
 
@@ -371,7 +266,6 @@ module srl_nokia-if-ip {
           type address-origin;
           description
             "The origin of the IPv6 address";
-          // In phase 1 it will always be STATIC. Refer to RFC 7277.
         }
         leaf primary {
           srl_nokia-ext:first-released "20.12.1";
@@ -379,7 +273,6 @@ module srl_nokia-if-ip {
           must "not (starts-with(../../../../name, 'mgmt') or (starts-with(../../../../name, 'system')))" {
             error-message "primary not supported on mgmt or system subinterfaces";
           }
-          // no default since state will populate the value if needed and not configured
           description
             "One of the IPv6 prefixes assigned to the subinterface can be explicitly configured as primary by setting this leaf to true. This designates the associated IPv6 address as a primary IPv6 address of the subinterface. By default, the numerically lowest value IPv6 address is selected as the primary address.
 
@@ -390,8 +283,6 @@ module srl_nokia-if-ip {
           type ipv6-address-status;
           description
             "The status of an IPv6 address";
-          // States related to stateless address autoconfiguration (SLAAC) should not appear in phase 1.
-          // Refer to RFC 7277.
         }
       }
       uses subinterface-statistics {
@@ -461,7 +352,7 @@ module srl_nokia-if-ip {
           "The total number of octets received in input packets, counting transit and terminating traffic";
       }
       leaf in-error-packets {
-        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:future-0-0";
+        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
         type srl_nokia-comm:zero-based-counter64;
         description
           "The total number of input IPv4 packets or IPv6 packets or both discarded due to errors, counting transit and terminating traffic
@@ -489,7 +380,7 @@ module srl_nokia-if-ip {
            This also includes IP/MPLS packets dropped by ingress interface ACL drop action or CPM filer drop action.";
       }
       leaf in-terminated-packets {
-        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:platform-vsrl or srl_feat:future-0-0";
+        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:platform-vsrl";
         type srl_nokia-comm:zero-based-counter64;
         description
           "The total number of input IPv4 packets or IPv6 packets or both that were received on this subinterface and that have a destination IP address matching a local interface address or an IPv6 multicast address to which the interface belongs. The count includes packets eventually discarded by the CPM. Such discards include:
@@ -501,7 +392,7 @@ module srl_nokia-if-ip {
            This also includes terminating IP/MPLS packets.";
       }
       leaf in-terminated-octets {
-        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:platform-vsrl or srl_feat:future-0-0";
+        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:platform-vsrl";
         type srl_nokia-comm:zero-based-counter64;
         description
           "The total number of octets in input IPv4 packets or IPv6 packets or both that were received on this subinterface and counted in in-terminated-packets";
@@ -548,7 +439,7 @@ module srl_nokia-if-ip {
           "The number of octets in IPv4 packets or IPv6 packets or both which originated on the CPM and which the router attempted to route out this subinterface";
       }
       leaf out-error-packets {
-        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:future-0-0";
+        if-feature "srl_feat:jericho2 or srl_feat:jericho2cp";
         type srl_nokia-comm:zero-based-counter64;
         description
           "The number of IPv4 packets or IPv6 packets or both, originating and transit, for which this router was successful in finding a path to their final destination through this subinterface but an error prevented their transmission.

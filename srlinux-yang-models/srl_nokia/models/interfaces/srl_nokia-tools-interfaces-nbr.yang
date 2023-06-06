@@ -10,19 +10,9 @@ module srl_nokia-tools-interfaces-nbr {
     prefix srl_nokia-comm;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "Model for operational commands on ARP and ND tables.";
 
-  revision 2022-11-30 {
-    description
-      "SRLinux 22.11.1";
-  }
   revision 2019-11-30 {
     description
       "SRLinux 19.11.1";
@@ -31,9 +21,6 @@ module srl_nokia-tools-interfaces-nbr {
   grouping arp-top {
     container arp {
       presence "IPv4 ARP protocol is enabled";
-      must "not(starts-with(../../../srl_nokia_tools-if:name, 'lo') or starts-with(../../../srl_nokia_tools-if:name, 'system'))" {
-        error-message "ARP is not supported on loopback or system interfaces";
-      }
       list neighbor {
         key "ipv4-address";
         leaf ipv4-address {
@@ -58,9 +45,6 @@ module srl_nokia-tools-interfaces-nbr {
   grouping nd-top {
     container neighbor-discovery {
       presence "IPv6 ND protocol is enabled";
-      must "not(starts-with(../../../srl_nokia_tools-if:name, 'lo') or starts-with(../../../srl_nokia_tools-if:name, 'system'))" {
-        error-message "ND is not supported on loopback or system interfaces";
-      }
       list neighbor {
         key "ipv6-address";
         leaf ipv6-address {

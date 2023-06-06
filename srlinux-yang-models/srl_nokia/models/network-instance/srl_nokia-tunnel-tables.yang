@@ -1,27 +1,24 @@
 module srl_nokia-tunnel-tables {
   yang-version 1.1;
-
   namespace "urn:srl_nokia/tunnel-tables";
   prefix srl_nokia-tunnel-tables;
 
-  import srl_nokia-common { prefix srl_nokia-comm; }
-  import srl_nokia-extensions { prefix srl_nokia-ext; }
-  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
-  import srl_nokia-ip-route-tables { prefix srl_nokia-rt; }
-
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-ip-route-tables {
+    prefix srl_nokia-rt;
+  }
 
   description
     "A model describing the tunnel tables of a network instance.";
 
-  revision 2022-11-30 {
-    description
-      "SRLinux 22.11.1";
-  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
@@ -36,8 +33,8 @@ module srl_nokia-tunnel-tables {
       description
         "The type of encapsulation used by the tunnel.";
       type enumeration {
-        enum "vxlan";
-        enum "mpls";
+        enum vxlan;
+        enum mpls;
       }
     }
     leaf next-hop-group {
@@ -69,11 +66,11 @@ module srl_nokia-tunnel-tables {
         "Container for state related to the FIB programming of the tunnel";
       leaf status {
         type enumeration {
-          enum "active" {
+          enum active {
             description
               "The tunnel is active and programmed into the datapath.";
           }
-          enum "inactive" {
+          enum inactive {
             description
               "The tunnel is inactive and not programmed into the datapath.";
           }
@@ -83,9 +80,9 @@ module srl_nokia-tunnel-tables {
       }
       leaf not-programmed-reason {
         type enumeration {
-          enum "out-of-tunnel-resources";
+          enum out-of-tunnel-resources;
         }
-        description 
+        description
           "The reason why the tunnel is not programmed";
       }
     }
@@ -93,15 +90,14 @@ module srl_nokia-tunnel-tables {
 
   grouping vxlan-fields {
     container vxlan {
-      // when type == vxlan
       leaf destination-address {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         type srl_nokia-comm:ip-address;
         description
           "The IP address that identifies the remote VXLAN Termination Endpoint (VTEP).";
       }
       leaf source-address {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         type srl_nokia-comm:ip-address;
         description
           "The IP address that identifies the local VXLAN Termination Endpoint (VTEP).";
@@ -115,24 +111,6 @@ module srl_nokia-tunnel-tables {
         type uint16;
         description
           "The destination UDP port number written into the outer IP/UDP header of VXLAN packets associated with this tunnel and originated by this router.";
-      }
-    }
-  }
-
-  grouping ip-in-ip-fields {
-    container ip-in-ip {
-      // when type == ip-in-ip
-      leaf destination-address {
-        srl_nokia-ext:show-importance high;
-        type srl_nokia-comm:ip-address;
-        description
-          "The IP address that identifies the destination of the tunnel.";
-      }
-      leaf source-address {
-        srl_nokia-ext:show-importance high;
-        type srl_nokia-comm:ip-address;
-        description
-          "The IP address that identifies the source of the tunnel.";
       }
     }
   }
@@ -162,7 +140,7 @@ module srl_nokia-tunnel-tables {
       description
         "Tunnel summary information";
       list tunnel-type {
-        key type;
+        key "type";
         leaf type {
           type identityref {
             base srl_nokia-comm:tunnel-type;
@@ -171,10 +149,10 @@ module srl_nokia-tunnel-tables {
             "Tunneling encapsulation format";
         }
         leaf active-tunnels {
-        type uint32;
-        description
-          "The total number of tunnels, using this encapsulation type, that are active.";
-      }
+          type uint32;
+          description
+            "The total number of tunnels, using this encapsulation type, that are active.";
+        }
         leaf inactive-tunnels {
           type uint32;
           description
@@ -219,7 +197,6 @@ module srl_nokia-tunnel-tables {
         }
         uses tunnel-entry-common-fields;
         uses vxlan-fields;
-        uses ip-in-ip-fields;
       }
       uses tunnel-statistics;
       uses tunnel-summary;
@@ -253,7 +230,6 @@ module srl_nokia-tunnel-tables {
         }
         uses tunnel-entry-common-fields;
         uses vxlan-fields;
-        uses ip-in-ip-fields;
       }
       uses tunnel-statistics;
       uses tunnel-summary;

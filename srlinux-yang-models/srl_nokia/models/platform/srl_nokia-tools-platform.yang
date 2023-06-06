@@ -7,23 +7,9 @@ module srl_nokia-tools-platform {
     prefix srl-feat;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "Model for operational commands for platform.";
 
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
-  }
-  revision 2022-11-30 {
-    description
-      "SRLinux 22.11.1";
-  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -62,83 +48,13 @@ module srl_nokia-tools-platform {
     }
   }
 
-  grouping reboot-options-no-force {
-    description
-      "Grouping for force leaf used with reboots";
-    leaf cancel {
-      type empty;
-      must "not(../delay)" {
-        error-message "cancel cannot be used with a delay";
-      }
-      description
-        "Cancels a pending reboot on this component";
-    }
-  }
-
-  grouping reboot-options-force {
-    description
-      "Grouping for force leaf used with reboots";
-    leaf cancel {
-      type empty;
-      must "not(../delay)" {
-        error-message "cancel cannot be used with a delay";
-      }
-      must "not(../force)" {
-        error-message "cancel cannot be used with force";
-      }
-      description
-        "Cancels a pending reboot on this component";
-    }
-    leaf force {
-      type empty;
-      description
-        "Force a reboot of this component, overriding any synchronizations or other activities in progress
-
-         This option can be dangerous, and may result in a module booting on an older image if used after an image change";
-    }
-  }
-
-  grouping common-tools-no-force {
+  grouping common-tools {
     description
       "Grouping for common component commands";
-    container reboot {
-      if-feature "srl-feat:chassis";
-      presence "Trigger or cancel a reboot of this component";
-      description 
-        "Trigger or a reboot of this component";
-      uses reboot-options;
-      uses reboot-options-no-force;
-    }
-  }
-
-  grouping common-tools-force {
-    description
-      "Grouping for common component commands";
-    container reboot {
-      if-feature "srl-feat:chassis";
-      presence "Trigger or cancel a reboot of this component";
-      description 
-        "Trigger or a reboot of this component";
-      uses reboot-options;
-      uses reboot-options-force;
-    }
-  }
-
-  grouping reboot-options {
-    description
-      "Grouping for reboot options";
-    leaf message {
-      type string;
+    leaf reboot {
+      type empty;
       description
-        "A user-defined message to broadcoast to other users of the system";
-    }
-    leaf delay {
-      type uint64;
-      units "seconds";
-      description
-        "The amount of time to delay the reboot
-
-        During this period, the reboot can be cancelled.";
+        "Reboot this component";
     }
   }
 
@@ -150,9 +66,13 @@ module srl_nokia-tools-platform {
         presence "Trigger a reboot of the chassis";
         description
           "Trigger a reboot of the chassis";
+        leaf force {
+          type empty;
+          description
+            "Force a reboot of the chassis, overriding any synchronizations or other activities in progress
 
-        uses reboot-options;
-        uses reboot-options-force;
+             This option can be dangerous, and may result in a standby module booting on an older image if used after an image change";
+        }
         container warm {
           if-feature "srl-feat:warm-reboot";
           presence "Trigger a warm reboot operation on the system";
@@ -185,7 +105,7 @@ module srl_nokia-tools-platform {
         description
           "Numeric identifier for the line card";
       }
-      uses common-tools-no-force;
+      uses common-tools;
       uses locator-tools;
     }
     leaf show-fabric-bandwidth {
@@ -204,7 +124,7 @@ module srl_nokia-tools-platform {
         description
           "Numeric identifier for the fabric module";
       }
-      uses common-tools-no-force;
+      uses common-tools;
       uses locator-tools;
     }
     list control {
@@ -216,7 +136,19 @@ module srl_nokia-tools-platform {
         description
           "Slot identifier for the control module";
       }
-      uses common-tools-force;
+      container reboot {
+        if-feature "srl-feat:chassis";
+        presence "Trigger a reboot of the control module";
+        description
+          "Trigger a reboot of the control module";
+        leaf force {
+          type empty;
+          description
+            "Force a reboot of the control module, overriding any synchronizations or other activies in progress
+
+             This option can be dangerous, and may result in a standby module booting on an older image if used after an image change";
+        }
+      }
       uses locator-tools;
     }
     list fan-tray {
@@ -229,11 +161,6 @@ module srl_nokia-tools-platform {
           "Numeric identifier for the fan module";
       }
       uses locator-tools;
-    }
-    container trust {
-      if-feature "srl-feat:secure-boot or srl-feat:measured-boot";
-      description
-        "Operational commands related to Platform Trust";
     }
   }
 

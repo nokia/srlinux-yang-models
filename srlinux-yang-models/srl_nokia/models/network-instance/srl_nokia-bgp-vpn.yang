@@ -1,32 +1,23 @@
 module srl_nokia-bgp-vpn {
-
   yang-version 1.1;
-
   namespace "urn:srl_nokia/bgp-vpn";
-
-  prefix "srl_nokia-bgp-vpn";
+  prefix srl_nokia-bgp-vpn;
 
   import srl_nokia-common {
-      prefix srl_nokia-comm;
+    prefix srl_nokia-comm;
   }
   import srl_nokia-network-instance {
-      prefix srl_nokia-netinst;
+    prefix srl_nokia-netinst;
   }
   import srl_nokia-bgp {
-      prefix srl-bgp;
+    prefix srl-bgp;
   }
   import srl_nokia-extensions {
-      prefix srl_nokia-ext;
+    prefix srl_nokia-ext;
   }
   import srl_nokia-policy-types {
-      prefix srl_nokia-pol-types;
+    prefix srl_nokia-pol-types;
   }
-
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
 
   description
     "This yang file models configuration and state of the bgp-vpn protocols (EVPN and IPVPN).";
@@ -44,8 +35,7 @@ module srl_nokia-bgp-vpn {
     description
       "Top-level grouping containing a list of bgp-vpn instances.";
     container bgp-vpn {
-      presence 
-        "Configuration and state of bgp-vpn.";
+      presence "Configuration and state of bgp-vpn.";
       must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type != "srl_nokia-netinst:default")' {
         error-message "The bgp-vpn configuration is not possible on network-instance of type default.";
       }
@@ -54,8 +44,9 @@ module srl_nokia-bgp-vpn {
       }
       list bgp-instance {
         key "id";
-        max-elements "1";
-        description "List of bgp-vpn instances configured in the network-instance. Only one instance allowed in the current release.";
+        max-elements 1;
+        description
+          "List of bgp-vpn instances configured in the network-instance. Only one instance allowed in the current release.";
         leaf id {
           type uint8 {
             range "1..2";
@@ -63,24 +54,24 @@ module srl_nokia-bgp-vpn {
           description
             "The index of the bgp-vpn instance";
         }
-
         container route-distinguisher {
-          description "Route Distinguisher (RD) of the bgp-vpn instance.";
+          description
+            "Route Distinguisher (RD) of the bgp-vpn instance.";
           leaf rd {
             srl_nokia-ext:show-importance "high";
             type srl_nokia-comm:route-distinguisher;
-            description 
-              "Route Distinguisher (RD) in the bgp-vpn instance. When used for evpn and if not configured, the RD is auto-derived 
+            description
+              "Route Distinguisher (RD) in the bgp-vpn instance. When used for evpn and if not configured, the RD is auto-derived
                as <ip-address>:<evi> where 'ip-address' is the ipv4 address associated to the subinterface lo0.1.";
           }
           leaf route-distinguisher-origin {
             config false;
             srl_nokia-ext:show-importance "high";
             type enumeration {
-              enum "auto-derived-from-evi";
-              enum "auto-derived-from-system-ip:0";
-              enum "manual";
-              enum "none";
+              enum auto-derived-from-evi;
+              enum auto-derived-from-system-ip:0;
+              enum manual;
+              enum none;
             }
             description
               "Origin of the operational Route Distinguisher (RD) of the bgp-vpn instance.
@@ -93,24 +84,24 @@ module srl_nokia-bgp-vpn {
           }
         }
         container route-target {
-          description 
+          description
             "Route Target (RT) of the bgp-vpn instance.";
           leaf export-rt {
             srl_nokia-ext:show-importance "high";
             type srl_nokia-pol-types:bgp-ext-community-type;
             must "starts-with(.,'target')";
             description
-            "Export Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is auto-derived 
-             with the format <asn>:<evi> where 'asn' is the autonomous-system configured in the network-instance default.";
+              "Export Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is auto-derived
+               with the format <asn>:<evi> where 'asn' is the autonomous-system configured in the network-instance default.";
           }
           leaf export-route-target-origin {
             config false;
             srl_nokia-ext:show-importance "high";
             type enumeration {
-              enum "auto-derived-from-evi";
-              enum "auto-derived-from-esi-bytes-1-6";
-              enum "manual";
-              enum "none";
+              enum auto-derived-from-evi;
+              enum auto-derived-from-esi-bytes-1-6;
+              enum manual;
+              enum none;
             }
             description
               "Origin of the operational export Route Target (RT) of the bgp-vpn instance.
@@ -124,18 +115,18 @@ module srl_nokia-bgp-vpn {
             srl_nokia-ext:show-importance "high";
             type srl_nokia-pol-types:bgp-ext-community-type;
             must "starts-with(.,'target')";
-            description 
-              "Import Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is 
+            description
+              "Import Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is
                auto-derived with the format <asn>:<evi> where 'asn' is the autonomous-system configured in the network-instance default.";
           }
           leaf import-route-target-origin {
             config false;
             srl_nokia-ext:show-importance "high";
             type enumeration {
-              enum "auto-derived-from-evi";
-              enum "auto-derived-from-esi-bytes-1-6"; 
-              enum "manual";
-              enum "none";
+              enum auto-derived-from-evi;
+              enum auto-derived-from-esi-bytes-1-6;
+              enum manual;
+              enum none;
             }
             description
               "Origin of the operational import Route Target (RT) of the bgp-vpn instance.
@@ -151,11 +142,11 @@ module srl_nokia-bgp-vpn {
           config false;
           srl_nokia-ext:show-importance "high";
           type enumeration {
-            enum "no-loopback-address-or-rd";
-            enum "no-autonomous-system-or-rt";
-            enum "network-instance-oper-down";
-            enum "bad-rd-format";
-            enum "none";
+            enum no-loopback-address-or-rd;
+            enum no-autonomous-system-or-rt;
+            enum network-instance-oper-down;
+            enum bad-rd-format;
+            enum none;
           }
           description
             "Reason for bgp-instance being down";
@@ -163,7 +154,8 @@ module srl_nokia-bgp-vpn {
       }
     }
   }
+
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
-      uses bgp-vpn-top;
+    uses bgp-vpn-top;
   }
 }

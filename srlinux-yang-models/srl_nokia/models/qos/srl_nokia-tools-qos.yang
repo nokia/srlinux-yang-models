@@ -1,7 +1,7 @@
 module srl_nokia-tools-qos {
   yang-version 1.1;
   namespace "urn:srl_nokia/tools-qos";
-  prefix srl_nokia-tools-qos;
+  prefix srl-qos;
 
   import srl_nokia-common {
     prefix srl_nokia-comm;
@@ -13,20 +13,6 @@ module srl_nokia-tools-qos {
     prefix srl-feat;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
-  }
-  revision 2022-11-30 {
-    description
-      "SRLinux 22.11.1";
-  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -48,64 +34,44 @@ module srl_nokia-tools-qos {
       "SRLinux 19.11.1";
   }
 
-  grouping tools-qos-intf-top {
-    container qos {
-      container output {
-        container queue-statistics {
-          if-feature "not srl-feat:platform-7220-d1";
-          leaf clear {
-            type empty;
-          }
-          list queue {
-            description
-              "List of queues";
-            key "queue-name";
-            leaf queue-name {
-              type string;
-              description
-                "The queue name";
-            }
-            leaf clear {
-              type empty;
-            }
-          }
+  augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:statistics" {
+    container queue-statistics {
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:tomahawk3 or srl-feat:platform-vsrl or srl-feat:platform-7220-bcmsvk or srl-feat:platform-7220-d5 or srl-feat:platform-7210-sas24g or srl-feat:platform-7210-sas24";
+      leaf clear {
+        type empty;
+      }
+      list unicast-queue {
+        key "queue-id";
+        leaf queue-id {
+          type srl_nokia-comm:queue-index;
+          description
+            "Queue number: 0-7";
+        }
+        leaf clear {
+          type empty;
+        }
+      }
+      list multicast-queue {
+        key "queue-id";
+        leaf queue-id {
+          type srl_nokia-comm:queue-index;
+          description
+            "Queue number: 0-7";
+        }
+        leaf clear {
+          type empty;
         }
       }
     }
   }
 
-  grouping tools-qos-subif-top {
+  grouping tools-qos-top {
     container qos {
       container input;
-      container output {
-        container queue-statistics {
-          if-feature "srl-feat:future-0-0";
-          leaf clear {
-            type empty;
-          }
-          list queue {
-            description
-              "List of queues";
-            key "queue-name";
-            leaf queue-name {
-              type string;
-              description
-                "The queue name";
-            }
-            leaf clear {
-              type empty;
-            }
-          }
-        } //queue-statistics
-      }
     }
   }
 
   augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface" {
-    uses tools-qos-subif-top;
-  }
-
-  augment "/srl_nokia-tools-if:interface" {
-    uses tools-qos-intf-top;
+    uses tools-qos-top;
   }
 }

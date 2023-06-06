@@ -65,28 +65,9 @@ module openconfig-platform-pipeline-counters {
     5 blocks, is to have the abililty to receive all drop counters from
     all 5 blocks, for example, with one request.";
 
-  oc-ext:openconfig-version "0.3.0";
+  oc-ext:openconfig-version "0.1.0";
   oc-ext:catalog-organization "openconfig";
   oc-ext:origin "openconfig";
-
-  revision "2022-11-09" {
-    description
-      "Add container for vendor specific drop counters.";
-    reference "0.3.0";
-  }
-
-  revision "2022-01-19" {
-    description
-      "Fixed typo for aggregate field.";
-    reference "0.2.1";
-  }
-
-  revision "2021-10-16" {
-    description
-      "Update pipeline error counters to allow for multiple errors
-      per block.";
-    reference "0.2.0";
-  }
 
   revision "2020-07-31" {
     description
@@ -100,10 +81,10 @@ module openconfig-platform-pipeline-counters {
       counters.";
 
     container pipeline-counters {
-      config false;
       description
         "Top-level container for the packet, drop, and error counters for the
         five NPU sub-blocks.";
+      config false;
       container packet {
         description
           "IC packet counters for all five NPU sub-blocks.";
@@ -184,14 +165,6 @@ module openconfig-platform-pipeline-counters {
       container drop {
         description
           "IC drop counters for all five NPU sub-blocks.";
-        container state {
-          description
-            "State container for IC drop counters";
-
-          uses pipeline-drop-packet-state;
-        }
-
-
         container interface-block {
           description
             "The IC interface subsystem connects the IC to the external PHY or
@@ -262,8 +235,6 @@ module openconfig-platform-pipeline-counters {
             uses pipeline-drop-packet-host-interface-block-state;
           }
         }
-
-        uses pipeline-vendor-drop-packets;
       }
 
       container errors {
@@ -274,26 +245,14 @@ module openconfig-platform-pipeline-counters {
             "The IC interface subsystem connects the IC to the external PHY or
             MAC.";
 
-          list interface-block-error {
-            key "name";
+          // We do not need a 'config' container here since there is no configurable state for a particular
+          // entity.
+
+          container state {
             description
-              "An individual error within the interface block. Each error counter
-              is uniquely identified by the name of the error.";
+              "Errors corresponding to the interface subsystem of the IC.";
 
-            leaf name {
-              type leafref {
-                path "../state/name";
-              }
-              description
-                "Reference to the name of the error being described.";
-            }
-
-            container state {
-              description
-                "Errors corresponding to the interface subsystem of the IC.";
-
-              uses pipeline-errors-packet-interface-block-state;
-            }
+            uses pipeline-errors-packet-interface-block-state;
           }
         }
 
@@ -302,26 +261,11 @@ module openconfig-platform-pipeline-counters {
             "The IC lookup subsystem perform the next hop lookup of the packet
             and other forwarding features such as firewall filters.";
 
-          list lookup-block-error {
-            key "name";
+          container state {
             description
-              "An individual error within the lookup block. Each error counter
-              is uniquely identified by the name of the error.";
+              "Errors corresponding to the lookup subsystem of the IC.";
 
-            leaf name {
-              type leafref {
-                path "../state/name";
-              }
-              description
-                "Reference to the name of the error being described.";
-            }
-
-            container state {
-              description
-                "Errors corresponding to the lookup subsystem of the IC.";
-
-              uses pipeline-errors-packet-lookup-block-state;
-            }
+            uses pipeline-errors-packet-lookup-block-state;
           }
         }
 
@@ -330,26 +274,11 @@ module openconfig-platform-pipeline-counters {
             "The IC queueing subsystem buffers the packet while processing it
             and queues the packet for delivery to the next stage";
 
-          list queueing-block-error {
-            key "name";
+          container state {
             description
-              "An individual error within the queueing block. Each error counter
-              is uniquely identified by the name of the error.";
+              "Errors corresponding to the queueing subsystem of the IC.";
 
-            leaf name {
-              type leafref {
-                path "../state/name";
-              }
-              description
-                "Reference to the name of the error being described.";
-            }
-
-            container state {
-              description
-                "Errors corresponding to the queueing subsystem of the IC.";
-
-              uses pipeline-errors-packet-queueing-block-state;
-            }
+            uses pipeline-errors-packet-queueing-block-state;
           }
         }
 
@@ -358,26 +287,11 @@ module openconfig-platform-pipeline-counters {
             "The IC fabric block subsystem connects the IC to the external
             systems fabric subsystem";
 
-          list fabric-block-error {
-            key "name";
+          container state {
             description
-              "An individual error within the fabric block. Each error counter
-              is uniquely identified by the name of the error.";
+              "Errors corresponding to the fabric subsystem of the IC.";
 
-            leaf name {
-              type leafref {
-                path "../state/name";
-              }
-              description
-                "Reference to the name of the error being described.";
-            }
-
-            container state {
-              description
-                "Errors corresponding to the fabric subsystem of the IC.";
-
-              uses pipeline-errors-packet-fabric-block-state;
-            }
+            uses pipeline-errors-packet-fabric-block-state;
           }
         }
 
@@ -386,27 +300,11 @@ module openconfig-platform-pipeline-counters {
             "The IC host interface block subsystem connects the IC to the
             external systems host or control subsystem";
 
-          list host-interface-error {
-            key "name";
+          container state {
             description
-              "An individual error within the host interface block. Each error
-              counter is uniquely identified by the name of the error.";
+              "Errors corresponding to the host interface subsystem of the IC.";
 
-            leaf name {
-              type leafref {
-                path "../state/name";
-              }
-              description
-                "Reference to the name of the error being described.";
-            }
-
-            container state {
-              description
-                "Errors corresponding to the host interface subsystem of
-                the IC.";
-
-              uses pipeline-errors-packet-host-interface-block-state;
-            }
+            uses pipeline-errors-packet-host-interface-block-state;
           }
         }
       }
@@ -546,7 +444,7 @@ module openconfig-platform-pipeline-counters {
         "Amount of used firewall or ACL memory counter measured in entries.
         The number of used entries must include the entries
         that are 'allocated but free' if the memory reaping algorithm makes
-        these entries practically unusable.";
+        these entries practically unusable";
     }
 
     leaf acl-memory-total-bytes {
@@ -816,7 +714,7 @@ module openconfig-platform-pipeline-counters {
         due to DF bit.";
     }
 
-    leaf lookup-aggregate {
+    leaf lookup-aggregte {
       type oc-yang:counter64;
       description
         "Packets dropped due to aggregate lookup drop counters - this counter
@@ -921,26 +819,25 @@ module openconfig-platform-pipeline-counters {
     description
       "A common set of error counters that apply to multiple error sections.";
 
-    leaf name {
+    leaf error-name {
       type string;
       description
         "Name of the interrupt, hardware error, or software error in the NPU.";
     }
 
-    leaf count {
+    leaf error-count {
       type uint64;
       description
-        "Total count of errors of this type.";
+        "Number of all the errors.";
     }
 
-    leaf threshold {
+    leaf error-threshold {
       type uint64;
       description
-        "Number of errors before a recovery action is automatically
-        taken by the system.";
+        "Number of errors before recovery action.";
     }
 
-    leaf-list action {
+    leaf error-action {
       type enumeration {
         enum LOG {
           description
@@ -972,22 +869,11 @@ module openconfig-platform-pipeline-counters {
         }
       }
       description
-        "Error actions that are taken by the system - log, linecard reboot,
-        linecard offline, NPU reset, NPU offline, gather diagnostic data,
-        raise an alarm.";
+        "Error action taken - log, linecard reboot, linecard offline, NPU
+        reset, NPU offline, gather diagnostic data, raise an alarm.";
     }
 
-    leaf active {
-      type boolean;
-      default false;
-      description
-        "The error is currently in an active state. When the system detects
-        that the specified threshold is exceeded, this value should be set to
-        true.";
-      oc-ext:telemetry-on-change;
-    }
-
-    leaf level {
+    leaf error-level {
       type enumeration {
         enum FATAL {
           description
@@ -1008,9 +894,8 @@ module openconfig-platform-pipeline-counters {
         }
       }
       description
-        "The severity of the error that is being recorded by the system. This
-        value can be used by a consumer to determine the action when this error
-        is recorded.";
+        "Identify the severity of the error - Fatal, Major, Minor, or
+        Informational.";
     }
   }
 
@@ -1062,123 +947,6 @@ module openconfig-platform-pipeline-counters {
 
     uses pipeline-errors-common;
 
-  }
-
-  grouping pipeline-drop-packet-state {
-    description
-      "Grouping of pipeline drop packet state.";
-
-    leaf adverse-aggregate {
-      type oc-yang:counter64;
-      description
-        "This captures the aggregation of all counters where the switch is
-        unexpectedly dropping packets. Occurrence of these drops on a stable
-        (no recent hardware or config changes) and otherwise healthy
-        switch needs further investigation.";
-    }
-
-    leaf congestion-aggregate {
-      type oc-yang:counter64;
-      description
-        "This tracks the aggregation of all counters where the expected
-        conditions of packet drops due to internal congestion in some block of
-        the hardware that may not be visible in through other congestion
-        indicators like interface discards or queue drop counters.";
-    }
-
-    leaf packet-processing-aggregate {
-      type oc-yang:counter64;
-      description
-        "This aggregation of counters represents the conditions in which
-        packets are dropped due to legitimate forwarding decisions (ACL drops,
-        No Route etc.)";
-    }
-  }
-
-  grouping pipeline-vendor-drop-packets {
-    description
-      "Grouping for vendor specific drop packets";
-
-    container vendor {
-      description
-        "Counters within these containers are defined and augmented by vendors.
-        As each ASIC and vendor has different implementation and internal
-        parts where packets may be dropped at any point in time. Providing
-        specific hardware counters provides better visibility into traffic drop.
-
-        The recommended useage of this container is to create an augment at
-        .../pipeline-counter/drop/vendor that contains additional vendor/platform
-        specific containers.
-
-        e.g.
-        augment /components/component/integrated-circuit/pipeline-counter/drop/vendor {
-          container <vendor name> {
-            container <platform name> {
-              uses pipeline-vendor-drop-containers;
-            }
-          }
-        }";
-
-      reference "doc/vendor_counter_guide.md";
-    }
-  }
-
-  grouping pipeline-vendor-drop-containers {
-    description
-      "A utility grouping for vendors to insert when augmenting the vendor
-      drop counters container .../pipeline-counter/drop/vendor.
-
-      Counters that cannot differentiate between adverse, congestion, and
-      packet-processing should still be exposed as a vendor-specific,
-      packet-processing counter.";
-
-    reference "doc/vendor_counter_guide.md";
-
-    container adverse {
-      description
-        "These counters capture where the switch is unexpectedly dropping
-        packets. Occurrence of these drops on a stable (no recent hardware
-        or config changes) and otherwise healthy switch needs further
-        investigation.
-
-        The sum of all counters under this container should match the value in
-        .../pipeline-counters/drop/state/adverse-aggregate";
-
-      container state {
-        description
-          "State container for vendor specific adverse counters.";
-      }
-    }
-
-    container congestion {
-      description
-        "These counters track expected conditions of packet drops due to
-        internal congestion in some block of the hardware that may not be
-        visible in through other congestion indicators like interface
-        discards or queue drop counters.
-
-        The sum of all counters under this container should match the value in
-        .../pipeline-counters/drop/state/congestion-aggregate";
-
-      container state {
-        description
-          "State container for vendor specific congestion counters.";
-      }
-    }
-
-    container packet-processing {
-      description
-        "These counters represent the conditions in which packets are dropped
-        due to legitimate forwarding decisions (ACL drops, No Route etc.)
-
-        The sum of all counters under this container should match the value in
-        .../pipeline-counters/drop/state/packet-processing-aggregate";
-
-      container state {
-        description
-          "State container for vendor specific packet processing counters.";
-      }
-    }
   }
 
   augment "/oc-platform:components/oc-platform:component/oc-platform:integrated-circuit" {

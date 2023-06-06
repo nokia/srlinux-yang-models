@@ -10,19 +10,9 @@ module srl_nokia-mtu {
     prefix srl_nokia-system;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state data related to the system MTU";
 
-  revision 2022-11-30 {
-    description
-      "SRLinux 22.11.1";
-  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -55,41 +45,39 @@ module srl_nokia-mtu {
       type uint16 {
         range "1500..9500";
       }
-      default "9232";
       description
         "System default port MTU in bytes including ethernet overhead but excluding 4-bytes FCS
 
-         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum port MTU of 9412 bytes.";
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum port MTU of 9412 bytes.  The 7210 SAS-12, 7210 SAS-24, and 7210 SAS-24G systems support a maximum port MTU of 9212";
     }
     leaf default-l2-mtu {
       if-feature "srl_nokia-feat:bridged";
       type uint16 {
         range "1500..9500";
       }
-      default "9232";
       description
         "System default Layer-2 MTU in bytes including ethernet overhead and VLAN tags but excluding 4-bytes FCS
 
-         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum L2 MTU of 9412 bytes.";
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum L2 MTU of 9412 bytes. The 7210 SAS-12, 7210 SAS-24, and 7210 SAS-24G systems support a maximum L2 MTU of 9212";
     }
     leaf default-ip-mtu {
       type uint16 {
         range "1280..9486";
       }
-      default "1500";
       description
         "System default IP MTU in bytes including the IP header but excluding Ethernet overhead
 
-         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum IP MTU of 9398 bytes.";
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum IP MTU of 9398 bytes. The 7210 SAS-12, 7210 SAS-24, and 7210 SAS-24G systems support a maximum IP MTU of 9194";
     }
     leaf default-mpls-mtu {
       if-feature "srl_nokia-feat:mpls";
       type uint16 {
         range "1284..9496";
       }
-      default "1508";
       description
-        "System default MPLS MTU in bytes including the size of the transmitted label stack.";
+        "System default MPLS MTU in bytes including the size of the transmitted label stack.
+
+         The 7210 SAS-12, 7210 SAS-24, and 7210 SAS-24G systems support a maximum MPLS MTU of 9194";
     }
     leaf min-path-mtu {
       type uint16 {
@@ -99,7 +87,9 @@ module srl_nokia-mtu {
       description
         "Sets the minimum path MTU to use when receiving an ICMP fragmentation needed message
 
-         This is controlled via the kernel min_pmtu option. In the event an ICMP fragmentation needed message is received by the kernel, the system will drop the session to this MTU to allow packets to traverse the entire path.";
+         This is controlled via the kernel min_pmtu option. In the event an ICMP fragmentation needed message is received by the kernel, the system will drop the session to this MTU to allow packets to traverse the entire path.
+
+         The 7210 SAS-12, 7210 SAS-24, and 7210 SAS-24G systems support a maximum MTU of 9216";
     }
   }
 

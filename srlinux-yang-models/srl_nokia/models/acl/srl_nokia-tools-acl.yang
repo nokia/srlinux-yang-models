@@ -1,30 +1,15 @@
 module srl_nokia-tools-acl {
-    yang-version 1.1;
-    namespace "urn:srl_nokia/tools-acl";
-    prefix srl_nokia-tools-acl;
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-acl";
+  prefix srl_nokia-tools-acl;
 
-    import srl_nokia-common { prefix srl_nokia-comm; }
-    import srl_nokia-features { prefix srl_nokia-feat; }
-    import srl_nokia-tools-interfaces { prefix srl_nokia-tools-if; }
-    import srl_nokia-tools-qos { prefix srl_nokia-tools-qos; }
-
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
-    description
-            "Model for operational commands on network interfaces and subinterfaces.";
-
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
   }
-  revision 2022-11-30 {
-    description
-      "SRLinux 22.11.1";
-  }
+
+  description
+    "Model for operational commands on network interfaces and subinterfaces.";
+
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -38,265 +23,204 @@ module srl_nokia-tools-acl {
       "SRLinux 19.11.1";
   }
 
-    grouping ip-common-clear-group {
-        container statistics {
-            leaf clear {
-                type empty;
-                description
-                        "Reset all statistics of all entries of the filter to zero";
-            }
-        }
-        list entry {
-            description "List of filter rules.";
-            key sequence-id;
-            leaf sequence-id {
-                type uint32;
-                description
-                        "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
-            }
-            container statistics {
-                leaf clear {
-                    type empty;
-                    description
-                            "Reset all aggregate and per-interface statistics associated with this particular entry to zero";
-                }
-                container per-interface {
-                    if-feature "not srl_nokia-feat:future-0-0";
-                    description
-                            "Container for per-subinterface per-entry statistics";
-                    list subinterface {
-                        key name;
-                        description
-                                "List of subinterfaces where the ACL is applied to either input or output traffic";
-                        leaf name {
-                            type srl_nokia-comm:subinterface-all;
-                        }
-                        leaf clear {
-                            type empty;
-                            description
-                                    "Reset the per-interface statistics associated with this particular entry and this particular subinterface to zero";
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    grouping cpm-common-clear-group {
-        leaf clear {
-            type empty;
-            description
-                    "Reset all statistics of all entries of the filter to zero";
-        }
-        list entry {
-            description "List of filter rules.";
-            key sequence-id;
-            leaf sequence-id {
-                type uint32;
-                description
-                        "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
-            }
-            container statistics {
-                leaf clear {
-                    type empty;
-                    description
-                            "Reset all statistics associated with this particular entry to zero";
-                }
-            }
-        }
-    }
-
-    grouping system-common-clear-group {
-        leaf clear {
-            type empty;
-            description
-                    "Reset all statistics of all entries of the filter to zero";
-        }
-        list entry {
-            description "List of filter rules.";
-            key sequence-id;
-            leaf sequence-id {
-                type uint32;
-                description
-                        "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
-            }
-            container statistics {
-                leaf clear {
-                    type empty;
-                    description
-                            "Reset all statistics associated with this particular entry to zero";
-                }
-            }
-        }
-    }
-
-    grouping policer-common-clear-group {
-        container statistics {
-            leaf clear {
-                type empty;
-                description
-                        "Reset all statistics associated with this particular policer to zero";
-            }
-        }
-    }
-
-    container acl {
+  grouping ip-common-clear-group {
+    container statistics {
+      leaf clear {
+        type empty;
         description
-                "Top level enclosing container for ACL operational tools";
-        list ipv4-filter {
-            description "List of IPv4 filter policies";
-            key name;
-            leaf name {
-                type srl_nokia-comm:name;
-                description "Name of the IPv4 filter policy.";
-            }
-
-            uses ip-common-clear-group;
-        }
-
-        list ipv6-filter {
-            description "List of IPv6 filter policies";
-            key name;
-            leaf name {
-                type srl_nokia-comm:name;
-                description "Name of the IPv6 filter policy.";
-            }
-
-            uses ip-common-clear-group;
-        }
-
-        list mac-filter {
-            if-feature "not srl_nokia-feat:future-0-0";
-            description "List of MAC filter policies";
-            key name;
-            leaf name {
-                type srl_nokia-comm:name;
-                description "Name of the MAC filter policy.";
-            }
-
-            uses ip-common-clear-group;
-        }
-
-        container cpm-filter {
-            description "List of CPM filters";
-
-            container ipv4-filter {
-                description "List of CPM IPv4 filter rules";
-                uses cpm-common-clear-group;
-            }
-
-            container ipv6-filter {
-                description "List of CPM IPv6 filter rules";
-                uses cpm-common-clear-group;
-            }
-
-            container mac-filter {
-                if-feature "not srl_nokia-feat:future-0-0";
-                description "List of CPM MAC filter rules";
-                uses cpm-common-clear-group;
-            }
-        }
-
-        container system-filter {
-            if-feature "not srl_nokia-feat:future-0-0";
-            description "List of System filters";
-
-            container ipv4-filter {
-                description "List of System IPv4 filter rules";
-                uses system-common-clear-group;
-            }
-
-            container ipv6-filter {
-                description "List of System IPv6 filter rules";
-                uses system-common-clear-group;
-            }
-        }
-
-        container policers {
-            description
-                    "List of policers used by ACL entries";
-
-            list system-cpu-policer {
-                description "List of system CPU policers";
-                key name;
-                leaf name {
-                    description "Name of the system cpu policer";
-                    type srl_nokia-comm:name;
-                }
-
-                uses policer-common-clear-group;
-            }
-
-            list policer {
-                description "List of hardware policers";
-                key name;
-                leaf name {
-                    description "Name of the hardware policer";
-                    type srl_nokia-comm:name;
-                }
-
-                uses policer-common-clear-group;
-            }
-        }
+          "Reset all statistics of all entries of the filter to zero";
+      }
     }
-
-    container qos {
+    list entry {
+      description
+        "List of filter rules.";
+      key "sequence-id";
+      leaf sequence-id {
+        type uint32;
         description
-                "Top level enclosing container for qos operational tools";
-        container classifiers {
+          "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Reset all aggregate and per-interface statistics associated with this particular entry to zero";
+        }
+        container per-interface {
+          description
+            "Container for per-subinterface per-entry statistics";
+          list subinterface {
+            key "name";
             description
-                    "Top level enclosing container for qos classifiers operational tools";
-            container multifield {
-                description
-                        "Top level enclosing container for qos multifield classifiers operational tools";
-                list ipv4-policy {
-                    description "List of IPv4 policies";
-                    key name;
-                    leaf name {
-                        type srl_nokia-comm:name;
-                        description "Name of the IPv4 policy.";
-                    }
-
-                }
-
-                list ipv6-policy {
-                    description "List of IPv6 policies";
-                    key name;
-                    leaf name {
-                        type srl_nokia-comm:name;
-                        description "Name of the IPv6 policy.";
-                    }
-
-                }
+              "List of subinterfaces where the ACL is applied to either input or output traffic";
+            leaf name {
+              type srl_nokia-comm:subinterface-all;
             }
-        }
-    }
-
-    grouping tools-qos-policer-templates-top {
-        container policer-templates {
             leaf clear {
-                type empty;
+              type empty;
+              description
+                "Reset the per-interface statistics associated with this particular entry and this particular subinterface to zero";
             }
-            list policer {
-                description
-                        "The list of policer instances belonging to the template definition.";
-                key "index";
-                leaf index {
-                    description
-                            "The policer index";
-                    type uint8 {
-                        range "1..32";
-                    }
-                }
-                leaf clear {
-                    type empty;
-                }
-            }
+          }
         }
+      }
     }
+  }
 
-    augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface/srl_nokia-tools-qos:qos/srl_nokia-tools-qos:input" {
-        uses tools-qos-policer-templates-top;
+  grouping cpm-common-clear-group {
+    leaf clear {
+      type empty;
+      description
+        "Reset all statistics of all entries of the filter to zero";
     }
+    list entry {
+      description
+        "List of filter rules.";
+      key "sequence-id";
+      leaf sequence-id {
+        type uint32;
+        description
+          "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Reset all statistics associated with this particular entry to zero";
+        }
+      }
+    }
+  }
 
+  grouping system-common-clear-group {
+    leaf clear {
+      type empty;
+      description
+        "Reset all statistics of all entries of the filter to zero";
+    }
+    list entry {
+      description
+        "List of filter rules.";
+      key "sequence-id";
+      leaf sequence-id {
+        type uint32;
+        description
+          "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Reset all statistics associated with this particular entry to zero";
+        }
+      }
+    }
+  }
+
+  grouping policer-common-clear-group {
+    container statistics {
+      leaf clear {
+        type empty;
+        description
+          "Reset all statistics associated with this particular policer to zero";
+      }
+    }
+  }
+
+  container acl {
+    description
+      "Top level enclosing container for ACL operational tools";
+    list ipv4-filter {
+      description
+        "List of IPv4 filter policies";
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Name of the IPv4 filter policy.";
+      }
+      uses ip-common-clear-group;
+    }
+    list ipv6-filter {
+      description
+        "List of IPv6 filter policies";
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Name of the IPv6 filter policy.";
+      }
+      uses ip-common-clear-group;
+    }
+    list mac-filter {
+      description
+        "List of MAC filter policies";
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Name of the MAC filter policy.";
+      }
+      uses ip-common-clear-group;
+    }
+    container cpm-filter {
+      description
+        "List of CPM filters";
+      container ipv4-filter {
+        description
+          "List of CPM IPv4 filter rules";
+        uses cpm-common-clear-group;
+      }
+      container ipv6-filter {
+        description
+          "List of CPM IPv6 filter rules";
+        uses cpm-common-clear-group;
+      }
+      container mac-filter {
+        description
+          "List of CPM MAC filter rules";
+        uses cpm-common-clear-group;
+      }
+    }
+    container system-filter {
+      description
+        "List of System filters";
+      container ipv4-filter {
+        description
+          "List of System IPv4 filter rules";
+        uses system-common-clear-group;
+      }
+      container ipv6-filter {
+        description
+          "List of System IPv6 filter rules";
+        uses system-common-clear-group;
+      }
+    }
+    container policers {
+      description
+        "List of policers used by ACL entries";
+      list system-cpu-policer {
+        description
+          "List of system CPU policers";
+        key "name";
+        leaf name {
+          description
+            "Name of the system cpu policer";
+          type srl_nokia-comm:name;
+        }
+        uses policer-common-clear-group;
+      }
+      list policer {
+        description
+          "List of hardware policers";
+        key "name";
+        leaf name {
+          description
+            "Name of the hardware policer";
+          type srl_nokia-comm:name;
+        }
+        uses policer-common-clear-group;
+      }
+    }
+  }
 }

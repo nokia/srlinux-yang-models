@@ -30,7 +30,8 @@
     },
     {
       "oc": "/routing-policy/defined-sets/prefix-sets/prefix-set/{config,state}/mode",
-      "supported": false
+      "srlinux": "",
+      "special-handling": "accept-any-value-but-always-return-mixed"
     },
     {
       "oc": "/routing-policy/defined-sets/prefix-sets/prefix-set/prefixes",
@@ -54,8 +55,7 @@
     },
     {
       "oc": "/routing-policy/defined-sets/prefix-sets/prefix-set/prefixes/prefix/{config,state}/ip-prefix",
-      "srlinux": "",
-      "type": "srl_nokia-common:ip-prefix"
+      "srlinux": ""
     },
     {
       "oc": "/routing-policy/defined-sets/prefix-sets/prefix-set/prefixes/prefix/{config,state}/masklength-range",
@@ -139,7 +139,7 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/name",
-      "srlinux": "/routing-policy/policy/statement/name"
+      "srlinux": "/routing-policy/policy/statement/sequence-id"
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/{config,state}",
@@ -147,7 +147,9 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/{config,state}/name",
-      "srlinux": ""
+      "srlinux": "",
+      "type": "uint32",
+      "special-handling": "only-NUMBERS-is-supported-until-named is supported in SRL"
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions",
@@ -171,15 +173,7 @@
           {"OSPF3": "ospfv3"},
           {"STATIC": "static"},
           {"DIRECTLY_CONNECTED": "local"},
-          {"LOCAL_AGGREGATE": "aggregate"},
-          {"<clear>": "arp-nd"},
-          {"<clear>": "bgp-evpn"},
-          {"<clear>": "dhcp"},
-          {"GRIBI": "gribi"},
-          {"<clear>": "host"},
-          {"<clear>": "linux"},
-          {"<clear>": "ndk1"},
-          {"<clear>": "ndk2"}
+          {"LOCAL_AGGREGATE": "aggregate"}
         ]
     },
     {
@@ -212,7 +206,17 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions/match-prefix-set/{config,state}/match-set-options",
-      "supported": false
+      "srlinux": "",
+      "special-handling": "only-ANY-is-supported",
+      "deviations": {
+        "add": {
+            "must": [
+              {
+                  "expression": ". = 'ANY'"
+              }
+            ]
+        }
+      }
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/conditions/match-neighbor-set",
@@ -256,10 +260,10 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/{config,state}/policy-result",
-      "srlinux": "/routing-policy/policy/statement/action/policy-result",
+      "srlinux": "",
       "mapping": [
-        {"ACCEPT_ROUTE": "accept"},
-        {"REJECT_ROUTE": "reject"}
+        {"ACCEPT_ROUTE": "create-accept-presence-container"},
+        {"REJECT_ROUTE": "create-reject-presence-container"}
       ]
     },
     {

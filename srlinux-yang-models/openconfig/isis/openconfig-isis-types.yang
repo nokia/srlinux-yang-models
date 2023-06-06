@@ -20,22 +20,7 @@ module openconfig-isis-types {
     "This module contains general data definitions for use in ISIS YANG
     model.";
 
-  oc-ext:openconfig-version "0.6.0";
-
-  revision "2022-02-11" {
-    description
-      "Add simple authentication key support.";
-    reference "0.6.0";
-  }
-
-  revision "2021-08-12" {
-    description
-      "Make pattern regexes conform to RFC7950, remove
-      oc-ext:regexp-posix, and fix broken regex for area
-      address. This change is backwards incompatible
-      because it changes the area address regex.";
-    reference "0.5.0";
-  }
+  oc-ext:openconfig-version "0.4.3";
 
   revision "2020-06-30" {
     description
@@ -95,6 +80,7 @@ module openconfig-isis-types {
   }
 
   // OpenConfig specific extensions for module metadata.
+  oc-ext:regexp-posix;
   oc-ext:catalog-organization "openconfig";
   oc-ext:origin "openconfig";
 
@@ -183,25 +169,6 @@ module openconfig-isis-types {
     base AFI_TYPE;
     description
       "Base identify type for IPv6 address family";
-  }
-
-  identity AUTH_MODE {
-    description
-      "Base identify to define the authentication mode";
-  }
-
-  identity TEXT {
-    base AUTH_MODE;
-      description
-        "Simple Text Authentication";
-      reference "RFC1195";
-  }
-
-  identity MD5 {
-    base AUTH_MODE;
-      description
-        "HMAC-MD5 Authentication";
-      reference "RFC5304";
   }
 
   // typedef statements
@@ -355,8 +322,8 @@ module openconfig-isis-types {
 
   typedef area-address {
     type string {
-      pattern '[0-9A-Fa-f]{2}(\.[0-9A-Fa-f]{4}){0,3}';
-      oc-ext:posix-pattern '^[0-9A-Fa-f]{2}(\.[0-9A-Fa-f]{4}){0,3}$';
+      pattern '^[0-9A-Fa-f]{2}\.([0-9A-Fa-f]{4}\.){0,3}$';
+      oc-ext:posix-pattern '^[0-9A-Fa-f]{2}\.([0-9A-Fa-f]{4}\.){0,3}$';
     }
     description
         "This type defines the ISIS area address.";
@@ -364,7 +331,7 @@ module openconfig-isis-types {
 
   typedef system-id {
     type string {
-      pattern '[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}';
+      pattern '^[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}$';
       oc-ext:posix-pattern '^[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}$';
     }
     description
@@ -381,8 +348,8 @@ module openconfig-isis-types {
   typedef lsp-id {
     type string {
       pattern
-            '[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]'
-      +      '{4}\.[0-9][0-9]-[0-9][0-9]';
+            '^[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]'
+      +      '{4}\.[0-9][0-9]-[0-9][0-9]$';
       oc-ext:posix-pattern
             '^[0-9A-Fa-f]{4}\.[0-9A-Fa-f]{4}\.[0-9A-Fa-f]'
       +      '{4}\.[0-9][0-9]-[0-9][0-9]$';

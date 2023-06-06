@@ -1,31 +1,38 @@
 module srl_nokia-ethcfm {
-    yang-version 1.1;
-    namespace "urn:srl_nokia/ethcfm";
-    prefix "srl_nokia-ethcfm";
-    import ietf-yang-types            { prefix yang; }
-    import ietf-inet-types            { prefix inet; }
-    import srl_nokia-features         { prefix srl_nokia-feat; }
-    import srl_nokia-common           { prefix srl_nokia-comm; }
-    import srl_nokia-ethcfm-types     { prefix srl_nokia-ethcfm-types; }
-    import srl_nokia-interfaces       { prefix srl_nokia-if; }
-    import srl_nokia-network-instance { prefix srl_nokia-netinst; }
-    import srl_nokia-oam              { prefix srl_nokia-oam; }
+  yang-version 1.1;
+  namespace "urn:srl_nokia/ethcfm";
+  prefix srl_nokia-ethcfm;
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
-    description 
-        "This module contains configuration and state data definitions for the
-        management of Ethernet Services Operations, Administration and
-        Maintenance for Connectivity Fault Management.";
-
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
+  import ietf-yang-types {
+    prefix yang;
   }
+  import ietf-inet-types {
+    prefix inet;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-ethcfm-types {
+    prefix srl_nokia-ethcfm-types;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+
+  description
+    "This module contains configuration and state data definitions for the
+     management of Ethernet Services Operations, Administration and
+     Maintenance for Connectivity Fault Management.";
+
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -39,1321 +46,1332 @@ module srl_nokia-ethcfm {
       "SRLinux 21.11.1";
   }
 
-    grouping port-id-tlv-group {
+  grouping port-id-tlv-group {
+    description
+      "Data definitions associated with the Port ID TLV";
+    reference
+      "[802.1AB] 9.5.3";
+    choice port-id-subtype {
+      leaf interface-alias {
+        type string {
+          length "0..64";
+        }
         description
-            "Data definitions associated with the Port ID TLV";
+          "The ifAlias field from the Interfaces Group MIB";
         reference
-            "[802.1AB] 9.5.3";
-        choice port-id-subtype {
-            leaf interface-alias {
-                type string {
-                    length "0..64";
-                }
-                description
-                    "The ifAlias field from the Interfaces Group MIB";
-                reference
-                    "[RFC2863]";
+          "[RFC2863]";
+      }
+      leaf port-component {
+        type string {
+          length "0..32";
+        }
+        description
+          "EntPhysicalAlias when entPhysClass has a value of port(10) or
+           backplane(4)";
+        reference
+          "[RFC2737]";
+      }
+      leaf mac-address {
+        type yang:mac-address;
+        description
+          "A MAC address";
+      }
+      leaf network-address {
+        type string;
+        description
+          "network-address is an octet string that identifies a particular network
+           address family and an associated network address that are
+           encoded in network octet order. An IP address, for example,
+           would be encoded with the first octet containing the IANA
+           Address Family Numbers enumeration value for the specific
+           address type and octets 2 through n containing the address
+           value";
+        reference
+          "[802.1AB] Table 9.2";
+      }
+      leaf interface-name {
+        type string {
+          length "0..64";
+        }
+        description
+          "The ifName field from the Interfaces Group MIB";
+        reference
+          "[RFC2863]";
+      }
+      leaf agent-circuit-id {
+        type string;
+        description
+          "Agent circuit ID";
+        reference
+          "[RFC3046]";
+      }
+      leaf local {
+        type string;
+        description
+          "A locally defined identifier";
+        reference
+          "[802.1AB] Table 9.3";
+      }
+    }
+  }
+
+  grouping sender-id-tlv-group {
+    description
+      "Data definitions associated with the Sender ID TLV";
+    reference
+      "[802.1q] 21.5.3";
+    choice chassis-id-subtype {
+      description
+        "The chassis-id-subtype contains the chassis ID entity that is listed in
+         the chassis ID field. This is a combination of the 'Chassis ID Subtype'
+         and 'chsssis ID' fields";
+      reference
+        "[802.1AB] 9.5.2.2";
+      leaf chassis-component {
+        type string {
+          length "0..32";
+        }
+        description
+          "This leaf contains the content of EntPhysicalAlias when entPhysClass has
+           a value of chassis(3)’";
+        reference
+          "[RFC2737]";
+      }
+      leaf interface-alias {
+        type string {
+          length "0..64";
+        }
+        description
+          "The IfAlias field from the Interfaces Group MIB";
+        reference
+          "[RFC2863]";
+      }
+      leaf port-component {
+        type string {
+          length "0..32";
+        }
+        description
+          "The EntPhysicalAlias from the Interfaces Group MIB when entPhysClass has
+           a value of port(10) or backplane(4)";
+        reference
+          "[RFC2737]";
+      }
+      leaf mac-address-type {
+        type yang:mac-address;
+        description
+          "An IEEE 802-2001 Ethernet MAC Address";
+        reference
+          "[802-2001]";
+      }
+      leaf network-address {
+        type string;
+        description
+          "network-address is an octet string that identifies a particular network
+           address family and an associated network address that are encoded in
+           network octet order. An IP address, for example, would be encoded with
+           the first octet containing the IANA Address Family Numbers enumeration
+           value for the specific address type and octets 2 through n containing
+           the address value";
+        reference
+          "[802.1AB] Table 9.2";
+      }
+      leaf interface-name {
+        type string {
+          length "0..64";
+        }
+        description
+          "IfName";
+        reference
+          "[RFC2863]";
+      }
+      leaf local {
+        type string;
+        description
+          "A locally assigned alpha-numeric string.";
+        reference
+          "[802.1AB] Table 9.2";
+      }
+    }
+    container management-address {
+      description
+        "Data definitions related to the management address fields defined
+         in a Sender ID TLV";
+      reference
+        "[802.1] Section 21.5.3";
+      choice management-address {
+        case udp-ipv4 {
+          description
+            "Represents an IPv4 UDP transport address consisting of an IPv4 address,
+             and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv4";
+          leaf udp-ipv4-address {
+            type inet:ipv4-address;
+          }
+          leaf udp-ipv4-port {
+            type inet:port-number;
+          }
+        }
+        case udp-ipv6 {
+          description
+            "Represents an IPv6 UDP transport address consisting of an IPv6 address,
+             and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv6";
+          leaf udp-ipv6-address {
+            type inet:ipv6-address;
+          }
+          leaf udp-ipv6-port {
+            type inet:port-number;
+          }
+        }
+        case udp-ipv4z {
+          description
+            "Represents a UDP transport address consisting of an IPv4 address, a zone
+             index and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv4z";
+          leaf udp-ipv4z-address {
+            type inet:ipv4-address;
+          }
+          leaf udp-ipv4z-index {
+            type uint32;
+          }
+          leaf udp-ipv4z-port {
+            type inet:port-number;
+          }
+        }
+        case udp-ipv6z {
+          description
+            "Represents a UDP transport address consisting of an IPv6 address, a zone
+             index and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv6z";
+          leaf udp-ipv6z-address {
+            type inet:ipv6-address;
+          }
+          leaf udp-ipv6z-index {
+            type uint32;
+          }
+          leaf udp-ipv6z-port {
+            type inet:port-number;
+          }
+        }
+        case tcp-ipv4 {
+          description
+            "Represents an IPv4 TCP transport address consisting of an IPv4 address,
+             and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv4";
+          leaf tcp-ipv4-address {
+            type inet:ipv4-address;
+          }
+          leaf tcp-ipv4-port {
+            type inet:port-number;
+          }
+        }
+        case tcp-ipv6 {
+          description
+            "Represents an IPv6 TCP transport address consisting of an IPv6 address,
+             and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv6";
+          leaf tcp-ipv6-address {
+            type inet:ipv6-address;
+          }
+          leaf tcp-ipv6-port {
+            type inet:port-number;
+          }
+        }
+        case tcp-ipv4z {
+          description
+            "Represents a TCP IPv4 transport address consisting of an IPv4 address, a
+             zone index and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv4z";
+          leaf tcp-ipv4z-address {
+            type inet:ipv4-address;
+          }
+          leaf tcp-ipv4z-index {
+            type uint32;
+          }
+          leaf tcp-ipv4z-port {
+            type inet:port-number;
+          }
+        }
+        case tcp-ipv6z {
+          description
+            "Represents a TCP IPv6 transport address consisting of an IPv6 address,
+             a zone index and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv6z";
+          leaf tcp-ipv6z-address {
+            type inet:ipv6-address;
+          }
+          leaf tcp-ipv6z-index {
+            type uint32;
+          }
+          leaf tcp-ipv6z-port {
+            type inet:port-number;
+          }
+        }
+        case sctp-ipv4 {
+          description
+            "Represents an IPv4 SCTP transport address consisting of an IPv4 address,
+             and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv4";
+          leaf sctp-ipv4-address {
+            type inet:ipv4-address;
+          }
+          leaf sctp-ipv4-port {
+            type inet:port-number;
+          }
+        }
+        case sctp-ipv6 {
+          description
+            "Represents an IPv6 SCTP transport address consisting of an IPv6 address,
+             and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv6";
+          leaf sctp-ipv6-address {
+            type inet:ipv6-address;
+          }
+          leaf sctp-ipv6-port {
+            type inet:port-number;
+          }
+        }
+        case sctp-ipv4z {
+          description
+            "Represents an SCTP IPv4 transport address consisting of an IPv4
+             address, a zone index and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv4z";
+          leaf sctp-ipv4z-address {
+            type inet:ipv4-address;
+          }
+          leaf sctp-ipv4z-index {
+            type uint32;
+          }
+          leaf sctp-ipv4z-port {
+            type inet:port-number;
+          }
+        }
+        case sctp-ipv6z {
+          description
+            "Represents an SCTP IPv6 transport address consisting of an IPv6
+             address, a zone index and a port number.";
+          reference
+            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv6z";
+          leaf sctp-ipv6z-address {
+            type inet:ipv6-address;
+          }
+          leaf sctp-ipv6z-index {
+            type uint32;
+          }
+          leaf sctp-ipv6z-port {
+            type inet:port-number;
+          }
+        }
+        case local {
+          leaf local-address {
+            type string {
+              length "1..255";
             }
-            leaf port-component {
-                type string {
-                    length "0..32";
+            description
+              "Represents a POSIX Local IPC transport address.";
+          }
+        }
+        case udp-dns {
+          leaf udp-dns-address {
+            type string {
+              length "1..255";
+            }
+            description
+              "The UDP transport domain using fully qualified domain names. Represents
+               a DNS domain name followed by a colon ':' (ASCII character
+               0x3A) and a port number in ASCII. The name SHOULD be fully
+               qualified whenever possible.";
+            reference
+              "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpDns";
+          }
+        }
+        case tcp-dns {
+          leaf tcp-dns-address {
+            type string {
+              length "1..255";
+            }
+            description
+              "The TCP transport domain using fully qualified domain names. Represents
+               a DNS domain name followed by a colon ':' (ASCII character
+               0x3A) and a port number in ASCII. The name SHOULD be fully
+               qualified whenever possible.";
+            reference
+              "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpDns";
+          }
+        }
+        case sctp-dns {
+          leaf sctp-dns-address {
+            type string {
+              length "1..255";
+            }
+            description
+              "The SCTP transport domain using fully qualified domain names.
+               Represents a DNS domain name followed by a colon ':' (ASCII
+               character 0x3A) and a port number in ASCII. The name SHOULD be
+               fully qualified whenever possible.";
+            reference
+              "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpDns";
+          }
+        }
+      }
+    }
+  }
+
+  grouping alarm-indication-signal {
+    description
+      "Augments to support the AIS functionality";
+    reference
+      "[Y.1731] 7.4, [MEF30] 8.5";
+    container ais {
+      description
+        "This set of data definitions covers the proactive Ethernet OAM Fault
+         Management Alarm Indication Signal function (ETH-AIS) as
+         defined in Y.1731 and extended in MEF30";
+      reference
+        "[Y.1731] 7.4, [MEF30] 8.5";
+      leaf enabled {
+        type boolean;
+        default "false";
+        description
+          "This attribute specifies whether ETH-AIS transmission is enabled. The
+           value 'true' indicates ETH-AIS transmission is enabled. The
+           value 'false' indicates ETH-AIS transmission is disabled.";
+        reference
+          "[MEF7.1] 9.3.4.1, [MEF30] 8.4";
+      }
+      leaf interval {
+        type srl_nokia-ethcfm-types:ais-interval-type;
+        default "one-second";
+        description
+          "This attribute specifies the ETH-AIS transmission period.";
+        reference
+          "[MEF7.1] 9.3.4.1";
+      }
+      leaf priority {
+        type srl_nokia-ethcfm-types:priority-type;
+        default "7";
+        description
+          "This attribute specifies the priority of frames with ETH-AIS
+           information. If ETH-AIS is supported, the default value for
+           the CoS for AIS frame MUST be the value which yields the
+           lowest frame loss performance for this EVC.";
+        reference
+          "[MEF7.1] 9.3.4.1";
+      }
+      leaf-list client-meg-level {
+        type uint32 {
+          range "1..7";
+        }
+        max-elements 7;
+        description
+          "The MEG/Maintenance Domain Level of the Client ETH-AIS PDU (transmitted
+           level).";
+        reference
+          "[Y.1731] 7.4";
+      }
+      leaf transmit-status {
+        type boolean;
+        config false;
+        description
+          "This attribute specifies the current AIS transmission status of the
+           MEP.
+           The value 'true' indicates AIS frames are currently being
+           transmitted by the MEP.
+           The value 'false' indicates AIS frames are not currently
+           being transmitted by the MEP.";
+        reference
+          "[Y.1731] 7.4";
+      }
+      leaf receive-status {
+        type boolean;
+        config false;
+        description
+          "This attribute specifies the current AIS receive status of the
+           MEP. The value 'true' indicates an AIS PDU has been received
+           and 3.5 times the interval defined in the PDU has not yet
+           passed, otherwise it is 'false'.";
+        reference
+          "[Y.1731] 7.4";
+      }
+      leaf transmit-counter {
+        type yang:zero-based-counter32;
+        config false;
+        description
+          "This attribute contains the count of the total number of AIS messages
+           sent by the MEP. The count is incremented every time an AIS
+           PDU is transmitted by the MEP.";
+        reference
+          "[MEF7.1] 9.3.2.2";
+      }
+      leaf receive-counter {
+        type yang:counter32;
+        config false;
+        description
+          "This attribute contains the count of the total number of AIS messages
+           received by the MEP. The count is incremented every time an
+           AIS PDU is received by the MEP.";
+        reference
+          "[MEF7.1] 9.3.2.2";
+      }
+      leaf last-received-mac-address {
+        type yang:mac-address;
+        config false;
+        description
+          "The source MAC Address Field of last AIS received by the MEP.
+           If no AIS PDU has been received by the NE the MAC address is
+           set to all zeros.";
+        reference
+          "[Y.1731] 7.7";
+      }
+    }
+  }
+
+  grouping remote-mep-database {
+    container remote-mep-db {
+      description
+        "The MEP CCM database";
+      config false;
+      list remote-mep {
+        description
+          "The list of remote MEPs in the MEP CCM database";
+        reference
+          "[802.1q] 12.14.7.6";
+        key "remote-mep-id";
+        leaf remote-mep-id {
+          type srl_nokia-ethcfm-types:mep-id-type;
+          description
+            "The MEPID of a remote MEP";
+          reference
+            "[802.1q] 12.14.7.6.2";
+        }
+        leaf remote-mep-state {
+          type srl_nokia-ethcfm-types:remote-mep-state-type;
+          description
+            "An enumerated value indicating the operational state of the
+             Remote MEP state machine for this remote MEP.";
+          reference
+            "[802.1q] 12.14.7.6.3:b
+             IEEE8021-CFM-MIB.Dot1agCfmRemoteMepState";
+        }
+        leaf failed-ok-time {
+          type yang:timeticks;
+          description
+            "The time (SysUpTime, IETF RFC 3418) at which the Remote
+             MEP state machine last entered either the RMEP_FAILED or
+             RMEP_OK state, or 0 if it has not yet entered either of
+             those states";
+          reference
+            "[802.1q] 12.14.7.6.3:c";
+        }
+        leaf mac-address {
+          type yang:mac-address;
+          description
+            "The MAC address of the remote MEP.";
+          reference
+            "[802.1q] 12.14.7.6.3:d";
+        }
+        leaf rdi {
+          type boolean;
+          description
+            "An indication of the state of the RDI bit in the last
+             received CCM, true for RDI = 1, or false for RDI = 0 or
+             if none has been received.";
+          reference
+            "[802.1q] 12.14.7.6.3:e";
+        }
+        leaf port-status-tlv {
+          type srl_nokia-ethcfm-types:port-status-type;
+          description
+            "The enumerated value from the Port Status TLV from the
+             last CCM received from the remote MEP.";
+          reference
+            "[802.1q] 12.14.7.6.3:f";
+        }
+        leaf interface-status-tlv {
+          type srl_nokia-ethcfm-types:interface-status-type;
+          description
+            "The enumerated value from the Interface Status TLV from
+             the last CCM received from the remote MEP";
+          reference
+            "[802.1q] 12.14.7.6.3:g";
+        }
+        uses sender-id-tlv-group;
+      }
+    }
+  }
+
+  grouping linktrace-parameters-group {
+    description
+      "This is the group of parameters associated with linktrace sessions. It is
+       used for linktrace RPC input as well as linktrace database entries.";
+    leaf target-address {
+      description
+        "Target MAC address for the Linktrace session.";
+      type yang:mac-address;
+    }
+    leaf transmit-ltm-flags {
+      type bits {
+        bit use-fdb-only;
+      }
+      description
+        "The Flags field for LTMs transmitted by the MEP";
+      reference
+        "[802.1q] 12.14.7.4.2:b";
+    }
+    leaf default-ttl {
+      type uint8;
+      default "64";
+      description
+        "An initial value for the LTM TTL field";
+      reference
+        "[802.1q] 12.14.7.4.2:d";
+    }
+  }
+
+  grouping linktrace-result {
+    container linktrace {
+      config false;
+      description
+        "Data definitions related to a linktrace test result.";
+      leaf transaction-id {
+        type uint32;
+        description
+          "The LTM Transaction Identifier to which the LTR
+           entries will be attached";
+        reference
+          "[802.1q] 12.14.7.5.2:b";
+      }
+      uses linktrace-parameters-group;
+      list reply {
+        key "reply-order";
+        description
+          "The list of LTRs associated with a specific
+           Linktrace transaction.";
+        leaf reply-order {
+          type uint32;
+          description
+            "An index to distinguish among multiple LTRs
+             with the same LTR transaction-id field value.
+             reply-order are assigned sequentially from 1,
+             in the order that the Linktrace Initiator
+             received the LTR";
+          reference
+            "[802.1q] 12.14.7.5.2:c";
+        }
+        leaf reply-ttl {
+          type uint32;
+          description
+            "The integer Reply TTL field value returned
+             in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:b";
+        }
+        leaf forwarded {
+          type boolean;
+          description
+            "A Boolean value stating whether an LTM was
+             forwarded by the responding MP.";
+          reference
+            "[802.1q] 12.14.7.5.3:c";
+        }
+        leaf terminal-mep {
+          type boolean;
+          description
+            "A Boolean value stating whether the forwarded
+             LTM reached a MEP for its MA.";
+          reference
+            "[802.1q] 12.14.7.5.3:d";
+        }
+        leaf last-egress-identifier {
+          type string {
+            length "8";
+          }
+          description
+            "An octet string holding the Last Egress
+             Identifier field returned in the LTR Egress
+             Identifier TLV of the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:e";
+        }
+        leaf next-egress-identifier {
+          type string {
+            length "8";
+          }
+          description
+            "An octet string holding the Next Egress
+             Identifier field returned in the LTR Egress
+             Identifier TLV of the LTR";
+          reference
+            "[802.1q] 12.14.7.5.3:f";
+        }
+        leaf ltr-relay {
+          type srl_nokia-ethcfm-types:relay-action;
+          description
+            "An enumerated value indicating the value
+             returned in the Relay Action field.";
+          reference
+            "[802.1q] 12.14.7.5.3:g, Table 21-27
+             IEEE8021-CFM-MIB.Dot1agCfmRelayActionFieldValue";
+        }
+        uses sender-id-tlv-group;
+        leaf ingress-action {
+          type srl_nokia-ethcfm-types:reply-action;
+          description
+            "An enumerated value indicating the value returned
+             in the Ingress Action field. This leaf is not
+             present if no value is returned in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:k, Table 21-30
+             IEEE8021-CFM-MIB.Dot1agCfmIngressActionFieldValue";
+        }
+        leaf ingress-mac {
+          type yang:mac-address;
+          description
+            "The MAC address returned in the Ingress MAC
+             Address field.  This leaf is not present if no
+             value is returned in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:l";
+        }
+        container ingress-port-id {
+          uses port-id-tlv-group;
+          description
+            "The Ingress Port ID field and the corresponding
+             port ID value. This leaf is not present if no
+             value is returned in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:m";
+        }
+        leaf egress-action {
+          type srl_nokia-ethcfm-types:reply-action;
+          description
+            "An enumerated value indicating the value returned
+             in the Egress Action field. This leaf is not
+             present if no value is returned in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:o, Table 21-32
+             IEEE8021-CFM-MIB.Dot1agCfmIngressActionFieldValue";
+        }
+        leaf egress-mac {
+          type yang:mac-address;
+          description
+            "The MAC address returned in the Egress MAC
+             Address field. This leaf is not present if no
+             value is returned in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:p";
+        }
+        container egress-port-id {
+          uses port-id-tlv-group;
+          description
+            "The Egress Port ID field and the corresponding
+             port ID value. This leaf is not present if no
+             value is returned in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:p, 12.14.7.5.3:q";
+        }
+        leaf organization-specific-tlv {
+          type binary {
+            length "0|4 .. 1500";
+          }
+          description
+            "The OUI and contents of any Organization-Specific
+             TLVs. This leaf is not present if no value is
+             returned in the LTR.";
+          reference
+            "[802.1q] 12.14.7.5.3:s";
+        }
+      }
+    }
+  }
+
+  grouping loopback-result {
+    container loopback {
+      config false;
+      description
+        "Data definitions related to a loopback test result.";
+      leaf transaction-id {
+        type uint32;
+        description
+          "The LBM Transaction Identifier to which the LBR entries will be attached";
+        reference
+          "[802.1q] 12.14.7.5.2:b";
+      }
+      leaf target-address {
+        type yang:mac-address;
+        description
+          "Target MAC address for the loopback session.";
+      }
+      leaf send-count {
+        type uint32 {
+          range "1..1024";
+        }
+        description
+          "The number of LBM transmissions in a session.";
+        reference
+          "[802.1q] 12.14.7.3.2:c, [MEF30] R39";
+      }
+      leaf data-length {
+        type uint32 {
+          range "0..9502";
+        }
+        units "bytes";
+        description
+          "An arbitrary amount of data to be included in the data tlv,
+           if the data tlv is selected to be sent";
+        reference
+          "[802.1q] 12.14.7.3.d, IEEE8021-CFM-MIB.dot1agCfmMepTransmitLbmDataTlv";
+      }
+      leaf priority {
+        type srl_nokia-ethcfm-types:priority-type;
+        description
+          "The priority parameter to be used in the transmitted LBMs";
+        reference
+          "[802.1q] 12.14.7.3.2:e";
+      }
+      leaf replies-received {
+        type yang:counter32;
+        description
+          "The total number of valid, in-order LBRs received.";
+        reference
+          "[802.1q] 12.14.7.1.3:y";
+      }
+      leaf replies-transmitted {
+        type yang:counter32;
+        description
+          "The total number of LBRs transmitted.";
+        reference
+          "[802.1q] 12.14.7.1.3:ad";
+      }
+      leaf out-of-order-replies-received {
+        type yang:counter32;
+        description
+          "The total number of valid, out-of-order LBRs received.";
+        reference
+          "[802.1q] 12.14.7.1.3:z";
+      }
+      leaf bad-msdu {
+        type yang:counter32;
+        description
+          "The total number of LBRs received whose mac_service_data_unit did not
+           match (except for the OpCode) that of the corresponding LBM";
+        reference
+          "[802.1q] 12.14.7.1.3:aa";
+      }
+      leaf lb-next-sequence {
+        type uint32;
+        description
+          "Next sequence number/transaction identifier to be sent in a
+           Loopback message. This sequence number can be zero because
+           it wraps around.";
+        reference
+          "[802.1q] 12.14.7.1.3:x";
+      }
+      leaf lb-status {
+        type boolean;
+        description
+          "A Boolean flag set to true by the bridge port to indicate
+           that another LBM may be transmitted.";
+      }
+      leaf lb-result-ok {
+        type boolean;
+        description
+          "Indicates the result of the operation:
+           - true       The Loopback Message(s) will be (or has been) sent.
+           - false      The Loopback Message(s) will not be sent.";
+        reference
+          "[802.1q] 12.14.7.3.3:a";
+      }
+    }
+  }
+
+  grouping one-way-dm-result {
+    container one-way-dm {
+      config false;
+      description
+        "Data definitions related to an one-way dm test result.";
+      leaf target-address {
+        type yang:mac-address;
+        description
+          "Target MAC address for the one-way dm test session.";
+      }
+      leaf data-length {
+        description
+          "An arbitrary amount of data to be included in the data tlv,
+           if the data tlv is selected to be sent";
+        type uint32 {
+          range "64..9612";
+        }
+      }
+      leaf priority {
+        description
+          "The priority used in generating one-way-delay-test frames";
+        type srl_nokia-ethcfm-types:priority-type;
+      }
+      container far-end {
+        leaf frame-delay {
+          type yang:gauge64;
+          units "nanoseconds";
+          description
+            "The measured one-way frame delay.";
+        }
+        leaf frame-delay-variation {
+          type yang:gauge64;
+          units "nanoseconds";
+          description
+            "The measured one-way frame delay variation.";
+        }
+      }
+      container near-end {
+        leaf frame-delay {
+          type yang:gauge64;
+          units "nanoseconds";
+          description
+            "The measured one-way frame delay.";
+        }
+        leaf frame-delay-variation {
+          type yang:gauge64;
+          units "nanoseconds";
+          description
+            "The measured one-way frame delay variation.";
+        }
+      }
+    }
+  }
+
+  grouping two-way-dm-result {
+    container two-way-dm {
+      config false;
+      description
+        "Data definitions related to a two-way dm test result.";
+      leaf target-address {
+        type yang:mac-address;
+        description
+          "Target MAC address for the two-way dm test session.";
+      }
+      leaf data-length {
+        description
+          "An arbitrary amount of data to be included in the data tlv,
+           if the data tlv is selected to be sent";
+        type uint32 {
+          range "64..9612";
+        }
+      }
+      leaf priority {
+        description
+          "The priority used in generating two-way-delay-test frames";
+        type srl_nokia-ethcfm-types:priority-type;
+      }
+      container round-trip {
+        leaf frame-delay {
+          type yang:gauge64;
+          units "nanoseconds";
+          description
+            "The measured round-trip frame delay.";
+        }
+        leaf frame-delay-variation {
+          type yang:gauge64;
+          units "nanoseconds";
+          description
+            "The measured round-trip frame delay variation.";
+        }
+      }
+    }
+  }
+
+  grouping two-way-slm-result {
+    container two-way-slm {
+      config false;
+      description
+        "Data definitions related to a two-way slm test result.";
+      leaf target-address {
+        type yang:mac-address;
+        description
+          "Target MAC address for the two-way slm test session.";
+      }
+      leaf priority {
+        description
+          "The priority used in the generated test frame for the two-way SLM test";
+        type srl_nokia-ethcfm-types:priority-type;
+      }
+      leaf send-count {
+        description
+          "The number of SLM packets to send during the two-way SLM test";
+        type uint32 {
+          range "1..100";
+        }
+      }
+      leaf data-length {
+        description
+          "The number of bytes contained in the padding TLV for the two-way SLM test.";
+        type uint32 {
+          range "64..9612";
+        }
+      }
+      leaf interval {
+        description
+          "The interval between SLM messages sent by the two-way SLM test.";
+        type srl_nokia-ethcfm-types:interval-type;
+      }
+      leaf out-loss {
+        type yang:gauge32;
+        description
+          "The measured far-end frame loss.";
+      }
+      leaf in-loss {
+        type yang:gauge32;
+        description
+          "The measured near-end frame loss.";
+      }
+      leaf tx-count {
+        type yang:gauge32;
+        description
+          "The number of frames transmitted.";
+      }
+      leaf rx-count {
+        type yang:gauge32;
+        description
+          "The number of frames received.";
+      }
+      leaf unack-count {
+        type yang:gauge32;
+        description
+          "The number of frames unacknowledged.";
+      }
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    if-feature "srl_nokia-feat:ethcfm";
+    container ethcfm {
+      presence "Configure Ethernet CFM";
+      description
+        "Configuration and operational data for the management of
+         Ethernet Services OAM for CFM.";
+      leaf fault-mode {
+        description
+          "The fault mode for reporting Ethernet CFM defects.";
+        type enumeration {
+          enum itu;
+          enum ieee;
+        }
+        default "itu";
+      }
+      list domain {
+        description
+          "A Maintenance Domain managed object is required in order to create an MA
+           with a MAID that includes that Maintenance Domain’s Name. From
+           this Maintenance Domain managed object, all Maintenance
+           Association managed objects associated with that Maintenance
+           Domain managed object can be accessed, and thus controlled.";
+        reference
+          "[802.1q] 12.14.5";
+        key "id";
+        max-elements 255;
+        leaf id {
+          type srl_nokia-ethcfm-types:admin-name;
+          description
+            "A unique identifier of a Maintenance Domain";
+          reference
+            "[802.1q] 12.14.5";
+        }
+        leaf format {
+          type srl_nokia-ethcfm-types:md-name-type;
+          default "none";
+          description
+            "The Maintenance Domain name format.";
+          reference
+            " IEEE8021-CFM-MIB.Dot1agCfmMaintDomainNameType";
+        }
+        leaf name {
+          type string {
+            length "1..43";
+          }
+          default "DEFAULT";
+          description
+            "The Maintenance Domain Name must correspond to the
+             configuration name-type according to the following:
+             - If the name-type is 'character-string' then the name must be of
+             type string
+             - If the name-type is 'none' then the name must not be defined";
+          reference
+            "[802.1q] 21.6.5.1 (Table 21-19), 12.14.5.3.2:a";
+        }
+        leaf level {
+          type srl_nokia-ethcfm-types:md-level-type;
+          default "0";
+          description
+            "Integer identifying the Maintenance Domain Level (MD Level). Higher
+             numbers correspond to higher Maintenance Domains, those with the
+             greatest physical reach, with the highest values for customers'
+             CFM PDUs. Lower numbers correspond to lower Maintenance
+             Domains, those with more limited physical reach, with the lowest
+             values for CFM PDUs protecting single bridges or physical links.";
+          reference
+            "[802.1q] 12.14.5.1.3:b";
+        }
+        list association {
+          description
+            "This list represents Maintenance Entity Groups (Y.1731) or
+             Maintenance Associations (802.1ag). MEGs/MAs are sets of
+             MEPs, each configured to the same service inside a common
+             OAM domain.";
+          key "id";
+          max-elements 512;
+          leaf id {
+            type srl_nokia-ethcfm-types:admin-name;
+            description
+              "A unique identifier of a Maintenance Association";
+            reference
+              "[802.1q] 12.14.6";
+          }
+          leaf format {
+            mandatory true;
+            type srl_nokia-ethcfm-types:ma-name-type;
+            description
+              "Name type discriminator for the 'name' leaf.";
+            reference
+              "[802.1q] 12.14.5.3.2:b, Table 21-20
+               IEEE8021-CFM-MIB.Dot1agCfmMaintAssocNameType";
+          }
+          leaf name {
+            mandatory true;
+            type string {
+              length "1..45";
+            }
+            description
+              "The Maintenance Domain Association name
+
+               It is the part of the Maintenance Association Identifier
+               which is unique within the Maintenance Domain Name and is
+               appended to the Maintenance Domain Name to form the
+               Maintenance Association Identifier (MAID).";
+            reference
+              "[802.1q] 12.14.5.3.2:b, Table 21-20";
+          }
+          list bridge {
+            description
+              "A list of components each of which can be managed in a manner
+               essentially equivalent to an 802.1Q bridge.";
+            reference
+              "[802.1q] IEEE8021-CFM-V2-MIB.ieee8021CfmMaCompTable";
+            key "id";
+            max-elements 1;
+            leaf id {
+              type leafref {
+                path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+              }
+              must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+                error-message "Only 'mac-vrf' network instance is supported.";
+              }
+              description
+                "The bridge component within the system to which the information
+                 in this maintenance-association applies";
+              reference
+                "[802.1q] IEEE8021-CFM-V2-MIB.ieee8021CfmMaComponentId";
+            }
+            leaf mhf-creation {
+              type srl_nokia-ethcfm-types:mhf-creation-type;
+              default "defer";
+              description
+                "An enumerated value indicating whether the management entity
+                 can create MHFs for this MA. A value of 'defer' here means that
+                 control of MHF creation is deferred to the corresponding variable
+                 in the enclosing maintenance-domain.";
+              reference
+                "[802.1q] 12.14.6.1.3:c";
+            }
+          }
+          leaf ccm-interval {
+            type srl_nokia-ethcfm-types:interval-type;
+            default "1s";
+            description
+              "The interval between CCM transmissions to be used by all MEPs in
+               the MA";
+            reference
+              "[802.1q] 12.14.6.1.3:e
+               IEEE8021-CFM-MIB.Dot1agCfmCcmInterval";
+          }
+          leaf-list remote-meps {
+            type srl_nokia-ethcfm-types:mep-id-type;
+            description
+              "A list of the MEPIDs of the MEPs in the MA.";
+            reference
+              "[802.1q] 12.14.6.1.3:g";
+            max-elements 64;
+          }
+          list mep {
+            description
+              "The list of Maintenance association End Points in a specific
+               Maintance Association.";
+            key "mep-id";
+            leaf mep-id {
+              type srl_nokia-ethcfm-types:mep-id-type;
+              description
+                "Integer that is unique among all the MEPs in the same MA. Other
+                 definition is: a small integer, unique over a given
+                 Maintenance Association, identifying a specific Maintenance
+                 association End Point.";
+              reference
+                "[802.1q] 12.14.6.3.2:b";
+            }
+            choice type {
+              case interface {
+                leaf interface {
+                  type leafref {
+                    path "/srl_nokia-if:interface/srl_nokia-if:name";
+                  }
+                  description
+                    "An interface, either a Bridge Port or an aggregated IEEE 802.3 port
+                     within a Bridge Port, to which the MEP is attached. Each interface in
+                     the system is uniquely identified by an interface-name. The structure
+                     and content of the name is outside the scope of this specification.";
+                  reference
+                    "[802.1q] 12.14.7.1.3:b";
                 }
-                description
-                    "EntPhysicalAlias when entPhysClass has a value of port(10) or
-                    backplane(4)";
-                reference
-                    "[RFC2737]";
+              }
+              case subinterface {
+                leaf subinterface {
+                  type leafref {
+                    path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()/../../bridge/id]/srl_nokia-netinst:interface/srl_nokia-netinst:name";
+                  }
+                  description
+                    "Either a bridge or aggregated subinterface to which the MEP
+                     is attached.";
+                  reference
+                    "[802.1q] 12.14.7.1.3:b";
+                }
+              }
+            }
+            leaf direction {
+              type srl_nokia-ethcfm-types:mep-direction-type;
+              mandatory true;
+              description
+                "A value indicating the direction in which the MEP faces on the
+                 interface.";
+              reference
+                "[802.1q] 12.14.7.1.3:c";
+            }
+            leaf admin-state {
+              type srl_nokia-comm:admin-state;
+              default "disable";
+              description
+                "The administrative state of the MEP";
+              reference
+                "[802.1q] 12.14.7.1.3:e";
             }
             leaf mac-address {
-                type yang:mac-address;
-                description
-                    "A MAC address";
-            } 
-            leaf network-address {
-                type string;
-                description
-                    "network-address is an octet string that identifies a particular network
-                    address family and an associated network address that are
-                    encoded in network octet order. An IP address, for example,
-                    would be encoded with the first octet containing the IANA
-                    Address Family Numbers enumeration value for the specific
-                    address type and octets 2 through n containing the address
-                    value";
-                reference
-                    "[802.1AB] Table 9.2";
+              type yang:mac-address;
+              default "00:00:00:00:00:00";
+              description
+                "The MAC address of the MEP";
+              reference
+                "[802.1q] 12.14.7.1.3:i";
             }
-            leaf interface-name {
-                type string {
-                    length "0..64";
-                }
-                description
-                    "The ifName field from the Interfaces Group MIB";
-                reference
-                    "[RFC2863]";
+            leaf ccm-ltm-priority {
+              type srl_nokia-ethcfm-types:priority-type;
+              default "7";
+              description
+                "The priority parameter for CCMs and LTMs transmitted by the MEP.";
+              reference
+                "[802.1q] 12.14.7.1.3:h";
             }
-            leaf agent-circuit-id {
-                type string;
-                description
-                    "Agent circuit ID";
-                reference
-                    "[RFC3046]";
+            leaf ccm {
+              type boolean;
+              default "false";
+              description
+                "An indicator of whether the MEP is or is not to generate CCMs";
+              reference
+                "[802.1q] 12.14.7.1.3:g";
             }
-            leaf local {
-                type string;
-                description
-                    "A locally defined identifier";
-                reference
-                    "[802.1AB] Table 9.3";
+            leaf lowest-fault-priority-defect {
+              type srl_nokia-ethcfm-types:lowest-alarm-priority-type;
+              default "mac-rem-err-xcon";
+              description
+                "The lowest priority defect that is allowed to generate
+                 a Fault Alarm.";
+              reference
+                "[802.1q] 12.14.7.1.3:k";
             }
+            leaf highest-priority-defect-found {
+              type srl_nokia-ethcfm-types:highest-priority-defect-type;
+              config false;
+              description
+                "Value indicating the highest-priority defect that has been
+                 present since the MEP Fault Notification Generator state machine
+                 was last in the FNG_RESET state The non-existence of this
+                 leaf represents that no defect has been present since the
+                 last FNG_RESET state";
+              reference
+                "[802.1q] 12.14.7.1.3:n";
+            }
+            leaf active-defect {
+              type srl_nokia-ethcfm-types:mep-defect-flag;
+              config false;
+              description
+                "A bit field of potential active defects.";
+              reference
+                "[802.1q] 12.14.7.1.3:o, p, q, r, s";
+            }
+            leaf last-error-ccm {
+              type string {
+                length "1..1522";
+              }
+              config false;
+              description
+                "The last-received CCM that triggered an invalid-ccm fault";
+              reference
+                "[802.1q] 12.14.7.1.3:t";
+            }
+            leaf last-cross-connect-ccm {
+              type string {
+                length "1..1522";
+              }
+              config false;
+              description
+                "The last-received CCM that triggered a cross-connect-ccm fault";
+              reference
+                "[802.1q] 12.14.7.1.3:u";
+            }
+            leaf ccm-sequence-error-count {
+              type yang:counter32;
+              config false;
+              mandatory true;
+              description
+                "The total number of out-of-sequence CCMs received from all remote
+                 MEPs.";
+              reference
+                "[802.1q] 12.14.7.1.3:v";
+            }
+            leaf sent-ccms {
+              type yang:counter32;
+              config false;
+              mandatory true;
+              description
+                "The total number of CCMs transmitted.";
+              reference
+                "[802.1q] 12.14.7.1.3:w";
+            }
+            uses remote-mep-database;
+            uses loopback-result;
+            uses linktrace-result;
+            uses one-way-dm-result;
+            uses two-way-dm-result;
+            uses two-way-slm-result;
+          }
         }
+      }
     }
-    grouping sender-id-tlv-group {
-        description
-            "Data definitions associated with the Sender ID TLV";
-        reference
-            "[802.1q] 21.5.3";
-        choice chassis-id-subtype {
-            description
-                "The chassis-id-subtype contains the chassis ID entity that is listed in
-                the chassis ID field. This is a combination of the 'Chassis ID Subtype'
-                and 'chsssis ID' fields";
-            reference
-                "[802.1AB] 9.5.2.2";
-            leaf chassis-component {
-                type string {
-                    length "0..32";
-                }
-                description
-                    "This leaf contains the content of EntPhysicalAlias when entPhysClass has
-                    a value of chassis(3)";
-                reference
-                    "[RFC2737]";
-            }
-            leaf interface-alias {
-                type string {
-                    length "0..64";
-                }
-                description
-                    "The IfAlias field from the Interfaces Group MIB";
-                reference
-                    "[RFC2863]";
-            }
-            leaf port-component {
-                type string {
-                    length "0..32";
-                }
-                description
-                    "The EntPhysicalAlias from the Interfaces Group MIB when entPhysClass has
-                    a value of port(10) or backplane(4)";
-                reference
-                    "[RFC2737]";
-            }
-            leaf mac-address-type {
-                type yang:mac-address;
-                description
-                    "An IEEE 802-2001 Ethernet MAC Address";
-                reference
-                    "[802-2001]";
-            }
-            leaf network-address {
-                type string;
-                description
-                    "network-address is an octet string that identifies a particular network
-                    address family and an associated network address that are encoded in
-                    network octet order. An IP address, for example, would be encoded with 
-                    the first octet containing the IANA Address Family Numbers enumeration
-                    value for the specific address type and octets 2 through n containing
-                    the address value";
-                reference
-                    "[802.1AB] Table 9.2";
-            }
-            leaf interface-name {
-                type string {
-                    length "0..64";
-                }
-                description
-                    "IfName";
-                reference
-                    "[RFC2863]";
-            }
-            leaf local {
-                type string;
-                description
-                    "A locally assigned alpha-numeric string.";
-                reference
-                    "[802.1AB] Table 9.2";
-            } 
-        }
-        container management-address {
-            description
-                "Data definitions related to the management address fields defined
-                in a Sender ID TLV";
-            reference
-                "[802.1] Section 21.5.3";
-            choice management-address {
-                case udp-ipv4 {
-                    description
-                        "Represents an IPv4 UDP transport address consisting of an IPv4 address,
-                        and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv4";
-                    leaf udp-ipv4-address {
-                        type inet:ipv4-address;
-                    }
-                    leaf udp-ipv4-port {
-                        type inet:port-number;
-                    }
-                }
-                case udp-ipv6 {
-                    description
-                        "Represents an IPv6 UDP transport address consisting of an IPv6 address,
-                        and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv6";
-                    leaf udp-ipv6-address {
-                        type inet:ipv6-address;
-                    }
-                    leaf udp-ipv6-port {
-                        type inet:port-number;
-                    }
-                }
-                case udp-ipv4z {
-                    description
-                        "Represents a UDP transport address consisting of an IPv4 address, a zone
-                        index and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv4z";
-                    leaf udp-ipv4z-address {
-                        type inet:ipv4-address;
-                    }
-                    leaf udp-ipv4z-index {
-                        type uint32;
-                    }
-                    leaf udp-ipv4z-port {
-                        type inet:port-number;
-                    }
-                }
-                case udp-ipv6z {
-                    description
-                        "Represents a UDP transport address consisting of an IPv6 address, a zone
-                        index and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpIpv6z";
-                    leaf udp-ipv6z-address {
-                        type inet:ipv6-address;
-                    }
-                    leaf udp-ipv6z-index {
-                        type uint32;
-                    }
-                    leaf udp-ipv6z-port {
-                        type inet:port-number;
-                    }
-                }
-                case tcp-ipv4 {
-                    description
-                        "Represents an IPv4 TCP transport address consisting of an IPv4 address,
-                        and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv4";
-                    leaf tcp-ipv4-address {
-                        type inet:ipv4-address;
-                    }
-                    leaf tcp-ipv4-port {
-                        type inet:port-number;
-                    }
-                }
-                case tcp-ipv6 {
-                    description
-                        "Represents an IPv6 TCP transport address consisting of an IPv6 address,
-                        and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv6";
-                    leaf tcp-ipv6-address {
-                        type inet:ipv6-address;
-                    }
-                    leaf tcp-ipv6-port {
-                        type inet:port-number;
-                    }
-                }
-                case tcp-ipv4z {
-                    description
-                        "Represents a TCP IPv4 transport address consisting of an IPv4 address, a
-                        zone index and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv4z";
-                    leaf tcp-ipv4z-address {
-                        type inet:ipv4-address;
-                    }
-                    leaf tcp-ipv4z-index {
-                        type uint32;
-                    }
-                    leaf tcp-ipv4z-port {
-                        type inet:port-number;
-                    }
-                }
-                case tcp-ipv6z {
-                    description
-                        "Represents a TCP IPv6 transport address consisting of an IPv6 address,
-                        a zone index and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpIpv6z"; 
-                    leaf tcp-ipv6z-address {
-                        type inet:ipv6-address;
-                    }
-                    leaf tcp-ipv6z-index {
-                        type uint32;
-                    }
-                    leaf tcp-ipv6z-port {
-                        type inet:port-number;
-                    }
-                }
-                case sctp-ipv4 {
-                    description
-                        "Represents an IPv4 SCTP transport address consisting of an IPv4 address,
-                        and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv4"; 
-                    leaf sctp-ipv4-address {
-                        type inet:ipv4-address;
-                    }
-                    leaf sctp-ipv4-port {
-                        type inet:port-number;
-                    }
-                }
-                case sctp-ipv6 {
-                    description
-                        "Represents an IPv6 SCTP transport address consisting of an IPv6 address,
-                        and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv6"; 
-                    leaf sctp-ipv6-address {
-                        type inet:ipv6-address;
-                    }
-                    leaf sctp-ipv6-port {
-                        type inet:port-number;
-                    }
-                }
-                case sctp-ipv4z {
-                    description
-                        "Represents an SCTP IPv4 transport address consisting of an IPv4 
-                        address, a zone index and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv4z"; 
-                    leaf sctp-ipv4z-address {
-                        type inet:ipv4-address;
-                    }
-                    leaf sctp-ipv4z-index {
-                        type uint32;
-                    }
-                    leaf sctp-ipv4z-port {
-                        type inet:port-number;
-                    }
-                }
-                case sctp-ipv6z {
-                    description
-                        "Represents an SCTP IPv6 transport address consisting of an IPv6 
-                        address, a zone index and a port number.";
-                    reference
-                        "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpIpv6z"; 
-                    leaf sctp-ipv6z-address {
-                        type inet:ipv6-address;
-                    }
-                    leaf sctp-ipv6z-index {
-                        type uint32;
-                    }
-                    leaf sctp-ipv6z-port {
-                        type inet:port-number;
-                    }
-                }
-                case local {
-                    leaf local-address {
-                        type string {
-                            length '1..255';
-                        }
-                        description
-                            "Represents a POSIX Local IPC transport address.";
-                    }
-                }
-                case udp-dns {
-                    leaf udp-dns-address {
-                        type string {
-                            length "1..255";
-                        }
-                        description
-                            "The UDP transport domain using fully qualified domain names. Represents
-                            a DNS domain name followed by a colon ':' (ASCII character
-                            0x3A) and a port number in ASCII. The name SHOULD be fully
-                            qualified whenever possible.";
-                        reference
-                            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainUdpDns"; 
-                    }
-                }
-                case tcp-dns {
-                    leaf tcp-dns-address {
-                        type string {
-                            length "1..255";
-                        }
-                        description
-                            "The TCP transport domain using fully qualified domain names. Represents
-                            a DNS domain name followed by a colon ':' (ASCII character
-                            0x3A) and a port number in ASCII. The name SHOULD be fully
-                            qualified whenever possible.";
-                        reference
-                            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainTcpDns"; 
-                    }
-                }
-                case sctp-dns {
-                    leaf sctp-dns-address {
-                        type string {
-                            length "1..255";
-                        }
-                        description
-                            "The SCTP transport domain using fully qualified domain names. 
-                            Represents a DNS domain name followed by a colon ':' (ASCII 
-                            character 0x3A) and a port number in ASCII. The name SHOULD be
-                            fully qualified whenever possible.";
-                        reference
-                            "[RFC3419] TRANSPORT-ADDRESS-MIB.transportDomainSctpDns"; 
-                    }
-                }
-            }
-        }
-    }
-    grouping alarm-indication-signal {
-        description
-            "Augments to support the AIS functionality";
-        reference
-            "[Y.1731] 7.4, [MEF30] 8.5";
-        container ais {
-            description
-                "This set of data definitions covers the proactive Ethernet OAM Fault
-                Management Alarm Indication Signal function (ETH-AIS) as
-                defined in Y.1731 and extended in MEF30";
-            reference
-                "[Y.1731] 7.4, [MEF30] 8.5";
-            leaf enabled {
-                type boolean;
-                default false;
-                description
-                    "This attribute specifies whether ETH-AIS transmission is enabled. The
-                    value 'true' indicates ETH-AIS transmission is enabled. The
-                    value 'false' indicates ETH-AIS transmission is disabled.";
-                reference
-                    "[MEF7.1] 9.3.4.1, [MEF30] 8.4";
-            }
-            leaf interval {
-                type srl_nokia-ethcfm-types:ais-interval-type;
-                default one-second;
-                description
-                    "This attribute specifies the ETH-AIS transmission period.";
-                reference
-                    "[MEF7.1] 9.3.4.1";
-            }
-            leaf priority {
-                type srl_nokia-ethcfm-types:priority-type;
-                default 7;
-                description
-                    "This attribute specifies the priority of frames with ETH-AIS
-                    information. If ETH-AIS is supported, the default value for
-                    the CoS for AIS frame MUST be the value which yields the
-                    lowest frame loss performance for this EVC.";
-                reference
-                    "[MEF7.1] 9.3.4.1";
-            }
-            leaf-list client-meg-level {
-                type uint32 {
-                    range "1..7";
-                }
-                max-elements 7;
-                description
-                    "The MEG/Maintenance Domain Level of the Client ETH-AIS PDU (transmitted
-                    level).";
-                reference
-                    "[Y.1731] 7.4";
-            }
-            leaf transmit-status {
-                type boolean;
-                config false;
-                description
-                    "This attribute specifies the current AIS transmission status of the
-                    MEP.
-                    The value 'true' indicates AIS frames are currently being
-                    transmitted by the MEP.
-                    The value 'false' indicates AIS frames are not currently
-                    being transmitted by the MEP.";
-                reference
-                    "[Y.1731] 7.4";
-            }
-            leaf receive-status {
-                type boolean;
-                config false;
-                description
-                    "This attribute specifies the current AIS receive status of the
-                    MEP. The value 'true' indicates an AIS PDU has been received
-                    and 3.5 times the interval defined in the PDU has not yet
-                    passed, otherwise it is 'false'.";
-                reference
-                    "[Y.1731] 7.4";
-            }
-            leaf transmit-counter {
-                type yang:zero-based-counter32;
-                config false;
-                description
-                    "This attribute contains the count of the total number of AIS messages
-                    sent by the MEP. The count is incremented every time an AIS
-                    PDU is transmitted by the MEP.";
-                reference
-                    "[MEF7.1] 9.3.2.2";
-            }
-            leaf receive-counter {
-                type yang:counter32;
-                config false;
-                description
-                    "This attribute contains the count of the total number of AIS messages
-                    received by the MEP. The count is incremented every time an
-                    AIS PDU is received by the MEP.";
-                reference
-                    "[MEF7.1] 9.3.2.2";
-            }
-            leaf last-received-mac-address {
-                type yang:mac-address;
-                config false;
-                description
-                    "The source MAC Address Field of last AIS received by the MEP.
-                    If no AIS PDU has been received by the NE the MAC address is
-                    set to all zeros.";
-                reference
-                    "[Y.1731] 7.7";
-            }
-        }
-    }
-    grouping remote-mep-database {
-        container remote-mep-db {
-            description
-                "The MEP CCM database";
-            config false;
-            list remote-mep {
-                description
-                    "The list of remote MEPs in the MEP CCM database";
-                reference
-                    "[802.1q] 12.14.7.6";
-                key remote-mep-id;
-                leaf remote-mep-id {
-                    type srl_nokia-ethcfm-types:mep-id-type;
-                    description
-                        "The MEPID of a remote MEP";
-                    reference
-                        "[802.1q] 12.14.7.6.2";
-                }
-                leaf remote-mep-state {
-                    type srl_nokia-ethcfm-types:remote-mep-state-type;
-                    description
-                        "An enumerated value indicating the operational state of the 
-                        Remote MEP state machine for this remote MEP.";
-                    reference
-                        "[802.1q] 12.14.7.6.3:b
-                        IEEE8021-CFM-MIB.Dot1agCfmRemoteMepState";
-                }
-                leaf failed-ok-time {
-                    type yang:timeticks;
-                    description
-                        "The time (SysUpTime, IETF RFC 3418) at which the Remote
-                        MEP state machine last entered either the RMEP_FAILED or
-                        RMEP_OK state, or 0 if it has not yet entered either of
-                        those states";
-                    reference
-                        "[802.1q] 12.14.7.6.3:c";
-                }
-                leaf mac-address {
-                    type yang:mac-address;
-                    description
-                        "The MAC address of the remote MEP.";
-                    reference
-                        "[802.1q] 12.14.7.6.3:d";
-                }
-                leaf rdi {
-                    type boolean;
-                    description
-                        "An indication of the state of the RDI bit in the last
-                        received CCM, true for RDI = 1, or false for RDI = 0 or
-                        if none has been received.";
-                    reference
-                        "[802.1q] 12.14.7.6.3:e";
-                }
-                leaf port-status-tlv {
-                    type srl_nokia-ethcfm-types:port-status-type;
-                    description
-                        "The enumerated value from the Port Status TLV from the
-                        last CCM received from the remote MEP.";
-                    reference
-                        "[802.1q] 12.14.7.6.3:f";
-                }
-                leaf interface-status-tlv {
-                    type srl_nokia-ethcfm-types:interface-status-type;
-                    description
-                        "The enumerated value from the Interface Status TLV from
-                        the last CCM received from the remote MEP";
-                    reference
-                        "[802.1q] 12.14.7.6.3:g";
-                }
-                uses sender-id-tlv-group;
-            }
-        }
-    }
-    grouping linktrace-parameters-group {
-        description
-            "This is the group of parameters associated with linktrace sessions. It is
-            used for linktrace RPC input as well as linktrace database entries.";
-        leaf target-address {
-            description
-                "Target MAC address for the Linktrace session.";
-            type yang:mac-address;
-        }
-        leaf transmit-ltm-flags { 
-            type bits {
-                bit use-fdb-only;
-            }
-            description
-                "The Flags field for LTMs transmitted by the MEP";
-            reference
-                "[802.1q] 12.14.7.4.2:b";
-        } 
-        leaf default-ttl {
-            type uint8;
-            default 64;
-            description
-                "An initial value for the LTM TTL field";
-            reference
-                "[802.1q] 12.14.7.4.2:d";
-        }
-    }
-    grouping linktrace-result {
-        container linktrace {
-            config false;
-            description
-                "Data definitions related to a linktrace test result.";
-            leaf transaction-id {
-                type uint32;
-                description
-                    "The LTM Transaction Identifier to which the LTR
-                    entries will be attached";
-                reference
-                    "[802.1q] 12.14.7.5.2:b";
-            }
-            uses linktrace-parameters-group;
-            list reply {
-                key reply-order;
-                description
-                    "The list of LTRs associated with a specific
-                    Linktrace transaction.";
-                leaf reply-order {
-                    type uint32;
-                    description
-                        "An index to distinguish among multiple LTRs
-                        with the same LTR transaction-id field value.
-                        reply-order are assigned sequentially from 1,
-                        in the order that the Linktrace Initiator
-                        received the LTR";
-                    reference "[802.1q] 12.14.7.5.2:c";
-                }
-                leaf reply-ttl {
-                    type uint32;
-                    description
-                        "The integer Reply TTL field value returned
-                        in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:b";
-                }
-                leaf forwarded {
-                    type boolean;
-                    description
-                        "A Boolean value stating whether an LTM was
-                        forwarded by the responding MP.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:c";
-                }
-                leaf terminal-mep {
-                    type boolean;
-                    description
-                        "A Boolean value stating whether the forwarded
-                        LTM reached a MEP for its MA.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:d";
-                }
-                leaf last-egress-identifier {
-                    type string {
-                        length 8;
-                    }
-                    description
-                        "An octet string holding the Last Egress
-                        Identifier field returned in the LTR Egress
-                        Identifier TLV of the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:e";
-                }
-                leaf next-egress-identifier {
-                    type string {
-                        length 8;
-                    }
-                    description
-                        "An octet string holding the Next Egress
-                        Identifier field returned in the LTR Egress
-                        Identifier TLV of the LTR";
-                    reference
-                        "[802.1q] 12.14.7.5.3:f";
-                }
-                leaf ltr-relay {
-                    type srl_nokia-ethcfm-types:relay-action;
-                    description
-                        "An enumerated value indicating the value
-                        returned in the Relay Action field.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:g, Table 21-27
-                        IEEE8021-CFM-MIB.Dot1agCfmRelayActionFieldValue";
-                }
-                uses sender-id-tlv-group;
-                leaf ingress-action {
-                    type srl_nokia-ethcfm-types:reply-action;
-                    description
-                        "An enumerated value indicating the value returned
-                        in the Ingress Action field. This leaf is not
-                        present if no value is returned in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:k, Table 21-30
-                        IEEE8021-CFM-MIB.Dot1agCfmIngressActionFieldValue";
-                }
-                leaf ingress-mac {
-                    type yang:mac-address;
-                    description
-                        "The MAC address returned in the Ingress MAC
-                        Address field.  This leaf is not present if no
-                        value is returned in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:l";
-                }
-                container ingress-port-id {
-                    uses port-id-tlv-group;
-                    description
-                        "The Ingress Port ID field and the corresponding
-                        port ID value. This leaf is not present if no
-                        value is returned in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:m";
-                }
-                leaf egress-action {
-                    type srl_nokia-ethcfm-types:reply-action;
-                    description
-                        "An enumerated value indicating the value returned
-                        in the Egress Action field. This leaf is not
-                        present if no value is returned in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:o, Table 21-32
-                        IEEE8021-CFM-MIB.Dot1agCfmIngressActionFieldValue";                    
-                }
-                leaf egress-mac {
-                    type yang:mac-address;
-                    description
-                        "The MAC address returned in the Egress MAC
-                        Address field. This leaf is not present if no
-                        value is returned in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:p";
-                }
-                container egress-port-id {
-                    uses port-id-tlv-group;
-                    description
-                        "The Egress Port ID field and the corresponding
-                        port ID value. This leaf is not present if no
-                        value is returned in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:p, 12.14.7.5.3:q";
-                }
-                leaf organization-specific-tlv {
-                    type binary {
-                        length "0|4 .. 1500";
-                    }
-                    description
-                        "The OUI and contents of any Organization-Specific
-                        TLVs. This leaf is not present if no value is
-                        returned in the LTR.";
-                    reference
-                        "[802.1q] 12.14.7.5.3:s";
-                }
-            }
-        }
-    }
-    grouping loopback-result {
-        container loopback {
-            config false;
-            description
-                "Data definitions related to a loopback test result.";
-            leaf transaction-id {
-                type uint32;
-                description
-                    "The LBM Transaction Identifier to which the LBR entries will be attached";
-                reference
-                    "[802.1q] 12.14.7.5.2:b";
-            }
-            leaf target-address {
-                type yang:mac-address;
-                description
-                    "Target MAC address for the loopback session.";
-            }
-            leaf send-count { 
-                type uint32 {
-                    range "1..1024";
-                }
-                description
-                    "The number of LBM transmissions in a session.";
-                reference
-                    "[802.1q] 12.14.7.3.2:c, [MEF30] R39";
-            }
-            leaf data-length {
-                type uint32 {
-                    range "0..9502";
-                }
-                units "bytes";
-                description
-                    "An arbitrary amount of data to be included in the data tlv,
-                    if the data tlv is selected to be sent";
-                reference
-                    "[802.1q] 12.14.7.3.d, IEEE8021-CFM-MIB.dot1agCfmMepTransmitLbmDataTlv";
-
-            }
-            leaf priority {
-                type srl_nokia-ethcfm-types:priority-type;
-                description
-                    "The priority parameter to be used in the transmitted LBMs";
-                reference
-                    "[802.1q] 12.14.7.3.2:e";
-            }
-            leaf replies-received {
-                type yang:counter32; 
-                description
-                    "The total number of valid, in-order LBRs received.";
-                reference
-                    "[802.1q] 12.14.7.1.3:y"; 
-            }
-            leaf replies-transmitted {
-                type yang:counter32;
-                description
-                    "The total number of LBRs transmitted.";
-                reference
-                    "[802.1q] 12.14.7.1.3:ad";
-            }
-            leaf out-of-order-replies-received {
-                type yang:counter32; 
-                description
-                    "The total number of valid, out-of-order LBRs received.";
-                reference
-                    "[802.1q] 12.14.7.1.3:z";
-            }
-            leaf bad-msdu {
-                type yang:counter32;
-                description
-                    "The total number of LBRs received whose mac_service_data_unit did not
-                    match (except for the OpCode) that of the corresponding LBM";
-                reference
-                    "[802.1q] 12.14.7.1.3:aa";
-            }
-            leaf lb-next-sequence {
-                type uint32;
-                description
-                    "Next sequence number/transaction identifier to be sent in a
-                     Loopback message. This sequence number can be zero because
-                     it wraps around."; 
-                reference
-                    "[802.1q] 12.14.7.1.3:x";
-            }
-            leaf lb-status {
-                type boolean;
-                description
-                    "A Boolean flag set to true by the bridge port to indicate
-                     that another LBM may be transmitted.";
-            }
-            leaf lb-result-ok {
-                type boolean;
-                description
-                    "Indicates the result of the operation:
-                     - true       The Loopback Message(s) will be (or has been) sent.
-                     - false      The Loopback Message(s) will not be sent.";
-                reference
-                    "[802.1q] 12.14.7.3.3:a";
-            }
-        }
-    }
-    grouping one-way-dm-result {
-        container one-way-dm {
-            config false;
-            description
-                "Data definitions related to an one-way dm test result.";
-            leaf target-address {
-                type yang:mac-address;
-                description
-                    "Target MAC address for the one-way dm test session.";
-            }
-            leaf data-length {
-                description
-                    "An arbitrary amount of data to be included in the data tlv,
-                    if the data tlv is selected to be sent";
-                type uint32 {
-                    range "64..9612";
-                }
-            }
-            leaf priority {
-                description
-                    "The priority used in generating one-way-delay-test frames";
-                type srl_nokia-ethcfm-types:priority-type;
-            }
-            container far-end {
-                leaf frame-delay {
-                    type yang:gauge64;
-                    units nanoseconds;
-                    description
-                        "The measured one-way frame delay.";
-                }
-                leaf frame-delay-variation {
-                    type yang:gauge64;
-                    units nanoseconds;
-                    description
-                        "The measured one-way frame delay variation.";
-                }
-            }
-            container near-end {
-                leaf frame-delay {
-                    type yang:gauge64;
-                    units nanoseconds;
-                    description
-                        "The measured one-way frame delay.";
-                }
-                leaf frame-delay-variation {
-                    type yang:gauge64;
-                    units nanoseconds;
-                    description
-                        "The measured one-way frame delay variation.";
-                }
-            }
-        }
-    }
-    grouping two-way-dm-result {
-        container two-way-dm {
-            config false;
-            description
-                "Data definitions related to a two-way dm test result.";
-            leaf target-address {
-                type yang:mac-address;
-                description
-                    "Target MAC address for the two-way dm test session.";
-            }
-            leaf data-length {
-                description
-                    "An arbitrary amount of data to be included in the data tlv,
-                    if the data tlv is selected to be sent";
-                type uint32 {
-                    range "64..9612";
-                }
-            }
-            leaf priority {
-                description
-                    "The priority used in generating two-way-delay-test frames";
-                type srl_nokia-ethcfm-types:priority-type;
-            }
-            container round-trip {
-                leaf frame-delay {
-                    type yang:gauge64;
-                    units nanoseconds;
-                    description
-                        "The measured round-trip frame delay.";
-                }
-                leaf frame-delay-variation {
-                    type yang:gauge64;
-                    units nanoseconds;
-                    description
-                        "The measured round-trip frame delay variation.";
-                }
-            }
-        }
-    }
-    grouping two-way-slm-result {
-        container two-way-slm {
-            config false;
-            description
-                "Data definitions related to a two-way slm test result.";
-            leaf target-address {
-                type yang:mac-address;
-                description
-                    "Target MAC address for the two-way slm test session.";
-            }
-            leaf priority {
-                description
-                    "The priority used in the generated test frame for the two-way SLM test";
-                type srl_nokia-ethcfm-types:priority-type;
-            }
-            leaf send-count {
-                description
-                    "The number of SLM packets to send during the two-way SLM test";
-                type uint32 {
-                    range "1..100";
-                }
-            }
-            leaf data-length {
-                description
-                    "The number of bytes contained in the padding TLV for the two-way SLM test.";
-                type uint32 {
-                    range "64..9612";
-                }
-            }
-            leaf interval {
-                description
-                    "The interval between SLM messages sent by the two-way SLM test.";
-                type srl_nokia-ethcfm-types:interval-type;
-            }
-            leaf out-loss {
-                type yang:gauge32;
-                description
-                    "The measured far-end frame loss.";
-            }
-            leaf in-loss {
-                type yang:gauge32;
-                description
-                    "The measured near-end frame loss.";
-            }
-            leaf tx-count {
-                type yang:gauge32;
-                description
-                    "The number of frames transmitted.";
-            }
-            leaf rx-count {
-                type yang:gauge32;
-                description
-                    "The number of frames received.";
-            }
-            leaf unack-count {
-                type yang:gauge32;
-                description
-                    "The number of frames unacknowledged.";
-            }
-        }
-    }
-
-    augment "/srl_nokia-oam:oam" {
-        if-feature srl_nokia-feat:ethcfm;
-        container ethcfm {
-            presence "Configure Ethernet CFM";
-            description 
-                "Configuration and operational data for the management of
-                Ethernet Services OAM for CFM.";
-            leaf fault-mode {
-                description
-                    "The fault mode for reporting Ethernet CFM defects.";
-                type enumeration {
-                    enum itu;
-                    enum ieee;
-                }
-                default itu;
-            }
-            list domain {
-                description
-                    "A Maintenance Domain managed object is required in order to create an MA
-                    with a MAID that includes that Maintenance Domain's Name. From
-                    this Maintenance Domain managed object, all Maintenance
-                    Association managed objects associated with that Maintenance
-                    Domain managed object can be accessed, and thus controlled.";
-                reference
-                    "[802.1q] 12.14.5";
-                key id;
-                max-elements "255";
-                leaf id {
-                    type srl_nokia-ethcfm-types:admin-name;
-                    description
-                        "A unique identifier of a Maintenance Domain";
-                    reference
-                        "[802.1q] 12.14.5";
-                }
-                leaf format {
-                    type srl_nokia-ethcfm-types:md-name-type;
-                    default 'none';
-                    description
-                        "The Maintenance Domain name format.";
-                    reference
-                        " IEEE8021-CFM-MIB.Dot1agCfmMaintDomainNameType";
-                }
-                leaf name {
-                    type string {
-                        length 1..43;
-                    }
-                    default "DEFAULT";
-                    description
-                        "The Maintenance Domain Name must correspond to the
-                        configuration name-type according to the following:
-                        - If the name-type is 'character-string' then the name must be of
-                        type string
-                        - If the name-type is 'none' then the name must not be defined";
-                    reference
-                        "[802.1q] 21.6.5.1 (Table 21-19), 12.14.5.3.2:a";
-                }
-                leaf level {
-                    type srl_nokia-ethcfm-types:md-level-type;
-                    default 0;
-                    description
-                        "Integer identifying the Maintenance Domain Level (MD Level). Higher
-                        numbers correspond to higher Maintenance Domains, those with the
-                        greatest physical reach, with the highest values for customers'
-                        CFM PDUs. Lower numbers correspond to lower Maintenance
-                        Domains, those with more limited physical reach, with the lowest
-                        values for CFM PDUs protecting single bridges or physical links.";
-                    reference
-                        "[802.1q] 12.14.5.1.3:b";
-                }
-                list association {
-                    description
-                        "This list represents Maintenance Entity Groups (Y.1731) or 
-                        Maintenance Associations (802.1ag). MEGs/MAs are sets of
-                        MEPs, each configured to the same service inside a common
-                        OAM domain.";
-                    key id;
-                    max-elements "512";
-                    leaf id {
-                        type srl_nokia-ethcfm-types:admin-name;
-                        description
-                            "A unique identifier of a Maintenance Association";
-                        reference
-                            "[802.1q] 12.14.6";
-                    }
-                    leaf format {
-                        mandatory true;
-                        type srl_nokia-ethcfm-types:ma-name-type;
-                        description
-                            "Name type discriminator for the 'name' leaf.";
-                        reference
-                            "[802.1q] 12.14.5.3.2:b, Table 21-20
-                            IEEE8021-CFM-MIB.Dot1agCfmMaintAssocNameType";
-                    }
-                    leaf name {
-                        mandatory true;
-                        type string {
-                            length "1..45";
-                        }
-                        description
-                            "The Maintenance Domain Association name
-
-                            It is the part of the Maintenance Association Identifier
-                            which is unique within the Maintenance Domain Name and is
-                            appended to the Maintenance Domain Name to form the
-                            Maintenance Association Identifier (MAID).";
-                        reference
-                            "[802.1q] 12.14.5.3.2:b, Table 21-20"; 
-                    }
-                    list bridge {
-                        description
-                            "A list of components each of which can be managed in a manner
-                            essentially equivalent to an 802.1Q bridge.";
-                        reference
-                            "[802.1q] IEEE8021-CFM-V2-MIB.ieee8021CfmMaCompTable";
-                        key id;
-                        max-elements "1";
-                        leaf id {
-                            type leafref {
-                                path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
-                            }
-                            must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
-                                error-message "Only 'mac-vrf' network instance is supported.";
-                            }
-                            description
-                                "The bridge component within the system to which the information
-                                in this maintenance-association applies";
-                            reference
-                                "[802.1q] IEEE8021-CFM-V2-MIB.ieee8021CfmMaComponentId";
-                        }
-                        leaf mhf-creation {
-                            type srl_nokia-ethcfm-types:mhf-creation-type;
-                            default defer;
-                            description
-                                "An enumerated value indicating whether the management entity
-                                can create MHFs for this MA. A value of 'defer' here means that
-                                control of MHF creation is deferred to the corresponding variable
-                                in the enclosing maintenance-domain.";
-                            reference
-                                "[802.1q] 12.14.6.1.3:c";
-                        }
-                    }
-                    leaf ccm-interval {
-                        type srl_nokia-ethcfm-types:interval-type;
-                        default 1s;
-                        description
-                            "The interval between CCM transmissions to be used by all MEPs in
-                            the MA";
-                        reference
-                            "[802.1q] 12.14.6.1.3:e
-                            IEEE8021-CFM-MIB.Dot1agCfmCcmInterval";
-                    }
-                    leaf-list remote-meps {
-                        type srl_nokia-ethcfm-types:mep-id-type;
-                        description
-                            "A list of the MEPIDs of the MEPs in the MA.";
-                        reference
-                            "[802.1q] 12.14.6.1.3:g";
-                            max-elements "64";
-                    }
-                    list mep {
-                        description
-                            "The list of Maintenance association End Points in a specific
-                            Maintance Association.";
-                        key "mep-id";
-                        leaf mep-id {
-                            type srl_nokia-ethcfm-types:mep-id-type;
-                            description
-                                "Integer that is unique among all the MEPs in the same MA. Other
-                                definition is: a small integer, unique over a given
-                                Maintenance Association, identifying a specific Maintenance
-                                association End Point.";
-                            reference
-                                "[802.1q] 12.14.6.3.2:b";
-                        }
-                        choice type {
-                            case interface {
-                                leaf interface {
-                                    type leafref {
-                                        path "/srl_nokia-if:interface/srl_nokia-if:name";
-                                    }
-                                    description
-                                        "An interface, either a Bridge Port or an aggregated IEEE 802.3 port
-                                        within a Bridge Port, to which the MEP is attached. Each interface in
-                                        the system is uniquely identified by an interface-name. The structure
-                                        and content of the name is outside the scope of this specification.";
-                                    reference
-                                        "[802.1q] 12.14.7.1.3:b";
-                                }
-                            }
-                            case subinterface {
-                                leaf subinterface {
-                                    type srl_nokia-comm:subinterface-all;
-                                    description
-                                        "Either a bridge or aggregated subinterface to which the MEP
-                                        is attached.";
-                                    reference
-                                        "[802.1q] 12.14.7.1.3:b";
-                                }
-                            }
-                        }
-                        leaf direction {
-                            type srl_nokia-ethcfm-types:mep-direction-type;
-                            mandatory true;
-                            description
-                                "A value indicating the direction in which the MEP faces on the 
-                                interface.";
-                            reference
-                                "[802.1q] 12.14.7.1.3:c";
-                        }
-                        leaf admin-state {
-                            type srl_nokia-comm:admin-state;
-                            default disable;
-                            description
-                                "The administrative state of the MEP";
-                            reference
-                                "[802.1q] 12.14.7.1.3:e";
-                        }
-                        leaf mac-address {
-                            type yang:mac-address;
-                        default     "00:00:00:00:00:00";
-                            description
-                                "The MAC address of the MEP";
-                            reference
-                                "[802.1q] 12.14.7.1.3:i"; 
-                        }
-                        leaf ccm-ltm-priority {
-                            type srl_nokia-ethcfm-types:priority-type;
-                            default 7;
-                            description
-                                "The priority parameter for CCMs and LTMs transmitted by the MEP.";
-                            reference
-                                "[802.1q] 12.14.7.1.3:h";
-                        }
-                        leaf ccm {
-                            type boolean;
-                            default false;
-                            description
-                                "An indicator of whether the MEP is or is not to generate CCMs";
-                            reference
-                                "[802.1q] 12.14.7.1.3:g";
-                        }
-                        leaf lowest-fault-priority-defect {
-                            type srl_nokia-ethcfm-types:lowest-alarm-priority-type;
-                            default 'mac-rem-err-xcon';
-                            description
-                                "The lowest priority defect that is allowed to generate
-                                a Fault Alarm.";
-                            reference
-                                "[802.1q] 12.14.7.1.3:k";
-                        }
-                        leaf highest-priority-defect-found {
-                            type srl_nokia-ethcfm-types:highest-priority-defect-type;
-                            config false;
-                            description
-                                "Value indicating the highest-priority defect that has been 
-                                present since the MEP Fault Notification Generator state machine 
-                                was last in the FNG_RESET state The non-existence of this
-                                leaf represents that no defect has been present since the
-                                last FNG_RESET state";
-                            reference
-                                "[802.1q] 12.14.7.1.3:n";
-                        }
-                        leaf active-defect {
-                            type srl_nokia-ethcfm-types:mep-defect-flag;
-                            config false;
-                            description
-                                "A bit field of potential active defects.";
-                            reference
-                                "[802.1q] 12.14.7.1.3:o, p, q, r, s";
-                        }
-                        leaf last-error-ccm {
-                            type string {
-                                length "1..1522";
-                            }
-                            config false;
-                            description
-                                "The last-received CCM that triggered an invalid-ccm fault";
-                            reference
-                                "[802.1q] 12.14.7.1.3:t";
-                        }
-                        leaf last-cross-connect-ccm {
-                            type string {
-                                length "1..1522";
-                            }
-                            config false;
-                            description
-                                "The last-received CCM that triggered a cross-connect-ccm fault";
-                            reference
-                                "[802.1q] 12.14.7.1.3:u";
-                        }
-                        leaf ccm-sequence-error-count {
-                            type yang:counter32;
-                            config false;
-                            mandatory true;
-                            description
-                                "The total number of out-of-sequence CCMs received from all remote
-                                MEPs.";
-                            reference
-                                "[802.1q] 12.14.7.1.3:v"; 
-                        }
-                        leaf sent-ccms {
-                            type yang:counter32;
-                            config false;
-                            mandatory true;
-                            description
-                                "The total number of CCMs transmitted.";
-                            reference
-                                "[802.1q] 12.14.7.1.3:w"; 
-                        }
-                        uses remote-mep-database;
-                        uses loopback-result;
-                        uses linktrace-result;
-                        uses one-way-dm-result;
-                        uses two-way-dm-result;
-                        uses two-way-slm-result;
-                    }
-                }
-            }
-        }
-    }
+  }
 }

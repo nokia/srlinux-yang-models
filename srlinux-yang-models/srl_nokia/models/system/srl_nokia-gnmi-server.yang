@@ -22,19 +22,9 @@ module srl_nokia-gnmi-server {
     prefix srl-feat;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state data related to the gnmi server.";
 
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
-  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -79,13 +69,13 @@ module srl_nokia-gnmi-server {
         "Enable or disable the use of username/password authentication for every gNMI request";
     }
     leaf yang-models {
-      if-feature srl-feat:openconfig;
+      if-feature "srl-feat:openconfig";
       type enumeration {
-          enum native;
-          enum openconfig;
+        enum native;
+        enum openconfig;
       }
       srl-ext:show-importance "high";
-      default native;
+      default "native";
       description
         "Specify yang-models to be used when origin field is not present in the gnmi requests";
     }
@@ -146,6 +136,7 @@ module srl_nokia-gnmi-server {
           "Port the gNMI server will listen on for incoming connections";
       }
       leaf tls-profile {
+        mandatory true;
         type leafref {
           path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
         }
@@ -228,7 +219,7 @@ module srl_nokia-gnmi-server {
       leaf commit-save {
         srl-ext:first-released "21.3.1";
         type boolean;
-        default false;
+        default "false";
         srl-ext:show-importance "low";
         description
           "Specifies whether to save startup configuration after every successful commit";
@@ -236,11 +227,11 @@ module srl_nokia-gnmi-server {
       leaf include-defaults-in-config-only-responses {
         srl-ext:first-released "20.6.4";
         type boolean;
-        default false;
+        default "false";
         srl-ext:show-importance "low";
         description
-            "Specifies whether to include field default values in get/subscribe responses when
-             using configuration only datastore (for example running/intended datastore)";
+          "Specifies whether to include field default values in get/subscribe responses when
+           using configuration only datastore (for example running/intended datastore)";
       }
       list subscription {
         config false;

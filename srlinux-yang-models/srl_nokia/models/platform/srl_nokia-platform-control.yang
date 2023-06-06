@@ -1,8 +1,5 @@
 module srl_nokia-platform-control {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/platform-control";
   prefix srl_nokia-platform-control;
 
@@ -19,23 +16,9 @@ module srl_nokia-platform-control {
     prefix srl-feat;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state data related to control modules.";
 
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
-  }
-  revision 2022-11-30 {
-    description
-      "SRLinux 22.11.1";
-  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -72,7 +55,6 @@ module srl_nokia-platform-control {
   grouping control-interfaces-top {
     description
       "Grouping for configuration and state relating to control module interfaces";
-
     list interface {
       key "name";
       leaf name {
@@ -82,7 +64,6 @@ module srl_nokia-platform-control {
           base control-interfaces;
         }
       }
-
       leaf admin-state {
         description
           "Set the administrative state of this interface";
@@ -96,6 +77,7 @@ module srl_nokia-platform-control {
       }
     }
   }
+
   grouping control-state-top {
     description
       "Grouping for control module state";
@@ -136,12 +118,9 @@ module srl_nokia-platform-control {
         "Top-level container for control module configuration and state";
       uses control-state-top;
       uses control-interfaces-top {
-        if-feature "srl-feat:disabled";
+        if-feature "srl-feat:platform-7210-sas24 or srl-feat:platform-7210-sas24g";
       }
       uses srl-platform:component-common-state-top;
-      uses srl-platform:component-delayed-reboot-state {
-        if-feature "srl-feat:chassis";
-      }
       uses srl-platform:component-common-state-sw;
       uses srl-platform:component-locator;
       uses srl-platform:component-power-state-top;

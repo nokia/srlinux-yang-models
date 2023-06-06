@@ -16,7 +16,6 @@ module openconfig-system {
   import openconfig-system-logging { prefix oc-log; }
   import openconfig-system-terminal { prefix oc-sys-term; }
   import openconfig-procmon { prefix oc-proc; }
-  import openconfig-platform { prefix oc-platform; }
   import openconfig-alarms { prefix oc-alarms; }
   import openconfig-messages { prefix oc-messages; }
   import openconfig-license { prefix oc-license; }
@@ -46,56 +45,8 @@ module openconfig-system {
     Section 4.c of the IETF Trust's Legal Provisions Relating
     to IETF Documents (http://trustee.ietf.org/license-info).";
 
-  oc-ext:openconfig-version "0.16.0";
-
-  revision "2022-09-28" {
-    description
-      "Add last configuration timestamp leaf.";
-    reference "0.16.0";
-  }
-
-  revision "2022-07-25" {
-    description
-      "Add system software version.";
-    reference "0.15.0";
-  }
-
-  revision "2022-07-20" {
-    description
-      "Added routing-mac system MAC address.";
-    reference "0.14.0";
-  }
-
-  revision "2022-07-12" {
-    description
-      "Modify ntp enabled description to reflect true and false case.";
-    reference "0.13.1";
-  }
-
-  revision "2021-07-20" {
-    description
-      "Adding list of mount points.";
-    reference "0.13.0";
-  }
-
-  revision "2021-07-14" {
-    description
-      "Support for additional RAM usage counters.";
-    reference "0.12.0";
-  }
-
-  revision "2021-06-28" {
-    description
-      "Adding system memory error counters.";
-    reference "0.11.1";
-  }
-
-  revision "2021-06-16" {
-    description
-      "Remove trailing whitespace";
-    reference "0.10.1";
-  }
-
+  oc-ext:openconfig-version "0.10.0";
+  
   revision "2020-04-13" {
     description
       "Remove the existing grpc-service, and add a new list
@@ -292,55 +243,6 @@ module openconfig-system {
     }
   }
 
-  grouping mount-point-state {
-    description
-      "Operational state data for the mount point.";
-
-    leaf name {
-      type string;
-      description
-        "Mount point name.";
-    }
-
-    leaf storage-component {
-      type leafref {
-        path "/oc-platform:components/oc-platform:component/" +
-          "oc-platform:name";
-      }
-
-      description
-        "In the case that the filesystem that is mounted corresponds to a
-        physical or logical component within the system, this leaf provides
-        a reference to the hosting component within the /components
-        hierarchy.
-
-        The reference should be to the most specific component (e.g., if an
-        entry for /dev/sda1 exists, then this should be referred to,
-        otherwise a reference to /dev/sda may be provided.";
-    }
-
-    leaf size {
-      type uint64;
-      units megabytes;
-      description
-        "The total size of the initialised filesystem.";
-    }
-
-    leaf available {
-      type uint64;
-      units megabytes;
-      description
-        "The amount of unused space on the filesystem.";
-    }
-
-    leaf utilized {
-      type uint64;
-      units megabytes;
-      description
-        "The amount of space currently in use on the filesystem.";
-    }
-  }
-
   grouping system-global-state {
     description
       "Global operational state data for the system";
@@ -360,59 +262,6 @@ module openconfig-system {
           to the Unix Epoch (Jan 1, 1970 00:00:00 UTC).";
     }
 
-    leaf software-version {
-        type string;
-        description
-          "Operating system version of the currently active controller
-          of the device.  It is required that this value matches the
-          value of the state/software-version leaf in the component
-          of type OPERATING_SYSTEM.";
-    }
-
-    leaf last-configuration-timestamp {
-      type oc-types:timeticks64;
-      units "nanoseconds";
-      description
-        "Indicates the monotonically increasing timestamp at which the
-        last configuration change was made. This may may be through CLI,
-        gNMI or some other mechanism.";
-    }
-  }
-
-  grouping mount-points-top {
-    description
-      "Top-level grouping for mount points data.";
-
-    container mount-points {
-      config false;
-      description
-        "When a system has a set of filesystems that are attached to a
-        directory (i.e., mounted on the system) they are expected to be
-        present in this list. If the system has the concept of mounting
-        physical or virtual resources to a mount point within the root
-        filesystem (/) they should also be included in this list.";
-
-      list mount-point {
-        key "name";
-        description
-          "List of mount points in the system.";
-
-        leaf name {
-          type leafref {
-            path "../state/name";
-          }
-          description
-            "Reference to the key for list of mount points.";
-        }
-
-        container state {
-          config false;
-          description
-            "State of system mount point.";
-          uses mount-point-state;
-        }
-      }
-    }
   }
 
   grouping system-dns-config {
@@ -430,6 +279,7 @@ module openconfig-system {
   grouping system-dns-state {
     description
       "Operational state data for system DNS resolver";
+
   }
 
   grouping system-dns-servers-config {
@@ -523,7 +373,9 @@ module openconfig-system {
         }
 
         container state {
+
           config false;
+
           description
             "Operational state data for static host entries";
 
@@ -583,7 +435,9 @@ module openconfig-system {
         }
 
         container state {
+
           config false;
+
           description
             "Operational state data for each DNS resolver";
 
@@ -613,7 +467,9 @@ module openconfig-system {
       }
 
       container state {
+
         config false;
+
         description
           "Operational state data for the DNS resolver";
 
@@ -796,13 +652,16 @@ module openconfig-system {
         }
 
         container state {
+
           config false;
+
           description
             "Operational state data for an NTP server.";
 
           uses system-ntp-server-config;
           uses system-ntp-server-state;
         }
+
       }
     }
   }
@@ -889,7 +748,7 @@ module openconfig-system {
       type boolean;
       default false;
       description
-        "Enables and disables the NTP protocol and indicates that the system should
+        "Enables the NTP protocol and indicates that the system should
         attempt to synchronize the system clock with an NTP server
         from the servers defined in the 'ntp/server' list.";
     }
@@ -950,52 +809,6 @@ module openconfig-system {
     }
   }
 
-  grouping system-routing-macaddr-config {
-    description
-      "Configuration data for system's routing MAC addresses.";
-
-    leaf routing-mac {
-      type oc-yang:mac-address;
-      description
-        "Any packets destined to this MAC address must be sent through the
-        routing pipeline by the system. This MAC address is used to identify
-        routed packets in addition to any other MAC addresses that the system
-        may already have been using to perform routing.
-
-        It is not expected that this MAC address will be used as the
-        source MAC address of any routed packet, as the source MAC address of
-        any packets generated by the system, or a MAC address used in ARP
-        response. This MAC address may not be allocated from the block of
-        MAC address that system owns. For instance, it's allocation could
-        be managed by an external controller.";
-    }
-  }
-
-  grouping system-macaddr-top {
-    description
-      "Top-level grouping for configuration and state of system's MAC addresses.";
-
-    container mac-address {
-      description
-        "Top-level container for system's MAC address configuration and state";
-
-      container config {
-        description
-          "Configuration data for routing MAC address.";
-
-        uses system-routing-macaddr-config;
-      }
-
-      container state {
-        config false;
-        description
-          "Operational state data for routing MAC address.";
-
-        uses system-routing-macaddr-config;
-      }
-    }
-  }
-
   grouping system-memory-config {
     description
       "Configuration data for system memory";
@@ -1020,47 +833,6 @@ module openconfig-system {
       description
         "Memory reserved for system use";
     }
-
-    leaf used {
-      type uint64;
-      units bytes;
-      description
-        "Memory that has been used and not available for allocation.";
-    }
-
-    leaf free {
-      type uint64;
-      units bytes;
-      description
-        "Memory that is not used and is available for allocation.";
-    }
-  }
-
-  grouping system-memory-error-counters {
-    description
-      "Counters for system memory errors.";
-
-    leaf correctable-ecc-errors {
-      type uint64;
-      description
-        "Count of correctable ECC errors. Systems with ECC memory
-        are capable of correcting Single-bit ECC errors.";
-    }
-
-    leaf uncorrectable-ecc-errors {
-      type uint64;
-      description
-        "Count of uncorrectable ECC errors. Systems with ECC
-        memory are capable of detecting multi-bit ECC errors,
-        but cannot correct them.";
-    }
-
-    leaf total-ecc-errors {
-      type uint64;
-      description
-        "Count of total ECC errors, this includes both correctable
-        and uncorrectable ECC errors.";
-    }
   }
 
   grouping system-memory-top {
@@ -1082,12 +854,6 @@ module openconfig-system {
         config false;
         description
           "Operational state data for system memory";
-
-        container counters {
-          description
-            "Counters for tracking system memory errors";
-            uses system-memory-error-counters;
-        }
 
         uses system-memory-config;
         uses system-memory-state;
@@ -1201,6 +967,7 @@ module openconfig-system {
         }
 
         container state {
+
           description
             "Operational state data for the system CPU(s)";
 
@@ -1223,6 +990,7 @@ module openconfig-system {
         description "Global configuration data for the system";
 
         uses system-global-config;
+
       }
 
       container state {
@@ -1233,7 +1001,6 @@ module openconfig-system {
         uses system-global-state;
       }
 
-      uses mount-points-top;
       uses system-clock-top;
       uses system-dns-top;
       uses system-ntp-top;
@@ -1247,10 +1014,11 @@ module openconfig-system {
       uses oc-alarms:alarms-top;
       uses oc-messages:messages-top;
       uses oc-license:license-top;
-      uses system-macaddr-top;
     }
   }
 
   // data definition statements
+
   uses system-top;
+
 }

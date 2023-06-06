@@ -10,19 +10,35 @@ module srl_nokia-tools-qos-policers {
     prefix srl_nokia-tools-qos;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
-  revision 2023-03-31 {
-    description
-      "SRLinux 23.3.1";
-  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
   }
 
+  grouping tools-qos-policers-top {
+    container policers {
+      leaf clear {
+        type empty;
+      }
+      list policer {
+        description
+          "The list of policer instances belonging to the template definition.";
+        key "index";
+        leaf index {
+          description
+            "The policer index";
+          type uint8 {
+            range "1..32";
+          }
+        }
+        leaf clear {
+          type empty;
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface/srl_nokia-tools-qos:qos/srl_nokia-tools-qos:input" {
+    uses tools-qos-policers-top;
+  }
 }

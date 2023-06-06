@@ -1,12 +1,8 @@
 module srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-unicast-destinations {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/tunnel-interface/vxlan-interface/bridge-table/unicast-destinations";
   prefix srl_nokia-tunnel-if-vxlan-if-bt-unicast-destinations;
 
-  // import some basic types
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
@@ -17,16 +13,8 @@ module srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-unicast-destinat
     prefix srl_nokia-ext;
   }
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
-
   description
     "Model for bridge-table unicast destinations on the vxlan-interface";
-
-  // typedef statements
 
   revision 2021-11-30 {
     description
@@ -42,35 +30,33 @@ module srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-unicast-destinat
       config false;
       list mac {
         key "address";
-        description "macs learnt on the bridging instance";
+        description
+          "macs learnt on the bridging instance";
         leaf address {
           type srl_nokia-comm:mac-address;
         }
-
         leaf type {
           type srl_nokia-comm:mac-type;
           srl_nokia-ext:show-importance "high";
           description
             "the type of the mac installed in the fib.";
         }
-
         leaf last-update {
           type srl_nokia-comm:date-and-time-delta;
           srl_nokia-ext:show-importance "high";
           description
             "The date and time of the last update of this mac";
         }
-
         leaf not-programmed-reason {
           srl_nokia-ext:show-importance "high";
           type enumeration {
-            enum "mac-limit";
-            enum "failed-on-slots";
-            enum "no-destination-index";
-            enum "reserved";
+            enum mac-limit;
+            enum failed-on-slots;
+            enum no-destination-index;
+            enum reserved;
           }
-          description 
-             "The reason why the mac is not programmed";
+          description
+            "The reason why the mac is not programmed";
         }
         leaf-list failed-slots {
           srl_nokia-ext:show-importance "high";
@@ -81,7 +67,7 @@ module srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-unicast-destinat
             "The list of slot IDs corresponding to the linecards that did not successfully program the mac";
         }
       }
-    }  
+    }
   }
 
   grouping bridge-table-statistics-top {
@@ -162,7 +148,7 @@ module srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-unicast-destinat
       config false;
       key "vtep vni";
       leaf vtep {
-        srl_nokia-ext:show-importance high;
+        srl_nokia-ext:show-importance "high";
         type srl_nokia-comm:ip-address;
         description
           "The IP address that identifies the remote VXLAN Termination Endpoint (VTEP).";
@@ -172,7 +158,7 @@ module srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-unicast-destinat
           range "1..16777215";
         }
         srl_nokia-ext:show-importance "high";
-        description 
+        description
           "VXLAN Network Identifier of the destination.";
       }
       leaf destination-index {

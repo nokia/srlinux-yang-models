@@ -1,0 +1,81 @@
+module srl_nokia-platform-console {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/platform-console";
+  prefix srl_nokia-platform-console;
+
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-platform-control {
+    prefix srl-platform-control;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  description
+    "This module defines console configuration and state";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  identity console-ports {
+    description
+      "Identity for console ports";
+  }
+
+  identity console1 {
+    base console-ports;
+    description
+      "Indicates the main RJ45 console port";
+  }
+
+  identity console2 {
+    base console-ports;
+    description
+      "Indicates the micro-USB console port";
+  }
+
+  typedef console-speed {
+    type enumeration {
+      enum 9600;
+      enum 19200;
+      enum 38400;
+      enum 57600;
+      enum 115200;
+    }
+  }
+
+  grouping console-top {
+    description
+      "Top-level grouping for console configuration and state";
+    container console {
+      leaf port {
+        description
+          "Selects which console port to use as the operational console
+
+           Only one console port may be active at a time, and enabling one will disable the other. If this field is removed the default behavior is to maintain the currently configured console port.";
+        type identityref {
+          base console-ports;
+        }
+      }
+      leaf oper-port {
+        config false;
+        type identityref {
+          base console-ports;
+        }
+        description
+          "The currently active console port
+
+           This console will be available for connections, with any other console ports being implicitly disabled.";
+      }
+    }
+  }
+
+  augment "/srl-platform:platform/srl-platform-control:control" {
+    if-feature "srl-feat:platform-7210-sas24 or srl-feat:platform-7210-sas24g";
+    uses console-top;
+  }
+}

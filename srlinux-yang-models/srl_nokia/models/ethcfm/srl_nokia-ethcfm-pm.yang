@@ -1,23 +1,30 @@
 module srl_nokia-ethcfm-pm {
-    yang-version 1.1;
-    namespace "urn:srl_nokia/ethcfm/pm";
-    prefix "srl_nokia-ethcfm-pm";
-    import ietf-yang-types            { prefix yang; }
-    import srl_nokia-common           { prefix srl_nokia-comm; }
-    import srl_nokia-features         { prefix srl_nokia-feat; }
-    import srl_nokia-oam              { prefix srl_nokia-oam; }
-    import srl_nokia-ethcfm           { prefix srl_nokia-ethcfm; }
-    import srl_nokia-ethcfm-types     { prefix srl_nokia-ethcfm-types; }
+  yang-version 1.1;
+  namespace "urn:srl_nokia/ethcfm/pm";
+  prefix srl_nokia-ethcfm-pm;
 
-  organization
-    "Nokia";
-  contact
-    "Nokia SR Linux Support
-     Web: <http://www.nokia.com>";
+  import ietf-yang-types {
+    prefix yang;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+  import srl_nokia-ethcfm {
+    prefix srl_nokia-ethcfm;
+  }
+  import srl_nokia-ethcfm-types {
+    prefix srl_nokia-ethcfm-types;
+  }
 
-    description
-        "This YANG module contains the management data definitions for the
-        Ethernet CFM Performance Monitoring.";
+  description
+    "This YANG module contains the management data definitions for the
+     Ethernet CFM Performance Monitoring.";
 
   revision 2022-03-31 {
     description
@@ -28,699 +35,743 @@ module srl_nokia-ethcfm-pm {
       "SRLinux 21.11.1";
   }
 
-    grouping  bin-group-bin-type-key {
-        leaf bt-id {
-            description
-                "The identifier of a bin type within a bin group.";
-            type enumeration {
-                enum fd   { value 1; }
-                enum ifdv { value 2; }
-            }
+  grouping bin-group-bin-type-key {
+    leaf bt-id {
+      description
+        "The identifier of a bin type within a bin group.";
+      type enumeration {
+        enum fd {
+          value 1;
         }
+        enum ifdv {
+          value 2;
+        }
+      }
     }
-    grouping bin-group-bin-type-bin-key {
-        leaf bin-id {
+  }
+
+  grouping bin-group-bin-type-bin-key {
+    leaf bin-id {
+      description
+        "The bin identifier.";
+      type uint8 {
+        range "0..9";
+      }
+    }
+  }
+
+  grouping measurement-interval-duration-key {
+    leaf mi-type {
+      description
+        "The duration of the measurement interval.";
+      type enumeration {
+        enum 5-minutes {
+          value 1;
+        }
+        enum 15-minutes {
+          value 2;
+        }
+        enum 1-hour {
+          value 3;
+        }
+        enum 1-day {
+          value 4;
+        }
+      }
+    }
+  }
+
+  grouping measurement-interval-state {
+    leaf newest-index {
+      config false;
+      description
+        "The interval identifier of the newest interval for the
+         specified session and test type";
+      type uint8;
+    }
+  }
+
+  grouping template-reference {
+    leaf reference-count {
+      config false;
+      description
+        "The number of PM sessions referencing the template.";
+      type uint32;
+    }
+  }
+
+  grouping threshold-config {
+    leaf raise-threshold {
+      description
+        "The raise threshold for excessive loss. It must be higher
+         than clear-threshold. A value of '0' means TCA is disabled.";
+      type uint32 {
+        range "0|1..864000";
+      }
+      default "0";
+    }
+    leaf clear-threshold {
+      description
+        "The clear threshold for excessive loss. It must be lower
+         than raise-threshold. A value of '0' means the TCA is
+         stateless. Any non-zero value means the TCA is stateful.";
+      type uint32 {
+        range "0..863999";
+      }
+      default "0";
+    }
+  }
+
+  grouping threshold-percentage {
+    leaf raise-threshold {
+      description
+        "The raise threshold for excessive loss. It must be higher
+         than clear-threshold. A value of '0' means TCA is disabled.";
+      type uint32 {
+        range "0|1..100000";
+      }
+      default "0";
+      units "milli-percent";
+    }
+    leaf clear-threshold {
+      description
+        "The clear threshold for excessive loss. It must be lower
+         than raise-threshold. A value of '0' means the TCA is
+         stateless. Any non-zero value means the TCA is stateful.";
+      type uint32 {
+        range "0..100000";
+      }
+      default "0";
+      units "milli-percent";
+    }
+  }
+
+  augment "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm" {
+    if-feature "srl_nokia-feat:ethcfm-pm";
+    container pmon-template {
+      list bin-group {
+        max-elements 512;
+        description
+          "The bin group for delay measurement.
+           Bin Group 1 is created by the system and
+           cannot be deleted.";
+        key "bg-id";
+        leaf bg-id {
+          description
+            "Bin group identifier.";
+          type uint16 {
+            range "1..512";
+          }
+        }
+        list bin-type {
+          description
+            "The type of bin to be configured within the bin
+             group.";
+          key "bt-id";
+          uses bin-group-bin-type-key;
+          leaf bin-count {
             description
+              "The bin count for the bin type.";
+            type uint8 {
+              range "1..10";
+            }
+            default "2";
+          }
+          list delay-event {
+            description
+              "Delay thresholds for the bin type.";
+            key "direction";
+            leaf direction {
+              description
+                "The traffic flow direction of a delay test.";
+              type enumeration {
+                enum forward {
+                  value 1;
+                }
+                enum backward {
+                  value 2;
+                }
+                enum round-trip {
+                  value 3;
+                }
+              }
+            }
+            leaf lowest-bin {
+              description
+                "The lowest bin to be used when applying a
+                 configured Raise or Clear delay threshold.";
+              type uint8 {
+                range "0..9";
+              }
+              default "0";
+            }
+            uses threshold-config;
+          }
+          list bin {
+            max-elements 10;
+            description
+              "A bin within the bin type.";
+            key "bin-id";
+            leaf bin-id {
+              description
                 "The bin identifier.";
+              type uint8 {
+                range "0..9";
+              }
+              must '(current() < ../../bin-count)' {
+                error-message "The bin id is not within the range.";
+              }
+            }
+            leaf lower-bound {
+              description
+                "The lower bound for the bin. The value for
+                 Bin-0 must be '0'. The default values are:
+                 Bin-0: 0;
+                 Bin-1: 30;
+                 Bin-2~9: 10+the value of the proceeding bin;";
+              type uint32 {
+                range "0..5000";
+              }
+              units "microseconds";
+            }
+          }
+        }
+        uses template-reference;
+      }
+      list measurement-interval {
+        max-elements 512;
+        description
+          "The measurement interval parameters for the session.
+           MI 1 is created by the system and cannot be deleted.";
+        key "mi-id";
+        leaf mi-id {
+          description
+            "The measurement interval identifier.";
+          type uint16 {
+            range "1..512";
+          }
+        }
+        list duration {
+          max-elements 4;
+          description
+            "The type of measurement interval to be configured
+             within the template.";
+          key "mi-type";
+          uses measurement-interval-duration-key;
+          leaf interval-count {
+            description
+              "The maximum number of intervals stored for the
+               MI duration.
+               The default values are:
+               96 for 5-minutes;
+               96 for 15-minutes;
+               24 for 1-hour;
+               3  for 1-day ";
             type uint8 {
-                range 0..9;
+              range "1..96";
             }
+          }
         }
+        uses template-reference;
+      }
     }
-    grouping measurement-interval-duration-key {
-        leaf mi-type {
-            description
-                "The duration of the measurement interval.";
-            type enumeration {
-                enum 5-minutes  { value 1; }
-                enum 15-minutes { value 2; }
-                enum 1-hour     { value 3; }
-                enum 1-day      { value 4; }
-            }
-        }
-    }
-    grouping measurement-interval-state {
-        leaf newest-index {
-            config false;
-            description
-                "The interval identifier of the newest interval for the
-                specified session and test type";
-            type uint8;
-        }
-    }
-    grouping template-reference {
-        leaf reference-count {
-            config false;
-            description
-                "The number of PM sessions referencing the template.";
-            type uint32;
-        }
-    }
-    grouping threshold-config {
-        leaf raise-threshold {
-            description
-                "The raise threshold for excessive loss. It must be higher
-                than clear-threshold. A value of '0' means TCA is disabled.";
-            type uint32 {
-                range 0|1..864000;
-            }
-            default 0;
-        }
-        leaf clear-threshold {
-            description
-                "The clear threshold for excessive loss. It must be lower
-                than raise-threshold. A value of '0' means the TCA is
-                stateless. Any non-zero value means the TCA is stateful.";
-            type uint32 {
-                range 0..863999;
-            }
-            default 0;
-        }
-    }
-    grouping threshold-percentage {
-        leaf raise-threshold {
-            description
-                "The raise threshold for excessive loss. It must be higher
-                than clear-threshold. A value of '0' means TCA is disabled.";
-            type uint32 {
-                range "0|1..100000";
-            }
-            default 0;
-            units milli-percent;
-        }
-        leaf clear-threshold {
-            description
-                "The clear threshold for excessive loss. It must be lower
-                than raise-threshold. A value of '0' means the TCA is
-                stateless. Any non-zero value means the TCA is stateful.";
-            type uint32 {
-                range "0..100000";
-            }
-            default 0;
-            units milli-percent;
-        }
-    }
+  }
 
-    augment "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm" {
-        if-feature srl_nokia-feat:ethcfm-pm;
-        container pmon-template {
-            list bin-group {
-                max-elements 512;
-                description
-                    "The bin group for delay measurement.
-                    Bin Group 1 is created by the system and
-                    cannot be deleted.";
-                key "bg-id";
-                leaf bg-id {
-                    description
-                        "Bin group identifier.";
-                    type uint16 {
-                        range 1..512;
-                    }
-                }
-                list bin-type {
-                    description
-                        "The type of bin to be configured within the bin
-                        group.";
-                    key "bt-id";
-                    uses bin-group-bin-type-key;
-                    leaf bin-count {
-                        description
-                            "The bin count for the bin type.";
-                        type uint8 {
-                            range 1..10;
-                        }
-                        default 2;
-                    }
-                    list delay-event {
-                        description
-                            "Delay thresholds for the bin type.";
-                        key "direction";
-                        leaf direction {
-                            description
-                                "The traffic flow direction of a delay test.";
-                            type enumeration {
-                                enum forward    { value 1; }
-                                enum backward   { value 2; }
-                                enum round-trip { value 3; }
-                            }
-                        }
-                        leaf lowest-bin {
-                            description
-                                "The lowest bin to be used when applying a
-                                configured Raise or Clear delay threshold.";
-                            type uint8 {
-                                range 0..9;
-                            }
-                            default 0;
-                        }
-                        uses threshold-config;
-                    }
-                    list bin {
-                        max-elements 10;
-                        description
-                            "A bin within the bin type.";
-                        key "bin-id";
-                        leaf bin-id {
-                            description
-                                "The bin identifier.";
-                            type uint8 {
-                                range 0..9;
-                            }
-                            must '(current() < ../../bin-count)' {
-                                error-message "The bin id is not within the range.";
-                            }
-                        }
-                        leaf lower-bound {
-                            description
-                                "The lower bound for the bin. The value for
-                                Bin-0 must be '0'. The default values are:
-                                Bin-0: 0;
-                                Bin-1: 30;
-                                Bin-2~9: 10+the value of the proceeding bin;";
-                            type uint32 {
-                                range 0..5000;
-                            }
-                            units microseconds;
-                        }
-                    }
-                }
-                uses template-reference;
-            }
-            list measurement-interval {
-                max-elements 512;
-                description
-                    "The measurement interval parameters for the session.
-                    MI 1 is created by the system and cannot be deleted.";
-                key "mi-id";
-                leaf mi-id {
-                    description
-                        "The measurement interval identifier.";
-                    type uint16 {
-                        range 1..512;
-                    }
-                }
-                list duration {
-                    max-elements 4;
-                    description
-                        "The type of measurement interval to be configured
-                        within the template.";
-                    key "mi-type";
-                    uses measurement-interval-duration-key;
-                    leaf interval-count {
-                        description
-                            "The maximum number of intervals stored for the
-                            MI duration.
-                            The default values are:
-                            96 for 5-minutes;
-                            96 for 15-minutes;
-                            24 for 1-hour;
-                            3  for 1-day ";
-                        type uint8 {
-                            range 1..96;
-                        }
-                    }
-                }
-                uses template-reference;
-            }
-        }
+  grouping measurement-key {
+    leaf session-id {
+      type srl_nokia-ethcfm-types:admin-name;
+      description
+        "This object uniquely identifies a scheduled measurement.";
     }
+  }
 
-    grouping measurement-key {
-        leaf session-id {
-            type srl_nokia-ethcfm-types:admin-name;
-            description
-                "This object uniquely identifies a scheduled measurement.";
-        }
+  grouping measurement-config {
+    description
+      "This grouping includes configuration objects for the Delay
+       Measurement function defined in [Y.1731] and [MEF SOAM PM IA].";
+    reference
+      "MEF-SOAM-PM-MIB.mefSoamDmCfgTable, [Y.1731], and [MEF SOAM PM IA].";
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "This object enables/disables the session.";
     }
-    grouping measurement-config {
+    leaf target {
+      type yang:mac-address;
+      mandatory true;
+      description
+        "A unicast destination MAC address.";
+    }
+    leaf priority {
+      type srl_nokia-ethcfm-types:priority-type;
+      default "7";
+      description
+        "This object specifies the priority of frames with Performance
+         Monitoring OAM message information.";
+    }
+    leaf frame-size {
+      type uint32 {
+        range "64 .. 9600";
+      }
+      default "64";
+      description
+        "This object specifies the frame size between 64 bytes
+         and the maximum transmission unit of the EVC.
+         The range of frame sizes from 64 through 2000 octets need to be
+         supported, and the range of frame sizes from 2001 through 9600
+         octets is suggested to be supported.
+         The adjustment to the frame size of the standard frame size is
+         accomplished by the addition of a Data or Test TLV. A Data or
+         Test TLV is only added to the frame if the frame size is
+         greater than 64 bytes.";
+    }
+    leaf measurement-interval {
+      type leafref {
+        path "../../../../../../../pmon-template/measurement-interval/mi-id";
+      }
+      default "1";
+      description
+        "The measurement interval for the session.";
+    }
+  }
+
+  grouping dm-config {
+    leaf transmit-interval {
+      type enumeration {
+        enum 1s;
+        enum 10s;
+        enum 60s;
+        enum 600s;
+      }
+      default "1s";
+      description
+        "This object specifies the interval between Measurement
+         message transmission.";
+    }
+    leaf bin-group {
+      type leafref {
+        path "../../../../../../../pmon-template/bin-group/bg-id";
+      }
+      default "1";
+      description
+        "The bin group for the session.";
+    }
+  }
+
+  grouping measurement-interval-key {
+    leaf interval-id {
+      description
+        "Interval identifier.";
+      type uint8;
+    }
+  }
+
+  grouping measurement-status {
+    description
+      "This grouping includes statistics objects for a SOAM Delay
+       Measurement session.";
+    leaf oper-state {
+      description
+        "Operational state of the specified measurement interval.";
+      type enumeration {
+        enum in-progress {
+          value 1;
+        }
+        enum completed {
+          value 2;
+        }
+      }
+    }
+    leaf suspect-status {
+      description
+        "Whether the Measurement Interval has been marked as suspect.
+         The object is to be set to false at the start of a measurement
+         interval. It is set to true when there is a discontinuity in
+         the performance measurements during the Measurement Interval.
+         Conditions for a discontinuity include, but are not limited to
+         the following:
+         1 - The local time-of-day clock is adjusted by at least 10 seconds
+         2 - The conducting of a performance measurement is halted before the
+         current Measurement Interval is completed
+         3 - A local test, failure, or reconfiguration that disrupts service";
+      type boolean;
+    }
+    leaf start-time {
+      description
+        "The time that the current measurement interval started.";
+      type yang:date-and-time;
+    }
+    leaf elapsed-time {
+      description
+        "Time elapsed since data collection started for the specified
+         measurement interval.";
+      type uint64;
+      units "seconds";
+    }
+    leaf frames-sent {
+      description
+        "Number of test frames sent for the specified measurement
+         interval.";
+      type uint32;
+    }
+    leaf frames-received {
+      description
+        "Number of test frames received for the specified measurement
+         interval.";
+      type uint32;
+    }
+  }
+
+  grouping delay-measurement-statistics {
+    leaf minimum {
+      description
+        "Minimum delay for the specified direction, session, interval
+         duration, interval number, and bin type.";
+      type uint64;
+      units "nanoseconds";
+    }
+    leaf maximum {
+      description
+        "Maximum delay for the specified direction, session, interval
+         duration, interval number, and bin type.";
+      type uint64;
+      units "nanoseconds";
+    }
+    leaf average {
+      description
+        "Average delay for the specified direction, session, interval
+         duration, interval number, and bin type.";
+      type uint64;
+      units "nanoseconds";
+    }
+  }
+
+  grouping ethcfm-one-way-dm-pm {
+    description
+      "This container contains a collection of data definitions related
+       to One-Way Delay Measurements.";
+    list session {
+      key "session-id";
+      max-elements 1;
+      description
+        "A list of Delay Measurement PM Sessions where each instance
+         is uniquely identified by an id attribute.";
+      uses measurement-key;
+      uses measurement-config;
+      uses dm-config;
+      list measurement-result {
+        config false;
         description
-            "This grouping includes configuration objects for the Delay
-            Measurement function defined in [Y.1731] and [MEF SOAM PM IA].";
+          "The test statistics for a delay measurement.";
+        key "mi-type";
+        uses measurement-interval-duration-key;
+        uses measurement-interval-state;
+        list interval {
+          key "interval-id";
+          uses measurement-interval-key;
+          uses measurement-status;
+          list bin-type {
+            key "bt-id";
+            uses bin-group-bin-type-key;
+            container forward {
+              uses delay-measurement-statistics;
+            }
+            container backward {
+              uses delay-measurement-statistics;
+            }
+            list bin {
+              key "bin-id";
+              uses bin-group-bin-type-bin-key;
+              leaf forward-measurements {
+                description
+                  "Number of frame delay measurements in the
+                   forward direction that fall within the
+                   configured range of the specified bin.";
+                type uint32;
+              }
+              leaf backward-measurements {
+                description
+                  "Number of frame delay measurements in the
+                   backward direction that fall within the
+                   configured range of the specified bin.";
+                type uint32;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping ethcfm-two-way-dm-pm {
+    description
+      "This container contains a collection of data definitions related
+       to Two-Way Delay Measurements.";
+    list session {
+      key "session-id";
+      max-elements 1;
+      description
+        "A list of Delay Measurement PM Sessions where each instance
+         is uniquely identified by an id attribute.";
+      uses measurement-key;
+      uses measurement-config;
+      uses dm-config;
+      list measurement-result {
+        config false;
+        description
+          "The test statistics for a delay measurement.";
+        key "mi-type";
+        uses measurement-interval-duration-key;
+        uses measurement-interval-state;
+        list interval {
+          key "interval-id";
+          uses measurement-interval-key;
+          uses measurement-status;
+          list bin-type {
+            key "bt-id";
+            uses bin-group-bin-type-key;
+            container round-trip {
+              uses delay-measurement-statistics;
+            }
+            list bin {
+              key "bin-id";
+              uses bin-group-bin-type-bin-key;
+              leaf round-trip-measurements {
+                description
+                  "Number of frame delay measurements in the
+                   round-trip direction that fall within the
+                   configured range of the specified bin.";
+                type uint32;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping slm-config {
+    description
+      "This grouping includes configuration objects for the Frame Loss
+       Measurement function defined in [Y.1731] and [MEF SOAM PM IA].";
+    reference
+      "MEF-SOAM-PM-MIB.mefSoamLmCfgTable, [Y.1731] and [MEF SOAM PM IA]";
+    leaf transmit-interval {
+      type enumeration {
+        enum 3330us;
+        enum 10ms;
+        enum 100ms;
+        enum 1s;
+        enum 10s;
+      }
+      default "100ms";
+      description
+        "This object specifies the interval between measurement
+         message transmission.";
+    }
+    leaf delta-t {
+      type uint16 {
+        range "1..60";
+      }
+      units "seconds";
+      default "1";
+      description
+        "This object specifies a configurable parameter for the
+         length of time over which each Availability flr value is
+         calculated.";
+    }
+    leaf flr-threshold {
+      type uint32 {
+        range "0..100000";
+      }
+      units "milli-percent";
+      default "50000";
+      description
+        "This object specifies a configurable availability threshold
+         to be used in evaluating the availability/unavailability
+         status of an availability indicator per MEF 10.2.1.
+         The availability threshold range of 0.00 (0) through 1.00
+         (100000) is supported. This parameter is equivalent to the
+         Availability parameter of 'C' as specified by MEF 10.2.1.
+         Units are in milli-percent, where 1 indicates 0.001 percent.";
+      reference
+        "MEF-SOAM-PM-MIB.mefSoamLmCfgAvailabilityFlrThreshold";
+    }
+    leaf consecutive-intervals {
+      type uint8 {
+        range "2..10";
+      }
+      default "10";
+      description
+        "This object specifies a configurable number of consecutive
+         availability indicators to be used to determine a change in
+         the availability status as indicated by MEF 10.2.1.
+         This parameter is equivalent to the Availability parameter of
+         'n' as specified by MEF 10.2.1.";
+      reference
+        "MEF-SOAM-PM-MIB.mefSoamLmCfgAvailabilityNumConsecutiveIntervals";
+    }
+  }
+
+  grouping loss-event-key {
+    leaf direction {
+      description
+        "Traffic flow direction.";
+      type enumeration {
+        enum forward {
+          value 1;
+        }
+        enum backward {
+          value 2;
+        }
+      }
+    }
+  }
+
+  grouping loss-event-config {
+    description
+      "This group is to define the thresholds for SLM loss events.";
+    list avg-flr {
+      description
+        "The thresholds for Average Frame Loss Ratio (FLR) TCA.";
+      key "direction";
+      uses loss-event-key;
+      uses threshold-percentage;
+    }
+    list hli {
+      description
+        "The thresholds for high loss interval (HLI) TCA.";
+      key "direction";
+      uses loss-event-key;
+      uses threshold-config;
+    }
+    list unavail {
+      description
+        "The thresholds for unavailability TCA.";
+      key "direction";
+      uses loss-event-key;
+      uses threshold-config;
+    }
+  }
+
+  grouping slm-statistics {
+    leaf high-loss {
+      type yang:gauge32;
+      description
+        "This object is the number of high loss intervals (HLI) over
+         time.  The value starts at 0 and increments for every HLI that
+         occurs.  This parameter is equivalent to 'L Sub T' found in
+         MEF 10.2.1.";
+      reference
+        "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardHighLoss";
+    }
+    leaf available {
+      type yang:gauge32;
+      description
+        "This object contains the number of availability indicators
+         during a small time interval evaluated as available (low
+         frame loss) by this MEP during this measurement interval.";
+      reference
+        "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardAvailable";
+    }
+    leaf unavailable {
+      type yang:gauge32;
+      description
+        "This object contains the number of availability indicators
+         during a small time interval evaluated as unavailable (high
+         frame loss) by this MEP during this measurement interval.";
+      reference
+        "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardUnavailable";
+    }
+    container flr {
+      description
+        "This object contains the minimum, maximum, and average
+         one-way availability flr from among the set of availability
+         flr values calculated by the MEP in this Measurement Interval.
+         There is one availability flr value for each 'delta_t' time
+         period within the Measurement Interval, as specified in MEF
+         10.2.1.  The flr value is a ratio that is expressed as a
+         percent with a value of 0 (ratio 0.00) through 100000 (ratio
+         1.00).  Units are in milli-percent, where 1 indicates 0.001
+         percent.";
+      leaf min {
+        type uint32 {
+          range "0..100000";
+        }
+        units "milli-percent";
         reference
-            "MEF-SOAM-PM-MIB.mefSoamDmCfgTable, [Y.1731], and [MEF SOAM PM IA].";
-        leaf admin-state {
-            type srl_nokia-comm:admin-state;
-            default disable;
-            description
-                "This object enables/disables the session.";
+          "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardMinFlr";
+      }
+      leaf max {
+        type uint32 {
+          range "0..100000";
         }
-        leaf target {
-            type yang:mac-address;
-            mandatory true;
-            description
-                "A unicast destination MAC address.";
-        }
-        leaf priority {
-            type srl_nokia-ethcfm-types:priority-type;
-            default 7;
-            description
-                "This object specifies the priority of frames with Performance
-                Monitoring OAM message information.";
-        }
-        leaf frame-size {
-            type uint32 {
-                range "64 .. 9600";
-            }
-            default 64;
-            description
-                "This object specifies the frame size between 64 bytes
-                and the maximum transmission unit of the EVC.
-                The range of frame sizes from 64 through 2000 octets need to be
-                supported, and the range of frame sizes from 2001 through 9600
-                octets is suggested to be supported.
-                The adjustment to the frame size of the standard frame size is
-                accomplished by the addition of a Data or Test TLV. A Data or
-                Test TLV is only added to the frame if the frame size is
-                greater than 64 bytes.";
-        }
-        leaf measurement-interval {
-            type leafref {
-                path "../../../../../../../pmon-template/measurement-interval/mi-id";
-            }
-            default 1;
-            description
-                "The measurement interval for the session.";
-        }
-    }
-    grouping dm-config {
-        leaf transmit-interval {
-            type enumeration {
-                enum 1s;
-                enum 10s;
-                enum 60s;
-                enum 600s;
-            }
-            default 1s;
-            description
-                "This object specifies the interval between Measurement
-                message transmission.";
-        }
-        leaf bin-group {
-            type leafref {
-                path "../../../../../../../pmon-template/bin-group/bg-id";
-            }
-            default 1;
-            description
-                "The bin group for the session.";
-        }
-    }
-    grouping measurement-interval-key {
-        leaf interval-id {
-            description
-                "Interval identifier.";
-            type uint8;
-        }
-    }
-    grouping measurement-status {
-        description
-            "This grouping includes statistics objects for a SOAM Delay
-            Measurement session.";
-        leaf oper-state {
-            description
-                "Operational state of the specified measurement interval.";
-            type enumeration {
-                enum in-progress    { value 1; }
-                enum completed      { value 2; }
-            }
-        }
-        leaf suspect-status {
-            description
-                "Whether the Measurement Interval has been marked as suspect.
-                The object is to be set to false at the start of a measurement
-                interval. It is set to true when there is a discontinuity in
-                the performance measurements during the Measurement Interval.
-                Conditions for a discontinuity include, but are not limited to
-                the following:
-                1 - The local time-of-day clock is adjusted by at least 10 seconds
-                2 - The conducting of a performance measurement is halted before the
-                current Measurement Interval is completed
-                3 - A local test, failure, or reconfiguration that disrupts service";
-            type boolean;
-        }
-        leaf start-time {
-            description
-                "The time that the current measurement interval started.";
-            type yang:date-and-time;
-        }
-        leaf elapsed-time {
-            description
-                "Time elapsed since data collection started for the specified
-                measurement interval.";
-            type uint64;
-            units seconds;
-        }
-        leaf frames-sent {
-            description
-                "Number of test frames sent for the specified measurement
-                interval.";
-            type uint32;
-        }
-        leaf frames-received {
-            description
-                "Number of test frames received for the specified measurement
-                interval.";
-            type uint32;
-        }
-    }
-    grouping delay-measurement-statistics {
-        leaf minimum {
-            description
-                "Minimum delay for the specified direction, session, interval
-                duration, interval number, and bin type.";
-            type uint64;
-            units nanoseconds;
-        }
-        leaf maximum {
-            description
-                "Maximum delay for the specified direction, session, interval
-                duration, interval number, and bin type.";
-            type uint64;
-            units nanoseconds;
-        }
-        leaf average {
-            description
-                "Average delay for the specified direction, session, interval
-                duration, interval number, and bin type.";
-            type uint64;
-            units nanoseconds;
-        }
-    }
-    grouping ethcfm-one-way-dm-pm {
-        description
-            "This container contains a collection of data definitions related
-            to One-Way Delay Measurements.";
-        list session {
-            key session-id;
-            max-elements 1;
-            description
-                "A list of Delay Measurement PM Sessions where each instance
-                is uniquely identified by an id attribute.";
-            uses measurement-key;
-            uses measurement-config;
-            uses dm-config;
-            list measurement-result {
-                config false;
-                description
-                    "The test statistics for a delay measurement.";
-                key "mi-type";
-                uses measurement-interval-duration-key;
-                uses measurement-interval-state;
-                list interval {
-                    key "interval-id";
-                    uses measurement-interval-key;
-                    uses measurement-status;
-                    list bin-type {
-                        key "bt-id";
-                        uses bin-group-bin-type-key;
-                        container forward {
-                            uses delay-measurement-statistics;
-                        }
-                        container backward {
-                            uses delay-measurement-statistics;
-                        }
-                        list bin {
-                            key "bin-id";
-                            uses bin-group-bin-type-bin-key;
-                            leaf forward-measurements {
-                                description 
-                                    "Number of frame delay measurements in the
-                                    forward direction that fall within the
-                                    configured range of the specified bin.";
-                                type uint32;
-                            }
-                            leaf backward-measurements {
-                                description
-                                    "Number of frame delay measurements in the
-                                    backward direction that fall within the
-                                    configured range of the specified bin.";
-                                type uint32;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    grouping ethcfm-two-way-dm-pm {
-        description
-            "This container contains a collection of data definitions related
-            to Two-Way Delay Measurements.";
-        list session {
-            key session-id;
-            max-elements 1;
-            description
-                "A list of Delay Measurement PM Sessions where each instance
-                is uniquely identified by an id attribute.";
-            uses measurement-key;
-            uses measurement-config;
-            uses dm-config;
-            list measurement-result {
-                config false;
-                description
-                    "The test statistics for a delay measurement.";
-                key "mi-type";
-                uses measurement-interval-duration-key;
-                uses measurement-interval-state;
-                list interval {
-                    key "interval-id";
-                    uses measurement-interval-key;
-                    uses measurement-status;
-                    list bin-type {
-                        key "bt-id";
-                        uses bin-group-bin-type-key;
-                        container round-trip {
-                            uses delay-measurement-statistics;
-                        }
-                        list bin {
-                            key "bin-id";
-                            uses bin-group-bin-type-bin-key;
-                            leaf round-trip-measurements {
-                                description 
-                                    "Number of frame delay measurements in the
-                                    round-trip direction that fall within the
-                                    configured range of the specified bin.";
-                                type uint32;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    grouping slm-config {
-        description
-            "This grouping includes configuration objects for the Frame Loss
-            Measurement function defined in [Y.1731] and [MEF SOAM PM IA].";
+        units "milli-percent";
         reference
-            "MEF-SOAM-PM-MIB.mefSoamLmCfgTable, [Y.1731] and [MEF SOAM PM IA]";
-        leaf transmit-interval {
-            type enumeration {
-                enum 3330us;
-                enum 10ms;
-                enum 100ms;
-                enum 1s;
-                enum 10s;
-            }
-            default 100ms;
-            description
-                "This object specifies the interval between measurement
-                message transmission.";
+          "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardMaxFlr";
+      }
+      leaf avg {
+        type uint32 {
+          range "0..100000";
         }
-        leaf delta-t {
-            type uint16 {
-                range "1..60";
-            }
-            units seconds;
-            default 1;
-            description
-                "This object specifies a configurable parameter for the 
-                length of time over which each Availability flr value is
-                calculated.";
-        }
-        leaf flr-threshold {
-            type uint32 {
-                range "0..100000";
-            }
-            units milli-percent;
-            default 50000;
-            description
-                "This object specifies a configurable availability threshold
-                to be used in evaluating the availability/unavailability
-                status of an availability indicator per MEF 10.2.1.
-                The availability threshold range of 0.00 (0) through 1.00
-                (100000) is supported. This parameter is equivalent to the
-                Availability parameter of 'C' as specified by MEF 10.2.1.
-                Units are in milli-percent, where 1 indicates 0.001 percent.";
-            reference
-                "MEF-SOAM-PM-MIB.mefSoamLmCfgAvailabilityFlrThreshold";
-        }
-        leaf consecutive-intervals {
-            type uint8 {
-                range "2..10";
-            }
-            default 10;
-            description
-                "This object specifies a configurable number of consecutive
-                availability indicators to be used to determine a change in
-                the availability status as indicated by MEF 10.2.1.
-                This parameter is equivalent to the Availability parameter of
-                'n' as specified by MEF 10.2.1.";
-            reference
-                "MEF-SOAM-PM-MIB.mefSoamLmCfgAvailabilityNumConsecutiveIntervals";
-        }
+        units "milli-percent";
+        reference
+          "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardAvgFlr";
+      }
     }
-    grouping loss-event-key {
-        leaf direction {
-            description
-                "Traffic flow direction.";
-            type enumeration {
-                enum forward  { value 1; }
-                enum backward { value 2; }
-            }
-        }
-    }
-    grouping loss-event-config {
-        description
-            "This group is to define the thresholds for SLM loss events.";
-        list avg-flr {
-            description
-                "The thresholds for Average Frame Loss Ratio (FLR) TCA.";
-            key "direction";
-            uses loss-event-key;
-            uses threshold-percentage;
-        }
-        list hli {
-            description
-                "The thresholds for high loss interval (HLI) TCA.";
-            key "direction";
-            uses loss-event-key;
-            uses threshold-config;
-        }
-        list unavail {
-            description
-                "The thresholds for unavailability TCA.";
-            key "direction";
-            uses loss-event-key;
-            uses threshold-config;
-        }
-    }
-    grouping slm-statistics {
-        leaf high-loss {
-            type yang:gauge32;
-            description
-                "This object is the number of high loss intervals (HLI) over
-                time.  The value starts at 0 and increments for every HLI that
-                occurs.  This parameter is equivalent to 'L Sub T' found in
-                MEF 10.2.1.";
-            reference
-                "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardHighLoss";
-        }
-        leaf available {
-            type yang:gauge32;
-            description
-                "This object contains the number of availability indicators
-                during a small time interval evaluated as available (low
-                frame loss) by this MEP during this measurement interval.";
-            reference
-                "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardAvailable";
-        }
-        leaf unavailable {
-            type yang:gauge32;
-            description
-                "This object contains the number of availability indicators
-                during a small time interval evaluated as unavailable (high
-                frame loss) by this MEP during this measurement interval.";
-            reference
-                "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardUnavailable";
-        }
-        container flr {
-            description
-                "This object contains the minimum, maximum, and average
-                one-way availability flr from among the set of availability
-                flr values calculated by the MEP in this Measurement Interval.
-                There is one availability flr value for each 'delta_t' time
-                period within the Measurement Interval, as specified in MEF
-                10.2.1.  The flr value is a ratio that is expressed as a
-                percent with a value of 0 (ratio 0.00) through 100000 (ratio
-                1.00).  Units are in milli-percent, where 1 indicates 0.001
-                percent.";
-            leaf min {
-                type uint32 {
-                    range "0..100000";
-                }
-                units milli-percent;
-                reference
-                    "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardMinFlr";
-            }
-            leaf max {
-                type uint32 {
-                    range "0..100000";
-                }
-                units milli-percent;
-                reference
-                    "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardMaxFlr";
-            }
-            leaf avg {
-                type uint32 {
-                    range "0..100000";
-                }
-                units milli-percent;
-                reference
-                    "MEF-SOAM-PM-MIB.mefSoamLmCurrentAvailStatsForwardAvgFlr";
-            }
-        }
-    }
-    grouping ethcfm-two-way-slm-pm {
-        description
-            "This container contains a collection of data definitions related
-            to Synthetic Loss Measurements.";
-        list session {
-            key session-id;
-            max-elements 1;
-            description
-                "A list of SLM PM Sessions where each instance is uniquely
-                identified by an id attribute.";
-            uses measurement-key;
-            uses measurement-config;
-            uses slm-config;
-            container loss-event {
-                uses loss-event-config;
-            }
-            list measurement-result {
-                config false;
-                description
-                    "The test statistics for a SLM.";
-                key "mi-type";
-                uses measurement-interval-duration-key;
-                uses measurement-interval-state;
-                list interval {
-                    key "interval-id";
-                    uses measurement-interval-key;
-                    uses measurement-status;
-                    container far-end {
-                        uses slm-statistics;
-                    }
-                    container near-end {
-                        uses slm-statistics;
-                    }
-                }
-            }
-        }
-    }
+  }
 
-    augment "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain/srl_nokia-ethcfm:association/srl_nokia-ethcfm:mep" {
-        if-feature srl_nokia-feat:ethcfm-pm;
-        container pmon {
-            container one-way-dm {
-                uses ethcfm-one-way-dm-pm;
-            }
-            container two-way-dm {
-                uses ethcfm-two-way-dm-pm;
-            }
-            container two-way-slm {
-                uses ethcfm-two-way-slm-pm;
-            }
+  grouping ethcfm-two-way-slm-pm {
+    description
+      "This container contains a collection of data definitions related
+       to Synthetic Loss Measurements.";
+    list session {
+      key "session-id";
+      max-elements 1;
+      description
+        "A list of SLM PM Sessions where each instance is uniquely
+         identified by an id attribute.";
+      uses measurement-key;
+      uses measurement-config;
+      uses slm-config;
+      container loss-event {
+        uses loss-event-config;
+      }
+      list measurement-result {
+        config false;
+        description
+          "The test statistics for a SLM.";
+        key "mi-type";
+        uses measurement-interval-duration-key;
+        uses measurement-interval-state;
+        list interval {
+          key "interval-id";
+          uses measurement-interval-key;
+          uses measurement-status;
+          container far-end {
+            uses slm-statistics;
+          }
+          container near-end {
+            uses slm-statistics;
+          }
         }
+      }
     }
+  }
+
+  augment "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain/srl_nokia-ethcfm:association/srl_nokia-ethcfm:mep" {
+    if-feature "srl_nokia-feat:ethcfm-pm";
+    container pmon {
+      container one-way-dm {
+        uses ethcfm-one-way-dm-pm;
+      }
+      container two-way-dm {
+        uses ethcfm-two-way-dm-pm;
+      }
+      container two-way-slm {
+        uses ethcfm-two-way-slm-pm;
+      }
+    }
+  }
 }
