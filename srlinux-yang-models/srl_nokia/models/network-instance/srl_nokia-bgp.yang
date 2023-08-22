@@ -21,14 +21,17 @@ module srl_nokia-bgp {
     import srl_nokia-system {
         prefix srl_nokia-system;
     }
+    import srl_nokia-mpls-label-management {
+        prefix srl_nokia-mplslbl;
+    }
+    import srl_nokia-system-protocols {
+        prefix srl_nokia-system-protocols;
+    }
     import srl_nokia-keychains {
         prefix srl-keychain;
     }
     import srl_nokia-features {
         prefix srl_nokia-feat;
-    }
-    import srl_nokia-system-reboot {
-        prefix srl_nokia-system-reboot;
     }
 
   organization
@@ -40,6 +43,10 @@ module srl_nokia-bgp {
     description
         "This yang file models configuration and state of the BGP protocol";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -195,6 +202,38 @@ module srl_nokia-bgp {
         }
     }
 
+    grouping rfc-8950-instance {
+        leaf advertise-ipv6-next-hops {
+            type boolean;
+            description
+                "Enables advertisement of IPv4 routes with IPv6 next-hops";
+            default false;
+        }
+        leaf receive-ipv6-next-hops {
+            type boolean;
+            description
+                "Enables the advertisement of the RFC 8950 capability to receive IPv4 routes with IPv6 next-hops
+
+                When set to true, BGP advertises an extended NH encoding (RFC 8950) capability to its peers. This capability indicates that local router is prepared to accept BGP routes for the AFI/SAFI with IPv6 next-hops from  peers in the scope of the command. When set to false, BGP handles received AFI/SAFI routes with IPv6 next-hops as an error and applies treat-as-withdraw.";
+            default false;
+        }
+    }
+
+    grouping rfc-8950-group-neighbor {
+        leaf advertise-ipv6-next-hops {
+            type boolean;
+            description
+                "Enables advertisement of IPv4 routes with IPv6 next-hops";
+        }
+        leaf receive-ipv6-next-hops {
+            type boolean;
+            description
+                "Enables the advertisement of the RFC 8950 capability to receive IPv4 routes with IPv6 next-hops
+
+                When set to true, BGP advertises an extended NH encoding (RFC 8950) capability to its peers. This capability indicates that local router is prepared to accept BGP routes for the AFI/SAFI with IPv6 next-hops from  peers in the scope of the command. When set to false, BGP handles received AFI/SAFI routes with IPv6 next-hops as an error and applies treat-as-withdraw.";
+        }
+    }
+
     grouping bgp-group {
         list group {
             key "group-name";
@@ -213,7 +252,11 @@ module srl_nokia-bgp {
                 must ". = 'disable' or
                   (((not(../afi-safi[afi-safi-name='ipv4-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv4-unicast']/admin-state = 'enable') or (../afi-safi[afi-safi-name='ipv4-unicast']/admin-state = 'enable')) or
                    ((not(../afi-safi[afi-safi-name='ipv6-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv6-unicast']/admin-state = 'enable') or (../afi-safi[afi-safi-name='ipv6-unicast']/admin-state = 'enable')) or
-                   ((not(../afi-safi[afi-safi-name='evpn']/admin-state) and ../../afi-safi[afi-safi-name='evpn']/admin-state = 'enable') or (../afi-safi[afi-safi-name='evpn']/admin-state = 'enable')))"
+                   ((not(../afi-safi[afi-safi-name='evpn']/admin-state) and ../../afi-safi[afi-safi-name='evpn']/admin-state = 'enable') or (../afi-safi[afi-safi-name='evpn']/admin-state = 'enable')) or
+                   ((not(../afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state) and ../../afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state = 'enable') or (../afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state = 'enable')) or
+                   ((not(../afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state) and ../../afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state = 'enable') or (../afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state = 'enable')) or
+                   ((not(../afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state = 'enable') or (../afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state = 'enable')) or
+                   ((not(../afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state = 'enable') or (../afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state = 'enable')))"
                {
                   error-message "One of the address families must be enabled.";
                }
@@ -251,7 +294,7 @@ module srl_nokia-bgp {
               type boolean;
               default false;
               description
-                "When set to true, the next-hop in all IPv4-unicast, IPv6-unicast and EVPN BGP routes advertised to all IBGP peers in the peer-group is set equal to the local-address used on each session (or to the router ID if the NLRI is IPv6 and there is no IPv6 local address to use). This is independent of the route origin (EBGP, IBGP-client, IBGP-non-client or redistributed direct/static/aggregate route). 
+                "When set to true, the next-hop in all IPv4-unicast, IPv6-unicast, EVPN, VPN-IPv4 and VPN-IPv6 BGP routes advertised to all IBGP peers in the peer-group is set equal to the local-address used on each session (or to the router ID if the NLRI is IPv6 and there is no IPv6 local address to use). This is independent of the route origin (EBGP, IBGP-client, IBGP-non-client or redistributed direct/static/aggregate route). 
                 
                 When set to false, normal BGP rules from RFC 4271 apply.";
             }
@@ -432,6 +475,18 @@ module srl_nokia-bgp {
                     must "not(../afi-safi-name = 'evpn') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
                         error-message "EVPN is not supported in network instances other than default";
                     }
+                    must "not(../afi-safi-name = 'l3vpn-ipv4-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "L3VPN is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'l3vpn-ipv6-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "L3VPN is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'ipv4-labeled-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "Label-ipv4 is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'ipv6-labeled-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "Label-ipv6 is not supported in network instances other than default";
+                    }
                 }
                 container add-paths {
                     if-feature "srl_nokia-feat:bgp-add-paths";
@@ -441,16 +496,16 @@ module srl_nokia-bgp {
                         type boolean;
                         description
                             "Enable capability negotiation to receive multiple path advertisements from a single peer for a single NLRI belonging to the AFI/SAFI";
-                        must "not(../../afi-safi-name = 'evpn')" {
-                            error-message "add-paths is not supported for EVPN address family";
+                        must "../../afi-safi-name = 'ipv4-unicast' or ../../afi-safi-name = 'ipv6-unicast'" {
+                            error-message "add-paths is not supported for address families other than IPv4 unicast and IPv6 unicast";
                         }
                     }
                     leaf send {
                         type boolean;
                         description
                             "Enable capability negotiation to send multiple path advertisements to a single peer for a single NLRI belonging to the AFI/SAFI";
-                        must "not(../../afi-safi-name = 'evpn')" {
-                            error-message "add-paths is not supported for EVPN address family";
+                        must "../../afi-safi-name = 'ipv4-unicast' or ../../afi-safi-name = 'ipv6-unicast'" {
+                            error-message "add-paths is not supported for address families other than IPv4 unicast and IPv6 unicast";
                         }
                     }
                     choice selection-algorithm {
@@ -479,20 +534,7 @@ module srl_nokia-bgp {
                 container ipv4-unicast {
                     description
                         "Options related to the IPv4-unicast address family";
-                    leaf advertise-ipv6-next-hops {
-                        type boolean;
-                        description
-                            "Enables advertisement of IPv4 routes with IPv6 next-hops to peers in the group
-
-                            When set to true, BGP advertises IPv4-unicast routes to its peers using MP-BGP. If the local-address towards a peer is an IPv6 address and BGP is supposed to apply next-hop-self the MP_REACH_NLRI will encode the IPv6 local-address as the BGP next-hop. When set to false, BGP is required to advertise an IPv4 next-hop with every IPv4 route (and to encode that in the NEXT_HOP attribute).";
-                    }
-                    leaf receive-ipv6-next-hops {
-                        type boolean;
-                        description
-                            "Enables the advertisement of the RFC 5549 capability to receive IPv4 routes with IPv6 next-hops
-
-                            When set to true, BGP advertises an extended NH encoding (RFC 5549) capability to its peers. This capability indicates that local router is prepared to accept BGP routes for IPv4 NLRI with IPv6 next-hops from  peers in the scope of the command. When set to false, BGP handles received IPV4 routes with IPv6 next-hops as an error and applies treat-as-withdraw.";
-                    }
+                    uses rfc-8950-group-neighbor;
                     container prefix-limit {
                         description
                             "Options for configuring the maximum number of IPv4 routes allowed to be received from each peer in the group";
@@ -517,6 +559,69 @@ module srl_nokia-bgp {
                              description
                                  "When false the session is immediately torn down when the number of received IPv4 routes exceeds the configured limit.";
                          }
+                    }
+                    uses unequal-ecmp;
+                }
+                container ipv4-labeled-unicast {
+                    if-feature srl_nokia-feat:bgp-labeled-unicast;
+                    description
+                        "Options related to the labeled-IPv4-unicast address family";
+                    uses rfc-8950-group-neighbor;
+                    container prefix-limit {
+                        description
+                            "Options for configuring the maximum number of label-IPv4 routes allowed to be received from each peer in the group";
+                        leaf max-received-routes {
+                            type uint32 {
+                                range "1..4294967295";
+                            }
+                            default 4294967295;
+                            description
+                                "Maximum number of label-IPv4 routes that will be accepted from each neighbor, counting routes accepted and rejected by import policies";
+                        }
+                        leaf warning-threshold-pct {
+                            type percentage;
+                            default 90;
+                            description
+                                "When the number of label-IPv4 routes received from any group peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+                        }
+                        leaf prevent-teardown {
+                             if-feature "srl_nokia-feat:bgp-prefix-limit";
+                             type boolean;
+                             default false;
+                             description
+                                 "When false the session is immediately torn down when the number of received label-IPv4 routes exceeds the configured limit.";
+                        }
+                    }
+                }
+                container l3vpn-ipv4-unicast {
+                    if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn or srl_nokia-feat:ipvpn";
+                    description
+                        "Options related to the VPN-IPv4 unicast address family";
+                    uses rfc-8950-group-neighbor;
+                    container prefix-limit {
+                        description
+                            "Options for configuring the maximum number of VPN-IPv4 unicast routes allowed to be received from each peer in the group";
+                        leaf max-received-routes {
+                            type uint32 {
+                                range "1..4294967295";
+                            }
+                            default 4294967295;
+                            description
+                                "Maximum number of VPN-IPv4 routes that will be accepted from each neighbor, counting routes accepted and rejected by import policies";
+                        }
+                        leaf warning-threshold-pct {
+                            type percentage;
+                            default 90;
+                            description
+                                "When the number of VPN-IPv4 routes received from any group peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+                        }
+                        leaf prevent-teardown {
+                             if-feature "srl_nokia-feat:bgp-prefix-limit";
+                             type boolean;
+                             default false;
+                             description
+                                 "When false the session is immediately torn down when the number of received VPN-IPv4 routes exceeds the configured limit.";
+                        }
                     }
                 }
                 container ipv6-unicast {
@@ -545,7 +650,68 @@ module srl_nokia-bgp {
                             default false;
                             description
                                "When false the session is immediately torn down when the number of received IPv6 routes exceeds the configured limit.";
-                         }
+                        }
+                    }
+                    uses unequal-ecmp;
+                }
+                container ipv6-labeled-unicast {
+                    if-feature srl_nokia-feat:bgp-labeled-unicast;
+                    description
+                        "Options related to the labeled IPv6-unicast address family";
+                    container prefix-limit {
+                        description
+                            "Options for configuring the maximum number of labeled IPv6 routes allowed to be received from each peer in the group";
+                        leaf max-received-routes {
+                            type uint32 {
+                                range "1..4294967295";
+                            }
+                            default 4294967295;
+                            description
+                                "Maximum number of labeled IPv6 routes that will be accepted from each neighbor, counting routes accepted and rejected by import policies";
+                        }
+                        leaf warning-threshold-pct {
+                            type percentage;
+                            default 90;
+                            description
+                                "When the number of labeled IPv6 routes received from any group peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+                        }
+                        leaf prevent-teardown {
+                            if-feature "srl_nokia-feat:bgp-prefix-limit";
+                            type boolean;
+                            default false;
+                            description
+                               "When false the session is immediately torn down when the number of received labeled IPv6 routes exceeds the configured limit.";
+                        }
+                    }
+                }
+                container l3vpn-ipv6-unicast {
+                    if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn or srl_nokia-feat:ipvpn";
+                    description
+                        "Options related to the VPN-IPv6 unicast address family";
+                    container prefix-limit {
+                        description
+                            "Options for configuring the maximum number of VPN-IPv6 unicast routes allowed to be received from each peer in the group";
+                        leaf max-received-routes {
+                            type uint32 {
+                                range "1..4294967295";
+                            }
+                            default 4294967295;
+                            description
+                                "Maximum number of VPN-IPv6 routes that will be accepted from each neighbor, counting routes accepted and rejected by import policies";
+                        }
+                        leaf warning-threshold-pct {
+                            type percentage;
+                            default 90;
+                            description
+                                "When the number of VPN-IPv6 routes received from any group peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+                        }
+                        leaf prevent-teardown {
+                             if-feature "srl_nokia-feat:bgp-prefix-limit";
+                             type boolean;
+                             default false;
+                             description
+                                 "When false the session is immediately torn down when the number of received VPN-IPv6 routes exceeds the configured limit.";
+                        }
                     }
                 }
                 container evpn {
@@ -741,9 +907,9 @@ module srl_nokia-bgp {
                     }
                     units "bytes";
                     description
-                        "The maximum segment size for each BGP TCP session belonging to the group
+                        "The maximum segment size of BGP TCP packets
 
-                        If the configured tcp-mss value is higher than the discovered path MTU it has no effect and the path MTU is used as the operational TCP MSS.";
+                        The actual value used in the transmit direction towards a particular peer should be checked at the neighbor level.";
                 }
                 leaf passive-mode {
                     type boolean;
@@ -962,27 +1128,24 @@ module srl_nokia-bgp {
         }
         leaf-list received-afi-safi {
             config false;
-            type enumeration {
-                enum "ipv4-unicast";
-                enum "ipv6-unicast";
+            type identityref {
+                base srl_nokia-comm:bgp-address-family;
             }
             description
                 "List of multiprotocol BGP address families supported by the peer, derived from the AFI/SAFI list in the MP-BGP capability received by the local routing device from the peer";
         }
         leaf-list received-end-of-rib {
             config false;
-            type enumeration {
-                enum "ipv4-unicast";
-                enum "ipv6-unicast";
+            type identityref {
+                base srl_nokia-comm:bgp-address-family;
             }
             description
                 "List of address families for which the peer has signaled the End of RIB marker";
         }
         leaf-list sent-end-of-rib {
             config false;
-            type enumeration {
-                enum "ipv4-unicast";
-                enum "ipv6-unicast";
+            type identityref {
+                base srl_nokia-comm:bgp-address-family;
             }
             description
                 "List of address families for which this router sent the peer an End of RIB marker";
@@ -1132,6 +1295,12 @@ module srl_nokia-bgp {
                      }
                      enum "Out of Resources" {
                      }
+                     enum "Unspecific" {
+                     }
+                     enum "Hard Reset" {
+                     }
+                     enum "Unsupported Capability" {
+                     }
                  }
                  description "The error subcode in the last NOTIFICATION sent to this peer.";
              }
@@ -1184,100 +1353,106 @@ module srl_nokia-bgp {
                 description "Timestamp representing the time of the last Notification message received from the peer.";
             }
             leaf last-notification-error-code {
-                 config false;
-                 type enumeration {
-                     enum "Message Header Error" {
-                         value 0;
-                     }
-                     enum "Open Message Error" {
-                         value 1;
-                     }
-                     enum "Update Message Error" {
-                         value 2;
-                     }
-                     enum "Hold Timer Error" {
-                         value 3;
-                     }
-                     enum "Finite State Machine Error" {
-                         value 4;
-                     }
-                     enum Cease {
-                         value 5;
-                     }
-                 }
-                 description
-                     "The error code in the last NOTIFICATION received from this peer.";
-             }
-             leaf last-notification-error-subcode {
-                 config false;
-                 type enumeration {
-                     enum "Connection Not Synchronized" {
-                         value 0;
-                     }
-                     enum "Bad Message Length" {
-                         value 1;
-                     }
-                     enum "Bad Message Type" {
-                         value 2;
-                     }
-                     enum "Unsupported Version Number" {
-                         value 3;
-                     }
-                     enum "Bad Peer As" {
-                         value 4;
-                     }
-                     enum "Bad BGP Identifier" {
-                         value 5;
-                     }
-                     enum "Unsupported Optional Parameter" {
-                     }
-                     enum "Unacceptable Hold Time" {
-                     }
-                     enum "UPDATE Message Error subcodes" {
-                     }
-                     enum "Malformed Attribute List" {
-                     }
-                     enum "Unrecognized Well-known Attribute" {
-                     }
-                     enum "Missing Well-known Attribute" {
-                     }
-                     enum "Attribute Flags Error" {
-                     }
-                     enum "Attribute Length Error" {
-                     }
-                     enum "Invalid ORIGIN Attribute" {
-                     }
-                     enum "Invalid NEXT_HOP Attribute" {
-                     }
-                     enum "Optional Attribute Error" {
-                     }
-                     enum "Invalid Network Field" {
-                     }
-                     enum "Malformed AS_PATH" {
-                     }
-                     enum "Maximum Number of Prefixes Reached" {
-                     }
-                     enum "Administrative Shutdown" {
-                     }
-                     enum "Peer De-configured" {
-                     }
-                     enum "Administrative Reset" {
-                     }
-                     enum "Connection Rejected" {
-                     }
-                     enum "Other Configuration Change" {
-                     }
-                     enum "Connection Collision Resolution" {
-                     }
-                     enum "Out of Resources" {
-                     }
-                 }
-                 description "The error subcode in the last NOTIFICATION received from the peer.";
-             }
-             leaf total-notifications {
-                 type uint32;
-                 description "Number of BGP Notification messages received from the peer over the lifetime of its configuration or since the last clear.";
-             }
+                config false;
+                type enumeration {
+                    enum "Message Header Error" {
+                        value 0;
+                    }
+                    enum "Open Message Error" {
+                        value 1;
+                    }
+                    enum "Update Message Error" {
+                        value 2;
+                    }
+                    enum "Hold Timer Error" {
+                        value 3;
+                    }
+                    enum "Finite State Machine Error" {
+                        value 4;
+                    }
+                    enum Cease {
+                        value 5;
+                    }
+                }
+                description
+                    "The error code in the last NOTIFICATION received from this peer.";
+            }
+            leaf last-notification-error-subcode {
+                config false;
+                type enumeration {
+                    enum "Connection Not Synchronized" {
+                        value 0;
+                    }
+                    enum "Bad Message Length" {
+                        value 1;
+                    }
+                    enum "Bad Message Type" {
+                        value 2;
+                    }
+                    enum "Unsupported Version Number" {
+                        value 3;
+                    }
+                    enum "Bad Peer As" {
+                        value 4;
+                    }
+                    enum "Bad BGP Identifier" {
+                        value 5;
+                    }
+                    enum "Unsupported Optional Parameter" {
+                    }
+                    enum "Unacceptable Hold Time" {
+                    }
+                    enum "UPDATE Message Error subcodes" {
+                    }
+                    enum "Malformed Attribute List" {
+                    }
+                    enum "Unrecognized Well-known Attribute" {
+                    }
+                    enum "Missing Well-known Attribute" {
+                    }
+                    enum "Attribute Flags Error" {
+                    }
+                    enum "Attribute Length Error" {
+                    }
+                    enum "Invalid ORIGIN Attribute" {
+                    }
+                    enum "Invalid NEXT_HOP Attribute" {
+                    }
+                    enum "Optional Attribute Error" {
+                    }
+                    enum "Invalid Network Field" {
+                    }
+                    enum "Malformed AS_PATH" {
+                    }
+                    enum "Maximum Number of Prefixes Reached" {
+                    }
+                    enum "Administrative Shutdown" {
+                    }
+                    enum "Peer De-configured" {
+                    }
+                    enum "Administrative Reset" {
+                    }
+                    enum "Connection Rejected" {
+                    }
+                    enum "Other Configuration Change" {
+                    }
+                    enum "Connection Collision Resolution" {
+                    }
+                    enum "Out of Resources" {
+                    }
+                    enum "Unspecific" {
+                    }
+                    enum "Hard Reset" {
+                    }
+                    enum "Unsupported Capability" {
+                    }
+                }
+                description "The error subcode in the last NOTIFICATION received from the peer.";
+            }
+            leaf total-notifications {
+                type uint32;
+                description "Number of BGP Notification messages received from the peer over the lifetime of its configuration or since the last clear.";
+            }
         }
     }
 
@@ -1289,8 +1464,8 @@ module srl_nokia-bgp {
             leaf peer-address {
                 type srl_nokia-comm:ip-address-with-zone;
                 description
-                    "The transport address of the BGP peer
-
+                  "The transport address of the BGP peer
+                   
                    The peer-address must be a valid IPv4 unicast address, IPv6 global unicast address or IPv6 link-local address. An IPv6 link-local address requires the interface scope to be identified, using a format such as fe80::1234%ethernet-1/1.1";
             }
             leaf admin-state {
@@ -1304,7 +1479,11 @@ module srl_nokia-bgp {
                   ../afi-safi[afi-safi-name='ipv4-unicast']/admin-state = 'enable' or ../afi-safi[afi-safi-name='ipv6-unicast']/admin-state = 'enable' or ../afi-safi[afi-safi-name='evpn']/admin-state = 'enable' or
                   (not(../afi-safi[afi-safi-name='ipv4-unicast']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv4-unicast']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv4-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv4-unicast']/admin-state = 'enable')))  or
                   (not(../afi-safi[afi-safi-name='ipv6-unicast']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv6-unicast']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv6-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv6-unicast']/admin-state = 'enable'))) or
-                  (not(../afi-safi[afi-safi-name='evpn']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='evpn']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='evpn']/admin-state) and ../../afi-safi[afi-safi-name='evpn']/admin-state = 'enable')))"
+                  (not(../afi-safi[afi-safi-name='evpn']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='evpn']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='evpn']/admin-state) and ../../afi-safi[afi-safi-name='evpn']/admin-state = 'enable'))) or
+                  (not(../afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state) and ../../afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state = 'enable'))) or
+                  (not(../afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state) and ../../afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state = 'enable'))) or
+                  (not(../afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state = 'enable'))) or
+                  (not(../afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state) and (../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state = 'enable' or (not(../../group[group-name = current()/../peer-group]/afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state) and ../../afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state = 'enable')))"
                   {
                       error-message "One of the address families must be enabled.";
                   }
@@ -1428,26 +1607,6 @@ module srl_nokia-bgp {
                     type boolean;
                 }
             }
-            container multihop {
-                description
-                    "Configuration parameters specifying the multihop behaviour for an EBGP peer. This is not applicable to an IBGP peer.";
-                leaf admin-state {
-                    type srl_nokia-comm:admin-state;
-                    description
-                        "When enabled, the peer is allowed to be indirectly connected by up to N hops, where N is controlled by the maximum-hops parameter. When disabled, multihop is allowed only if the peer type is IBGP.
-
-                        This overrides the group setting for admin-state.";
-                }
-                leaf maximum-hops {
-                    type uint8 {
-                        range "1..255";
-                    }
-                    description
-                        "This sets the maximum number of routing hops towards the peer. It determines the IP TTL value in originated BGP TCP/IP packets. By default the TTL is set to 1 towards an EBGP peer and 64 towards an IBGP peer.
-
-                        This overrides the group setting for maximum-hops.";
-                }
-            }
             container authentication {
                 description
                   "Container with authentication options that apply to this specific peer";
@@ -1555,10 +1714,8 @@ module srl_nokia-bgp {
                             "List of AFI/SAFI TLVs that were contained in the neighbor's last GR capability";
                         key name;
                         leaf name {
-                            type enumeration {
-                                enum "ipv4-unicast";
-                                enum "ipv6-unicast";
-                                enum "evpn";
+                            type identityref {
+                                base srl_nokia-comm:bgp-address-family;
                             }
                         }
                         leaf forwarding-preserved {
@@ -1569,6 +1726,27 @@ module srl_nokia-bgp {
                     }
                 }
             }
+            container multihop {
+                description
+                    "Configuration parameters specifying the multihop behaviour for an EBGP peer. This is not applicable to an IBGP peer.";
+                leaf admin-state {
+                    type srl_nokia-comm:admin-state;
+                    description
+                        "When enabled, the peer is allowed to be indirectly connected by up to N hops, where N is controlled by the maximum-hops parameter. When disabled, multihop is allowed only if the peer type is IBGP.
+
+                        This overrides the group setting for admin-state.";
+                }
+                leaf maximum-hops {
+                    type uint8 {
+                        range "1..255";
+                    }
+                    description
+                        "This sets the maximum number of routing hops towards the peer. It determines the IP TTL value in originated BGP TCP/IP packets. By default the TTL is set to 1 towards an EBGP peer and 64 towards an IBGP peer.
+
+                        This overrides the group setting for maximum-hops.";
+                }
+            }
+
             list afi-safi {
                 key "afi-safi-name";
 
@@ -1588,18 +1766,29 @@ module srl_nokia-bgp {
                     must "not(../afi-safi-name = 'evpn') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
                         error-message "EVPN is not supported in network instances other than default";
                     }
+                    must "not(../afi-safi-name = 'l3vpn-ipv4-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "L3VPN is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'l3vpn-ipv6-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "L3VPN is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'ipv4-labeled-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "Label-ipv4 is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'ipv6-labeled-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "Label-ipv6 is not supported in network instances other than default";
+                    }
                 }
                 leaf oper-state {
-                    //TO-DO not sure we need this leaf; it could be deprecated
                     config false;
                     type enumeration {
                         enum "up" {
                             description
-                                "Negotiated operational state of the IPv4 unicast address family is up";
+                                "Negotiated operational state of the address family is up";
                         }
                         enum "down" {
                             description
-                                "Negotiated operational state of the IPv4 unicast address family is down";
+                                "Negotiated operational state of the address family is down";
                         }
                     }
                 }
@@ -1611,16 +1800,16 @@ module srl_nokia-bgp {
                         type boolean;
                         description
                             "Enable capability negotiation to receive multiple path advertisements from a single peer for a single NLRI belonging to the AFI/SAFI";
-                        must "not(../../afi-safi-name = 'evpn')" {
-                            error-message "add-paths is not supported for EVPN address family";
+                        must "../../afi-safi-name = 'ipv4-unicast' or ../../afi-safi-name = 'ipv6-unicast'" {
+                            error-message "add-paths is not supported for address families other than IPv4 unicast and IPv6 unicast";
                         }
                     }
                     leaf send {
                         type boolean;
                         description
                             "Enable capability negotiation to send multiple path advertisements to a single peer for a single NLRI belonging to the AFI/SAFI";
-                        must "not(../../afi-safi-name = 'evpn')" {
-                            error-message "add-paths is not supported for EVPN address family";
+                        must "../../afi-safi-name = 'ipv4-unicast' or ../../afi-safi-name = 'ipv6-unicast'" {
+                            error-message "add-paths is not supported for address families other than IPv4 unicast and IPv6 unicast";
                         }
                     }
                     choice selection-algorithm {
@@ -1662,7 +1851,7 @@ module srl_nokia-bgp {
                     config false;
                     type uint32;
                     description
-                        "The number of routes belonging to this AFI/SAFI received from the peer that are currently installed for forwarding";
+                        "The number of routes belonging to this AFI/SAFI received from the peer that are installed and used, being best routes";
                 }
                 leaf rejected-routes {
                     config false;
@@ -1673,20 +1862,7 @@ module srl_nokia-bgp {
                 container ipv4-unicast {
                     description
                         "Options related to the IPv4-unicast address family";
-                    leaf advertise-ipv6-next-hops {
-                        type boolean;
-                        description
-                            "Enables advertisement of IPv4 routes with IPv6 next-hops to the peer
-
-                            When set to true, BGP advertises IPv4-unicast routes using MP-BGP. If the local-address towards the peer is an IPv6 address and BGP is supposed to apply next-hop-self the MP_REACH_NLRI will encode the IPv6 local-address as the BGP next-hop. When set to false, BGP is required to advertise an IPv4 next-hop with every IPv4 route (and to encode that in the NEXT_HOP attribute).";
-                    }
-                    leaf receive-ipv6-next-hops {
-                        type boolean;
-                        description
-                            "Enables the advertisement of the RFC 5549 capability to receive IPv4 routes with IPv6 next-hops
-
-                            When set to true, BGP advertises an extended NH encoding (RFC 5549) capability to the peer. This capability indicates that local router is prepared to accept BGP routes for IPv4 NLRI with IPv6 next-hops from the peer. When set to false, BGP handles received IPV4 routes with IPv6 next-hops as an error and applies treat-as-withdraw.";
-                    }
+                    uses rfc-8950-group-neighbor;
                     container prefix-limit {
                         description
                             "Options for configuring the maximum number of IPv4 routes allowed to be received from the peer";
@@ -1716,13 +1892,56 @@ module srl_nokia-bgp {
                             must "../../../afi-safi-name = 'ipv4-unicast'" {
                                 error-message "Only allowed on afi-safi ipv4-unicast";
                             }
-                         }
+                        }
                         leaf prefix-limit-exceeded {
                             if-feature "srl_nokia-feat:bgp-prefix-limit";
                             config false;
                             type boolean;
                             description
-                                "Changes from false to true when the number of received IPv4 routes increases to max-received-routes + 1 and remains true until the number of received IPv4 routes decreases back to max-received-routes      (applicable if prevent-teardown = true) or until the session is re-established (applicable if prevent-teardown = false)";
+                                "Changes from false to true when the number of received IPv4 routes increases to max-received-routes + 1 and remains true until the number of received IPv4 routes decreases back to max-received-routes (applicable if prevent-teardown = true) or until the session is re-established (applicable if prevent-teardown = false)";
+                        }
+                    }
+                    uses unequal-ecmp;
+                }
+                container l3vpn-ipv4-unicast {
+                    if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn or srl_nokia-feat:ipvpn";
+                    description
+                        "Options related to the VPN-IPv4 unicast address family";
+                    uses rfc-8950-group-neighbor;
+                    container prefix-limit {
+                        description
+                            "Options for configuring the maximum number of VPN-IPv4 unicast routes allowed to be received from the peer";
+                        leaf max-received-routes {
+                            type uint32 {
+                                range "1..4294967295";
+                            }
+                            description
+                                "Maximum number of VPN-IPv4 routes that will be accepted from the neighbor, counting routes accepted and rejected by import policies";
+                            must "../../../afi-safi-name = 'l3vpn-ipv4-unicast'" {
+                                error-message "Only allowed on afi-safi l3vpn-ipv4-unicast";
+                            }
+                        }
+                        leaf warning-threshold-pct {
+                            type percentage;
+                            description
+                                "When the number of VPN-IPv4 routes received from the peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+                            must "../../../afi-safi-name = 'l3vpn-ipv4-unicast'" {
+                                error-message "Only allowed on afi-safi l3vpn-ipv4-unicast";
+                            }
+                        }
+                        leaf prevent-teardown {
+                             type boolean;
+                             description
+                                 "When false the session is immediately torn down when the number of received VPN-IPv4 routes exceeds the configured limit.";
+                            must "../../../afi-safi-name = 'l3vpn-ipv4-unicast'" {
+                                error-message "Only allowed on afi-safi l3vpn-ipv4-unicast";
+                            }
+                        }
+                        leaf prefix-limit-exceeded {
+                            config false;
+                            type boolean;
+                            description
+                                "Changes from false to true when the number of received VPN-IPv4 routes increases to max-received-routes + 1 and remains true until the number of received VPN-IPv4 routes decreases back to max-received-routes (applicable if prevent-teardown = true) or until the session is re-established (applicable if prevent-teardown = false)";
                         }
                     }
                 }
@@ -1758,13 +1977,55 @@ module srl_nokia-bgp {
                             must "../../../afi-safi-name = 'ipv6-unicast'" {
                                 error-message "Only allowed on afi-safi ipv6-unicast";
                             }
-                         }
+                        }
                         leaf prefix-limit-exceeded {
                             if-feature "srl_nokia-feat:bgp-prefix-limit";
                             config false;
                             type boolean;
                             description
                                 "Changes from false to true when the number of received IPv6 routes increases to max-received-routes + 1 and remains true until the number of received IPv6 routes decreases back to max-received-routes      (applicable if prevent-teardown = true) or until the session is re-established (applicable if prevent-teardown = false)";
+                        }
+                    }
+                    uses unequal-ecmp;
+                }
+                container l3vpn-ipv6-unicast {
+                    if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn or srl_nokia-feat:ipvpn";
+                    description
+                        "Options related to the VPN-IPv6 unicast address family";
+                    container prefix-limit {
+                        description
+                            "Options for configuring the maximum number of VPN-IPv6 unicast routes allowed to be received from the peer";
+                        leaf max-received-routes {
+                            type uint32 {
+                                range "1..4294967295";
+                            }
+                            description
+                                "Maximum number of VPN-IPv6 routes that will be accepted from the neighbor, counting routes accepted and rejected by import policies";
+                            must "../../../afi-safi-name = 'l3vpn-ipv6-unicast'" {
+                                error-message "Only allowed on afi-safi l3vpn-ipv6-unicast";
+                            }
+                        }
+                        leaf warning-threshold-pct {
+                            type percentage;
+                            description
+                                "When the number of VPN-IPv6 routes received from the peer (counting routes accepted and rejected by import policy) reaches this percentage of the max-received-routes limit, BGP raises a warning log event";
+                            must "../../../afi-safi-name = 'l3vpn-ipv6-unicast'" {
+                                error-message "Only allowed on afi-safi l3vpn-ipv6-unicast";
+                            }
+                        }
+                        leaf prevent-teardown {
+                             type boolean;
+                             description
+                                 "When false the session is immediately torn down when the number of received VPN-IPv6 routes exceeds the configured limit.";
+                            must "../../../afi-safi-name = 'l3vpn-ipv6-unicast'" {
+                                error-message "Only allowed on afi-safi l3vpn-ipv6-unicast";
+                            }
+                        }
+                        leaf prefix-limit-exceeded {
+                            config false;
+                            type boolean;
+                            description
+                                "Changes from false to true when the number of received VPN-IPv6 routes increases to max-received-routes + 1 and remains true until the number of received VPN-IPv6 routes decreases back to max-received-routes (applicable if prevent-teardown = true) or until the session is re-established (applicable if prevent-teardown = false)";
                         }
                     }
                 }
@@ -1965,6 +2226,7 @@ module srl_nokia-bgp {
                     type uint16;
                 }
             }
+
             uses traceoptions;
             container transport {
                 leaf mtu-discovery {
@@ -1979,9 +2241,10 @@ module srl_nokia-bgp {
                     }
                     units "bytes";
                     description
-                        "The maximum segment size for the BGP TCP session
+                        "The maximum segment size of BGP TCP packets
 
-                        If the configured tcp-mss value is higher than the discovered path MTU it has no effect and the path MTU is used as the operational TCP MSS.";
+                        The configured value of this leaf is the TCP MSS value advertised to the peer during TCP connection setup (in the TCP MSS option), reduced if necessary to accommodate the outgoing interface IP MTU.
+                        The state value of this leaf is the operational TCP MSS used in the data transmit direction towards the peer. It may be less than the received TCP MSS option value due to adjustment for TCP options used in the transit direction and/or the path MTU discovery process (if enabled).";
                 }
                 leaf passive-mode {
                     type boolean;
@@ -2029,7 +2292,7 @@ module srl_nokia-bgp {
                 }
                 default 0;
                 must "(. = 0) or (. >= ../../../../convergence/min-wait-to-advertise)" {
-                    error-message "Invalid ipv4-unicast max-wait-to-advertise value. Value should be greater than or equal to min-wait-to-advertise.";
+                    error-message "Invalid max-wait-to-advertise value. Value should be greater than or equal to min-wait-to-advertise.";
                 }
                 description
                     "The maximum amount of time, in seconds, measured from the time when the first session (configured or dynamic) that supports the address family comes up after a BGP restart, until BGP is allowed to advertise any routes in that address family to any peer
@@ -2137,7 +2400,7 @@ module srl_nokia-bgp {
         }
     }
 
-    grouping next-hop-resolution {
+    grouping next-hop-resolution-unlabeled {
         container next-hop-resolution {
             if-feature srl_nokia-feat:mpls;
             description
@@ -2196,6 +2459,166 @@ module srl_nokia-bgp {
         }
     }
 
+    grouping next-hop-resolution-labeled {
+        container next-hop-resolution {
+            description
+                "Options for controlling next-hop resolution procedures";
+            container ipv4-next-hops {
+                description
+                    "Options related to the resolution of BGP next-hops that are IPv4 addresses";
+                container route-resolution {
+                    description
+                        "Options related to resolution using IP routes in the FIB";
+                    leaf admin-state {
+                        description
+                            "Enable or disable route resolution if no resolving tunnel is found";
+                        type srl_nokia-comm:admin-state;
+                        default "enable";
+                    }
+                    leaf ignore-default-routes {
+                        description
+                            "Ignore default routes, regardless of route type";
+                        type boolean;
+                        default true;
+                    }
+                }
+                container tunnel-resolution {
+                    description
+                        "Options related to resolution using tunnels in the tunnel table";
+                    leaf-list allowed-tunnel-types {
+                        description
+                            "List of allowed tunnel types";
+                        type identityref {
+                            base srl_nokia-comm:tunnel-type;
+                        }
+                        must "not(. = 'vxlan' or . = 'ip-in-ip' or . = 'bgp')" {
+                            error-message "unsupported resolving tunnel";
+                        }
+                    }
+                }
+            } // ipv4-next-hops
+            container ipv6-next-hops {
+                description
+                    "Options related to the resolution of BGP next-hops that are IPv6 addresses";
+                container route-resolution {
+                    description
+                        "Options related to resolution using IP routes in the FIB";
+                    leaf admin-state {
+                        description
+                            "Enable or disable route resolution if no resolving tunnel is found";
+                        type srl_nokia-comm:admin-state;
+                        default "enable";
+                    }
+                    leaf ignore-default-routes {
+                        description
+                            "Ignore default routes, regardless of route type";
+                        type boolean;
+                        default true;
+                    }
+                }
+                container tunnel-resolution {
+                    description
+                        "Options related to resolution using tunnels in the tunnel table";
+                    leaf-list allowed-tunnel-types {
+                        description
+                            "List of allowed tunnel types";
+                        type identityref {
+                            base srl_nokia-comm:tunnel-type;
+                        }
+                        must "not(. = 'vxlan' or . = 'ip-in-ip' or . = 'bgp')" {
+                            error-message "unsupported resolving tunnel";
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    grouping unequal-ecmp {
+        description 
+            "Grouping containing the configuration and state for unequal ECMP";
+        container link-bandwidth {
+            if-feature "srl_nokia-feat:unequal-ecmp";
+            leaf add-next-hop-count-to-received-bgp-routes {
+                if-feature "srl_nokia-feat:evpn-ifl-unequal-ecmp";
+                must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:ip-vrf'" {
+                    error-message "Add next-hop count weight is only supported in network instances of type ip-vrf";
+                }
+                type union {
+                    type int32 {
+                        range "1..128";
+                    }
+                    type enumeration {
+                        enum disable {
+                            value -1;
+                        }
+                    }
+                }
+                description
+                    "Determines the weight that is internally added to the received PE-CE BGP routes 
+                    
+                     The configured weight is added to all received BGP PE-CE routes for the purpose of EVPN unequal ECMP.
+                     This weight is internal and not added into any link-bandwidth extended community when readvertising 
+                     the received routes to other ipv4 or ipv6 neighbors.";
+            }
+        }
+    }
+
+    grouping bgp-label-instance {
+        container bgp-label {
+            if-feature "srl_nokia-feat:bgp-labeled-unicast or srl_nokia-feat:inter-as-nhsrr-ipvpn";
+            container labeled-unicast {
+                if-feature "srl_nokia-feat:label-management and srl_nokia-feat:bgp-labeled-unicast";
+                leaf dynamic-label-block {
+                    type leafref {
+                        path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:dynamic/srl_nokia-mplslbl:name";
+                    }
+                    description
+                        "Reference to a dynamic label block";
+                }
+                leaf dynamic-label-block-status {
+                    config false;
+                    type enumeration {
+                        enum "available";
+                        enum "unavailable";
+                    }
+                    description
+                        "Status of the label block.
+
+                        The label block may show as unavailable if there is pending cleanup.";
+                }
+            }
+        }
+    }
+
+    grouping rib-management {
+        container rib-management {
+            if-feature srl_nokia-feat:bgp-labeled-unicast;
+            list table {
+                key "address-family";
+                leaf address-family {
+                    description
+                        "BGP address family";
+                    type identityref {
+                        base srl_nokia-comm:bgp-address-family;
+                    }
+                    must ". = 'ipv4-unicast' or . = 'ipv6-unicast' or . = 'ipv4-labeled-unicast' or . = 'ipv6-labeled-unicast'" {
+                        error-message "unsupported address family";
+                    }
+                }
+                description
+                    "List of RIB tables maintained by BGP running in this network-instance";
+                leaf route-table-import {
+                    description
+                        "Apply a route policy to accept routes that should be installed in the BGP RIB table";
+                    type leafref {
+                        path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+                    }
+                }
+            }
+        }
+    }
+
     grouping bgp-top {
         container bgp {
             presence
@@ -2212,7 +2635,11 @@ module srl_nokia-bgp {
                 must " (. = 'disable') or
                        (../afi-safi[afi-safi-name='ipv4-unicast']/admin-state = 'enable') or
                        (../afi-safi[afi-safi-name='ipv6-unicast']/admin-state = 'enable') or
-                       (../afi-safi[afi-safi-name='evpn']/admin-state = 'enable')"
+                       (../afi-safi[afi-safi-name='evpn']/admin-state = 'enable') or
+                       (../afi-safi[afi-safi-name='ipv4-labeled-unicast']/admin-state = 'enable') or
+                       (../afi-safi[afi-safi-name='ipv6-labeled-unicast']/admin-state = 'enable') or
+                       (../afi-safi[afi-safi-name='l3vpn-ipv4-unicast']/admin-state = 'enable') or
+                       (../afi-safi[afi-safi-name='l3vpn-ipv6-unicast']/admin-state = 'enable')"
                 {
                    error-message "One of the address families must be enabled.";
                 }
@@ -2360,6 +2787,7 @@ module srl_nokia-bgp {
                         "Compare multi-exit discriminator (MED) value from different ASes when selecting the best route. The default behavior is to only compare MEDs for paths received from the same AS.";
                 }
             }
+            uses bgp-label-instance;
             container convergence {
                 description
                     "Options for configuring address family independent BGP convergence parameters";
@@ -2462,7 +2890,7 @@ module srl_nokia-bgp {
                     }
                     leaf peer-group {
                         type leafref {
-                            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-bgp:bgp/srl_nokia-bgp:group/srl_nokia-bgp:group-name";
+                            path "../../../srl_nokia-bgp:group/srl_nokia-bgp:group-name";
                         }
                         description
                             "Reference to a peer-group
@@ -2543,6 +2971,20 @@ module srl_nokia-bgp {
                     default 300;
                 }
             }
+            leaf max-ecmp-hash-buckets-per-next-hop-group {
+                if-feature "srl_nokia-feat:bgp-max-ecmp-hash-buckets";
+                type uint8 {
+                    range "1..128";
+                }
+                default "128";
+                description
+                    "Specifies the maximum number of ECMP hash buckets per next-hop-group
+
+                     Weighted ECMP weights are normalized based on this number of hash buckets.";
+                must "(. = 128) or not (../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                    error-message "max-ecmp-hash-buckets-per-next-hop-group is not supported in network instance default";
+                }
+            }
             list afi-safi {
                 key "afi-safi-name";
 
@@ -2562,6 +3004,18 @@ module srl_nokia-bgp {
                     must "not(../afi-safi-name = 'evpn') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
                         error-message "EVPN is not supported in network instances other than default";
                     }
+                    must "not(../afi-safi-name = 'l3vpn-ipv4-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "L3VPN is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'l3vpn-ipv6-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "L3VPN is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'ipv4-labeled-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "Label-IPv4 is not supported in network instances other than default";
+                    }
+                    must "not(../afi-safi-name = 'ipv6-labeled-unicast') or . = 'disable' or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+                        error-message "Label-IPv6 is not supported in network instances other than default";
+                    }
                 }
                 container add-paths {
                     if-feature "srl_nokia-feat:bgp-add-paths";
@@ -2571,16 +3025,16 @@ module srl_nokia-bgp {
                         type boolean;
                         description
                             "Enable capability negotiation to receive multiple path advertisements from a single peer for a single NLRI belonging to the AFI/SAFI";
-                        must "not(../../afi-safi-name = 'evpn')" {
-                            error-message "add-paths is not supported for EVPN address family";
+                        must "../../afi-safi-name = 'ipv4-unicast' or ../../afi-safi-name = 'ipv6-unicast'" {
+                            error-message "add-paths is not supported for address families other than IPv4 unicast and IPv6 unicast";
                         }
                     }
                     leaf send {
                         type boolean;
                         description
                             "Enable capability negotiation to send multiple path advertisements to a single peer for a single NLRI belonging to the AFI/SAFI";
-                        must "not(../../afi-safi-name = 'evpn')" {
-                            error-message "add-paths is not supported for EVPN address family";
+                        must "../../afi-safi-name = 'ipv4-unicast' or ../../afi-safi-name = 'ipv6-unicast'" {
+                            error-message "add-paths is not supported for address families other than IPv4 unicast and IPv6 unicast";
                         }
                     }
                     choice selection-algorithm {
@@ -2617,36 +3071,128 @@ module srl_nokia-bgp {
                     config false;
                     type srl_nokia-comm:zero-based-counter64;
                     description
-                        "The total number of routes belonging to this AFI/SAFI that are installed for forwarding";
+                        "The total number of routes belonging to this AFI/SAFI that are installed and used, being best routes";
                 }
                 container ipv4-unicast {
                     description
                         "Options related to the IPv4-unicast address family";
-                    leaf advertise-ipv6-next-hops {
-                        type boolean;
-                        default false;
-                        description
-                            "Enables advertisement of IPv4 routes with IPv6 next-hops to peers
-
-                            When set to true, BGP advertises IPv4-unicast routes to its peers using MP-BGP. If the local-address towards a peer is an IPv6 address and BGP is supposed to apply next-hop-self the MP_REACH_NLRI will encode the IPv6 local-address as the BGP next-hop. When set to false, BGP is required to advertise an IPv4 next-hop with every IPv4 route (and to encode that in the NEXT_HOP attribute).";
-                    }
-                    leaf receive-ipv6-next-hops {
-                        type boolean;
-                        default false;
-                        description
-                            "Enables the advertisement of the RFC 5549 capability to receive IPv4 routes with IPv6 next-hops
-
-                            When set to true, BGP advertises an extended NH encoding (RFC 5549) capability to its peers. This capability indicates that local router is prepared to accept BGP routes for IPv4 NLRI with IPv6 next-hops from  peers in the scope of the command. When set to false, BGP handles received IPV4 routes with IPv6 next-hops as an error and applies treat-as-withdraw.";
-                    }
+                    uses rfc-8950-instance;
                     uses convergence-for-family;
-                    uses next-hop-resolution;
+                    uses next-hop-resolution-unlabeled;
+                }
+                container ipv4-labeled-unicast {
+                    if-feature srl_nokia-feat:bgp-labeled-unicast;
+                    description
+                        "Options related to the labeled IPv4-unicast address family";
+                    uses rfc-8950-instance;
+                    uses convergence-for-family;
+                    leaf rapid-update {
+                        description
+                          "When true, label-ipv4 update messages are advertised immediately, bypassing the MRAI
 
+                          When this is false, reachability updates and withdrawals are subject to the MRAI interval.";
+                        type boolean;
+                        default false;
+                    }
+                }
+                container l3vpn-ipv4-unicast {
+                    if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn or srl_nokia-feat:ipvpn";
+                    description
+                        "Options related to the VPN-IPv4 unicast address family";
+                    uses rfc-8950-instance;
+                    uses convergence-for-family;
+                    uses next-hop-resolution-labeled;
+                    leaf next-hop-self-route-reflector {
+                        if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn";
+                        description
+                            "When set to true, received VPN-IPv4 routes are kept in the RIB and readvertised to the other route reflector clients with a local next-hop and VPN label
+                            
+                             This command triggers the programming of a VPN label swap operation for each received VPN-IPv4 route.";
+                        type boolean;
+                        default false;
+                        must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                            error-message "VPN-IPv4 is not supported in network instances other than default";
+                        }                        
+                    }
+                    leaf inter-as-vpn {
+                        if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn";
+                        description
+                            "When set to true, received VPN-IPv4 routes that are not imported by any network-instance are retained in the BGP RIB and considered 'used' so that they can be propagated to any EBGP or IBGP peer.
+
+                            This command supersedes the effect of keep-all-routes. This command triggers the programming of a VPN label swap operation for each received VPN-IPv4 route.";
+                        type boolean;
+                        default false;
+                        must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                            error-message "VPN-IPv4 is not supported in network instances other than default";
+                        }
+                    }
+                    leaf rapid-update {
+                        description
+                          "When true, vpn-ipv4 update messages are advertised immediately, bypassing the MRAI
+
+                          When this is false, reachability updates and withdrawals are subject to the MRAI interval.";
+                        type boolean;
+                        default false;
+                    }
                 }
                 container ipv6-unicast {
                     description
                         "Options related to the IPv6-unicast address family";
                     uses convergence-for-family;
-                    uses next-hop-resolution;
+                    uses next-hop-resolution-unlabeled;
+                }
+                container ipv6-labeled-unicast {
+                    if-feature srl_nokia-feat:bgp-labeled-unicast;
+                    description
+                        "Options related to the labeled IPv6-unicast address family";
+                    uses convergence-for-family;
+                    leaf rapid-update {
+                        description
+                          "When true, label-ipv6 update messages are advertised immediately, bypassing the MRAI
+
+                          When this is false, reachability updates and withdrawals are subject to the MRAI interval.";
+                        type boolean;
+                        default false;
+                    }
+                }
+                container l3vpn-ipv6-unicast {
+                    if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn or srl_nokia-feat:ipvpn";
+                    description
+                        "Options related to the VPN-IPv6 unicast address family";
+                    uses convergence-for-family;
+                    uses next-hop-resolution-labeled;
+                    leaf next-hop-self-route-reflector {
+                        if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn";
+                        description
+                            "When set to true, received VPN-IPv6 routes are kept in the RIB and readvertised to the other route reflector clients with a local next-hop and VPN label
+                            
+                             This command triggers the programming of a VPN label swap operation for each received VPN-IPv6 route.";
+                        type boolean;
+                        default false;
+                        must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                            error-message "VPN-IPv6 is not supported in network instances other than default";
+                        }                        
+                    }
+                    leaf inter-as-vpn {
+                        if-feature "srl_nokia-feat:inter-as-nhsrr-ipvpn";
+                        description
+                            "When set to true, received VPN-IPv6 routes that are not imported by any network-instance are retained in the BGP RIB and considered 'used' so that they can be propagated to any EBGP or IBGP peer.
+
+                            This command supersedes the effect of keep-all-routes. This command triggers the programming of a VPN label swap operation for each received VPN-IPv6 route.";
+                        type boolean;
+                        default false;
+                        must ". = false() or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                            error-message "VPN-IPv6 is not supported in network instances other than default";
+                        }
+                    }
+                    leaf rapid-update {
+                        description
+                          "When true, vpn-ipv6 update messages are advertised immediately, bypassing the MRAI
+
+                          When this is false, reachability updates and withdrawals are subject to the MRAI interval.";
+                        type boolean;
+                        default false;
+                    }
                 }
                 container evpn {
                     description
@@ -2720,6 +3266,9 @@ module srl_nokia-bgp {
                         BGP import policies can override this preference value on a route by route basis.";
                 }
             }
+
+            uses rib-management;
+
             container route-advertisement {
                 description
                     "Options for controlling route advertisement behavior";
@@ -2807,9 +3356,9 @@ module srl_nokia-bgp {
                     }
                     default 1024;
                     description
-                        "The maximum segment size for all BGP TCP sessions
+                        "The maximum segment size of BGP TCP packets
 
-                        If the configured tcp-mss value is higher than the discovered path MTU it has no effect and the path MTU is used as the operational TCP MSS";
+                        The actual value used in the transmit direction towards a particular peer should be checked at the neighbor level.";
                 }
             }
             uses traceoptions;
@@ -2873,18 +3422,20 @@ module srl_nokia-bgp {
         uses bgp-top;
     }
 
-    augment "/srl_nokia-system:system/srl_nokia-system-reboot:warm-reboot" {
-        if-feature srl_nokia-feat:warm-reboot;
-        leaf bgp-max-wait {
-            description
-                "The maximum amount of time that BGP will wait to receive End of RIB markers from all peers and for all address families that were up prior to warm reboot (in all network instances).
+    augment "/srl_nokia-system:system/srl_nokia-system-protocols:protocols" {
+        container bgp {
+            presence "Configure system-wide BGP parameters";
+            leaf restart-max-wait {
+                description
+                    "The maximum amount of time that BGP will wait to receive End of RIB markers from all peers and for all address families that were up prior to restart.
 
-                After this time elapses BGP declares that convergence has occurred and sends its own EOR markers to its peers.";
-            type uint16 {
-                range "0..3600";
+                    After this time elapses BGP declares that convergence has occurred and sends its own EOR markers to its peers.";
+                type uint16 {
+                    range "0..3600";
+                }
+                units "seconds";
+                default 600;
             }
-            units "seconds";
-            default 600;
         }
     }
 }

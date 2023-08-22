@@ -15,6 +15,9 @@ module srl_nokia-platform-disk {
   import srl_nokia-platform-control {
     prefix srl-platform-control;
   }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
 
   organization
     "Nokia";
@@ -25,6 +28,10 @@ module srl_nokia-platform-disk {
   description
     "This module defines configuration and operational state data related to disks.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2019-11-30 {
     description
       "SRLinux 19.11.1";
@@ -89,6 +96,12 @@ module srl_nokia-platform-disk {
         description
           "Percentage of the partition in use";
       }
+      leaf encrypted {
+        if-feature "srl-feat:disk-encryption";
+        description
+          "Indicates if the partition is encrypted using disk encryption";
+        type boolean;
+      }
     }
   }
 
@@ -96,6 +109,7 @@ module srl_nokia-platform-disk {
     description
       "Grouping for disk statistics";
     container statistics {
+      config false;
       description
         "Top-level container for disk statistics";
       leaf utilization {
@@ -162,6 +176,12 @@ module srl_nokia-platform-disk {
         enum hdd;
         enum usb;
       }
+    }
+    leaf encrypted {
+      if-feature "srl-feat:disk-encryption";
+      description
+        "Indicates if the disk is encrypted";
+      type boolean;
     }
     uses partition-state-top;
     uses disk-statistics-top;

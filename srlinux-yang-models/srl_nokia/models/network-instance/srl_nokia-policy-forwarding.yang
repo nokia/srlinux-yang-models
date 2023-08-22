@@ -20,6 +20,10 @@ module srl_nokia-policy-forwarding {
   description
     "This module defines configuration and operational state data for policy-forwarding related objects.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -108,6 +112,24 @@ module srl_nokia-policy-forwarding {
         type srl_nokia-comm:description;
         description "Description string for the policy";
       }
+      leaf type {
+        type enumeration {
+          enum pbr-policy {
+            description
+              "The policy reflects a policy-based routing policy that supports generic PBR actions.";
+          }
+          enum vrf-selection-policy {
+            description
+              "The policy is used only to classify incoming packets into corresponding network instances.";
+          }
+        }
+        default "vrf-selection-policy";
+        must ". = 'vrf-selection-policy'" {
+          error-message "Only VRF selection policy is supported";
+        }
+        description
+          "The type of the policy";
+      }
       leaf tcam-entries {
         config false;
         type uint16;
@@ -118,9 +140,7 @@ module srl_nokia-policy-forwarding {
         description "List of policy forwarding rules.";
         key sequence-id;
         leaf sequence-id {
-          type uint32 {
-            range "1..128";
-          }
+          type srl_nokia-comm:rule-sequence-id;
           description
             "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
         }

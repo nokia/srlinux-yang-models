@@ -21,12 +21,6 @@ module srl_nokia-mld-snooping {
   import srl_nokia-extensions {
     prefix srl_nokia-ext;
   }
-  import srl_nokia-tunnel-interfaces {
-    prefix srl_nokia-tunnel-if;
-  }
-  import srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-multicast-destinations {
-    prefix srl_nokia-tunnel-if-mcast-dest;
-  }
 
   organization
     "Nokia";
@@ -37,6 +31,10 @@ module srl_nokia-mld-snooping {
   description
     "This yang file models configuration and state of the mld snooping protocol on mac-vrf";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -288,6 +286,12 @@ module srl_nokia-mld-snooping {
       config false;
       description
         "The number of multicast groups which have been learned";
+      type uint32;
+    }
+    leaf proxy-evpn-membership-group-count {
+      config false;
+      description
+        "The number of multicast groups in proxy-evpn-membership-groups";
       type uint32;
     }
     container proxy-membership-groups {
@@ -584,13 +588,6 @@ module srl_nokia-mld-snooping {
         "V2 Reports";
       type srl_nokia-comm:zero-based-counter32;
     }
-    leaf v3-reports {
-      config false;
-      srl_nokia-ext:show-importance "high";
-      description
-        "V3 Reports";
-      type srl_nokia-comm:zero-based-counter32;
-    }
     leaf leave-messages {
       config false;
       srl_nokia-ext:show-importance "high";
@@ -865,14 +862,6 @@ module srl_nokia-mld-snooping {
       type uint32;
       units "seconds";
     }
-    leaf v2-host-timer {
-      config false;
-      description
-        "The time remaining until the local router will assume that
-         there are no longer any version 2 members";
-      type uint32;
-      units "seconds";
-    }
     leaf mld-compatibility-mode {
       config false;
       description
@@ -1015,34 +1004,30 @@ module srl_nokia-mld-snooping {
   }
 
   grouping mld-snooping-evpn-interface-state {
-    container mld-snooping {
-      if-feature "srl_nokia-feat:mld-snooping";
+    leaf is-mrouter-port {
       config false;
-      leaf is-mrouter-port {
-        config false;
-        description
-          "vxlan-interface is a multicast router port";
-        type boolean;
-      }
-      leaf is-evpn-proxy {
-        config false;
-        description
-          "vxlan-interface supports evpn-proxy";
-        type boolean;
-      }
-      leaf is-sbd {
-        config false;
-        description
-          "";
-        type boolean;
-      }
-      uses mld-snooping-interface-membership;
-      container statistics {
-        config false;
-        description
-          "vxlan-interface statistics";
-        uses mld-snooping-bgp-route-stats;
-      }
+      description
+        "vxlan-interface is a multicast router port";
+      type boolean;
+    }
+    leaf is-evpn-proxy {
+      config false;
+      description
+        "vxlan-interface supports evpn-proxy";
+      type boolean;
+    }
+    leaf is-sbd {
+      config false;
+      description
+        "";
+      type boolean;
+    }
+    uses mld-snooping-interface-membership;
+    container statistics {
+      config false;
+      description
+        "vxlan-interface statistics";
+      uses mld-snooping-bgp-route-stats;
     }
   }
 
@@ -1051,7 +1036,7 @@ module srl_nokia-mld-snooping {
       if-feature "srl_nokia-feat:mld-snooping";
       presence "Configure MLD snooping";
       must "(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
-        error-message "IMGP snooping configuration is only possible on network-instance of type mac-vrf";
+        error-message "mld-snooping configuration is only possible on network-instance of type mac-vrf";
       }
       uses mld-snooping-global-config;
       uses mld-snooping-global-trace-options;
@@ -1064,16 +1049,34 @@ module srl_nokia-mld-snooping {
         uses mld-snooping-interface-config;
         uses mld-snooping-interface-state;
       }
+      list vxlan-destination {
+        config false;
+        key "vtep vni";
+        leaf vtep {
+          srl_nokia-ext:show-importance high;
+          type srl_nokia-comm:ip-address;
+          description
+            "The IP address that identifies the remote VXLAN Termination Endpoint (VTEP).";
+        }
+        leaf vni {
+          type uint32 {
+            range "1..16777215";
+          }
+          srl_nokia-ext:show-importance "high";
+          description 
+            "VXLAN Network Identifier of the destination.";
+        }
+        leaf index {
+          srl_nokia-ext:show-importance high;
+          type uint64;
+          description
+            "the next-hop-group-id (system allocated) for resolving the VXLAN termination endpoint";
+        }
+        uses mld-snooping-evpn-interface-state;
+      }      
     }
   }
-
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
     uses mld-snooping-top;
-  }
-
-  augment "/srl_nokia-tunnel-if:tunnel-interface/srl_nokia-tunnel-if:vxlan-interface/srl_nokia-tunnel-if:bridge-table/srl_nokia-tunnel-if-mcast-dest:multicast-destinations/srl_nokia-tunnel-if-mcast-dest:destination" {
-    description
-      "MLD-snooping state";
-    uses mld-snooping-evpn-interface-state;
   }
 }

@@ -28,6 +28,10 @@ module srl_nokia-platform-control {
   description
     "This module defines configuration and operational state data related to control modules.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -60,12 +64,68 @@ module srl_nokia-platform-control {
       "The single USB type A interface present on the control module";
   }
 
+  identity switchover-reason {
+    description
+      "Reasons the active control module performed a switchover";
+  }
+
+  identity user-initiated {
+    base switchover-reason;
+    description
+      "A user initiated the switchover directly via the tools schema";
+  }
+
+  identity control-reboot {
+    base switchover-reason;
+    description
+      "A user initiated the switchover indirectly via rebooting the active control module";
+  }
+
+  identity control-failure {
+    base switchover-reason;
+    description
+      "The system has forced a switchover due to a failure on the active control module";
+  }
+
+  identity linecard-connectivity {
+    base switchover-reason;
+    description
+      "The system has forced a switchover due to a loss of connectivity between the active control module and one or more linecards";
+  }
+
   typedef control-role-type {
     description
       "Details the current role of the control module";
     type enumeration {
       enum active;
       enum standby;
+    }
+  }
+
+  grouping last-switchover-reason {
+    description
+      "Grouping for state related to the last switchover";
+    
+    container last-switchover-reason {
+      config false;
+      description
+        "State information relating to the last control module switchover";
+      leaf trigger {
+        description
+          "Indicates the trigger of the last switchover
+          
+          This field is not populated if the system has not performed a switchover since initial startup.";
+        type identityref {
+          base switchover-reason;
+        }
+      }
+      leaf details {
+        description
+          "Any additional details relating to the last switchover
+          
+          This field is not populated if the system has not performed a switchover since initial startup.";
+        type string;
+      }
     }
   }
 
@@ -96,6 +156,7 @@ module srl_nokia-platform-control {
       }
     }
   }
+
   grouping control-state-top {
     description
       "Grouping for control module state";
@@ -125,6 +186,13 @@ module srl_nokia-platform-control {
 
          This field is not present on systems without removable control modules.";
     }
+    leaf disk-encrypted {
+      if-feature "srl-feat:disk-encryption";
+      description
+        "Indicates if the disk is encrypted on a control module";
+      config false;
+      type boolean;
+    }
   }
 
   grouping control-top {
@@ -135,10 +203,14 @@ module srl_nokia-platform-control {
       description
         "Top-level container for control module configuration and state";
       uses control-state-top;
+      uses srl-platform:component-common-state-top;
+      uses srl-platform:component-common-eeprom;
       uses control-interfaces-top {
         if-feature "srl-feat:disabled";
       }
-      uses srl-platform:component-common-state-top;
+      uses last-switchover-reason {
+        if-feature "srl-feat:chassis";
+      }
       uses srl-platform:component-delayed-reboot-state {
         if-feature "srl-feat:chassis";
       }

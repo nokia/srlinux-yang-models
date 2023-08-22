@@ -20,6 +20,10 @@ module srl_nokia-common {
     "This module contains a set of Internet address related
      types for use in OpenConfig modules.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -139,7 +143,7 @@ module srl_nokia-common {
     type interface-name {
       length "3..20";  // based on the pattern below
       pattern '(ethernet-([1-9](\d){0,1}(/[abcd])?(/[1-9](\d){0,1})?/(([1-9](\d){0,1})|(1[0-1]\d)|(12[0-8])))|'
-            + 'sync0)';
+            + 'gnss|sync0)';
     }
   }
 
@@ -408,12 +412,6 @@ module srl_nokia-common {
       enum "queue-13" {
           if-feature "srl-feat:future-0-0";
       }
-      enum "queue-14" {
-          if-feature "srl-feat:future-0-0";
-      }
-      enum "queue-15" {
-          if-feature "srl-feat:future-0-0";
-      }
     }
   }
 
@@ -600,6 +598,23 @@ module srl_nokia-common {
     }
     description
       "An IPv4 or IPv6 prefix with host bits.";
+  }
+
+  typedef ipv6-address-type {
+    type enumeration {
+      enum global-unicast {
+        description
+          "The IPv6 address is a global unicast address type and must be in the format defined in RFC 4291 section 2.4.";
+      }
+      enum link-local-unicast {
+        description
+          "The IPv6 address is a Link-Local unicast address type and must be in the format defined in RFC 4291 section 2.4.";
+      }
+    }
+    description
+      "The value represents the type of IPv6 address";
+    reference
+      "RFC 4291: IP Version 6 Addressing Architecture section 2.5";
   }
 
   typedef mac-address {
@@ -1221,7 +1236,7 @@ module srl_nokia-common {
   }
 
   typedef description {
-    type alphanumeric {
+    type string {
       length "1..255";
     }
     description
@@ -1236,7 +1251,7 @@ module srl_nokia-common {
       "A user provided name";
   }
 
- typedef restricted-name {
+  typedef restricted-name {
     type string {
       pattern "[A-Za-z0-9!@#$%^&()|+=`~.,'_:;?-][A-Za-z0-9 !@#$%^&()|+=`~.,'_:;?-]*";
       length "1..247";
@@ -1244,7 +1259,7 @@ module srl_nokia-common {
     description
       "A simple, one-line string that does not contain any control characters, and is Linux-safe.";
   }
-  
+
   typedef username {
     type name {
       srl_nokia-ext:preferred-column-width "16";
@@ -1421,12 +1436,18 @@ module srl_nokia-common {
 
   identity bgp {
     base ip-route-type;
-    // base mpls-label-entry-type;
-    // base tunnel-type;
+    base mpls-label-entry-type;
+    base tunnel-type;
     description
       "Border Gateway Protocol version 4";
     reference
       "RFC 4271";
+  }
+
+  identity bgp-label {
+    base ip-route-type;
+    description
+      "Border Gateway Protocol labeled routes";
   }
 
   identity bgp-evpn {
@@ -1439,6 +1460,12 @@ module srl_nokia-common {
     base ip-route-type;
     description
       "IP (default) route added by DHCP.";
+  }
+
+  identity esi {
+    base mpls-label-entry-type;
+    description
+      "ESI mpls label entry, used by BGP-EVPN";
   }
 
   identity gribi {
@@ -1499,6 +1526,12 @@ module srl_nokia-common {
     // base mpls-label-entry-type;
     description
       "Route added by an agent application using the NDK";
+  }
+
+  identity network-instance {
+    base mpls-label-entry-type;
+    description
+      "Network Instance mpls label entry, used by EVPN or IP-VPN";
   }
 
   identity ospfv2 {
@@ -1593,6 +1626,34 @@ module srl_nokia-common {
     base bgp-address-family;
     description
       "Unlabeled IPv6 unicast routes (AFI = 2, SAFI = 1)";
+  }
+
+  identity l3vpn-ipv4-unicast {
+    if-feature "srl-feat:ipvpn";
+    base bgp-address-family;
+    description
+      "VPN-IPv4 unicast address family (AFI = 1, SAFI = 128)";
+  }
+
+  identity l3vpn-ipv6-unicast {
+    if-feature "srl-feat:ipvpn";
+    base bgp-address-family;
+    description
+      "VPN-IPv6 unicast address family (AFI = 2, SAFI = 128)";
+  }
+
+  identity ipv4-labeled-unicast {
+    if-feature "srl-feat:bgp-labeled-unicast";
+    base bgp-address-family;
+    description
+      "Labeled IPv4 unicast routes (AFI 1, SAFI 4)";
+  }
+
+  identity ipv6-labeled-unicast {
+    if-feature "srl-feat:bgp-labeled-unicast";
+    base bgp-address-family;
+    description
+      "Labeled IPv6 unicast routes (AFI 2, SAFI 4)";
   }
 
   identity evpn {
@@ -1816,6 +1877,30 @@ module srl_nokia-common {
       }
     }
   }
+
+  typedef adaptation-rule {
+    description
+      "Defines how the configured parameter (rate or buffer size) is mapped into HW defined values.";
+    default closest;
+    type enumeration {
+      enum "closest" {
+        value 1;
+        description
+           "Closest possible HW value is used.";
+      }
+      enum "lower" {
+        value 2;
+        description
+           "The configured values is aligned with closest lower HW value.";
+      }
+      enum "higher" {
+        value 3;
+        description
+           "The configured value is aligned with the closest higher HW value.";
+      }
+    }
+  }
+
   typedef pcr {
     type uint8 {
       range "0..31";
@@ -1823,5 +1908,34 @@ module srl_nokia-common {
     description
       "Valid index number for a PCR. A TPM2.0 compliant PCR index extends from 0-31.";
   }
+
+  typedef bgp-set-med-type {
+    type union {
+      type string {
+        pattern '[+-][0-9]+';
+      }
+      type uint32;
+      type enumeration {
+        enum IGP {
+          description "set the MED value to the IGP cost toward the
+          next hop for the route";
+        }
+      }
+    }
+    description
+      "Type definition for specifying how the BGP MED can
+      be set in BGP policy actions. The three choices are to set
+      the MED directly, increment/decrement using +/- notation,
+      and setting it to the IGP cost (predefined value).";
+  }
+
+  typedef rule-sequence-id {
+    type uint32 {
+      range "0..128";
+    }
+    description
+      "Valid sequence id for an ACL filter rule or a policy forwarding rule sequence id.";
+  }
+
 }
 

@@ -21,12 +21,6 @@ module srl_nokia-igmp-snooping {
   import srl_nokia-extensions {
     prefix srl_nokia-ext;
   }
-  import srl_nokia-tunnel-interfaces {
-    prefix srl_nokia-tunnel-if;
-  }
-  import srl_nokia-tunnel-interfaces-vxlan-interface-bridge-table-multicast-destinations {
-    prefix srl_nokia-tunnel-if-mcast-dest;
-  }
 
   organization
     "Nokia";
@@ -37,6 +31,10 @@ module srl_nokia-igmp-snooping {
   description
     "This yang file models configuration and state of the igmp snooping protocol on mac-vrf";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -288,6 +286,12 @@ module srl_nokia-igmp-snooping {
       config false;
       description
         "The number of multicast groups which have been learned";
+      type uint32;
+    }
+    leaf proxy-evpn-membership-group-count {
+      config false;
+      description
+        "The number of multicast groups proxy-evpn-membership-groups";
       type uint32;
     }
     container proxy-membership-groups {
@@ -890,7 +894,7 @@ module srl_nokia-igmp-snooping {
 
   grouping igmp-snooping-interface-membership {
     description
-      "IGMP membership information.";
+      "IGMP membership information";
     leaf membership-group-count {
       config false;
       description
@@ -1022,34 +1026,30 @@ module srl_nokia-igmp-snooping {
   }
 
   grouping igmp-snooping-evpn-interface-state {
-    container igmp-snooping {
-      if-feature "srl_nokia-feat:igmp-snooping";
+    leaf is-mrouter-port {
       config false;
-      leaf is-mrouter-port {
-        config false;
-        description
-          "vxlan-interface is a multicast router port";
-        type boolean;
-      }
-      leaf is-evpn-proxy {
-        config false;
-        description
-          "vxlan-interface supports evpn-proxy";
-        type boolean;
-      }
-      leaf is-sbd {
-        config false;
-        description
-          "vxlan-interface is a supplementary broadcast domain";
-        type boolean;
-      }
-      uses igmp-snooping-interface-membership;
-      container statistics {
-        config false;
-        description
-          "vxlan-interface statistics";
-        uses igmp-snooping-bgp-route-stats;
-      }
+      description
+        "vxlan-interface is a multicast router port";
+      type boolean;
+    }
+    leaf is-evpn-proxy {
+      config false;
+      description
+        "vxlan-interface supports evpn-proxy";
+      type boolean;
+    }
+    leaf is-sbd {
+      config false;
+      description
+        "vxlan-interface is a supplementary broadcast domain";
+      type boolean;
+    }
+    uses igmp-snooping-interface-membership;
+    container statistics {
+      config false;
+      description
+        "vxlan-interface statistics";
+      uses igmp-snooping-bgp-route-stats;
     }
   }
 
@@ -1058,7 +1058,7 @@ module srl_nokia-igmp-snooping {
       if-feature "srl_nokia-feat:igmp-snooping";
       presence "Configure IGMP snooping";
       must "(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
-        error-message "IGMP-snooping configuration is only possible on a network-instance of type mac-vrf";
+        error-message "igmp-snooping configuration is only possible on a network-instance of type mac-vrf";
       }
       uses igmp-snooping-global-config;
       uses igmp-snooping-global-trace-options;
@@ -1071,16 +1071,34 @@ module srl_nokia-igmp-snooping {
         uses igmp-snooping-interface-config;
         uses igmp-snooping-interface-state;
       }
+      list vxlan-destination {
+        config false;
+        key "vtep vni";
+        leaf vtep {
+          srl_nokia-ext:show-importance high;
+          type srl_nokia-comm:ip-address;
+          description
+            "The IP address that identifies the remote VXLAN Termination Endpoint (VTEP).";
+        }
+        leaf vni {
+          type uint32 {
+            range "1..16777215";
+          }
+          srl_nokia-ext:show-importance "high";
+          description 
+            "VXLAN Network Identifier of the destination.";
+        }
+        leaf index {
+          srl_nokia-ext:show-importance high;
+          type uint64;
+          description
+            "the next-hop-group-id (system allocated) for resolving the VXLAN termination endpoint";
+        }
+        uses igmp-snooping-evpn-interface-state;
+      }
     }
   }
-
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
     uses igmp-snooping-top;
-  }
-
-  augment "/srl_nokia-tunnel-if:tunnel-interface/srl_nokia-tunnel-if:vxlan-interface/srl_nokia-tunnel-if:bridge-table/srl_nokia-tunnel-if-mcast-dest:multicast-destinations/srl_nokia-tunnel-if-mcast-dest:destination" {
-    description
-      "IGMP-snooping state";
-    uses igmp-snooping-evpn-interface-state;
   }
 }

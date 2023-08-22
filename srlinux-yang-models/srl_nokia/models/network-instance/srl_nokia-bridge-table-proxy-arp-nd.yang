@@ -10,6 +10,7 @@ module srl_nokia-bridge-table-proxy-arp-nd {
   import srl_nokia-extensions { prefix srl_nokia-ext; }
   import srl_nokia-features { prefix srl-feat; }
   import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-routing-policy { prefix srl_nokia-routing-pol; }
   
   organization
     "Nokia";
@@ -20,6 +21,10 @@ module srl_nokia-bridge-table-proxy-arp-nd {
   description
     "This yang file gives a description of bridge table proxy arp and nd configuration.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -99,6 +104,24 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       "Whether the override flag is set in the arp-nd extended community while advertising in bgp-evpn";
   }
 
+  grouping bridge-table-proxy-arp-nd-evpn-internal-tag-config {
+    description
+      "Grouping containing the configuration of internal tags";
+    container internal-tags {
+      if-feature "srl-feat:route-internal-tags and srl-feat:l2-proxy-arp-nd-route-internal-tags";
+      description
+        "Configuration and state of internal tags";
+      leaf-list tag-set {
+        max-elements 1;
+        type leafref {
+          path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
+      }
+    }
+  }
+
   grouping bridge-table-proxy-arp-evpn-flood-config {
     container flood {
       description 
@@ -122,6 +145,7 @@ module srl_nokia-bridge-table-proxy-arp-nd {
     container evpn {
       description 
         "How proxy arp interacts with evpn";
+      uses bridge-table-proxy-arp-nd-evpn-internal-tag-config;
       uses bridge-table-proxy-arp-evpn-flood-config;
     }
   } // bridge-table-proxy-arp-evpn-config
@@ -296,6 +320,7 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       type enumeration {
         enum "admin-down";
         enum "no-mcid";
+        enum "tag-set-not-resolved";
       }
       description
         "The reason the proxy-type is down on the network-instance";
@@ -845,6 +870,7 @@ module srl_nokia-bridge-table-proxy-arp-nd {
         }
         default router;
       }
+      uses bridge-table-proxy-arp-nd-evpn-internal-tag-config;
       uses bridge-table-proxy-nd-evpn-flood-config;
     }
   } // bridge-table-proxy-nd-evpn-config

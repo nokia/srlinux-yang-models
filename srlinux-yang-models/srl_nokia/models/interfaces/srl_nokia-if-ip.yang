@@ -29,6 +29,10 @@ module srl_nokia-if-ip {
 
   // typedef statements
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -341,8 +345,22 @@ module srl_nokia-if-ip {
 
              Up to 16 global unicast IPv6 addresses can be assigned to each subinterface. Global unicast IPv6 address subnets on the same subinterface are allowed to overlap as long as the host bits are different. When a locally originated unicast packet is destined to a host covered by multiple subnets associated with a subinterface, the source address is chosen to be the numerically lowest IP address among all these subnets.";
           // [adapted from IETF IP model RFC 7277]
-          must "not(.='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
-            error-message "Not a global unicast IPv6 address prefix";
+          must "not(.='::/128' or .='::1/128' or starts-with(.,'ff'))" {
+            error-message "Not a unicast IPv6 address prefix";
+          }
+        }
+        leaf type {
+          type srl_nokia-comm:ipv6-address-type;
+          default "global-unicast";
+          description
+            "Specifies the explicit type of the IPv6 address being assigned to the subinterface
+
+            By default, addresses are assumed to be global unicast.  Where a link-local address is to be explicitly configured, this leaf should be set to link-local.";
+          must "not(. = 'global-unicast' and starts-with(../ip-prefix,'fe80'))" {
+            error-message "Type is global but address prefix implies link-local";
+          }
+          must "not(. = 'link-local-unicast' and not(starts-with(../ip-prefix,'fe80')))" {
+            error-message "Type is link-local-unicast but address prefix is not link-local";
           }
         }
         leaf anycast-gw {
@@ -354,6 +372,9 @@ module srl_nokia-if-ip {
           // as the above error is sufficient in that case
           must ". = false() or (. = true() and ../../../anycast-gw) or not(starts-with(../../../../name,'irb'))" {
             error-message "Only supported if anycast-gw container is configured";
+          }
+          must "not(starts-with(../ip-prefix,'fe80'))" {
+            error-message "not supported on link local address";
           }
           type boolean;
           // default false;

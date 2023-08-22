@@ -22,6 +22,10 @@ module srl_nokia-load-balancing {
   description
     "This module defines configuration and operational state data related to ECMP and other load-balancing options.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -45,8 +49,10 @@ module srl_nokia-load-balancing {
 
   grouping generic-load-balancing {
     container load-balancing {
+      if-feature "not srl_nokia-feat:platform-vsrl";
       description "Adjust system-wide ECMP load balancing options.";
       container hash-options {
+        if-feature "not srl_nokia-feat:future-0-0";
         must "destination-address = source-address" {
             error-message "Destination address and source address hashing cannot be set differently on this platform";
             srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
@@ -118,6 +124,24 @@ module srl_nokia-load-balancing {
           type boolean;
           default "false";
         }
+      }
+
+      leaf lsr-profile {
+        description "Adjust system-wide LSR ECMP load balancing options.";
+        if-feature "srl_nokia-feat:future-0-0";
+        type enumeration {
+          enum label-stack {
+            description
+                "LSR load balancing based on only the label stack where node searches for BoS=1 or up until hash label search depth is reached";
+          }
+          enum label-eth-or-ip-l4-teid {
+            description
+              "LSR load balancing based on the label stack and Eth or IP headers
+
+              Node performs IPv4/6 speculation based on first nibble, includes source and destination IP address, followed by UDP/TCP check for inclusion of soruce and destination ports and includes GTP/TEID when UDP or TCP port is 2123 or 2152. Alternatively node attempts Ethernet header speculation for inclusion of source and destination MAC together with up to two VLANs";
+          }
+        }
+        default "label-eth-or-ip-l4-teid";
       }
     }
   }

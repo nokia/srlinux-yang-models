@@ -43,7 +43,8 @@
     },
     {
       "oc": "/system/state/software-version",
-      "supported": false
+      "srlinux": "/system/information/version",
+      "transform": "version-to-full-version"
     },
     {
       "oc": "/system/state/last-configuration-timestamp",
@@ -166,10 +167,6 @@
       "transform": "bool-to-admin-state"
     },
     {
-      "oc": "/system/ntp/{config,state}/ntp-source-address",
-      "supported": false
-    },
-    {
       "oc": "/system/ntp/{config,state}/enable-ntp-auth",
       "supported": false
     },
@@ -225,16 +222,24 @@
       "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:prefer"
     },
     {
+      "oc": "/system/ntp/servers/server/{config,state}/network-instance",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/source-address",
+      "supported": false
+    },
+    {
       "oc": "/system/ntp/servers/server/state/stratum",
       "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:stratum"
     },
     {
       "oc": "/system/ntp/servers/server/state/root-delay",
-      "supported": false
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:root-delay"
     },
     {
       "oc": "/system/ntp/servers/server/state/root-dispersion",
-      "supported": false
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:root-dispersion"
     },
     {
       "oc": "/system/ntp/servers/server/state/offset",
@@ -279,7 +284,21 @@
     },
     {
       "oc": "/system/grpc-servers/grpc-server/{config,state}/services",
-      "supported": false
+      "srlinux": "/system/srl-gnmi-server:gnmi-server/srl-gnmi-server:network-instance/srl-gnmi-server:services",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/services/services",
+      "srlinux": "/system/srl-gnmi-server:gnmi-server/srl-gnmi-server:network-instance/srl-gnmi-server:services/srl-gnmi-server:services",
+      "mapping": [
+        {"GNMI" : "gnmi"},
+        // others like GNOI/GNSI are unsupported in oc
+        {"GNOI" : "gnoi"},
+        {"GNSI" : "gnsi"},
+        // P4RT on the other hand is not yet supported in srl under gnmi-server
+        {"P4RT" : "p4rt"}
+      ],
+      "feature-flagged": true
     },
     {
       "oc": "/system/grpc-servers/grpc-server/{config,state}/enable",
@@ -404,17 +423,7 @@
     },
     {
       "oc": "/system/logging/console/selectors/selector/{config,state}/facility",
-      "srlinux": "",
-      "deviations": {
-        "add": {
-            "must": [
-              {
-                "expression": ". != 'ALL'",
-                "error-message": "ALL is not supported"
-              }
-            ]
-        }
-      }
+      "srlinux": ""
     },
     {
       "oc": "/system/logging/console/selectors/selector/{config,state}/severity",
@@ -443,6 +452,10 @@
     {
       "oc": "/system/logging/remote-servers/remote-server/{config,state}/source-address",
       "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:remote-server/srl_nokia-logging:source-address"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/{config,state}/network-instance",
+      "supported": false
     },
     {
       "oc": "/system/logging/remote-servers/remote-server/{config,state}/remote-port",
@@ -480,17 +493,7 @@
     },
     {
       "oc": "/system/logging/remote-servers/remote-server/selectors/selector/{config,state}/facility",
-      "srlinux": "",
-      "deviations": {
-        "add": {
-            "must": [
-              {
-                "expression": ". != 'ALL'",
-                "error-message": "ALL is not supported"
-              }
-            ]
-        }
-      }
+      "srlinux": ""
     },
     {
       "oc": "/system/logging/remote-servers/remote-server/selectors/selector/{config,state}/severity",

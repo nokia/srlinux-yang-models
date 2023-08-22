@@ -25,6 +25,10 @@ module srl_nokia-platform {
   description
     "This module defines configuration and operational state data related to platform components.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -59,6 +63,29 @@ module srl_nokia-platform {
     }
     description
       "Details if the locator LED is active on this component";
+  }
+
+  identity booted-reason {
+    description
+      "Reasons a component has booted or rebooted";
+  }
+
+  identity user-initiated-reboot {
+    base booted-reason;
+    description
+      "A user initiated the reboot directly via a management interface";
+  }
+
+  identity power-failure {
+    base booted-reason;
+    description
+      "The system rebooted the component due to insufficient power";
+  }
+
+  identity critical-error {
+    base booted-reason;
+    description
+      "The system rebooted the component due to an internal critical error";
   }
 
   grouping component-power-state-top {
@@ -182,6 +209,39 @@ module srl_nokia-platform {
     }
   }
 
+  grouping component-common-eeprom {
+    description
+      "Grouping for components that have a full featured EEPROM
+      
+      failure-reason is also included here for model simplicity";
+    leaf failure-reason {
+      type string;
+      config false;
+      description
+        "The reason the component transitioned to a failed state
+
+         Field is empty if the component is not currently in a failure state";
+    }
+    leaf clei-code {
+      type string;
+      config false;
+      description
+        "The Common Language Identification Code for this component";
+    }
+    leaf serial-number {
+      type string;
+      config false;
+      description
+        "The serial number for this component";
+    }
+    leaf manufactured-date {
+      type srl-comm:date-and-time;
+      config false;
+      description
+        "The date this component was manufactured";
+    }
+  }
+
   grouping component-common-state-top {
     description
       "Grouping for component state";
@@ -201,6 +261,17 @@ module srl_nokia-platform {
 
          For components that do not boot, this is the time the component was last discovered by the active control module";
     }
+    leaf last-booted-reason {
+      type identityref {
+        base booted-reason;
+      }
+      srl-ext:show-importance "high";
+      config false;
+      description
+        "The reason this component last booted or rebooted
+
+         For components without the ability to 'boot' this field is never populated";
+    }
     leaf last-change {
       type srl-comm:date-and-time-delta;
       srl-ext:show-importance "high";
@@ -214,37 +285,11 @@ module srl_nokia-platform {
       description
         "Part number for this component";
     }
-    leaf clei-code {
-      type string;
-      config false;
-      description
-        "The Common Language Identification Code for this component";
-    }
-    leaf serial-number {
-      type string;
-      config false;
-      description
-        "The serial number for this component";
-    }
-    leaf manufactured-date {
-      type string;
-      config false;
-      description
-        "The date this component was manufactured";
-    }
     leaf removable {
       type boolean;
       config false;
       description
         "Details if this component can be removed from the system";
-    }
-    leaf failure-reason {
-      type string;
-      config false;
-      description
-        "The reason the component transitioned to a failed state
-
-         Field is empty if the component is not currently in a failure state";
     }
   }
 
@@ -265,13 +310,14 @@ module srl_nokia-platform {
       "Grouping for common component configuration and state";
     uses component-common-config-top;
     uses component-common-state-top;
+    uses component-common-eeprom;
   }
 
   container platform {
     description
       "Enclosing container for platform components";
     container trust {
-      if-feature "srl-feat:secure-boot or srl-feat:measured-boot";
+      if-feature "srl-feat:secure-boot or srl-feat:measured-boot or srl-feat:disk-encryption";
       description
         "State information related to Platform Trust";
       config false;

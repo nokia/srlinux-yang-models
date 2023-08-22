@@ -6,7 +6,8 @@
     },
     {
       "oc": "/network-instances/network-instance",
-      "srlinux": "/network-instance"
+      "srlinux": "/network-instance",
+      "add-to-cache": true
     },
     {
       "oc": "/network-instances/network-instance/name",
@@ -182,7 +183,10 @@
     },
     {
       "oc": "/network-instances/network-instance/{config,state}",
-      "srlinux": ""
+      "srlinux": "",
+      // sets the OC type to SRL default when it is not explicity configured in SRL
+      // as default values are not mapped from SRL to OC
+      "finalize-transform": "oc-set-network-instance-default-type"
     },
     {
       "oc": "/network-instances/network-instance/{config,state}/name",
@@ -196,14 +200,6 @@
         {"L3VRF": "ip-vrf"},
         {"L2VSI": "mac-vrf"}
         // others unsupported
-      ]
-    },
-    {
-      "oc": "/network-instances/network-instance/{config,state}/enabled",
-      "srlinux": "/network-instance/admin-state",
-      "mapping": [
-        {"true": "enable"},
-        {"false": "disable"}
       ]
     },
     {
@@ -352,8 +348,7 @@
     },
     {
       "oc": "/network-instances/network-instance/interfaces/interface/id",
-      "srlinux": "/network-instance/interface/name",
-      "transform":"oc-subinterface-to-srl-subinterface"
+      "srlinux": "/network-instance/interface/name"
     },
     {
       "oc": "/network-instances/network-instance/interfaces/interface/{config,state}",
@@ -365,11 +360,13 @@
     },
     {
       "oc": "/network-instances/network-instance/interfaces/interface/{config,state}/interface",
-      "srlinux": ""
+      "srlinux": "/network-instance/interface/interface-ref/interface",
+      "feature-flagged": true
     },
     {
       "oc": "/network-instances/network-instance/interfaces/interface/{config,state}/subinterface",
-      "srlinux": ""
+      "srlinux": "/network-instance/interface/interface-ref/subinterface",
+      "feature-flagged": true
     },
     {
       "oc": "/network-instances/network-instance/interfaces/interface/{config,state}/associated-address-families",
@@ -3048,208 +3045,6 @@
       "supported": false
     },
     {
-      "oc": "/network-instances/network-instance/policy-forwarding",
-      "srlinux": "/network-instance/policy-forwarding"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy",
-      "srlinux": "/network-instance/policy-forwarding/policy"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/policy-id",
-      "srlinux": "/network-instance/policy-forwarding/policy/policy-id"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/{config,state}",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/{config,state}/policy-id",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/{config,state}/type",
-      "srlinux": "",
-      "supported": false,
-      "deviations": {
-        "add": {
-            "must": [
-              {
-                  "expression": "../type = 'VRF_SELECTION_POLICY'"
-              }
-            ]
-        }
-      }
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/sequence-id",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/sequence-id"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/{config,state}",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/{config,state}/sequence-id",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/state/matched-pkts",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/state/matched-octets",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/l2",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/match/ipv4"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}/source-address",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/match/ipv4/source-ip/prefix"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}/destination-address",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}/dscp",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}/dscp-set",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/match/ipv4/dscp-set"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}/dscp-set/dscp-set",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/match/ipv4/dscp-set/dscp-set"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}/protocol",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/match/ipv4/protocol"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv4/{config,state}/hop-limit",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/ipv6",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/transport",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/action"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}/discard",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}/decapsulate-gre",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}/decapsulate-gue",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}/decapsulate-mpls-in-udp",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}/network-instance",
-      "srlinux": "/network-instance/policy-forwarding/policy/rule/action/network-instance"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}/path-selection-group",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/{config,state}/next-hop",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/policies/policy/rules/rule/action/encapsulate-gre",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface",
-      "srlinux": "/network-instance/policy-forwarding/interface"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/interface-id",
-      "srlinux": "/network-instance/policy-forwarding/interface/subinterface"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/{config,state}",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/{config,state}/interface-id",
-      "srlinux": ""
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/{config,state}/apply-forwarding-policy",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/{config,state}/apply-vrf-selection-policy",
-      "srlinux": "/network-instance/policy-forwarding/interface/apply-forwarding-policy"
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/interface-ref",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/interface-ref/{config,state}",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/interface-ref/{config,state}/interface",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/interfaces/interface/interface-ref/{config,state}/subinterface",
-      "supported": false
-    },
-    {
-      "oc": "/network-instances/network-instance/policy-forwarding/path-selection-groups",
-      "supported": false
-    },
-    {
       "oc": "/network-instances/network-instance/afts",
       "srlinux": "/network-instance/route-table"
     },
@@ -3734,7 +3529,8 @@
     },
     {
       "oc": "/network-instances/network-instance/afts/next-hops/next-hop/state/mac-address",
-      "supported": false
+      "srlinux": "/network-instance/route-table/next-hop/mac-address",
+      "type": "srl_nokia-common:mac-address"
     },
     {
       "oc": "/network-instances/network-instance/afts/next-hops/next-hop/state/pushed-mpls-label-stack",
@@ -3746,19 +3542,23 @@
     },
     {
       "oc": "/network-instances/network-instance/afts/next-hops/next-hop/state/encapsulate-header",
-      "supported": false
-      // not currently in srl
-      // "srlinux": "/network-instance/route-table/next-hop/encapsulate-header",
-      // "mapping": [
-      //   {"GRE": "gre"},
-      //   {"IPV4": "ipv4"},
-      //   {"IPV6": "ipv6"},
-      //   {"MPLS": "mpls"}
-      // ]
+      "srlinux": "/network-instance/route-table/next-hop/encapsulate-header",
+      "mapping": [
+        {"GRE": "gre"},
+        {"IPV4": "ipv4"},
+        {"IPV6": "ipv6"},
+        {"MPLS": "mpls"}
+      ]
     },
     {
       "oc": "/network-instances/network-instance/afts/next-hops/next-hop/state/decapsulate-header",
-      "supported": false
+      "srlinux": "/network-instance/route-table/next-hop/decapsulate-header",
+      "mapping": [
+        {"GRE": "gre"},
+        {"IPV4": "ipv4"},
+        {"IPV6": "ipv6"},
+        {"MPLS": "mpls"}
+      ]
     },
     {
       "oc": "/network-instances/network-instance/afts/next-hops/next-hop/state/origin-protocol",
@@ -3772,7 +3572,8 @@
         {"DIRECTLY_CONNECTED": "local"},
         {"LOCAL_AGGREGATE": "aggregate"},
         {"PIM": ""},
-        {"IGMP": ""}
+        {"IGMP": ""},
+        {"GRIBI": "gribi"}
       ]
     },
     {
@@ -3797,24 +3598,22 @@
     },
     {
       "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip",
-      "supported": false
+      "srlinux": "/network-instance/route-table/next-hop/ip-in-ip"
     },
-    // {
-    //   "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip",
-    //   "srlinux": "/network-instance/route-table/next-hop/ip-in-ip"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip/state",
-    //   "srlinux": ""
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip/state/src-ip",
-    //   "srlinux": "/network-instance/route-table/next-hop/ip-in-ip/source-ip"
-    // },
-    // {
-    //   "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip/state/dst-ip",
-    //   "srlinux": "/network-instance/route-table/next-hop/ip-in-ip/destinarion-ip"
-    // },
+    {
+      "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip/state/src-ip",
+      "srlinux": "/network-instance/route-table/next-hop/ip-in-ip/src-ip",
+      "type": "srl_nokia-common:ip-address"
+    },
+    {
+      "oc": "/network-instances/network-instance/afts/next-hops/next-hop/ip-in-ip/state/dst-ip",
+      "srlinux": "/network-instance/route-table/next-hop/ip-in-ip/dst-ip",
+      "type": "srl_nokia-common:ip-address"
+    },
     {
       "oc": "/network-instances/network-instance/afts/next-hops/next-hop/interface-ref",
       "srlinux": ""

@@ -27,6 +27,10 @@ module srl_nokia-acl {
 
     // grouping statements
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -62,9 +66,16 @@ module srl_nokia-acl {
 
     grouping cpm-filter-entry-statistics {
         container statistics {
+            srl_nokia-ext:delivery-node-override "true";
             description
                 "Statistics container for packets matching the CPM-filter entry";
             config false;
+            leaf incomplete {
+              if-feature "not srl_nokia-feat:future-0-0";
+              type boolean;
+              description
+                "Returns true when at least one linecard had insufficient stats resources to ensure an accurate set of values for the number of matched packets.";
+            }
             leaf matched-packets {
                 srl_nokia-ext:show-importance high;
                 description
@@ -72,7 +83,6 @@ module srl_nokia-acl {
                 type srl_nokia-comm:zero-based-counter64;
             }
             leaf last-match {
-                if-feature "not srl_nokia-feat:future-0-0";
                 srl_nokia-ext:show-importance high;
                 description
                     "The elapsed time since a packet last matched the entry, considering all subinterfaces and all linecards.";
@@ -85,15 +95,16 @@ module srl_nokia-acl {
                     "Time of the last clear command performed by the user at this level";
             }
             container distributed-policer {
-                if-feature "not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not
-srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
+                if-feature "not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 description
                     "Distributed policer stats for traffic matching the entry.";
+                srl_nokia-ext:delivery-node-override "true";
                 uses policer-stats;
             }
             container system-cpu-policer {
                 description
                     "System CPU policer stats for traffic matching the entry.";
+                srl_nokia-ext:delivery-node-override "true";
                 uses policer-stats;
             }
         }
@@ -101,9 +112,15 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
     grouping system-ip-filter-entry-statistics {
         container statistics {
+            srl_nokia-ext:delivery-node-override "true";
             description
                 "Statistics container for packets matching the system-filter entry";
             config false;
+            leaf incomplete {
+              type boolean;
+              description
+                "Returns true when at least one linecard had insufficient stats resources to ensure an accurate set of values for the number of matched packets.";
+            }
             leaf matched-packets {
                 srl_nokia-ext:show-importance high;
                 description
@@ -111,7 +128,6 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 type srl_nokia-comm:zero-based-counter64;
             }
             leaf last-match {
-                if-feature "not srl_nokia-feat:future-0-0";
                 srl_nokia-ext:show-importance high;
                 description
                     "The elapsed time since a packet last matched the entry, considering all subinterfaces.";
@@ -137,8 +153,15 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     "Time of the last clear command performed by the user at this level or a higher level";
             }
             container aggregate {
+                srl_nokia-ext:delivery-node-override "true";
                 description
-                    "Container for aggregated per-entry statistics. Not present if the entry is part of a filter with statistics-per-entry set to false.";
+                    "Container for aggregated per-entry statistics (summed across all interfaces and all linecards).";
+                leaf incomplete {
+                    if-feature "not srl_nokia-feat:future-0-0";
+                    type boolean;
+                    description
+                        "Returns true when at least one linecard had insufficient stats resources to ensure an accurate set of values for the number of matched packets.";
+                }
                 leaf in-matched-packets {
                     srl_nokia-ext:show-importance high;
                     description
@@ -146,7 +169,6 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     type srl_nokia-comm:zero-based-counter64;
                 }
                 leaf in-last-match {
-                    if-feature "not srl_nokia-feat:future-0-0";
                     srl_nokia-ext:show-importance high;
                     description
                             "The elapsed time since an ingress packet last matched the entry, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
@@ -159,7 +181,6 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     type srl_nokia-comm:zero-based-counter64;
                 }
                 leaf out-last-match {
-                    if-feature "not srl_nokia-feat:future-0-0";
                     srl_nokia-ext:show-importance high;
                     description
                             "The elapsed time since an egress packet last matched the entry, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an output ACL";
@@ -184,6 +205,11 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                         type string;
                         description
                             "Reference to a subinterface.";
+                    }
+                    leaf incomplete {
+                        type boolean;
+                        description
+                            "Returns true when at least one linecard supporting the subinterface had insufficient stats resources to ensure an accurate set of values for the number of matched packets.";
                     }
                     leaf in-matched-packets {
                         description
@@ -319,6 +345,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                         "The maximum depth of the policer bucket in number of packets";
                 }
                 container statistics {
+                    srl_nokia-ext:delivery-node-override "true";
                     config false;
                     description
                         "Container for system CPU policer statistics
@@ -374,6 +401,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                             "Time of the last clear command that applied to these statistics";
                     }
                     container aggregate {
+                        srl_nokia-ext:delivery-node-override "true";
                             description
                                 "None of these statistics are populated if the policer is configured as entry-specific=true.
 
@@ -446,15 +474,18 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                         description
                         "The QoS profile to which the packet is mapped";
                     }
-                    leaf rate-limit {
-                        if-feature "(not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not srl_nokia-feat:platform-7220-h4) or (srl_nokia-feat:future-0-0)";
-                        if-feature srl_nokia-feat:subif-acl-policer;
+                    container rate-limit {
+                        if-feature "srl_nokia-feat:subif-acl-policer";
 
-                        type leafref {
-                            path "../../../../../policers/policer/name";
+                        description "Rate-limit accepted packets";
+                        leaf policer {
+                            if-feature "(not srl_nokia-feat:trident4 and not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not srl_nokia-feat:platform-7220-h4) or (srl_nokia-feat:future-0-0)";
+                            type leafref {
+                                path "../../../../../../policers/policer/name";
+                            }
+                            description
+                                "Reference to a policer";
                         }
-                        description
-                            "Reference to a policer";
                     }
                     container forward {
                         if-feature "srl_nokia-feat:future-0-0";
@@ -526,6 +557,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
     grouping cpm-filter-entry-action-config {
         container action {
+            srl_nokia-ext:delivery-node-override "false";
             description
                 "Container for the actions to be applied to packets matching the CPM filter entry.";
             choice action {
@@ -534,7 +566,6 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     description
                         "Accept matching packets and forward them towards their normal destination";
                     container rate-limit {
-                        if-feature "not srl_nokia-feat:future-0-0";
                         description "Rate-limit accepted packets";
                         leaf system-cpu-policer {
                             type leafref {
@@ -542,6 +573,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                             }
                             description
                                 "Reference to a system-cpu-policer.";
+                            must "(string(../../log) = '' or ../../log = false()) and (string(../../drop/log) = '' or ../../drop/log = false())" {
+                                error-message "Invalid action (log & policer) specified";
+                            }
                         }
                         leaf policer {
                             if-feature "(not srl_nokia-feat:platform-7220-h2 and not srl_nokia-feat:platform-7220-h3 and not srl_nokia-feat:platform-7220-h4) or (srl_nokia-feat:future-0-0)";
@@ -550,6 +584,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                             }
                             description
                                 "Reference to a policer";
+                            must "(string(../../log) = '' or ../../log = false()) and (string(../../drop/log) = '' or ../../drop/log = false())" {
+                                error-message "Invalid action (log & policer) specified";
+                            }
                         }
                     }
                     leaf log {
@@ -639,6 +676,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
     grouping capture-ip-filter-entry-action-config {
         container action {
+            srl_nokia-ext:delivery-node-override "false";
             description
                 "Container for the actions to be applied to packets matching the capture filter entry.";
             choice action {
@@ -658,6 +696,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
     grouping system-ip-filter-entry-action-config {
         container action {
+            srl_nokia-ext:delivery-node-override "false";
             description
                 "Container for the actions to be applied to packets matching the System filter entry.";
             choice action {
@@ -697,6 +736,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
     grouping common-ipv4-filter-entry-match-config {
         container match {
+            srl_nokia-ext:delivery-node-override "false";
             description
                 "Container for the conditions that determine whether a packet matches this entry";
             container destination-ip {
@@ -706,6 +746,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     description
                         "Match a packet if its destination IP address is within the specified IPv4 prefix.";
                     type srl_nokia-comm:ipv4-prefix;
+                    must "not(../address >= '' or ../mask >= '')" {
+                        error-message "An address and mask must be empty to use the address with prefix";
+                    }
                 }
                 // leaf prefix-list
                 leaf address {
@@ -715,6 +758,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     must "../mask >= ''" {
                         error-message "An inverse mask must be configured to use with the address";
                     }
+                    must "not(../prefix >= '')" {
+                        error-message "A prefix must be empty to use the address with mask";
+                    }
                 }
                 leaf mask {
                     description
@@ -722,6 +768,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     type srl_nokia-comm:ipv4-address;
                     must "../address >= ''" {
                         error-message "An address must be configured to use with the mask";
+                    }
+                    must "not(../prefix = '')" {
+                        error-message "A prefix must be empty to use the address with mask";
                     }
                 }
             }
@@ -743,7 +792,12 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 description
                     "Match the first fragment of an IPv4 datagram
 
-                    A packet matches the true condition if the IPv4 header indicates that the fragment-offset is zero and and the more-fragments bit is 1. It is not valid to configure this leaf without configuring a match value for the fragment leaf.";
+                    A packet matches the true condition if the IPv4 header indicates that the fragment-offset is zero
+                    and and the more-fragments bit is 1. It is not valid to configure this leaf without configuring a
+                    match value for the fragment leaf.";
+                must "../fragment = true()" {
+                    error-message "When the first-fragment is configured, fragment should be configured";
+                }
             }
             container icmp {
                 description
@@ -753,6 +807,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 leaf type {
                     description "Match a single ICMP type value.";
                     type srl_nokia-pkt-match-types:icmp-type;
+                    must "string(../../protocol) = '1' or string(../../protocol) = 'icmp'" {
+                        error-message "The protocol should be 1 or ICMP to use ICMP type";
+                    }
                 }
                 leaf-list code {
                     description
@@ -760,12 +817,18 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
                         Requires ICMP type to be specified because codes are type dependent.";
                     type uint8;
+                    must "string(../../protocol) = '1' or string(../../protocol) = 'icmp'" {
+                        error-message "The protocol should be 1 or ICMP to use ICMP type";
+                    }
                 }
             }
             leaf protocol {
                 description
                     "An IPv4 packet matches this condition if its IP protocol type field matches the specified value";
                 type srl_nokia-pkt-match-types:ip-protocol-type;
+                must "string(.) != '58' or string(.) = 'icmp6'" {
+                    error-message "The protocol must not be icmp6 or 58";
+                }
             }
             container source-ip {
                 description
@@ -774,6 +837,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     description
                         "Match a packet if its source IP address is within the specified IPv4 prefix.";
                     type srl_nokia-comm:ipv4-prefix;
+                    must "not(../address >= '' or ../mask >= '')" {
+                        error-message "An address and mask must be empty to use the address with prefix";
+                    }
                 }
                 // leaf prefix-list
                 leaf address {
@@ -783,6 +849,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     must "../mask >= ''" {
                         error-message "An inverse mask must be configured to use with the address";
                     }
+                    must "not(../prefix >= '')" {
+                        error-message "A prefix must be empty to use the address with mask";
+                    }
                 }
                 leaf mask {
                     description
@@ -790,6 +859,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     type srl_nokia-comm:ipv4-address;
                     must "../address >= ''" {
                         error-message "An address must be configured to use with the mask";
+                    }
+                    must "not(../prefix >= '')" {
+                        error-message "A prefix must be empty to use the address with mask";
                     }
                 }
             }
@@ -799,6 +871,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
     grouping common-ipv6-filter-entry-match-config {
         container match {
+            srl_nokia-ext:delivery-node-override "false";
             description
                 "Container for the conditions that determine whether a packet matches this entry";
             container destination-ip {
@@ -841,6 +914,9 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 leaf type {
                     description "Match a single ICMPv6 type value";
                     type srl_nokia-pkt-match-types:icmp6-type;
+                    must "string(../../next-header) = '58' or string(../../next-header) = 'icmp6'" {
+                        error-message "The next-header should be 58 or icmp6 to use icmp6 type";
+                    }
                 }
                 leaf-list code {
                     description
@@ -848,12 +924,18 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
                         Requires ICMPv6 type to be specified because codes are type dependent.";
                     type uint8;
+                    must "string(../../next-header) = '58' or string(../../next-header) = 'icmp6'" {
+                        error-message "The next-header should be 58 or icmp6 to use icmp6 code";
+                    }
                 }
             }
             leaf next-header {
                 description
                     "An IPv6 packet matches this condition if its first next-header field (in the IPv6 fixed header) contains the specified value";
                 type srl_nokia-pkt-match-types:ip-protocol-type;
+                must "string(.) != '1' or string(.) = 'icmp'" {
+                    error-message "The next-header must not be icmp or 1";
+                }
             }
             container source-ip {
                 description
@@ -900,10 +982,20 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     ge = greater than or equal to
                     le = less than or equal to";
                 type srl_nokia-pkt-match-types:operator;
+                must "string(../value) != ''" {
+                    error-message "The destination port value must be specified along with operator";
+                }
             }
             leaf value {
                 description "A destination port number";
                 type srl_nokia-pkt-match-types:l4-port-type;
+                must "string(../../protocol) = '6' or string(../../next-header) = '6' or string(../../protocol) = '17' or
+string(../../next-header) = '17' or string(../../protocol) = 'tcp' or string(../../next-header) = 'tcp' or string(../../protocol) = 'udp' or string(../../next-header) = 'udp'" {
+                    error-message "The protocol or next-header must be TCP or UDP to use port value";
+                }
+                must "../../fragment = false() or (string(../../fragment) = '' and string(../../first-fragment) = '') or (../../first-fragment = true())" {
+                    error-message "The first-fragment must be true to use port value with fragment. The packet can't be a fragment other than first-fragment";
+                }
             }
             container range {
                 description
@@ -911,10 +1003,30 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 leaf start {
                     type srl_nokia-pkt-match-types:l4-port-type;
                     description "The starting port number to include in the range";
+                    must "not(../../operator >= '')" {
+                        error-message "The destination port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../next-header) = '6' or string(../../../protocol) = '17' or
+string(../../../next-header) = '17' or string(../../../protocol) = 'tcp' or string(../../../next-header) = 'tcp' or string(../../../protocol) = 'udp' or string(../../../next-header) = 'udp'" {
+                        error-message "The protocol or next-header must be TCP or UDP to use port range";
+                    }
+                    must "../../../fragment = false() or (string(../../../fragment) = '' and string(../../../first-fragment) = '') or (../../../first-fragment = true())" {
+                        error-message "The first-fragment must be true to use port range with fragment. The packet can't be a fragment other than first-fragment";
+                    }
                 }
                 leaf end {
                     type srl_nokia-pkt-match-types:l4-port-type;
                     description "The ending port number to include in the range";
+                    must "not(../../operator >= '')" {
+                        error-message "The destination port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../next-header) = '6' or string(../../../protocol) = '17' or
+string(../../../next-header) = '17' or string(../../../protocol) = 'tcp' or string(../../../next-header) = 'tcp' or string(../../../protocol) = 'udp' or string(../../../next-header) = 'udp'" {
+                        error-message "The protocol or next-header must be TCP or UDP to use port range";
+                    }
+                    must "../../../fragment = false() or (string(../../../fragment) = '' and string(../../../first-fragment) = '') or (../../../first-fragment = true())" {
+                        error-message "The first-fragment must be true to use port range with fragment. The packet can't be a fragment other than first-fragment";
+                    }
                 }
             }
         }
@@ -931,10 +1043,20 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     ge = greater than or equal to
                     le = less than or equal to";
                 type srl_nokia-pkt-match-types:operator;
+                must "string(../value) != ''" {
+                    error-message "The source port value must be specified along with operator";
+                }
             }
             leaf value {
                 description "A source port number";
                 type srl_nokia-pkt-match-types:l4-port-type;
+                must "string(../../protocol) = '6' or string(../../next-header) = '6' or string(../../protocol) = '17' or
+string(../../next-header) = '17' or string(../../protocol) = 'tcp' or string(../../next-header) = 'tcp' or string(../../protocol) = 'udp' or string(../../next-header) = 'udp'" {
+                    error-message "The protocol or next-header must be TCP or UDP to use port value";
+                }
+                must "../../fragment = false() or (string(../../fragment) = '' and string(../../first-fragment) = '') or (../../first-fragment = true())" {
+                    error-message "The first-fragment must be true to use port value with fragment. The packet can't be a fragment other than first-fragment";
+                }
             }
             container range {
                 description
@@ -942,10 +1064,30 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 leaf start {
                     type srl_nokia-pkt-match-types:l4-port-type;
                     description "The starting port number to include in the range";
+                    must "not(../../operator >= '')" {
+                        error-message "The source port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../next-header) = '6' or string(../../../protocol) = '17' or
+string(../../../next-header) = '17' or string(../../../protocol) = 'tcp' or string(../../../next-header) = 'tcp' or string(../../../protocol) = 'udp' or string(../../../next-header) = 'udp'" {
+                        error-message "The protocol or next-header must be TCP or UDP to use port range";
+                    }
+                    must "../../../fragment = false() or (string(../../../fragment) = '' and string(../../../first-fragment) = '') or (../../../first-fragment = true())" {
+                        error-message "The first-fragment must be true to use port range with fragment. The packet can't be a fragment other than first-fragment";
+                    }
                 }
                 leaf end {
                     type srl_nokia-pkt-match-types:l4-port-type;
                     description "The ending port number to include in the range";
+                    must "not(../../operator >= '')" {
+                        error-message "The source port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../next-header) = '6' or string(../../../protocol) = '17' or
+string(../../../next-header) = '17' or string(../../../protocol) = 'tcp' or string(../../../next-header) = 'tcp' or string(../../../protocol) = 'udp' or string(../../../next-header) = 'udp'" {
+                        error-message "The protocol or next-header must be TCP or UDP to use port range";
+                    }
+                    must "../../../fragment = false() or (string(../../../fragment) = '' and string(../../../first-fragment) = '') or (../../../first-fragment = true())" {
+                        error-message "The first-fragment must be true to use port range with fragment. The packet can't be a fragment other than first-fragment";
+                    }
                 }
             }
         }
@@ -953,13 +1095,22 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             type string {
                 pattern '(\(|\)|&|\||!|ack|rst|syn)+';
             }
+            must "string(../protocol) = '6' or string(../protocol) = 'tcp' or string(../next-header) = '6' or string(../next-header) = 'tcp'" {
+                error-message "A protocol or next-header must be TCP to use with tcp flags";
+            }
+
+            must "../fragment = false() or (string(../fragment) = '' and string(../first-fragment) = '') or (../first-fragment = true())" {
+                error-message "The first-fragment must be true to use tcp-flags with fragment. The packet can't be a fragment other than first-fragment";
+            }
+
             description
-                "A logical expression using the &, | and ! logical operators and the TCP flag names: rst, syn and ack.";
+                    "A logical expression using the &, | and ! logical operators and the TCP flag names: rst, syn and ack.";
         }
     }
 
     grouping common-mac-filter-entry-match-config {
         container match {
+            srl_nokia-ext:delivery-node-override "false";
             description
                 "Container for the conditions that determine whether an Ethernet frame matches this entry";
             container destination-mac {
@@ -1039,10 +1190,16 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                                 leaf start {
                                     type srl_nokia-pkt-match-types:vlan-id-type;
                                     description "The starting VLAN ID to include in the range";
+                                    must "../end >= ." {
+                                        error-message "The end must be greater than start";
+                                    }
                                 }
                                 leaf end {
                                     type srl_nokia-pkt-match-types:vlan-id-type;
                                     description "The ending VLAN ID to include in the range";
+                                    must "../start <= ." {
+                                        error-message "The end must be greater than start";
+                                    }
                                 }
                             }
                         } //case
@@ -1211,10 +1368,18 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             leaf subinterface-specific {
                 if-feature "not srl_nokia-feat:future-0-0";
                 type enumeration {
-                    enum "disabled";
-                    enum "input-only";
-                    enum "output-only";
-                    enum "input-and-output";
+                    enum "disabled" {
+                        value 1;
+                    }
+                    enum "input-only" {
+                        value 2;
+                    }
+                    enum "output-only" {
+                        value 3;
+                    }
+                    enum "input-and-output" {
+                        value 4;
+                    }
                 }
                 default "disabled";
                 description
@@ -1285,11 +1450,20 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             leaf subinterface-specific {
                 if-feature "not srl_nokia-feat:future-0-0";
                 type enumeration {
-                    enum "disabled";
-                    enum "input-only";
-                    enum "output-only";
-                    enum "input-and-output";
+                    enum "disabled" {
+                        value 1;
+                    }
+                    enum "input-only" {
+                        value 2;
+                    }
+                    enum "output-only" {
+                        value 3;
+                    }
+                    enum "input-and-output" {
+                        value 4;
+                    }
                 }
+
                 default "disabled";
                 description
                   "Controls the instantiation of the filter when it is applied as an input or output ACL
@@ -1382,9 +1556,7 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             description "List of filter rules.";
             key sequence-id;
             leaf sequence-id {
-                type uint32 {
-                    range "1..128";
-                }
+                type srl_nokia-comm:rule-sequence-id;
                 description
                     "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
             }
@@ -1494,10 +1666,18 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             }
             leaf subinterface-specific {
                 type enumeration {
-                    enum "disabled";
-                    enum "input-only";
-                    enum "output-only";
-                    enum "input-and-output";
+                    enum "disabled" {
+                        value 1;
+                    }
+                    enum "input-only" {
+                        value 2;
+                    }
+                    enum "output-only" {
+                        value 3;
+                    }
+                    enum "input-and-output" {
+                        value 4;
+                    }
                 }
                 default "disabled";
                 description
@@ -1520,18 +1700,21 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             description "Top level container for CPM filters";
             container ipv4-filter {
                 description "Top level container for CPM IPv4 filters";
+                srl_nokia-ext:delivery-node-override "true";
 
                 uses cpm-ipv4-filter-top;
             }
 
             container ipv6-filter {
                 description "Top level container for CPM IPv6 filters";
+                srl_nokia-ext:delivery-node-override "true";
 
                 uses cpm-ipv6-filter-top;
             }
             container mac-filter {
                 if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5";
                 description "Top level container for CPM MAC filter";
+                srl_nokia-ext:delivery-node-override "true";
 
                 uses cpm-mac-filter-top;
             }
@@ -1544,12 +1727,14 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             description "Top level container for capture filters";
             container ipv4-filter {
                 description "Top level container for capture IPv4 filters";
+                srl_nokia-ext:delivery-node-override "true";
 
                 uses capture-ipv4-filter-top;
             }
 
             container ipv6-filter {
                 description "Top level container for capture IPv6 filters";
+                srl_nokia-ext:delivery-node-override "true";
 
                 uses capture-ipv6-filter-top;
             }
@@ -1562,12 +1747,14 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             description "Top level container for System filters";
             container ipv4-filter {
                 description "Top level container for System IPv4 filters";
+                srl_nokia-ext:delivery-node-override "true";
 
                 uses system-ipv4-filter-top;
             }
 
             container ipv6-filter {
                 description "Top level container for System IPv6 filters";
+                srl_nokia-ext:delivery-node-override "true";
 
                 uses system-ipv6-filter-top;
             }
@@ -1576,7 +1763,6 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
 
     grouping datapath-programming {
         container datapath-programming {
-            if-feature "not srl_nokia-feat:future-0-0";
             config false;
             description
                 "Container to represent the progress of ACL datapath programming";
@@ -1635,12 +1821,21 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     "Specify the TCAM resource management profile";
                 type enumeration {
                     enum "default" {
+                        value 1;
                         description
                             "Default allocation that provides twice as many resources to ingress ACLs as egress ACLs";
                     }
                     enum "ipv4-egress-scaled" {
+                        status deprecated;
+                        value 2;
                         description
                             "Alternate allocation that provides more resources to IPv4 egress ACLs than any other application";
+                    }
+                    enum "acl-mfc-ipv4-only" {
+                        if-feature "srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5";
+                        value 3;
+                        description
+                            "Alternate allocation that provides maximum entries for IPv4 ACLs and IPv4 MFC policies and provides no space for MAC ACLs, IPv6 ACLs or IPv6 MFC policies";
                     }
                 }
             }
@@ -1669,10 +1864,12 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
             description
                 "Container for ACL policies applied to the subinterface";
             container input {
+                srl_nokia-ext:delivery-node-override "true";
                 description
                     "Container for ACL options that apply to ingress traffic on the subinterface";
                 leaf-list ipv4-filter {
-                    max-elements 1;
+                    max-elements 2;
+                    ordered-by user;
                     description
                         "IPv4 ACL filter(s) to be applied on this subinterface
 
@@ -1694,7 +1891,8 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                     }
                 }
                 leaf-list ipv6-filter {
-                    max-elements 1;
+                    max-elements 2;
+                    ordered-by user;
                     description
                         "IPv6 ACL filter(s) to be applied on this subinterface
 
@@ -1716,8 +1914,8 @@ srl_nokia-feat:platform-7220-h4 and not srl_nokia-feat:future-0-0";
                 }
                 leaf-list mac-filter {
                     max-elements 1;
-                    if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or
-srl_nokia-feat:platform-7220-d5";
+                    ordered-by user;
+                    if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5";
                     description
                         "MAC ACL filter to be applied on this subinterface
 
@@ -1738,14 +1936,22 @@ srl_nokia-feat:platform-7220-d5";
                     }
                     must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
                         error-message "MAC ACLs not allowed on loopback subinterface";
+                    }
+                    must "not(../../../qos/input/classifiers/multifield/ipv4-policy)" {
+                      error-message "MAC ACLs and a IPv4 MFC policy are mutually exclusive on the same subinterface";
+                    }
+                    must "not(../../../qos/input/classifiers/multifield/ipv6-policy)" {
+                      error-message "MAC ACLs and a IPv6 MFC policy are mutually exclusive on the same subinterface";
                     }
                 }
             }
             container output {
                 description
                     "Container for ACL options that apply to egress traffic on the subinterface";
+                srl_nokia-ext:delivery-node-override "true";
                 leaf-list ipv4-filter {
                     max-elements 1;
+                    ordered-by user;
                     description
                         "IPv4 ACL filter(s) to be applied on this subinterface
 
@@ -1767,6 +1973,7 @@ srl_nokia-feat:platform-7220-d5";
                 }
                 leaf-list ipv6-filter {
                     max-elements 1;
+                    ordered-by user;
                     description
                         "IPv6 ACL filter(s) to be applied on this subinterface
 
@@ -1788,8 +1995,8 @@ srl_nokia-feat:platform-7220-d5";
                 }
                 leaf-list mac-filter {
                     max-elements 1;
-                    if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or
-srl_nokia-feat:platform-7220-d5";
+                    ordered-by user;
+                    if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5";
                     description
                         "MAC ACL filter to be applied on this subinterface
 
@@ -1810,6 +2017,12 @@ srl_nokia-feat:platform-7220-d5";
                     }
                     must "not(starts-with(../../../../srl_nokia-if:name,'lo'))" {
                         error-message "MAC ACLs not allowed on loopback subinterface";
+                    }
+                    must "not(../../../qos/input/classifiers/multifield/ipv4-policy)" {
+                      error-message "MAC ACLs and a IPv4 MFC policy are mutually exclusive on the same subinterface";
+                    }
+                    must "not(../../../qos/input/classifiers/multifield/ipv6-policy)" {
+                      error-message "MAC ACLs and a IPv6 MFC policy are mutually exclusive on the same subinterface";
                     }
                 }
             }
@@ -1818,6 +2031,28 @@ srl_nokia-feat:platform-7220-d5";
 
     augment "/srl_nokia-if:interface/srl_nokia-if:subinterface" {
         uses subinterface-acl-config;
+    }
+
+    grouping match-network-instance {
+      leaf network-instance {
+        if-feature "srl_nokia-feat:future-0-0";
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+        }
+        must 'not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+          error-message "The network-instance cannot be of type 'mac-vrf' for IPv4 cpm-filter";
+        }
+        description
+          "Reference to a configured network-instance";
+      }
+    }
+
+    augment "/acl/cpm-filter/ipv4-filter/entry/match" {
+      uses match-network-instance;
+    }
+
+    augment "/acl/cpm-filter/ipv6-filter/entry/match" {
+      uses match-network-instance;
     }
 
     uses acl-top;

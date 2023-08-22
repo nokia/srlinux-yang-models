@@ -10,7 +10,7 @@ module srl_nokia-bgp-ipvpn {
     import srl_nokia-network-instance { prefix srl_nokia-netinst; }
     import srl_nokia-extensions { prefix srl_nokia-ext; }
     import srl_nokia-bgp-vpn { prefix srl_bgp-vpn; }
-    import srl_nokia-policy-types { prefix srl_nokia-pol-types; }
+    import srl_nokia-routing-policy { prefix srl_nokia-routing-pol; }
     import srl_nokia-features { prefix srl-feat; }
 
   organization
@@ -22,6 +22,10 @@ module srl_nokia-bgp-ipvpn {
     description
       "This yang file models configuration and state of the bgp-ipvpn protocol";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -37,11 +41,31 @@ module srl_nokia-bgp-ipvpn {
         type identityref {
           base srl_nokia-comm:tunnel-type;
         }
-        must ".='sr-policy-mpls-colored' or 'sr-policy-mpls-uncolored' or .='sr-isis'" {
+        must ".='sr-policy-mpls-colored' or .='sr-isis' or .='sr-policy-mpls-uncolored'" {
           error-message "tunnel-type not supported";
         }
         description
           "list of allowed tunnel types";
+      }
+    }
+  }
+  
+  grouping route-internal-tags {
+    description
+      "Grouping containing the configuration of internal tags";
+    container internal-tags {
+      if-feature "srl-feat:route-internal-tags and srl-feat:ipvpn-route-internal-tags";
+      description
+        "Configuration and state of internal tags";
+      leaf-list tag-set {
+        max-elements 1;
+        type union {
+          type leafref {
+            path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+          }
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
       }
     }
   }
@@ -61,26 +85,29 @@ module srl_nokia-bgp-ipvpn {
         type srl_nokia-comm:admin-state;
         default "enable";
         description
-          "Configurable state of the bgp ipvpn instance.";
+          "Configurable state of the bgp-ipvpn instance.";
       }
       leaf encapsulation-type {
         type enumeration {
           enum mpls {
+            //if-feature "srl-feat:mpls and srl-feat:ipvpn"; 
             value 1;
           }
         }
         description
-          "encap type of the bgp ipvpn instance.";
+          "Encap type of the bgp ipvpn instance.";
         default "mpls";
       }
+      
       leaf ecmp {
         type uint8 {
-          range "1..8";
+          range "1..32";
         }
         default 1;
         description 
-          "The supported range of ECMP values.";
+          "The supported range of ECMP values for layer-3 ecmp.";
       }
+      uses route-internal-tags;
       leaf oper-state {
         config false;
         srl_nokia-ext:show-importance "high";
@@ -97,17 +124,27 @@ module srl_nokia-bgp-ipvpn {
           enum "network-instance-oper-down";
           enum "bgp-vpn-instance-oper-down";
           enum "no-mpls-label";
+          enum "tag-set-not-resolved";
         }
         description
           "The reason for the bgp-instance being down";
       }
       container mpls {
-        presence "Configure IPVPN-MPLS and enables the resolution of BGP-IPVPN route next-hops to tunnels in TTM";
-        if-feature "srl-feat:ipvpn";
+        presence "Configure MPLS and enables the resolution of BGP-IPVPN route next-hops to tunnels in TTM";
         must "../encapsulation-type = 'mpls'" {
           error-message "supported only when encapsulation is mpls";
         }
-        uses next-hop-resolution;        
+        leaf ingress-mpls-label {
+          config false;
+          type srl_nokia-comm:mpls-label-non-reserved;
+          description 
+            "The ingress label allocated for Routed traffic
+
+             The ingress mpls label is advertised by the vpn
+             route and it is expected on received routed packets.";
+        }
+        uses next-hop-resolution;
+        //uses bgp-ipvpn-routes;
       }
     } 
   }

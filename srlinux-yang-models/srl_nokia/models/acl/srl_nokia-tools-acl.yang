@@ -17,6 +17,10 @@ module srl_nokia-tools-acl {
     description
             "Model for operational commands on network interfaces and subinterfaces.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -240,9 +244,7 @@ module srl_nokia-tools-acl {
         }
     }
 
-    container qos {
-        description
-                "Top level enclosing container for qos operational tools";
+    grouping tools-qos-classifiers-top{
         container classifiers {
             description
                     "Top level enclosing container for qos classifiers operational tools";
@@ -293,6 +295,10 @@ module srl_nokia-tools-acl {
                 }
             }
         }
+    }
+
+    augment "/srl_nokia-tools-qos:qos" {
+        uses tools-qos-classifiers-top;
     }
 
     augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface/srl_nokia-tools-qos:qos/srl_nokia-tools-qos:input" {

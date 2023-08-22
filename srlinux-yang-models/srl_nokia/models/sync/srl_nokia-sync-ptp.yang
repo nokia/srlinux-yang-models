@@ -22,6 +22,10 @@ module srl_nokia-sync-ptp {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -658,7 +662,6 @@ module srl_nokia-sync-ptp {
         type uint8 {
           range "0..255";
         }
-        default "24";
         description
           "The IEEE Std 1588 domainNumber of the PTP instance
 
@@ -676,7 +679,6 @@ module srl_nokia-sync-ptp {
         type int8 {
           range "-3..4";
         }
-        default "-3";
         description
           "The base-2 logarithm of the mean announceInterval 
 
@@ -1189,7 +1191,7 @@ module srl_nokia-sync-ptp {
           "IEEE Std 1588-2008: 8.2.5";
       leaf port-number {
         type uint16 {
-            range "1..999";
+            range "1..1500";
         }
         description
           "Port number as per IEEE Std 1588
@@ -1236,7 +1238,7 @@ module srl_nokia-sync-ptp {
           }
         }*/
         leaf ethernet-port {
-          must 'not (../peer)' {
+          must 'not (../peer/host or ../peer/network-instance)'  {
             error-message "only one of ethernet-port and peer may be configured";
           }
           type srl_nokia-comm:interface-ptp;
@@ -1245,10 +1247,10 @@ module srl_nokia-sync-ptp {
         }
         container peer {
           if-feature "srl_nokia-feat:sync-ptp-ip-peers";
-          must 'not (../ethernet-port)' {
-            error-message "only one of ethernet-port and peer may be configured";
-          }
           leaf network-instance {
+            must 'not (../../ethernet-port)' {
+                error-message "only one of ethernet-port and peer may be configured";
+            }
             type leafref {
               path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
             }
@@ -1256,6 +1258,9 @@ module srl_nokia-sync-ptp {
               "Network instance that owns the PTP peer";
           }
           leaf host {
+            must 'not (../../ethernet-port)' {
+                error-message "only one of ethernet-port and peer may be configured";
+            }
             type srl_nokia-comm:host;
             description
               "IP address or DNS domain name for the PTP peer";
@@ -1279,7 +1284,6 @@ module srl_nokia-sync-ptp {
         type int8{
           range "-6..0";
         }
-        default "-4";
         description
           "The base-2 logarithm of the minDelayReqInterval
 
@@ -1316,7 +1320,6 @@ module srl_nokia-sync-ptp {
         type int8 {
           range "-6..0";
         }
-        default "-4";
         description
           "The base-2 logarithm of the mean SyncInterval for multicast messages
 
@@ -1379,9 +1382,6 @@ module srl_nokia-sync-ptp {
       }
 */
       leaf dest-mac {
-        must '(../underlying-transport/ethernet-port)' {
-          error-message "Must specify a underlying transport ethernet port";
-        }
         type enumeration {      
           enum forwardable {
             value 0;
@@ -1608,7 +1608,7 @@ module srl_nokia-sync-ptp {
       type enumeration {
       //  enum ieee1588 {value 0; description "IEEE1588-2008 Default Profile";}
         enum itug8275dot1 {value 1; description "ITU-T G.8275.1 (2014) Profile";}
-      //  enum itug8275dot2 {value 2; description "ITU-T G.8275.2 Profile";}
+        enum itug8275dot2 {value 2; description "ITU-T G.8275.2 Profile";}
       //  enum itug8265dot1 {value 3; description "ITU-T G.8265.1 Profile";}
       }        
       default "itug8275dot1";

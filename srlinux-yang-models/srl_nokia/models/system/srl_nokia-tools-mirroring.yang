@@ -1,0 +1,57 @@
+module srl_nokia-tools-mirroring {
+
+  yang-version 1.1;
+
+  // namespace
+  namespace "urn:srl_nokia/system/tools-mirroring";
+  prefix "srl_nokia-tools-mirroring";
+
+  import srl_nokia-common { prefix srl-comm; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-tools-system { prefix srl-tools-system;}
+  import srl_nokia-extensions { prefix srl-ext;}
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  description
+    "This module defines tools command for mirroring (SPAN/ERSPAN).";
+
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping tools-mirroring-top {
+    container mirroring {
+      if-feature "srl-feat:trident4 or srl-feat:jericho2cp";
+      list mirroring-instance {
+        key "name";
+        leaf name {
+          type string;
+          description
+            "A unique name identifying the mirroring instance";
+        }
+        uses mirror-destination-top;
+      }
+    }
+  }
+  grouping mirror-destination-top {
+    container mirror-destination {
+      description "Configure mirror destination";
+      container statistics {
+        if-feature "srl-feat:trident4 or srl-feat:jericho2cp";
+        leaf clear {
+          type empty;
+        }
+      }
+    }
+  }
+  augment "/srl-tools-system:system" {
+    if-feature "srl-feat:trident4 or srl-feat:jericho2cp";
+    uses tools-mirroring-top;
+  }
+}

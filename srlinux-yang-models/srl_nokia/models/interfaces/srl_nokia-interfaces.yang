@@ -23,6 +23,12 @@ module srl_nokia-interfaces {
   import srl_nokia-interfaces-bridge-table {
     prefix srl_nokia-if-bt;
   }
+  import srl_nokia-platform-lc {
+    prefix srl_nokia-lc;
+  }
+  import srl_nokia-platform {
+    prefix srl_nokia-plat;
+  }
 
   organization
     "Nokia";
@@ -36,6 +42,10 @@ module srl_nokia-interfaces {
      This model reuses data items defined in the IETF YANG model for
      interfaces described by RFC 7223";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -100,7 +110,7 @@ module srl_nokia-interfaces {
 
   identity transceiver-functional-type {
     description
-      "Base type for transceiver functional types.";
+      "Base type for transceiver functional types";
   }
 
   identity standard {
@@ -144,6 +154,7 @@ module srl_nokia-interfaces {
       enum interface-reload-timer-active;
       enum connector-down;
       enum event-handler;
+      enum unsupported-breakout-port;
     }
   }
 
@@ -188,7 +199,7 @@ module srl_nokia-interfaces {
   typedef interface-id {
     type string;
     description
-      "User-defined identifier for an interface.
+      "User-defined identifier for an interface
 
        This is generally used to name a interface reference. The id can be arbitrary but a useful convention is to use a combination of base interface name and subinterface index.";
   }
@@ -227,7 +238,7 @@ module srl_nokia-interfaces {
       if-feature "srl_nokia-feat:port-breakout";
       presence "Configures the connector for breakout mode";
       must 'starts-with(../srl_nokia-if:name, "ethernet")' {
-        error-message "Breakout not supported for this port type.";
+        error-message "Breakout not supported for this port type";
       }
       description
         "Configuration of breakout options.
@@ -239,10 +250,12 @@ module srl_nokia-interfaces {
          The 7220 D4 supports 4x100 breakout on ports 30-36.
          The 7220 D4 supports 4x25 breakout on ports 9, 15, 16 and 30-36.
          The 7220 D4 supports 4x10 breakout on ports 9, 15, 16 and 30-36.
-         The 7220 D5 supports 2x100/4x100 breakout on ports 1-32.";
+         The 7220 D5 supports 4x10, 4x25 and 2x100/4x100 breakout on ports 1-32.
+         7250 IXR-6e/10e 36p QSFPDD IMM all port:  4x100GE";
+
       leaf num-breakout-ports {
         description
-          "The number of breakout ports supported by this connector.";
+          "The number of breakout ports supported by this connector";
         type enumeration {
           enum 2 {
             if-feature "srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-h3";
@@ -256,17 +269,17 @@ module srl_nokia-interfaces {
       }
       leaf breakout-port-speed {
         description
-          "The speed of each breakout port.";
+          "The speed of each breakout port";
         type enumeration {
           enum 10G {
-            if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or ((srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-d5) and srl_nokia-feat:future-0-0)";
+            if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5 or (srl_nokia-feat:platform-7220-h3 and srl_nokia-feat:future-0-0)";
           }
           enum 25G {
-            if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or ((srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-d5) and srl_nokia-feat:future-0-0)";
+            if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5 or (srl_nokia-feat:platform-7220-h3 and srl_nokia-feat:future-0-0)";
           }
           // enum 50G;
           enum 100G {
-            if-feature "srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-h4 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-d4";
+            if-feature "srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-h4 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-d4 or (srl_nokia-feat:platform-7250-ixr-e and srl_nokia-feat:future-0-0)";
           }
         }
         mandatory true;
@@ -749,7 +762,7 @@ module srl_nokia-interfaces {
     list interface {
       key "name";
       description
-        "The list of named interfaces on the device.";
+        "The list of named interfaces on the device";
       leaf name {
         type srl_nokia-comm:interface-all;
         description
@@ -789,6 +802,7 @@ module srl_nokia-interfaces {
         type enumeration {
           enum up;
           enum down;
+          enum testing;
         }
         description
           "The operational state of the interface";
@@ -806,6 +820,26 @@ module srl_nokia-interfaces {
         description
           "The date and time of the most recent change to the interface state";
         // Corresponds to ifLastChange from the IF-MIB.
+      }
+      leaf linecard {
+        config false;
+        type leafref {
+          path "/srl_nokia-plat:platform/srl_nokia-lc:linecard/srl_nokia-lc:slot";
+        }
+        description
+          "The linecard on which this interface resides
+
+          This field is not populated for non-forwarding-complex-attached interfaces, for example mgmt0.";
+      }
+      leaf forwarding-complex {
+        config false;
+        type leafref {
+          path "/srl_nokia-plat:platform/srl_nokia-lc:linecard/srl_nokia-lc:forwarding-complex/srl_nokia-lc:name";
+        }
+        description
+          "The forwarding-complex on which this interface resides
+
+          This field is not populated for non-forwarding-complex-attached interfaces, for example mgmt0.";
       }
       leaf-list phy-group-members {
         if-feature "srl_nokia-feat:platform-7220-d2";
@@ -828,45 +862,44 @@ module srl_nokia-interfaces {
         leaf in-octets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCInOctets from the IFMIB.";
+            "Corresponds to ifHCInOctets from the IFMIB";
         }
         leaf in-unicast-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCInUcastPkts from the IF-MIB.";
+            "Corresponds to ifHCInUcastPkts from the IF-MIB";
         }
         leaf in-broadcast-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCInBroadcastPkts from the IF-MIB.";
+            "Corresponds to ifHCInBroadcastPkts from the IF-MIB";
         }
         leaf in-multicast-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCInMulticastPkts from the IF-MIB.";
+            "Corresponds to ifHCInMulticastPkts from the IF-MIB";
         }
         leaf in-discarded-packets {
-          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:trident4 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:tomahawk4 or srl_nokia-feat:platform-vsrl";
           type srl_nokia-comm:zero-based-counter64;
           description
             "Corresponds to ifInDiscards from the IFMIB.
 
-             This counts the number of IP packets discarded due to VLAN mismatch, unknown dest MAC or drop by system-filter drop action.";
+             This counts the number of IP packets discarded due to VLAN mismatch, unknown dest MAC or drop by system-filter drop action. On 7250 IXR/IXRe systems this counter is not expected to increment above zero.";
         }
         leaf in-error-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifInErrors from the IF-MIB.";
+            "Corresponds to ifInErrors from the IF-MIB";
         }
         /* leaf in-unknown-protos {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifInUnknownProtos from the IF-MIB.";
+            "Corresponds to ifInUnknownProtos from the IF-MIB";
         } */
         leaf in-fcs-error-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Ingress FCS errors.";
+            "Ingress FCS errors";
         }
         leaf out-packets {
           type srl_nokia-comm:zero-based-counter64;
@@ -876,7 +909,7 @@ module srl_nokia-interfaces {
         leaf out-octets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCOutOctetsfrom the IF-MIB.";
+            "Corresponds to ifHCOutOctetsfrom the IF-MIB";
         }
         leaf out-mirror-octets {
           if-feature "srl_nokia-feat:mirroring-intf-stats";
@@ -887,17 +920,17 @@ module srl_nokia-interfaces {
         leaf out-unicast-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCOutUcastPktsfrom the IF-MIB.";
+            "Corresponds to ifHCOutUcastPktsfrom the IF-MIB";
         }
         leaf out-broadcast-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCOutBroadcastPkts from the IF-MIB.";
+            "Corresponds to ifHCOutBroadcastPkts from the IF-MIB";
         }
         leaf out-multicast-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifHCOutMulticastPkts from the IF-MIB.";
+            "Corresponds to ifHCOutMulticastPkts from the IF-MIB";
         }
         leaf out-discarded-packets {
           type srl_nokia-comm:zero-based-counter64;
@@ -909,7 +942,7 @@ module srl_nokia-interfaces {
         leaf out-error-packets {
           type srl_nokia-comm:zero-based-counter64;
           description
-            "Corresponds to ifOutErrors from the IF-MIB.";
+            "Corresponds to ifOutErrors from the IF-MIB";
         }
         leaf out-mirror-packets {
           if-feature "srl_nokia-feat:mirroring-intf-stats";
@@ -927,7 +960,7 @@ module srl_nokia-interfaces {
         leaf last-clear {
           type srl_nokia-comm:date-and-time-delta;
           description
-            "Timestamp of the last time the interface counters were cleared.";
+            "Timestamp of the last time the interface counters were cleared";
         }
       }
       container traffic-rate {
@@ -953,7 +986,7 @@ module srl_nokia-interfaces {
         leaf model-number {
           type string;
           description
-            "Model information for the adapter.
+            "Model information for the adapter
 
              This is the information as read from the EEPROM of the part.  The string is expected to contain printable ASCII characters, but unprintable ASCII characters read from the EEPROM are not filtered out.";
         }
@@ -970,7 +1003,7 @@ module srl_nokia-interfaces {
             }
           }
           description
-            "Type of adapter for the port.";
+            "Type of adapter for the port";
         }
         leaf vendor-manufacture-date {
           type string;
@@ -982,21 +1015,21 @@ module srl_nokia-interfaces {
         leaf vendor-oui {
           type string;
           description
-            "Vendor's OUI which contains the IEEE company identifier for the vendor.
+            "Vendor's OUI which contains the IEEE company identifier for the vendor
 
              This is the information as read from the EEPROM of the part.  A value of all zero indicates that the vendor OUI is unspecified.";
         }
         leaf vendor-part-number {
           type string;
           description
-            "Vendor's part number or product name of the adapter.
+            "Vendor's part number or product name of the adapter
 
              This is the information as read from the EEPROM of the part.  An empty string indicates the vendor part number is unspecified. The string is expected to contain printable ASCII characters, but unprintable ASCII characters read from the EEPROM are not filtered out.";
         }
         leaf vendor-serial-number {
           type string;
           description
-            "Vendor's serial number of the adapter.
+            "Vendor's serial number of the adapter
 
              This is the information as read from the EEPROM of the part.  An empty string indicates the vendor serial number is unspecified. The string is expected to contain printable ASCII characters, but unprintable ASCII characters read from the EEPROM are not filtered out.";
         }
@@ -1005,7 +1038,7 @@ module srl_nokia-interfaces {
         leaf tx-laser {
           type boolean;
           description
-            "Enable (true) or disable (false) the transmit laser of the transceiver.
+            "Enable (true) or disable (false) the transmit laser of the transceiver
 
              When read from state this leaf always returns false (even if the configured value is true) when the Ethernet port is a copper/RJ45 port.
 
@@ -1021,7 +1054,7 @@ module srl_nokia-interfaces {
           config false;
           type transceiver-oper-state;
           description
-            "The operational state of the transceiver.
+            "The operational state of the transceiver
 
              The oper-state is always down when the Ethernet port is a copper/RJ45 port.";
         }
@@ -1029,12 +1062,12 @@ module srl_nokia-interfaces {
           config false;
           type transceiver-oper-down-reason;
           description
-            "The reason for the transceiver being operationally down.";
+            "The reason for the transceiver being operationally down";
         }
         leaf ddm-events {
           type boolean;
           description
-            "Controls the reporting of DDM events.
+            "Controls the reporting of DDM events
 
              When set to true, log events and state related to the Digital Diagnostic Monitoring (DDM) capabilities of the transceiver are generated and populated.
 
@@ -1055,16 +1088,16 @@ module srl_nokia-interfaces {
             enum rs-544;
             enum base-r {
               description
-                "BASE-R FEC algorithm for 25GbE interfaces (also known as fire-code).";
+                "BASE-R FEC algorithm for 25GbE interfaces (also known as fire-code)";
             }
             enum rs-108 {
               description
-                "Reed Solomon FEC algorithm for 25GbE interfaces.";
+                "Reed Solomon FEC algorithm for 25GbE interfaces";
             }
           }
           // default "none";
           description
-            "The forward error correction algorithm to use on the optical channel.
+            "The forward error correction algorithm to use on the optical channel
 
              The same FEC algorithm must be used at both ends of a link.
 
@@ -1122,9 +1155,12 @@ module srl_nokia-interfaces {
             enum SFPDD {
               value 13;
             }
+            enum QSFP56 {
+              value 14;
+            }
           }
           description
-            "Specifies the transceiver form factor associated with the port.";
+            "Specifies the transceiver form factor associated with the port";
           // (NOTE - may not be complete)
         }
         leaf functional-type {
@@ -1146,7 +1182,7 @@ module srl_nokia-interfaces {
           config false;
           type string;
           description
-            "Specifies the Ethernet compliance code of the transceiver associated with the port.";
+            "Specifies the Ethernet compliance code of the transceiver associated with the port";
         }
         leaf connector-type {
           config false;
@@ -1222,13 +1258,13 @@ module srl_nokia-interfaces {
             }
           }
           description
-            "Specifies the fiber connector type of the transceiver associated with the port.";
+            "Specifies the fiber connector type of the transceiver associated with the port";
         }
         leaf vendor {
           config false;
           type string;
           description
-            "Name of the transceiver vendor.
+            "Name of the transceiver vendor
 
              This is the information as read from the EEPROM of the part.";
         }
@@ -1236,7 +1272,7 @@ module srl_nokia-interfaces {
           config false;
           type string;
           description
-            "Vendor's part number for the transceiver.
+            "Vendor's part number for the transceiver
 
              This is the information as read from the EEPROM of the part.";
         }
@@ -1244,7 +1280,15 @@ module srl_nokia-interfaces {
           config false;
           type string;
           description
-            "Vendor's revision number for the transceiver.
+            "Vendor's revision number for the transceiver
+
+             This is the information as read from the EEPROM of the part.";
+        }
+        leaf vendor-lot-number {
+          config false;
+          type string;
+          description
+            "Vendor's lot number for the transceiver
 
              This is the information as read from the EEPROM of the part.";
         }
@@ -1252,13 +1296,13 @@ module srl_nokia-interfaces {
           config false;
           type string;
           description
-            "Transceiver serial number.
+            "Transceiver serial number
 
              This is the information as read from the EEPROM of the part.";
         }
         leaf date-code {
           config false;
-          type string;
+          type srl_nokia-comm:date-and-time;
           description
             "Transceiver date code.";
         }
@@ -1274,26 +1318,26 @@ module srl_nokia-interfaces {
             fraction-digits 2;
           }
           description
-            "Wavelength of the transmitting laser in nanometers.";
+            "Wavelength of the transmitting laser in nanometers";
         }
         container temperature {
           config false;
           leaf latest-value {
             type srl_nokia-comm:temperature;
             description
-              "The current temperature of the transceiver module in degrees Celsius.";
+              "The current temperature of the transceiver module in degrees Celsius";
           }
           leaf high-alarm-condition {
             type boolean;
             description
-              "High alarm threshold condition.
+              "High alarm threshold condition
 
                Set to true whenever the temperature is above the high-alarm-threshold and set to false whenever the temperature is below the high-alarm-threshold";
           }
           leaf high-alarm-threshold {
             type srl_nokia-comm:temperature;
             description
-              "High alarm threshold.
+              "High alarm threshold
 
                Read from the installed transceiver";
           }
@@ -1443,7 +1487,7 @@ module srl_nokia-interfaces {
         leaf aggregate-id {
           if-feature "srl_nokia-feat:lag";
           description
-            "lag interface with which this interface is associated.";
+            "lag interface with which this interface is associated";
           type leafref {
             path "/srl_nokia-if:interface/srl_nokia-if:name";
           }
@@ -1611,7 +1655,7 @@ module srl_nokia-interfaces {
               if-feature "srl_nokia-feat:platform-7250-ixr or srl_nokia-feat:platform-7250-ixr-e or srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-h2 or srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-h4 or srl_nokia-feat:platform-crimson or srl_nokia-feat:platform-vsrl or srl_nokia-feat:platform-fx1-sdd or srl_nokia-feat:platform-fx2-zq";
             }
             enum 200G {
-              if-feature "srl_nokia-feat:disabled";
+              if-feature "srl_nokia-feat:platform-7220-h3 or (srl_nokia-feat:platform-7220-d5 and srl_nokia-feat:future-0-0)";
             }
             enum 400G {
               if-feature "srl_nokia-feat:platform-7250-ixr or srl_nokia-feat:platform-7250-ixr-e or srl_nokia-feat:platform-7250-j2 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-7220-h4 or srl_nokia-feat:platform-crimson or srl_nokia-feat:platform-fx1-sdd or srl_nokia-feat:platform-fx2-zq";
@@ -1677,7 +1721,7 @@ module srl_nokia-interfaces {
              7220-D5 ports 33-38: 10G
              7220-H2 ports 1-128: 100G
              7220-H3 ports 1-2: 10G
-             7220-H3 ports 3-34: 40G, 100G, 400G
+             7220-H3 ports 3-34: 40G, 100G, 200G, 400G
              7220-H4 ports 1-64: 40G, 100G, 400G
              7220-H4 ports 65-66: 10G
 
@@ -1731,13 +1775,13 @@ module srl_nokia-interfaces {
           if-feature "srl_nokia-feat:platform-7220-d5";
           if-feature "srl_nokia-feat:sync";
           type int32;
-          default "0";
           units "nanoseconds";
-          must '(. = 0) or starts-with(../../srl_nokia-if:name, "ethernet")' {
-            error-message "ptp-asymmetry is supported only on ethernet interfaces.";
+          default 0;
+          must '(. = 0) or (starts-with(../../srl_nokia-if:name, "ethernet"))' {
+            error-message "ptp-asymmetry is supported only on ethernet interfaces";
           }
           description
-            "This command configures the PTP asymmetry delay on the Ethernet port.
+            "This command configures the PTP asymmetry delay on the Ethernet port
 
             This command is used to correct known asymmetry as part of time of day or phase
             recovery using PTP packets on both local and downstream PTP clocks.";
@@ -1956,27 +2000,27 @@ module srl_nokia-interfaces {
           leaf in-jabber-frames {
             type srl_nokia-comm:zero-based-counter64;
             description
-              "Number of jabber frames received on the interface. Jabber frames are typically defined as oversize frames which also have a bad CRC.";
+              "Number of jabber frames received on the interface. Jabber frames are typically defined as oversize frames which also have a bad CRC";
           }
           leaf in-fragment-frames {
             type srl_nokia-comm:zero-based-counter64;
             description
-              "Number of fragment frames received on the interface.";
+              "Number of fragment frames received on the interface";
           }
           leaf in-crc-error-frames {
             type srl_nokia-comm:zero-based-counter64;
             description
-              "Number of receive error events due to FCS/CRC check failure.";
+              "Number of receive error events due to FCS/CRC check failure";
           }
           /* leaf out-mac-control-frames {
             type srl_nokia-comm:zero-based-counter64;
             description
-              "Number of MAC layer control frames sent on the interface.";
+              "Number of MAC layer control frames sent on the interface";
           } */
           leaf out-mac-pause-frames {
             type srl_nokia-comm:zero-based-counter64;
             description
-              "Number of MAC layer PAUSE frames sent on the interface.";
+              "Number of MAC layer PAUSE frames sent on the interface";
           }
           leaf in-64b-frames {
             type srl_nokia-comm:zero-based-counter64;
@@ -2051,7 +2095,7 @@ module srl_nokia-interfaces {
           leaf last-clear {
             type srl_nokia-comm:date-and-time-delta;
             description
-              "Timestamp of the last time the MAC counters were cleared.";
+              "Timestamp of the last time the MAC counters were cleared";
           }
         }
       }

@@ -10,6 +10,7 @@ module srl_nokia-traffic-engineering {
   import srl_nokia-common { prefix srl_nokia-comm; }
   import srl_nokia-network-instance { prefix srl_nokia-netinst; }
   import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-interfaces { prefix srl_nokia-if; }
 
   organization
     "Nokia";
@@ -20,6 +21,10 @@ module srl_nokia-traffic-engineering {
   description
     "Configuration and state related to the use and propagation of TE information.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -35,21 +40,6 @@ module srl_nokia-traffic-engineering {
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
-  }
-
-  typedef srlg-flooding-type {
-    type enumeration {
-      enum flooded {
-        description
-          "SRLG is flooded in the IGP";
-      }
-      enum static {
-        description
-          "SRLG is not flooded, the members are statically configured";
-      }
-    }
-    description
-      "Enumerated bype for specifying how the SRLG is flooded";
   }
 
   grouping igp-instance-te-advertisement {
@@ -198,34 +188,6 @@ module srl_nokia-traffic-engineering {
             description
               "Group ID for the SRLG";
           }
-          leaf cost {
-            type uint32;
-            description
-              "The cost of the SRLG to the computation algorithm";
-          }
-          /*
-          leaf flooding-type {
-            type srlg-flooding-type;
-            default flooded;
-            description
-              "The type of SRLG, either flooded in the IGP or statically configured";
-          }
-          */
-          list static-member {
-            description
-              "Static SRLG members";
-            key from-address;
-            leaf from-address {
-              type srl_nokia-comm:ip-address;
-              description
-                "IP address of the a-side of the SRLG link";
-            }
-            leaf to-address {
-              type srl_nokia-comm:ip-address;
-              description
-                "IP address of the z-side of the SRLG link";
-            }
-          }
         }
       }
       list interface {
@@ -233,14 +195,39 @@ module srl_nokia-traffic-engineering {
           "List of routed subinterfaces that have associated TE information";
         key "interface-name";
         leaf interface-name {
-          type srl_nokia-comm:subinterface-all;
+          type srl_nokia-netinst:network-instance-subintf-name;
           description
-            "Name of a subinterface that is already bound to this network-instance that should have TE information associated with it";
+            "Name of the IS-IS interface";
         }
-        // leaf ipv4-interface-address
-        // leaf ipv4-neighbor-address
-        // leaf ipv6-interface-address
-        // leaf ipv6-neighbor-address
+        container interface-ref {
+          description
+            "Reference to a subinterface";
+
+          leaf interface {
+            type leafref {
+              path "/srl_nokia-if:interface/srl_nokia-if:name";
+            }
+            description
+              "Reference to a base interface, for example a port or LAG";
+
+            must "../subinterface" {
+              error-message "subinterface must be configured when interface is set";
+            }
+          }
+          leaf subinterface {
+            type leafref {
+              path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+            }
+            description
+              "Reference to a subinterface
+
+              This requires the base interface to be specified using the interface leaf in this container.";
+
+            must "../interface" {
+              error-message "interface must be configured when subinterface is set";
+            }
+          }
+        }
         leaf-list admin-group {
           description
             "The list of admin-groups generically associated with the interface (not application specific)";

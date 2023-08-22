@@ -1,0 +1,304 @@
+module srl_nokia-oam-pm-ip {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/oam/pm/ip";
+  prefix srl_nokia-oam-pm-ip;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+  import srl_nokia-oam-pm {
+    prefix srl_nokia-oam-pm;
+  }
+  import srl_nokia-oam-pm-types {
+    prefix srl_nokia-pm-types;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-net-inst;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  description
+    "This YANG module contains the management data definitions for
+     IP Performance Monitoring.";
+
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  augment "/srl_nokia-oam:oam/srl_nokia-oam:performance-monitoring" {
+    if-feature "srl_nokia-feat:oam-pm and srl_nokia-feat:oam-pm-ip";
+    container ip {
+      container delay {
+        uses srl_nokia-oam-pm:bin-group;
+      }
+      container loss {
+        uses srl_nokia-oam-pm:loss-events;
+      }
+      list session {
+        key "session-name";
+        description
+          "Enter the session list instance which contains the test session configuration";
+        uses srl_nokia-oam-pm:session;
+        uses srl_nokia-oam-pm:measurement-interval;
+        leaf destination {
+          type srl_nokia-comm:ip-address;
+          description
+            "Destination IP address for the IP test session";
+        }
+        leaf destination-udp-port {
+          type srl_nokia-comm:port-number;
+          description
+            "Destination UDP port for the test session
+
+             This must match the UDP listening port on the Session Reflector.";
+        }
+        leaf source-ip-address {
+          type srl_nokia-comm:ip-address;
+          description
+            "Source IPv4 or IPv6 IP address to be used as the source address of the packet";
+        }
+        leaf source-udp-port {
+          type union {
+            type uint32 {
+              range "64374..64383";
+            }
+            type enumeration {
+              enum auto {
+                value 1;
+              }
+            }
+          }
+          default "auto";
+          description
+            "Configure a source UDP port instead of using an automatically assignment from the dynamic port range";
+        }
+        leaf network-instance {
+          type leafref {
+            path "/srl_nokia-net-inst:network-instance/srl_nokia-net-inst:name";
+          }
+          must "(/srl_nokia-net-inst:network-instance[srl_nokia-net-inst:name=current()]/srl_nokia-net-inst:type = 'srl_nokia-net-inst:ip-vrf' or 'srl_nokia-net-inst:default')" {
+            error-message "IP Performance Monitoring only operates on an existing network-instance of type ip-vrf or default";
+          }
+          default "default";
+          description
+            "The name of the network instance specific to this test session";
+        }
+        leaf ttl {
+          type uint32 {
+            range "1..255";
+          }
+          default "255";
+          description
+            "TTL value for the IP packet";
+        }
+        leaf do-not-fragment {
+          type boolean;
+          default "false";
+          description
+            "Do not allow packet fragmentation setting the DNF bit in the IPv4 header, or disallow IPv6 fragmentation at the source";
+        }
+        leaf allow-egress-remark-dscp {
+          type boolean;
+          default "false";
+          description
+            "Allow DSCP modification by the egress QoS policy";
+        }
+        container forwarding {
+          presence "Enable the forwarding context";
+          description
+            "Control the local forwarding decision on the source";
+          choice forwarding-choice {
+            mandatory true;
+            case next-hop {
+              leaf next-hop {
+                type srl_nokia-comm:ip-address;
+                description
+                  "IP address of the next hop
+
+                   The next hop must have a valid route in the route-table of the network instance.";
+              }
+            }
+            case interface {
+              container interface-ref {
+                leaf interface {
+                  mandatory true;
+                  type leafref {
+                    path "/srl_nokia-if:interface/srl_nokia-if:name";
+                  }
+                  description
+                    "Reference to a base interface, for example a port";
+                }
+                leaf subinterface {
+                  mandatory true;
+                  type leafref {
+                    path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+                  }
+                  description
+                    "Subinterface to send the test packet
+
+                     The subinterface mut be a valid route to reach the destination";
+                }
+              }
+            }
+            case direct-connect {
+              leaf bypass-routing {
+                type boolean;
+                default "false";
+                description
+                  "Only transmit the test packet using an interface directly connected to peer
+
+                   If no directly connected interface exists the packet will not be transmitted even if the route exists in the routing table. ";
+              }
+            }
+          }
+        }
+        container stamp {
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            default "disable";
+            description
+              "Administrative state of the STAMP test session";
+          }
+          uses srl_nokia-oam-pm:operational-states-errors;
+          uses srl_nokia-oam-pm:test-session;
+          leaf timestamp-format {
+            type srl_nokia-pm-types:timestamp-format;
+            default "ntp";
+            description
+              "Format of the timestamp bits in the STAMP test PDU
+
+               If the value is 'ntp' the epoch January 1, 1900 at 00:00 will be used and 64-bit encoding of 32 seconds followed by 32 fractional seconds.
+               The value of the z-bit in the error estimate field of the PDU will be set to 0.  If the value is 'ptp' the epoch January 1, 1970 00:00
+               will be used and the 64-bit encoding of 32 seconds followed by 32 nanoseconds.  The value of the z-bit in the error estimate field
+               of the PDU with be set to 1.";
+          }
+          leaf pad-tlv-size {
+            type uint32 {
+              range "0| 3..9502";
+            }
+            default "0";
+            units "bytes";
+            description
+              "The PAD TLV byte count used to increase the size of the base STAMP PDU
+
+               A value '0' means no PAD TLV is added.  Any other value represents the size of the PAD TLV.";
+          }
+          leaf interval {
+            type srl_nokia-pm-types:oam-pm-interval;
+            default "1s";
+            description
+              "The transmission rate of the STAMP packets";
+          }
+          leaf allow-ipv6-udp-checksum-zero {
+            type boolean;
+            default "false";
+            description
+              "Process IPv6 packets with a zero UDP checksum
+
+               When the value of the leaf is 'false' IPv6 test sessions packets arriving with IPv6 UDP checksum 0
+               will be discarded.  When the value is 'true' the Session-Reflector UDP port will be registered to
+               allow test session packets arriving with IPv6 UDP checksum 0 to be processed by the Session-Reflector.";
+          }
+          container statistics {
+            config false;
+            leaf stamp-unrecognized-flag-received {
+              type uint32;
+              description
+                "Indicates the count of packets in this sample window with the U (Unrecognized) bit set
+                 in the flags field of the TLV.";
+            }
+            leaf stamp-malformed-flag-received {
+              type uint32;
+              description
+                "Indicates the count of packets in this sample window with the M (Malformed) bit set in
+                 the flags field of the TLV.";
+            }
+          }
+          container delay {
+            leaf bin-group {
+              type leafref {
+                path "../../../../delay/bin-group/bin-group-name";
+              }
+              default "default";
+              description
+                "Reference the bin group to be used for this session.  If not specified the 'default' bin-group will be used";
+            }
+            uses srl_nokia-oam-pm:bin-group-state;
+            list measurement-result {
+              config false;
+              description
+                "The test statistics for a delay measurement";
+              key "mi-type";
+              leaf mi-type {
+                type srl_nokia-pm-types:measurement-interval-duration-type;
+                description
+                  "The duration of the measurement interval";
+              }
+              list interval {
+                key "interval-id";
+                leaf interval-id {
+                  type uint32;
+                  description
+                    "Measurement interval unique identifier";
+                }
+                uses srl_nokia-oam-pm:mi-common-state;
+                container statistics {
+                  uses srl_nokia-oam-pm:mi-delay-statistics;
+                }
+              }
+            }
+            uses srl_nokia-oam-pm:delay-events-state;
+          }
+          container loss {
+            uses srl_nokia-oam-pm:frame-loss-configuration;
+            list measurement-result {
+              config false;
+              description
+                "The test statistics for a delay measurement";
+              key "mi-type";
+              leaf mi-type {
+                type srl_nokia-pm-types:measurement-interval-duration-type;
+                description
+                  "The duration of the measurement interval";
+              }
+              list interval {
+                key "interval-id";
+                leaf interval-id {
+                  type uint32;
+                  description
+                    "Interval identifier.";
+                }
+                uses srl_nokia-oam-pm:mi-common-state;
+                container statistics {
+                  uses srl_nokia-oam-pm:mi-general-loss-statistics;
+                  container forward {
+                    uses srl_nokia-oam-pm:mi-directional-loss-statistics;
+                  }
+                  container backward {
+                    uses srl_nokia-oam-pm:mi-directional-loss-statistics;
+                  }
+                }
+              }
+            }
+            uses srl_nokia-oam-pm:loss-events-state;
+          }
+        }
+      }
+    }
+  }
+}

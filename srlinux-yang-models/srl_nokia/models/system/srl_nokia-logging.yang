@@ -22,6 +22,10 @@ module srl_nokia-logging {
   description
     "This module describes a YANG model for system logging.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -92,6 +96,7 @@ module srl_nokia-logging {
         enum evpn;
         enum fib;
         enum gnmi;
+        enum gnsi;
         enum gribi;
         enum igmp;
         enum isis;
@@ -109,7 +114,6 @@ module srl_nokia-logging {
         enum netinst;
         enum ospf;
         enum p4rt;
-        enum pcc;
         enum pim;
         enum platform;
         enum policy;
@@ -128,8 +132,11 @@ module srl_nokia-logging {
 
     typedef facility-name-type {
       type enumeration {
+        enum all;
+        enum audit;
         enum auth;
         enum authpriv;
+        enum console;
         enum cron;
         enum daemon;
         enum ftp;
@@ -137,6 +144,7 @@ module srl_nokia-logging {
         enum lpr;
         enum mail;
         enum news;
+        enum ntp;
         enum syslog;
         enum user;
         enum uucp;
@@ -477,6 +485,13 @@ module srl_nokia-logging {
           default "514";
           description
             "Transport port for syslog to use for messages sent to a remote server";
+        }
+        leaf source-address {
+          type srl-comm:ip-address;
+          description
+            "Source address for syslog to use for messages sent to a remote server
+            
+            If no source address is provided, then packets will be sent to the remote server using the source address indicated by the routing table.";
         }
         uses facility-grouping;
         uses subsystem-grouping;

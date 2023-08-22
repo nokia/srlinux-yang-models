@@ -14,6 +14,9 @@ module srl_nokia-interfaces-nbr-evpn {
   import srl_nokia-interfaces-nbr {
     prefix srl_nokia-if-ip-nbr;
   }
+  import srl_nokia-routing-policy { 
+    prefix srl_nokia-routing-pol; 
+  }
   import srl_nokia-features {
     prefix srl-feat;
   }
@@ -27,6 +30,10 @@ module srl_nokia-interfaces-nbr-evpn {
   description
     "Model for managing ARP and IPv6 neighbor discovery for on IP subinterfaces.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -38,6 +45,24 @@ module srl_nokia-interfaces-nbr-evpn {
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
+  }
+
+  grouping route-internal-tags {
+    description
+      "Grouping containing the configuration of internal tags";
+    container internal-tags {
+      if-feature "srl-feat:route-internal-tags and srl-feat:interface-evpn-internal-tags";
+      description
+        "Configuration and state of internal tags";
+      leaf-list tag-set {
+        max-elements 1;
+        type leafref {
+          path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
+      }
+    }
   }
 
   grouping common-neighbor-discovery {
@@ -53,6 +78,7 @@ module srl_nokia-interfaces-nbr-evpn {
         }
       }
     }
+    uses route-internal-tags;
   }
 
   grouping evpn-top {

@@ -16,6 +16,10 @@ module srl_nokia-tools-platform {
   description
     "Model for operational commands for platform.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -142,6 +146,51 @@ module srl_nokia-tools-platform {
     }
   }
 
+  grouping disk-encryption {
+    description
+      "Grouping for Disk Encryption options";
+    container disk-encryption {
+      if-feature "srl-feat:disk-encryption";
+      description
+        "Operational commands related to Disk Encryption";
+
+      list control {
+        description
+          "Operational commands related Secure Boot for control modules";
+        key "slot";
+        leaf slot {
+          type string {
+            pattern 'A|B';
+          }
+          description
+            "Slot identifier for the control module";
+        }
+
+        container activate {
+          presence "Activate Disk Encryption on control module";
+          description "Activate Disk Encryption on control module";
+          // must "reboot" {
+          //  error-message "Missing reboot option";
+          // }
+          leaf reboot {
+            type empty;
+          }
+        }
+
+        container generate-recovery-key {
+          presence "Generate Disk Encryption recovery key for a control module";
+          description "Generate Disk Encryption recovery key for a control module";
+          // must "reboot" {
+          //  error-message "Missing reboot option";
+          // }
+          leaf reboot {
+            type empty;
+          }
+        }
+      }
+    }
+  }
+
   grouping tools-platform-top {
     container chassis {
       description
@@ -231,9 +280,10 @@ module srl_nokia-tools-platform {
       uses locator-tools;
     }
     container trust {
-      if-feature "srl-feat:secure-boot or srl-feat:measured-boot";
+      if-feature "srl-feat:secure-boot or srl-feat:measured-boot or srl-feat:disk-encryption";
       description
         "Operational commands related to Platform Trust";
+      uses disk-encryption;
     }
   }
 

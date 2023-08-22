@@ -9,6 +9,11 @@ module srl_nokia-mpls-route-tables {
   import srl_nokia-network-instance { prefix srl_nokia-netinst; }
   import srl_nokia-ip-route-tables { prefix srl_nokia-ip-tables; }
   import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-features { prefix srl_nokia-feat; }
+  import srl_nokia-bgp-vpn { prefix srl_nokia-bgp-vpn; }
+  import srl_nokia-system { prefix srl_nokia-system; }
+  import srl_nokia-system-network-instance { prefix srl_nokia-system-netinst; }
+  import srl_nokia-system-network-instance-bgp-evpn-ethernet-segments { prefix srl_nokia-eth-seg; }
 
   organization
     "Nokia";
@@ -19,6 +24,10 @@ module srl_nokia-mpls-route-tables {
   description
     "A model describing the MPLS routing tables of a network instance.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -63,6 +72,21 @@ module srl_nokia-mpls-route-tables {
       }
       description
         "If this ILM entry is for a pop label, and this label is at the bottom of the stack, the next forwarding lookup will be done in the referenced network-instance";
+    }
+    leaf next-bgp-instance {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-bgp-vpn:bgp-vpn/srl_nokia-bgp-vpn:bgp-instance/srl_nokia-bgp-vpn:id";
+      }
+    }
+    leaf next-ethernet-segment {
+      if-feature "srl_nokia-feat:evpn";
+      type leafref {
+        path "/srl_nokia-system:system/srl_nokia-system-netinst:network-instance/srl_nokia-system-netinst:protocols/srl_nokia-system-netinst:evpn/srl_nokia-eth-seg:ethernet-segments/srl_nokia-eth-seg:bgp-instance/srl_nokia-eth-seg:ethernet-segment/srl_nokia-eth-seg:name";
+      }
+      description
+        "If this ILM entry is for a pop label, and this label is below an EVPN label at the bottom of the stack,
+         the label will identify an Ethernet Segment and forwarding in the network-instance may exclude the
+         bridged subinterfaces associated with the Ethernet Segment";
     }
   }
 

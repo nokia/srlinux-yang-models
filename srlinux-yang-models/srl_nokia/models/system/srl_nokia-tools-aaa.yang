@@ -22,6 +22,10 @@ module srl_nokia-tools-aaa {
   description
     "This module defines operational commands related to AAA.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -51,7 +55,6 @@ module srl_nokia-tools-aaa {
         }
       }
       list user {
-        if-feature "srl-feat:password-complexity-and-lockout";
         description
           "List of local users including admin and linuxadmin";
         key "username";
@@ -63,7 +66,28 @@ module srl_nokia-tools-aaa {
             "Unlock the user, This will change its lockout state into false";
           type empty;
         }
+        leaf force-password-change {
+            if-feature "srl-feat:tools-force-pwd-change";
+          description
+            "Set change-on-first-login to true for this user
+
+             This command will only take effect if the feature change-on-first-login is currently set to true.";
+          type empty;
+        }
       }
+      leaf force-all-user-password-change {
+        if-feature "srl-feat:tools-force-pwd-change";
+        description
+          "Set change-on-first-login to true for all users
+
+           This command will only take effect if the feature change-on-first-login is currently set to true.";
+        type empty;
+      }
+    }
+    container authorization {
+      if-feature "srl-feat:gnsi-authz";
+      description
+        "Operational commands relating to authorization";
     }
   }
 

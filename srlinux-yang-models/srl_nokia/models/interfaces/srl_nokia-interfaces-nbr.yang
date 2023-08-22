@@ -20,6 +20,9 @@ module srl_nokia-interfaces-nbr {
   import srl_nokia-features {
     prefix srl-feat;
   }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-routing-pol;
+  }
 
   organization
     "Nokia";
@@ -30,6 +33,10 @@ module srl_nokia-interfaces-nbr {
   description
     "Model for managing ARP and IPv6 neighbor discovery on IP subinterfaces.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -127,6 +134,23 @@ module srl_nokia-interfaces-nbr {
     }
   }
 
+  grouping route-internal-tags {
+    description
+      "Grouping containing the configuration of internal tags";
+    container internal-tags {
+      if-feature "srl-feat:route-internal-tags";
+      description
+        "Configuration and state of internal tags";
+      leaf tag-set {
+        type leafref {
+          path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
+      }
+    }
+  }
+
   grouping host-route-top {
     container host-route {
       description
@@ -134,6 +158,7 @@ module srl_nokia-interfaces-nbr {
       list populate {
         key "route-type";
         uses common-neighbor-discovery;
+        uses route-internal-tags;
       }
     }
   }

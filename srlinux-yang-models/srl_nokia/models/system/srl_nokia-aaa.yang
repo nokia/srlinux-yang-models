@@ -49,6 +49,10 @@ module srl_nokia-aaa {
 
   // grouping statements
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -318,6 +322,31 @@ module srl_nokia-aaa {
     }
   }
 
+  grouping aaa-authentication-user-ssh {
+    description
+      "SSH-related configuration data for users";
+    leaf-list ssh-principals {
+      max-elements 32;
+      type string;
+      ordered-by user;
+      description
+        "List of principals to associate with this user
+
+         If any of the principals in the list are matched in a SSH client's certificate, and that clients username matches this user, and the certificate is verified, the client will authenticate.";
+    }
+    leaf-list ssh-key {
+      max-elements 32;
+      type string {
+        pattern 'ssh-rsa .*';
+      }
+      ordered-by user;
+      description
+        "SSH public key(s) for the user (RSA)
+
+         If defined, the user may login to the system over SSH with this key. This field includes the 'ssh-rsa' leader, as would normally be found in a SSH key.";
+    }
+  }
+
   grouping aaa-authentication-user-lockout {
     description
       "Grouping of state information relating to user lockouts";
@@ -343,7 +372,6 @@ module srl_nokia-aaa {
           "Indicates the time at which the most recent lockout for this user ended or will end";
       }
     }
-
   }
 
   grouping aaa-authentication-user-state {
@@ -375,6 +403,23 @@ module srl_nokia-aaa {
     }
   }
 
+  grouping aaa-authentication-spiffe {
+    description
+      "SPIFFE ID configuration";
+    leaf-list spiffe-ids {
+      if-feature "srl-feat:aaa-spiffe-id";
+      type string {
+        pattern "^spiffe://.*";
+      }
+      description
+        "The SPIFFE ID list for the user, including the spiffe:// URI
+
+        This list of IDs is evaluated by TLS-consuming servers (e.g. gNMI, JSON-RPC) that use a TLS server-profile with authenticate-client set to true.
+
+        If a match is found in any incoming offered client certificates, the provider of the certificate is associated with this local user, and given resulting permissions.";
+    }
+  }
+
   grouping aaa-authentication-user-config {
     description
       "Configuration data for local users";
@@ -396,17 +441,6 @@ module srl_nokia-aaa {
           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
           If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
     }
-    leaf-list ssh-key {
-      max-elements 32;
-      type string {
-        pattern 'ssh-rsa .*';
-      }
-      ordered-by user;
-      description
-        "SSH public key(s) for the user (RSA)
-
-         If defined, the user may login to the system over SSH with this key. This field includes the 'ssh-rsa' leader, as would normally be found in a SSH key.";
-    }
     leaf-list role {
       max-elements 32;
       type leafref {
@@ -418,6 +452,9 @@ module srl_nokia-aaa {
          The most specific rule for a particular role takes precedence.
          Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
     }
+
+    uses aaa-authentication-spiffe;
+    uses aaa-authentication-user-ssh;
     uses aaa-authentication-user-state;
     uses aaa-authentication-user-lockout;
   }
@@ -450,7 +487,12 @@ module srl_nokia-aaa {
       type enumeration {
         enum cli;
         enum gnmi;
+        enum gnoi;
+        enum gnsi;
         enum gribi;
+        enum netconf {
+            if-feature "srl-feat:netconf";
+        }
         enum p4rt {
             if-feature "srl-feat:p4rt";
         }
@@ -498,7 +540,7 @@ module srl_nokia-aaa {
         type string;
         max-elements 100;
         description
-            "List of cli commands the are denied for this role
+            "List of cli commands that are denied for this role
 
              Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
              of line). Empty deny-command-list means anything that is not in allow-command-list is denied. If both lists
@@ -509,7 +551,7 @@ module srl_nokia-aaa {
         type string;
         max-elements 100;
         description
-            "List of cli commands the are allowed for this role
+            "List of cli commands that are allowed for this role
 
              Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
              of line). Empty allow-command-list means anything that is not in deny-command-list is allowed. If both
@@ -552,6 +594,20 @@ module srl_nokia-aaa {
           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
           If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
       }
+      leaf-list role {
+        if-feature "srl-feat:admin-user-roles";
+        max-elements 32;
+        type leafref {
+          path "../../../authorization/role/rolename";
+        }
+        description
+          "List of roles to assign to this user
+
+           The most specific rule for a particular role takes precedence.
+           Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
+      }
+      uses aaa-authentication-spiffe;
+      uses aaa-authentication-user-ssh;
       uses aaa-authentication-user-state;
       uses aaa-authentication-user-lockout;
     }
@@ -582,6 +638,7 @@ module srl_nokia-aaa {
           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
           If provided as a hashed value, the value should include any '$' characters, for example '$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0'.";
       }
+      uses aaa-authentication-user-ssh;
     }
   }
 

@@ -28,6 +28,10 @@ module srl_nokia-routing-policy {
   description
     "YANG model for route policies. It supports widely used constructs for managing how routes are imported, exported, and modified across different routing protocols.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -129,9 +133,9 @@ module srl_nokia-routing-policy {
       srl_nokia-ext:no-globbing;
       min-elements 1;
       type union {
+        type srl_nokia-pol-types:bgp-std-community-well-known-type;
         type srl_nokia-pol-types:bgp-std-community-type;
         type srl_nokia-pol-types:bgp-std-community-regexp-type;
-        type srl_nokia-pol-types:bgp-std-community-well-known-type;
         type srl_nokia-pol-types:bgp-large-community-type;
         type srl_nokia-pol-types:bgp-large-community-regexp-type;
       }
@@ -151,6 +155,62 @@ module srl_nokia-routing-policy {
           "A name used to identify the community set";
       }
       uses community-member-top;
+    }
+  }
+
+  grouping tag-set-top {
+    description
+      "Configuration and state for tag-sets";
+    list tag-set {
+      key "name";
+      max-elements 255;
+      description
+          "List of administrative tag sets";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "A name used to identify the tag set";
+      }
+      leaf tag-set-index {
+        config false;
+        type uint32;
+        description
+          "System-wide persistent unique identifier assigned to the tag-set";
+      }
+    }
+  }
+
+  grouping tags-action {
+    description "Group containing actions related to tags";
+    container internal-tags {
+      if-feature "srl_nokia-feat:route-internal-tags";
+      description
+        "Configuration of internal tags";
+      leaf-list tag-set {
+        max-elements 1;
+        type leafref {
+          path "/srl_rpol:routing-policy/srl_rpol:tag-set/srl_rpol:name";
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
+      }
+    }
+  }
+
+  grouping route-preference-action {
+    container route-preference {
+      if-feature "srl_nokia-feat:routing-policy-preference-action";
+      description
+        "Options for modifying route preference";
+      leaf set {
+        type uint8;
+        description
+          "Overwrite the route preference with the specified value
+
+          The IP route table preference is sometimes called the administrative distance of the route. In general, when comparing any two routes, the route with the lower preference is the one that is activated and used for forwarding.
+
+          This action has an effect only in BGP import policies and VRF import policies";
+      }
     }
   }
 
@@ -194,7 +254,6 @@ module srl_nokia-routing-policy {
             type uint8 {
               range "1..50";
             }
-            default "1";
             description
               "The number of repetitions of the prepended AS number";
           }
@@ -264,6 +323,8 @@ module srl_nokia-routing-policy {
         }
       }
     }
+    uses route-preference-action;
+    uses tags-action;
   }
 
   grouping default-action-top {
@@ -333,13 +394,11 @@ module srl_nokia-routing-policy {
         }
         leaf operator {
           type srl_nokia-pol-types:comparison-operator-type;
-          default "eq";
           description
             "The comparison operator that applies to the value";
         }
         leaf unique {
           type boolean;
-          default "false";
           description
             "Count a repeated sequence of the same AS number as just 1 element";
         }
@@ -438,6 +497,24 @@ module srl_nokia-routing-policy {
     }
   }
 
+  grouping match-tags {
+    description
+      "Configuration tag based match criteria";
+    container internal-tags {
+      if-feature "srl_nokia-feat:route-internal-tags";
+      description
+        "Configuration and state of internal tags";
+      leaf-list tag-set {
+        max-elements 1;
+        type leafref {
+          path "/srl_rpol:routing-policy/srl_rpol:tag-set/srl_rpol:name";
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
+      }
+    }
+  }
+
   grouping match-top {
     description
       "Top-level grouping for match criteria";
@@ -447,6 +524,7 @@ module srl_nokia-routing-policy {
       uses match-prefix-set;
       uses match-bgp;
       uses match-general;
+      uses match-tags;
       uses match-igp;
     }
   }
@@ -515,6 +593,7 @@ module srl_nokia-routing-policy {
       uses as-path-set-top;
       uses prefix-set-top;
       uses community-set-top;
+      uses tag-set-top;
       uses policy-top;
     }
   }

@@ -9,8 +9,14 @@ module srl_nokia-platform-psu {
   import srl_nokia-platform {
     prefix srl-platform;
   }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
   import srl_nokia-extensions {
     prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
   }
 
   organization
@@ -22,6 +28,10 @@ module srl_nokia-platform-psu {
   description
     "This module defines configuration and operational state data related to power supplies.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2021-03-31 {
     description
       "SRLinux 21.3.1";
@@ -29,6 +39,35 @@ module srl_nokia-platform-psu {
   revision 2019-11-30 {
     description
       "SRLinux 19.11.1";
+  }
+
+  grouping psu-input-output-common {
+    description
+      "Grouping of common fields used with both input and output";
+    leaf voltage {
+      description
+        "Current voltage input/output for the power-supply";
+      units "volts";
+      type decimal64 {
+        fraction-digits 2;
+      }
+    }
+    leaf current {
+      description
+        "Current amperage input/output for the power-supply";
+      units "amps";
+      type decimal64 {
+        fraction-digits 2;
+      }
+    }
+    leaf power {
+      description
+        "Current power input/output for the power-supply";
+      units "watts";
+      type decimal64 {
+        fraction-digits 2;
+      }
+    }
   }
 
   grouping psu-state-top {
@@ -54,14 +93,53 @@ module srl_nokia-platform-psu {
         "The total capacity the power supply module can provide";
       units "watts";
     }
+    container fan {
+      if-feature "srl-feat:platform-7250-ixr or srl-feat:platform-7250-ixr-e";
+      description
+        "Top-level container for state relating to fans";
+      leaf speed {
+        srl-ext:delivery-node-override "true";
+        srl-ext:stream-mode "sample=5";
+        type srl-comm:percentage;
+        description
+          "The current speed of the fan";
+      }
+      leaf speed-rpm {
+        srl-ext:delivery-node-override "true";
+        srl-ext:stream-mode "sample=5";
+        type uint16;
+        description
+          "The current RPM of the fan";
+      }
+    }
     container input {
       srl-ext:delivery-node-override "true";
       srl-ext:stream-mode "sample=5";
       description
         "Top-level container for power-supply input state";
+      uses psu-input-output-common;
+    }
+    container output {
+      if-feature "srl-feat:platform-7250-ixr or srl-feat:platform-7250-ixr-e";
+      srl-ext:delivery-node-override "true";
+      srl-ext:stream-mode "sample=5";
+      description
+        "Top-level container for power-supply output state";
+      uses psu-input-output-common;
+    }
+    list feed {
+      if-feature "srl-feat:platform-7250-ixr-e";
+      key id;
+      description
+        "List of feeds on this power-supply";
+      leaf id {
+        type uint8;
+        description
+          "ID of the feed";
+      }
       leaf voltage {
         description
-          "Current input voltage for the power-supply";
+          "Current input voltage for this feed";
         units "volts";
         type decimal64 {
           fraction-digits 2;
@@ -69,16 +147,8 @@ module srl_nokia-platform-psu {
       }
       leaf current {
         description
-          "Current input amperage for the power-supply";
+          "Current input amperage of this feed";
         units "amps";
-        type decimal64 {
-          fraction-digits 2;
-        }
-      }
-      leaf power {
-        description
-          "Current input power for the power-supply";
-        units "watts";
         type decimal64 {
           fraction-digits 2;
         }
@@ -119,6 +189,7 @@ module srl_nokia-platform-psu {
         "Top-level container for power supply module configuration and state";
       uses psu-state-top;
       uses srl-platform:component-common-state-top;
+      uses srl-platform:component-common-eeprom;
       uses srl-platform:component-temperature-no-thresh-state-top;
     }
   }

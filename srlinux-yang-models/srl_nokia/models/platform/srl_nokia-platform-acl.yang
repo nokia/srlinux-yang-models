@@ -31,6 +31,10 @@ module srl_nokia-platform-acl {
   description
     "This module defines configuration and operational state related to ACL resources in the system";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -165,6 +169,20 @@ module srl_nokia-platform-acl {
       Cpm Ipv4 -> uses two stat counters
       Cpm Ipv6 -> uses two stat counters
       Cpm MAC -> uses two stat counters";
+  }
+
+  identity input-acl-qos-template-policers {
+    if-feature "srl_feat:acl-policer-resource-utilization";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 or IPv6 input subinterface filter entry uses a rate-limit policer, or subinterface policer-template is used.";
+  }
+
+  identity output-acl-cpm-filter-policers {
+    if-feature "srl_feat:acl-policer-resource-utilization and (not srl_feat:trident3)";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 or IPv6 output subinterface filter or CPM filter entry uses a rate-limit policer.";
   }
 
   grouping acl-resource-monitoring {

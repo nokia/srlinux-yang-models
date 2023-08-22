@@ -28,6 +28,10 @@ module srl_nokia-acl-policers {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -36,18 +40,17 @@ module srl_nokia-acl-policers {
     typedef forwarding-type {
         type enumeration {
             enum "unicast" {
+                value 1;
                 description
                     "A packet is 'unicast' if the destination address is unicast and it matches an entry in the FIB";
             }
             enum "unknown-unicast" {
+                value 2;
                 description
                     "A packet is 'unknown-unicast' if the destination address is unicast but it doesn't match any entry in the FIB and is therefore conventionally flooded";
             }
-            enum "broadcast" {
-                description
-                    "A packet is 'broadcast' if the destination address is a broadcast address.";
-            }
             enum "multicast" {
+                value 3;
                 if-feature srl_nokia-feat:trident3;
                 description
                     "A packet is 'multicast' if the destination address is a multicast address
@@ -55,9 +58,15 @@ module srl_nokia-acl-policers {
                     On TD3 systems this includes multicast packets with a known destination/group address and multicast packets with an unknown destination/group address. On TD4 systems this only includes known multicast packets.";
             }
             enum "unknown-multicast" {
+                value 4;
                 if-feature srl_nokia-feat:trident4;
                 description
                     "Multicast packets with an unknown destination/group address";
+            }
+            enum "broadcast" {
+                value 5;
+                description
+                    "A packet is 'broadcast' if the destination address is a broadcast address.";
             }
         }
     }
@@ -69,14 +78,17 @@ module srl_nokia-acl-policers {
             enum "low" {
                 description
                   "Traffic that should be dropped last when there is congestion. Internally this is traffic that is colored green.";
+                value 1;
             }
             enum "medium" {
                 description
                   "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
+                value 2;
             }
             enum "high" {
                 description
                   "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
+                value 3;
             }
         }
     }
@@ -117,8 +129,9 @@ module srl_nokia-acl-policers {
                         description
                           "A forwarding class that has traffic to match to the policer";
                         must "re-match(.,'fc[0-7]')" {
-                                error-message "The forwarding-class must to be within fc0..fc7";
-                            }
+                            error-message "custom forwarding-class is not supported";
+                            srl_nokia-ext:if-feature "not srl_nokia-features:future-0-0";
+                        }
                     }
                     leaf-list forwarding-type {
                         ordered-by system;
@@ -199,10 +212,12 @@ module srl_nokia-acl-policers {
                     "The statistics mode of all policers belonging to this template";
                 type enumeration {
                     enum "violating-focus" {
+                        value 1;
                         description
                             "In this statistics mode only 4 counters are provided: accepted-packets, accepted-octets, violating-packets, violating-octets";
                     }
                     enum "forwarding-focus" {
+                        value 2;
                         description
                             "In this statistics mode only 4 counters are provided: committed-packets, committed-octets, exceeding-packets, exceeding-octets";
                     }

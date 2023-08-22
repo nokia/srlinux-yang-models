@@ -1,20 +1,35 @@
 module srl_nokia-te-policies {
-
   yang-version 1.1;
 
   // namespace
+
   namespace "urn:srl_nokia/te-policies";
+  prefix srl_nokia-te-policies;
 
-  prefix "srl_nokia-te-policies";
-
-  import srl_nokia-common { prefix srl_nokia-comm; }
-  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
-  import srl_nokia-system { prefix srl_nokia-system; }
-  import srl_nokia-mpls-label-management { prefix srl_nokia-mplslbl; }
-  import srl_nokia-features { prefix srl_nokia-feat; }
-  import srl_nokia-maintenance-policies { prefix srl_nokia-maint-pol; }
-  import srl_nokia-traffic-engineering { prefix srl_nokia-te; }
-  import srl_nokia-routing-policy { prefix srl_nokia-routing-pol;}
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-mpls-label-management {
+    prefix srl_nokia-mplslbl;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-maintenance-policies {
+    prefix srl_nokia-maint-pol;
+  }
+  import srl_nokia-traffic-engineering {
+    prefix srl_nokia-te;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-routing-pol;
+  }
 
   organization
     "Nokia";
@@ -25,6 +40,10 @@ module srl_nokia-te-policies {
   description
     "Configuration and state for traffic engineering policies.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -84,8 +103,8 @@ module srl_nokia-te-policies {
 
   typedef te-policy-type {
     type enumeration {
-      enum "sr-mpls-colored";
-      enum "sr-mpls-uncolored";
+      enum sr-mpls-colored;
+      enum sr-mpls-uncolored;
     }
   }
 
@@ -100,39 +119,43 @@ module srl_nokia-te-policies {
     type enumeration {
       enum pcep {
         value 10;
-        description "PCEP used as signalling mechanism for the candidate path";
+        description
+          "PCEP used as signalling mechanism for the candidate path";
       }
       enum bgp {
         value 20;
-        description "BGP used as signalling mechanism for the candidate path";
+        description
+          "BGP used as signalling mechanism for the candidate path";
       }
       enum local {
         value 30;
-        description "Management interface used for candidate path instantiation";
+        description
+          "Management interface used for candidate path instantiation";
       }
     }
-    description "Originating protocol type";
+    description
+      "Originating protocol type";
   }
 
   typedef candidate-path-type {
     type enumeration {
-      enum "best" {
+      enum best {
         description
           "The candidate path is the best valid path but it does not have a protection policy with SBFD enabled";
       }
-      enum "primary" {
+      enum primary {
         description
           "The candidate path is the best valid path and it has a protection policy with SBFD enabled.";
       }
-      enum "secondary" {
+      enum secondary {
         description
           "The candidate path is the second best valid path and it has a protection policy with SBFD enabled.";
       }
-      enum "tertiary" {
+      enum tertiary {
         description
           "The candidate path is the third best valid path and it has a protection policy with SBFD enabled.";
       }
-      enum "other" {
+      enum other {
         description
           "The candidate path is invalid or else it is valid but without special designation as best, primary, secondary or tertiary.";
       }
@@ -141,37 +164,43 @@ module srl_nokia-te-policies {
 
   typedef te-policy-oper-state {
     type enumeration {
-      enum "up" {
+      enum up {
         description
           "The te-policy is operationally up.";
       }
-      enum "down" {
+      enum down {
         description
           "The te-policy is administratively down or no valid segment-list or due to other reasons.";
       }
     }
   }
+
   typedef segment-list-oper-state {
     type enumeration {
-      enum "up" {
+      enum up {
         description
           "The segment-list is valid and belongs to a candidate path that is best, primary, secondary or tertiary and if SBFD is enabled, the SBFD session state is up.";
+        value 1;
       }
-      enum "sbfd-down" {
+      enum sbfd-down {
         description
           "The segment-list is valid and belongs to a candidate path that is primary, secondary or tertiary but the SBFD session state is down (or in hold-down).";
+        value 2;
       }
-      enum "valid" {
+      enum valid {
         description
           "The segment-list is valid but does not belong to a candidate path that is best, primary, secondary or tertiary";
+        value 3;
       }
-      enum "invalid" {
+      enum invalid {
         description
           "The segment-list is invalid and the reason will be provided";
+        value 4;
       }
-      enum "down" {
+      enum down {
         description
           "The parent te-policy/candidate path is administratively disabled, or this segment list has been administratively disabled";
+        value 5;
       }
     }
   }
@@ -180,16 +209,19 @@ module srl_nokia-te-policies {
     description
       "Base identity for reasons that describe why a segment list is invalid.";
   }
+
   identity unresolved-first-segment {
     base segment-list-invalid-reason;
     description
       "The system is unable to resolve the first SID (MPLS label value) into one or more outgoing interface(s) and next-hop(s)";
   }
+
   identity unresolved-named-path {
     base segment-list-invalid-reason;
     description
       "The most recent query to TEDB about the named path (triggered by periodic re-optimization or initially) indicated that the named path is not viable.";
   }
+
   identity maximum-label-stack-depth-exceeded {
     base segment-list-invalid-reason;
     description
@@ -206,7 +238,8 @@ module srl_nokia-te-policies {
     container traffic-engineering-policies {
       if-feature "srl_nokia-feat:te-policies";
       presence "Configure traffic engineering policies";
-      description "Container with traffic engineering policies";
+      description
+        "Container with traffic engineering policies";
       uses binding-sid-label-blocks;
       uses named-paths;
       //uses srl_nokia-maint-pol:maintenance-policies;
@@ -218,31 +251,28 @@ module srl_nokia-te-policies {
   grouping binding-sid-label-blocks {
     container binding-sid {
       if-feature "srl_nokia-feat:label-management";
-      description "Configuration and state related to the label block(s) used for the binding SIDs associated with TE policies";
-      container static-assignment {
+      description
+        "Configuration and state related to the label block(s) used for the binding SIDs associated with TE policies";
+      leaf static-label-block {
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static/srl_nokia-mplslbl:name";
+        }
+        must 'not(/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()]/srl_nokia-mplslbl:shared)' {
+          error-message "Static label block for binding SIDs should be exclusive (not shared)";
+        }
         description
-          "Container applicable to statically assigned binding SIDs";
-        leaf label-range {
-          type leafref {
-              path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static/srl_nokia-mplslbl:name";
-          }
-          must "not(/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()]/srl_nokia-mplslbl:shared)" {
-              error-message "Static label block for binding SIDs should be exclusive (not shared)";
-          }
-          description
-            "Reference to a static label range";
+          "Reference to a static label range";
+      }
+      leaf static-label-block-status {
+        config false;
+        type enumeration {
+          enum available;
+          enum unavailable;
         }
-        leaf label-range-status {
-          config false;
-          type enumeration {
-              enum "available";
-              enum "unavailable";
-          }
-          description
-            "Status of the label block.
+        description
+          "Status of the label block.
 
-            The label block may show as unavailable if there is pending cleanup.";
-        }
+            \t\t\t  The label block may show as unavailable if there is pending cleanup.";
       }
     }
   }
@@ -252,7 +282,7 @@ module srl_nokia-te-policies {
       description
         "Named paths used to specify SR policy segment lists";
       list path {
-        key named-path-name;
+        key "named-path-name";
         leaf named-path-name {
           type srl_nokia-comm:name;
           description
@@ -262,17 +292,19 @@ module srl_nokia-te-policies {
           description
             "Type named path";
           type enumeration {
-            enum "ip-hops" {
-              description "Named path consists exclusively of hops identified by IP addresses";
+            enum ip-hops {
+              description
+                "Named path consists exclusively of hops identified by IP addresses";
             }
-            enum "label-hops" {
-              description "Named path consists exclusively of hops identified by MPLS label values";
+            enum label-hops {
+              description
+                "Named path consists exclusively of hops identified by MPLS label values";
             }
           }
           default "ip-hops";
         }
         list hop {
-          key index;
+          key "index";
           leaf index {
             type uint8;
             description
@@ -282,7 +314,7 @@ module srl_nokia-te-policies {
             case ip-address {
               leaf ip-address {
                 must "(../../type = 'ip-hops')" {
-                    error-message "named path must be type ip-hops";
+                  error-message "named path must be type ip-hops";
                 }
                 type srl_nokia-comm:ip-address;
                 description
@@ -292,7 +324,7 @@ module srl_nokia-te-policies {
             case mpls-label {
               leaf mpls-label {
                 must "(../../type = 'label-hops')" {
-                    error-message "named path must be type label-hops";
+                  error-message "named path must be type label-hops";
                 }
                 type srl_nokia-comm:mpls-label-non-reserved;
                 description
@@ -301,19 +333,19 @@ module srl_nokia-te-policies {
             } // case
           } // choice
           leaf hop-type {
-              must "(../../type = 'ip-hops')" {
-                  error-message "named path must be type ip-hops";
-              }
+            must "(../../type = 'ip-hops')" {
+              error-message "named path must be type ip-hops";
+            }
             type enumeration {
-              enum "strict" {
+              enum strict {
                 description
                   "A strict hop is always one hop away from the previous hop (or from the head-end in the case of the first hop). TE DB translates each strict hop into an adjacency-SID label. To be resolved to an adjacency SID, a strict hop must be a non-local IP address on a connected subnet (representing the neighbor's interface address on this subnet) or it must be a loopback or system address of the directly-connected neighbor.";
               }
-              enum "loose" {
+              enum loose {
                 description
                   "A loose hop can be any number of hops away from the previous hop (or from the head-end in the case of the first hop). TE DB translates each loose hop into a node-SID label. A loose hop can be any IP address of the remote router associated with the node SID, not just the IP address associated with the node SID itself.
 
-                  Note that the endpoint of the policy is implicitly considered to be a final loose hop. If the final configured hop (previous hop of this implicit loose hop) is unnecessary TEDB indicates this to SR policy manager and the adjacency SID or node SID of the final confgired hop is omitted from the datapath programming.";
+                   Note that the endpoint of the policy is implicitly considered to be a final loose hop. If the final configured hop (previous hop of this implicit loose hop) is unnecessary TEDB indicates this to SR policy manager and the adjacency SID or node SID of the final confgired hop is omitted from the datapath programming.";
               }
             }
           }
@@ -326,7 +358,7 @@ module srl_nokia-te-policies {
     list policy {
       description
         "List of traffic engineering policies";
-      key policy-name;
+      key "policy-name";
       leaf policy-name {
         description
           "The name of the traffic engineering policy";
@@ -336,7 +368,7 @@ module srl_nokia-te-policies {
         description
           "Specifies the TE policy type
 
-          TE Policy can be of type sr-mpls-colored where label based segment-list or segment-lists constitute a candidate path and color with endpoint is used to configure a path. TE Policy can be of type uncolored in which case a single primary LSP can be backed by one or more secondary LSPs";
+           TE Policy can be of type sr-mpls-colored where label based segment-list or segment-lists constitute a candidate path and color with endpoint is used to configure a path. TE Policy can be of type uncolored in which case a single primary LSP can be backed by one or more secondary LSPs";
         type te-policy-type;
         default "sr-mpls-colored";
       }
@@ -350,11 +382,11 @@ module srl_nokia-te-policies {
         description
           "MPLS label that opaquely represents a TE policy to upstream routers";
         type srl_nokia-comm:mpls-label-non-reserved;
-        must "../../binding-sid/static-assignment/label-range" {
+        must '../../binding-sid/static-label-block' {
           error-message "A static binding SID label block must be defined";
         }
-        must "(current() >= /srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../binding-sid/static-assignment/label-range]/srl_nokia-mplslbl:start-label)" +
-        " and (current() <= /srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../binding-sid/static-assignment/label-range]/srl_nokia-mplslbl:end-label)" {
+        must '(current() >= /srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../binding-sid/static-label-block]/srl_nokia-mplslbl:start-label)'
+           + ' and (current() <= /srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../binding-sid/static-label-block]/srl_nokia-mplslbl:end-label)' {
           error-message "Static bindig SID is outside of the defined range";
         }
       }
@@ -372,7 +404,7 @@ module srl_nokia-te-policies {
         mandatory true;
         description
           "Destination of the TE policy";
-          type srl_nokia-comm:ip-address-excluding-all-zero;
+        type srl_nokia-comm:ip-address-excluding-all-zero;
       }
       leaf distinguisher {
         description
@@ -388,29 +420,33 @@ module srl_nokia-te-policies {
         type union {
           type srl_nokia-comm:ipv4-address-excluding-all-zero;
           type enumeration {
-              enum "local"                        { value 1; }
+            enum local {
+              value 1;
+            }
           }
         }
         must "../policy-type = 'sr-mpls-colored'" {
           error-message "Head-end is specific to sr-mpls-colored TE policies";
         }
       }
-//      leaf tag-set {
-//        description
-//          "Tag set to associate with an sr-mpls-uncolored TE policy";
-//        type leafref {
-//          path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
-//        }
-//        must "../policy-type = 'sr-mpls-uncolored'" {
-//          error-message "Tag set is specific to sr-mpls-uncolored TE policies";
-//       }
-//      }
+      //      leaf tag-set {
+      //        description
+      //          "Tag set to associate with an sr-mpls-uncolored TE policy";
+      //        type leafref {
+      //          path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+      //        }
+      //        must "../policy-type = 'sr-mpls-uncolored'" {
+      //          error-message "Tag set is specific to sr-mpls-uncolored TE policies";
+      //       }
+      //      }
       leaf re-optimization-timer {
-        description "Re-optimizaion timer for the TE policy";
+        description
+          "Re-optimizaion timer for the TE policy";
         type uint32 {
-            range "1..360"; //TBD
+          range "1..360"; //TBD
         }
         units "minutes";
+        default "30";
       }
       leaf candidate-path-preference {
         type uint32 {
@@ -426,11 +462,12 @@ module srl_nokia-te-policies {
         description
           "Metric for the TE Policy";
         type uint32 {
-            range "1..16777215";
+          range "1..16777215";
         }
       }
       leaf retry-timer {
-        description "Time between TE policy re-establishment attempts after failure";
+        description
+          "Time between TE policy re-establishment attempts after failure";
         type uint32 {
           range "1..600";
         }
@@ -438,25 +475,29 @@ module srl_nokia-te-policies {
         default "30";
       }
       container ingress-statistics {
-        description "Enable the ingress-statistics context";
+        description
+          "Enable the ingress-statistics context";
         leaf admin-state {
           type srl_nokia-comm:admin-state;
           default "disable";
-          description "Administrative state of the traffic statistics";
+          description
+            "Administrative state of the traffic statistics";
         }
         //TO-DO: add state leafs
       }
       container egress-statistics {
-        description "Enable the egress-statistics context";
+        description
+          "Enable the egress-statistics context";
         leaf admin-state {
           type srl_nokia-comm:admin-state;
           default "disable";
-          description "Administrative state of the traffic statistics";
+          description
+            "Administrative state of the traffic statistics";
         }
         //TO-DO: add state leafs
       }
       leaf maintenance-policy {
-      if-feature "srl_nokia-feat:maintenance-policies";
+        if-feature "srl_nokia-feat:maintenance-policies";
         description
           "The maintenance policy to use with the TE policy";
         type leafref {
@@ -478,19 +519,19 @@ module srl_nokia-te-policies {
         description
           "When true, the TE policy is available for next-hop resolution of BGP unlabeled routes";
         type boolean;
-        default true;
+        default "true";
       }
       leaf bgp-labeled-unicast {
         description
           "When true, the TE policy is available for next-hop resolution of BGP labeled-unicast routes";
         type boolean;
-        default true;
+        default "true";
       }
       leaf ip-vrf {
         description
           "When true, the TE policy is available for next-hop resolution of VPN-IP routes in an ip-vrf network-instance";
         type boolean;
-        default true;
+        default "true";
       }
     }
   }
@@ -501,14 +542,16 @@ module srl_nokia-te-policies {
         "PCE association policy and diversity ";
       leaf-list diversity {
         max-elements 5;
-        description "List of diversity names";
+        description
+          "List of diversity names";
         type leafref {
           path "../../../pcep/pcc/pce-associations/diversity/assoc-name";
         }
       }
       leaf-list policy-assocation {
         max-elements 5;
-        description "List of PCE associations configured under the PCC";
+        description
+          "List of PCE associations configured under the PCC";
         type leafref {
           path "../../../pcep/pcc/pce-associations/policy/assoc-name";
         }
@@ -540,15 +583,21 @@ module srl_nokia-te-policies {
         description
           "Segment-list type: primary, standby or secondary
 
-          Standby is programmed in datapath, consumes resources and is ready for a failover any time. Secondary is programmed upon failure of the previous active";
-          type enumeration {
-            enum primary        { value 0; }
-            enum secondary      { value 1; }
-            enum standby        { value 2; }
-         }
-          must "not(. = 'secondary' and ../../policy-type = 'sr-mpls-colored' or . = 'standby' and ../../policy-type = 'sr-mpls-colored')" {
-            error-message "Only primary is supported for sr-mpls-colored TE policies";
+           Standby is programmed in datapath, consumes resources and is ready for a failover any time. Secondary is programmed upon failure of the previous active";
+        type enumeration {
+          enum primary {
+            value 0;
           }
+          enum secondary {
+            value 1;
+          }
+          enum standby {
+            value 2;
+          }
+        }
+        must "not(. = 'secondary' and ../../policy-type = 'sr-mpls-colored' or . = 'standby' and ../../policy-type = 'sr-mpls-colored')" {
+          error-message "Only primary is supported for sr-mpls-colored TE policies";
+        }
       }
       leaf weight {
         description
@@ -558,14 +607,16 @@ module srl_nokia-te-policies {
           error-message "Weight is only supported for sr-mpls-colored TE policies";
         }
       }
-      leaf secondary-segment-list-preference {
+      leaf segment-list-preference {
         //Check with Alp
         description
           "Preference value of this segment-list
 
-          For an sr-mpls-uncolored TE policy one secondary segment list is preferred over another if it has a lower preference value. The implicit default value is 100.";
-        type uint32;
-        must "../segment-list-type = 'secondary'" {
+           For an sr-mpls-uncolored TE policy one standby segment list is preferred over another if it has a lower preference value. The implicit default value is 100.";
+        type uint32 {
+          range "1..255";
+        }
+        must "../segment-list-type = 'standby'" {
           error-message "Only applicable to secondary segment lists";
         }
         must "not(../../policy-type = 'sr-mpls-colored')" {
@@ -577,9 +628,10 @@ module srl_nokia-te-policies {
         description
           "Configure setup and hold priorities to be conveyed to the PCE for preemption purposes";
         leaf hold-priority {
-          description "Hold priority of a TE policy in relation to preemption action";
+          description
+            "Hold priority of a TE policy in relation to preemption action";
           type uint8 {
-              range "0..7";
+            range "0..7";
           }
           default "0";
         }
@@ -591,6 +643,20 @@ module srl_nokia-te-policies {
           }
           default "0";
         }
+      }
+      leaf pce-control {
+        description
+          "Set to true for a PCE controlled segment-list";
+        type boolean;
+        must "not(../named-path) or not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-te-policies:traffic-engineering-policies/srl_nokia-te-policies:named-paths/srl_nokia-te-policies:path[srl_nokia-te-policies:named-path-name=current()/../named-path]/type = 'label-hops')" {
+          error-message "No named path or named path type must be ip-hops to use pce-control";
+        }
+      }
+      leaf pce-report {
+        description
+          "seto to true to enable reporting of the segment-list to the PCE";
+        type boolean;
+        default "false";
       }
       container dynamic {
         presence "Enable dynamic computation of the segment list";
@@ -605,25 +671,17 @@ module srl_nokia-te-policies {
           type dynamic-segment-path-computation-type;
           default "local-cspf";
         }
-        leaf pce-control {
-          description
-            "Set to true for a PCE controlled segment-list";
-          type boolean;
-          default "false";
-        }
-        leaf pce-report {
-          description
-            "seto to true to enable reporting of the segment-list to the PCE";
-          type boolean;
-          default "false";
-        }
         container te-constraints {
           leaf metric-type {
             description
               "Metric type used for segment-list computation";
             type enumeration {
-              enum igp               { value 1; }
-              enum te                { value 2; }
+              enum igp {
+                value 1;
+              }
+              enum te {
+                value 2;
+              }
             }
             default "igp";
           }
@@ -639,21 +697,24 @@ module srl_nokia-te-policies {
             type uint8 {
               range "2..255";
             }
+            default "255";
           }
           container segment-depth {
-            description "Configuration for the maximum number of SIDs/segments";
+            description
+              "Configuration for the maximum number of SIDs/segments";
             leaf segment-limit {
               description
                 "The maximum number of segments in the segment-list";
               type uint8 {
                 range "1..14";
               }
+              default "8"; // To be checked by Srini
             }
             leaf additional-frr-segment-limit {
               description
                 "The maximum number of additional segments used for FRR";
               type uint8 {
-                  range "0..3";
+                range "0..3";
               }
             }
           }
@@ -661,10 +722,16 @@ module srl_nokia-te-policies {
             description
               "Protection offered for local CSPF computed segment-lists";
             type enumeration {
-                enum "none"                    { value 0; }
-                enum "preferred"                { value 1; }
-                enum "mandated"                 { value 2; }
+              enum none {
+                value 0;
               }
+              enum preferred {
+                value 1;
+              }
+              enum mandated {
+                value 2;
+              }
+            }
             default "preferred";
           }
           leaf label-stack-reduction {
@@ -674,26 +741,28 @@ module srl_nokia-te-policies {
             default "true";
           }
           leaf-list exclude-hop {
-            description "Excluded IP addresses from path computation";
+            description
+              "Excluded IP addresses from path computation";
             type srl_nokia-comm:ip-address-excluding-all-zero;
             max-elements 10;
           }
           leaf-list exclude-srlg {
             max-elements 16;
-            description "Excluded SRLGs during path computation";
+            description
+              "Excluded SRLGs during path computation";
             type leafref {
               path "../../../../../../srl_nokia-te:traffic-engineering/srl_nokia-te:shared-risk-link-groups/srl_nokia-te:group/srl_nokia-te:name";
             }
           }
           leaf secondary-srlg {
             description
-              "Seto to true to consider SRLG for secondary and standby segment list of uncolored type";
+              "Set to to true to consider SRLG for secondary and standby segment list of uncolored type";
             type boolean;
             default "false";
           }
         }
       }
-      uses segment-list-state;
+      uses segment-list-oper-state-group;
     }
   }
 
@@ -702,48 +771,94 @@ module srl_nokia-te-policies {
       config false;
       description
         "Traffic Engineering Policy Database";
-      container sr-mpls-colored {
+      container sr-colored {
         description
           "SR MPLS Policy colored Traffic Engineering Paths";
         list policy {
           key "color endpoint";
           leaf color {
             type uint32;
-          description
-            "Color associated with the SR MPLS (colored) policy";
+            description
+              "Color associated with the SR MPLS (colored) policy";
           }
           leaf endpoint {
             type srl_nokia-comm:ip-address;
-            description "Policy endpoint IP address";
+            description
+              "Policy endpoint IP address";
           }
           uses candidate-paths;
         }
       }
-      container sr-mpls-uncolored {
+      container sr-uncolored {
         description
-          "SR MPLS Policy uncolored Traffic Engineering Paths. Also referred to as SR-TE LSPs";
+          "Uncolored Traffic Engineering Policy Paths. Also referred to as SR-TE LSPs";
         list policy {
-          key "policy-name";
+          key "policy-name protocol-origin";
           description
-            "Enter the SR-TE LSP list instance";
+            "Enter the Uncolored Traffic Engineering Policy Path list instance Also refered to as SR-TE LSP list";
           leaf policy-name {
             type srl_nokia-comm:name;
             description
-              "Name of SR-TE LSP";
+              "Name of Uncolored Traffic Engineering Policy";
+          }
+          leaf protocol-origin {
+            description
+              "Uncolored Traffic Engrineering Policy, origination source. The method Policy path is computed. This list includes Path Computation Engine, explicitly configured paths, etc.";
+            type protocol-origin-type;
           }
           leaf endpoint {
             type srl_nokia-comm:ip-address;
-            description "Policy endpoint IP address";
-          }
-          leaf binding-sid {
             description
-              "MPLS label that opaquely represents the SR-TE LSP to upstream routers";
-            type srl_nokia-comm:mpls-label-non-reserved;
+              "Uncolored Traffic Engineering Policy endpoint IP address";
+          }
+          leaf head-end {
+            type srl_nokia-comm:ip-address;
+            description
+              "Uncolored Traffic Engineering Policy headend IP address";
+          }
+          leaf policy-type {
+            type te-policy-type;
+            description
+              "Uncolored Traffic Engineering Policy type";
+          }
+          leaf tunnel-id {
+            type uint32;
+            description
+              "Uncolored Traffic Engineering Policy unique tunnel identifier";
+          }
+          leaf metric {
+            type uint32;
+            description
+              "Uncolored Traffic Engineering Policy metric";
+          }
+          container binding-sid {
+            description
+              "Identifier that opaquely represents the Uncolored Traffic Engineering Policy (a.k.a. SR-TE LSP) to upstream routers";
+            leaf mpls-label {
+              description
+                "MPLS label that represents the Uncolored Traffic Engineering Policy to upstream routers";
+              type srl_nokia-comm:mpls-label-non-reserved;
+            }
+          }
+          leaf created-time {
+            description
+              "Uncolored Traffic Engineering Policy creation time";
+            type srl_nokia-comm:date-and-time;
+          }
+          leaf segment-list-count {
+            description
+              "Uncolored Traffic Engineering Policy segment-list count";
+            type uint32;
+          }
+          leaf active-segment-list-index {
+            description
+              "Uncolored Traffic Engineering Policy active segment-list index";
+            type uint32;
           }
           leaf installation-type {
             type enumeration {
-              enum "tunnel";
-              enum "swap";
+              enum tunnel;
+              enum swap;
             }
             description
               "TE Policy installation-type definition. If tunnel, TE policy is installed in Tunnel table (LTN) and can be used by local services and IP shortcuts. If installarion-type is swap, it's installed in iLM as a swap entry";
@@ -786,7 +901,8 @@ module srl_nokia-te-policies {
   }
 
   grouping candidate-paths {
-    description "SR policy candidate path grouping";
+    description
+      "SR policy candidate path grouping";
     list candidate-path {
       description
         "SR policy candidate paths. This list includes local static policies, but only those that have both a color and endpoint.";
@@ -808,13 +924,15 @@ module srl_nokia-te-policies {
       }
       leaf discriminator {
         type uint32;
-        description "Candidate path distinguisher";
+        description
+          "Candidate path distinguisher";
       }
       leaf preference {
         type uint32 {
           range "1..65535";
         }
-        description "Candidate path preference";
+        description
+          "Candidate path preference";
       }
       leaf binding-sid {
         type srl_nokia-comm:mpls-label-non-reserved;
@@ -831,17 +949,243 @@ module srl_nokia-te-policies {
       config false;
       type te-policy-oper-state;
       description
-        "TE policy operational state.";
+        "Traffic Engineering policy operational state.";
     }
     leaf oper-down-reason {
       config false;
       type te-policy-oper-down-reason-type;
       description
-        "The reason why the TE policy is operationally down.
+        "The reason why the Traffic Engineering policy is operationally down.
 
-        One of the following values:
-        -  te-policy-admin-disabled: the TE policy is administratively disabled
-        -  te-policy-no-valid-segment-list: the TE policy has no valid segment lists";
+         One of the following values:
+         -  te-policy-admin-disabled: the TE policy is administratively disabled
+         -  te-policy-no-valid-segment-list: the TE policy has no valid segment lists";
+    }
+    leaf oper-state-change-count {
+      config false;
+      type uint32;
+      description
+        "Traffic Engineering Policy operational state change count
+         Operational status trnasition from up to down, down to up, etc all accounted under this counter";
+    }
+    leaf last-oper-state-change {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time elapsed since the last operational state change for the Traffic Engineering Policy";
+    }
+  }
+
+  grouping dynamic-state {
+    description
+      "Dynamic Segment List state";
+    container dynamic {
+      config false;
+      description
+        "Dynamic Segment List";
+      leaf path-algorithm {
+        description
+          "Algorithm used for computation of the Segment List";
+        type dynamic-segment-path-computation-type;
+      }
+      container te-constraints {
+        description
+          "Traffic Engineering constraints for dynamic segment-lists";
+        leaf hop-limit {
+          description
+            "Hop limit contraint used for computation of the Segment List";
+          type uint8;
+        }
+        leaf label-stack-reduction {
+          description
+            "If label stack reduction is enabled for the given Segment List";
+          type boolean;
+        }
+        leaf exclude-srlg {
+          description
+            "SRLG links excluded during path computation for the given Segment List";
+          type string;
+        }
+        leaf local-sr-protection {
+          description
+            "If local SR protection is requested for the given Segment List";
+          type boolean;
+        }
+        leaf exclude-hop {
+          description
+            "Excluded IP addresses from path computation for the given Segment List";
+          type srl_nokia-comm:ip-address-excluding-all-zero;
+        }
+        leaf segment-depth {
+          description
+            "Number of segments pushed while instantiating the Segment List";
+          type uint8;
+        }
+        leaf metric-type {
+          description
+            "Metric type used for segment-list computation";
+          type enumeration {
+            enum igp {
+              value 1;
+            }
+            enum te {
+              value 2;
+            }
+          }
+        }
+        leaf secondary-srlg {
+          description
+            "If SRLG constraints are taken into account while computing Secondary Segment List";
+          type boolean;
+        }
+      }
+    }
+    uses computed-hops;
+  }
+
+  grouping last-pce-update {
+    container last-pce-update {
+      leaf time {
+        config false;
+        description
+          "Indicates the system time when the last update occured.";
+        type srl_nokia-comm:date-and-time;
+      }
+      leaf update-id {
+        config false;
+        description
+          "Indicates the last update ID which was processed.";
+        type uint32;
+      }
+      leaf state {
+        config false;
+        description
+          "Indicates whether the last update was successful or failed.";
+        type enumeration {
+          enum success {
+            value 0;
+          }
+          enum failure {
+            value 1;
+          }
+        }
+      }
+      leaf failure-reason {
+        config false;
+        description
+          "Indicates the reason code for last MBB failure.";
+        type segment-list-invalid-reason-type;
+      }
+    }
+  }
+
+  grouping bfd-state {
+    container bfd {
+      leaf bfd-state {
+        config false;
+        description
+          "The current state of the BFD session on the LSP path.";
+        type enumeration {
+          enum not-applicable {
+            value 0;
+          }
+          enum down {
+            value 1;
+          }
+          enum up {
+            value 2;
+          }
+        }
+      }
+      leaf bfd-wait-for-up-expiry {
+        config false;
+        description
+          "The time in seconds left to wait for the bfd session to be up.";
+        type srl_nokia-comm:date-and-time-delta;
+      }
+      leaf session-request-id {
+        config false;
+        description
+          "Id used for BFD session request.";
+        type uint32;
+      }
+    }
+  }
+
+  grouping computed-hops {
+    container computed-hops {
+      list hop {
+        key "hop-index";
+        leaf hop-index {
+          type uint8;
+          description
+            "Index to enumerate the different segments in a segment-list";
+        }
+        leaf hop-type {
+          config false;
+          description
+            "Hop type.";
+          type enumeration {
+            enum ipv4 {
+              value 1;
+            }
+            enum ipv6 {
+              value 2;
+            }
+            //enum as-number { value 3; }//not-supported
+            enum unnum {
+              value 4;
+            }
+          }
+        }
+        leaf ip-address {
+          config false;
+          description
+            "IP Address for this hop.";
+          type srl_nokia-comm:ip-address;
+        }
+        leaf is-loose {
+          config false;
+          description
+            "Indicates if this tunnel hop is loose.";
+          type boolean;
+        }
+        leaf unnumbered-if-id {
+          config false;
+          description
+            "The value of unnumbered interface identifier of this hop.";
+          type uint32;
+        }
+        leaf router-id {
+          config false;
+          description
+            "The value of router ID.";
+          type uint64;
+        }
+        container sid-value {
+          leaf mpls-label {
+            description
+              "Label recorded for this hop.";
+            type uint32;
+          }
+        }
+        leaf sid-type {
+          config false;
+          description
+            "Type of Segment Identifier (SID).";
+          type enumeration {
+            enum not-applicable {
+              value 1;
+            }
+            enum node-sid {
+              value 2;
+            }
+            enum adjacency-sid {
+              value 3;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -852,12 +1196,12 @@ module srl_nokia-te-policies {
       description
         "The candidate path type.
 
-        One of the following values:
-        -  best: the policy is the best valid path but it does not have a protection policy with SBFD enabled
-        -  primary: the policy is the best valid path and it has a protection policy with SBFD enabled
-        -  secondary: the policy is the second best valid path and it has a protection policy with SBFD enabled
-        -  tertiary: the policy is the third best valid path and it has a protection policy with SBFD enabled
-        -  other: the policy is any other path";
+         One of the following values:
+         -  best: the policy is the best valid path but it does not have a protection policy with SBFD enabled
+         -  primary: the policy is the best valid path and it has a protection policy with SBFD enabled
+         -  secondary: the policy is the second best valid path and it has a protection policy with SBFD enabled
+         -  tertiary: the policy is the third best valid path and it has a protection policy with SBFD enabled
+         -  other: the policy is any other path";
     }
     leaf valid {
       config false;
@@ -871,11 +1215,11 @@ module srl_nokia-te-policies {
       description
         "The reason why the candidate path is invalid.
 
-        One of the following values:
-        -  admin-disabled: the candidate path is administratively disabled
-        -  no-valid-segment-list: the candidate path has no valid segment lists
-        -  binding-sid-failed: no free labels in the label-range or ILM programming failed
-        -  tunnel-programming-failed: programming failed due to exhaustion of tunnel, NHLFE or other datapath resources";
+         One of the following values:
+         -  admin-disabled: the candidate path is administratively disabled
+         -  no-valid-segment-list: the candidate path has no valid segment lists
+         -  binding-sid-failed: no free labels in the label-range or ILM programming failed
+         -  tunnel-programming-failed: programming failed due to exhaustion of tunnel, NHLFE or other datapath resources";
     }
     leaf protection-available {
       config false;
@@ -883,12 +1227,19 @@ module srl_nokia-te-policies {
       description
         "True when this (primary) candidate path is protected by another pre-programmed candidate path.
 
-        For a primary path to be protected all of the following conditions must be met:
-        -  the primary path is bound to a protection-policy with seamless-bfd set to true
-        -  there is a secondary path with a protection-policy having seamless-bfd set to true and the associated SBFD session is currently up OR there is a tertiary path with a protection-policy having seamless-bfd set to true and the associated SBFD session is currently up";
+         For a primary path to be protected all of the following conditions must be met:
+         -  the primary path is bound to a protection-policy with seamless-bfd set to true
+         -  there is a secondary path with a protection-policy having seamless-bfd set to true and the associated SBFD session is currently up OR there is a tertiary path with a protection-policy having seamless-bfd set to true and the associated SBFD session is currently up";
+    }
+    leaf last-oper-state-change {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time elapsed since the last operational state change for the Traffic Engineering Policy";
     }
   }
-    grouping dynamic-segment-lists {
+
+  grouping dynamic-segment-lists {
     list segment-list {
       key "segment-list-index";
       leaf segment-list-index {
@@ -898,37 +1249,33 @@ module srl_nokia-te-policies {
         description
           "Index to enumerate the different segment lists.";
       }
-      list segment {
-        key "segment-index";
-        leaf segment-index {
-          type uint8;
-          description
-            "Index to enumerate the different segments in a segment-list";
-        }
-        container segment-type-a {
-          description
-            "Segment identified by MPLS label";
-          leaf sid-value {
-            type srl_nokia-comm:mpls-label-non-reserved;
-            description "MPLS label value";
-          }
-        }
-      }
-      leaf segment-list-type {
-          config false;
-          type enumeration {
-              enum primary        { value 0; }
-              enum secondary      { value 1; }
-              enum standby        { value 2; }
-          }
-          description
-              "Segment-list type: primary, standby or secondary
-              Standby is programmed in datapath, consumes resources and is ready for a failover any time. Secondary is programmed upon failure of the previous active";
-      }
+      uses segments-state;
+      uses segment-list-oper-state-group;
       uses segment-list-state;
     }
   }
-  grouping segment-list-state {
+
+  grouping segments-state {
+    list segment {
+      key "segment-index";
+      leaf segment-index {
+        type uint8;
+        description
+          "Index to enumerate the different segments in a segment-list";
+      }
+      container segment-type-a {
+        description
+          "Segment identified by MPLS label";
+        leaf sid-value {
+          type srl_nokia-comm:mpls-label-non-reserved;
+          description
+            "MPLS label value";
+        }
+      }
+    }
+  }
+
+  grouping segment-list-oper-state-group {
     leaf oper-state {
       config false;
       type segment-list-oper-state;
@@ -941,20 +1288,202 @@ module srl_nokia-te-policies {
       description
         "The reason why the segment list is invalid.
 
-        One of the following values:
-        -  unresolved-first-segment: the first SID (MPLS label value) cannot be resolved into one or more outgoing interface(s) and next-hop(s)
-        -  unresolved-named-path: the most recent query to TEDB about the named path (triggered by periodic re-optimization or initially) indicated that the named path is not viable";
+         One of the following values:
+         -  unresolved-first-segment: the first SID (MPLS label value) cannot be resolved into one or more outgoing interface(s) and next-hop(s)
+         -  unresolved-named-path: the most recent query to TEDB about the named path (triggered by periodic re-optimization or initially) indicated that the named path is not viable";
     }
-    leaf sbfd-session-id {
+    leaf last-oper-state-change {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time elapsed since the last opertional state change for the segment-list";
+    }
+    leaf oper-state-change-count {
       config false;
       type uint32;
       description
-        "Sessions ID used to associate segement list to seamless-BFD session";
+        "Traffic Engineering Policy segment-list operational state change count
+         Operational status trnasition from up to down, down to up, etc all accounted under this counter";
+    }
+  }
+
+  grouping segment-list-state {
+    leaf segment-list-type {
+      config false;
+      type enumeration {
+        enum primary {
+          value 0;
+        }
+        enum secondary {
+          value 1;
+        }
+        enum standby {
+          value 2;
+        }
+      }
+      description
+        "Segment-list type: primary, standby or secondary
+         Standby is programmed in datapath, consumes resources and is ready for a failover any time. Secondary is programmed upon failure of the previous active";
+    }
+    leaf pce-report {
+      description
+        "PCE Reporting for Traffic Engineering Policy Segment-list";
+      type boolean;
+    }
+    leaf pce-control {
+      description
+        "PCE Control status for Traffic Engineering Policy Segment-list";
+      type boolean;
+    }
+    leaf segment-list-preference {
+      description
+        "Segment List preference for a given list under Traffic Engineering Policy";
+      type uint8;
+    }
+    leaf named-path {
+      description
+        "Named-path used for instantiating Segment List under Traffic Engineering Policy";
+      type srl_nokia-comm:name;
+    }
+    leaf metric {
+      description
+        "Metric of a given Segment List";
+      type uint32;
+    }
+    leaf lsp-id {
+      config false;
+      type uint32;
+      description
+        "Unique internal identifier of segment-list";
+    }
+    // Alp: to be postponed till oper-state is finalized
+    //    leaf transition-count {
+    //      config false;
+    //      type uint32;
+    //      description
+    //        "Number of up-to-down and down-to-up transitions for the segment-list";
+    //    }
+    leaf retry-attempts {
+      config false;
+      type uint32;
+      description
+        "Number of unsuccessful attempts made to signal the segment-list";
+    }
+    leaf last-retry-attempt {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time elapsed since the last retry attempt to re-established the segment-list";
+    }
+    leaf last-reoptimization-attempt {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time elapsed since last path re-optimization attempt on the segment-list";
+    }
+    leaf next-retry-attempt {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time remaining for next retry attempt to re-established the segment-list";
+    }
+    leaf next-reoptimization-attempt {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time remaining for next path re-optimization attempt on the segment-list";
+    }
+    leaf path-computation-requests {
+      config false;
+      type uint32;
+      description
+        "Number of path computation requests made for the segment-list";
+    }
+    uses bfd-state;
+    uses dynamic-state;
+    uses mbb-state;
+  }
+
+  grouping mbb-state {
+    container mbb {
+      config false;
+      description
+        "The make-before-break operational information.";
+      container last-mbb {
+        description
+          "The last make-before-break operational information.";
+        leaf type {
+          description
+            "Indicates the type of the make-before-break (MBB) that is in progress.";
+          type enumeration {
+            enum none {
+              value 0;
+            }
+            enum timer-based-reoptimization {
+              value 1;
+            }
+            enum manual-resignal {
+              value 2;
+            }
+            enum pce-update {
+              value 3;
+            }
+          }
+        }
+        leaf state {
+          description
+            "Indicates whether the last make-before-break was successful or failed.";
+          type enumeration {
+            enum success {
+              value 0;
+            }
+            enum failure {
+              value 1;
+            }
+          }
+        }
+        leaf end-time {
+          description
+            "Specifies the system time when the last MBB ended.";
+          type srl_nokia-comm:date-and-time;
+        }
+        leaf failed-reason {
+          description
+            "Indicates the reason code for last MBB failure.";
+          type segment-list-invalid-reason-type;
+        }
+      }
+      container in-progress-mbb {
+        description
+          "The in progress make-before-break operational information.";
+        leaf type {
+          description
+            "Indicates the type of the make-before-break (MBB) that is in progress.";
+          type enumeration {
+            enum none {
+              value 0;
+            }
+            enum timer-based-reoptimization {
+              value 1;
+            }
+            enum manual-resignal {
+              value 2;
+            }
+            enum pce-update {
+              value 3;
+            }
+          }
+        }
+        leaf start-time {
+          description
+            "Indicates the system time when the in-progress MBB started.";
+          type srl_nokia-comm:date-and-time;
+        }
+      }
     }
   }
 
   augment "/srl_nokia-netinst:network-instance" {
     uses te-policies-top;
   }
-
 }

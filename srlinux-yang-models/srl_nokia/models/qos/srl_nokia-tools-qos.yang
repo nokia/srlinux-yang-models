@@ -19,6 +19,10 @@ module srl_nokia-tools-qos {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -48,11 +52,50 @@ module srl_nokia-tools-qos {
       "SRLinux 19.11.1";
   }
 
+  container qos {
+    if-feature "not srl-feat:platform-7220-d1";
+    container interfaces {
+      if-feature "srl-feat:openconfig-qos";
+      presence "Enables configuration of QoS parameters for the interface";
+      description
+        "Interfaces and subinterfaces with QoS configuration and state";
+      list interface {
+        key "interface-id";
+        description
+          "List of interfaces and subinterfaces referenced by QoS policies.";
+        leaf interface-id {
+          type string;
+          description
+            "Identifier for the interface or subinterface.";
+        }
+        container input {
+            if-feature "srl-feat:future-0-0";
+        }
+        container output {
+          container queues {
+            list queue {
+              key "queue-name";
+              leaf queue-name {
+                type string;
+                description
+                  "The queue name";
+              }
+              container queue-statistics {
+                leaf clear {
+                  type empty;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   grouping tools-qos-intf-top {
     container qos {
       container output {
         container queue-statistics {
-          if-feature "not srl-feat:platform-7220-d1";
           leaf clear {
             type empty;
           }
@@ -74,30 +117,15 @@ module srl_nokia-tools-qos {
     }
   }
 
+  augment "/srl_nokia-tools-if:interface" {
+    uses tools-qos-intf-top {
+        if-feature "not (srl-feat:platform-7220-d1 or srl-feat:future-0-0)";
+    }
+  }
+
   grouping tools-qos-subif-top {
     container qos {
       container input;
-      container output {
-        container queue-statistics {
-          if-feature "srl-feat:future-0-0";
-          leaf clear {
-            type empty;
-          }
-          list queue {
-            description
-              "List of queues";
-            key "queue-name";
-            leaf queue-name {
-              type string;
-              description
-                "The queue name";
-            }
-            leaf clear {
-              type empty;
-            }
-          }
-        } //queue-statistics
-      }
     }
   }
 
@@ -105,7 +133,4 @@ module srl_nokia-tools-qos {
     uses tools-qos-subif-top;
   }
 
-  augment "/srl_nokia-tools-if:interface" {
-    uses tools-qos-intf-top;
-  }
 }

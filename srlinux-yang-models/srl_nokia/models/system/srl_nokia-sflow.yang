@@ -20,6 +20,9 @@ module srl_nokia-sflow {
   import srl_nokia-network-instance {
     prefix srl-netinst;
   }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
 
   organization
     "Nokia";
@@ -31,6 +34,10 @@ module srl_nokia-sflow {
     "This yang file gives a description of sflow-agent
      configuration.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -83,7 +90,7 @@ module srl_nokia-sflow {
         }
         leaf collector-address {
           srl_nokia-ext:show-importance "high";
-          type srl_nokia-comm:ip-address;
+          type srl_nokia-comm:ipv4-address;
           description
             "The IP address for an sFlow collector";
         }
@@ -100,7 +107,7 @@ module srl_nokia-sflow {
         }
         leaf source-address {
           srl_nokia-ext:show-importance "high";
-          type srl_nokia-comm:ip-address;
+          type srl_nokia-comm:ipv4-address;
           must 'not(boolean(../../source-address))' {
             error-message "Should not have source-address configured at sflow context";
           }
@@ -146,6 +153,18 @@ module srl_nokia-sflow {
           "Specify sFlow sample size
 
            This value specifies the number of bytes the sFlow agent samples from each frame.";
+      }
+      leaf dscp {
+        srl_nokia-ext:show-importance "high";
+        if-feature srl-feat:sflow-collector-dscp;
+        type uint8{
+            range "0..63";
+        } 
+        default "0";
+        description
+          "Specify sFlow DSCP value
+
+           This value specifies the DSCP value used in IP header of samples sent to the associated collectors.";
       }
       container statistics {
         config false;

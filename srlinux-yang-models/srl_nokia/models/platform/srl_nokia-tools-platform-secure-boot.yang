@@ -20,6 +20,10 @@ module srl_nokia-tools-platform-secure-boot {
   description
     "Model for operational commands for Platform Trust: Secure Boot.";
     
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -29,74 +33,63 @@ module srl_nokia-tools-platform-secure-boot {
     container secure-boot {
       if-feature "srl-feat:secure-boot";
       description
-        "Secure Boot operational commands";      
-      container activate {
-        if-feature "srl-feat:secure-boot-field-activated";
+        "Secure Boot operational commands";
+      list control {
         description
-          "Activate Secure Boot";           
-        leaf serial-number {
+          "Operational commands related Secure Boot for control modules";
+        key "slot";
+        leaf slot {
           type string;
-          description
-            "Indicates the serial-number of the control module";
-        }
-        leaf confirmation-code {
-          type string;
-          description
-            "Indicates the secure-boot command confirmation-code";
-        }
-        leaf control {
-          type string {
-            pattern 'A|B';
-          }
           description
             "Slot identifier for the control module";
         }
-      }
-      container update {
-        description
-          "Update UEFI Secure Boot authorized database (db), Key Exchange Key (KEK), Platform Key (PK)";
-        leaf serial-number {
-          type string;
+        container activate {
+          if-feature "srl-feat:secure-boot-field-activated";
           description
-            "Indicates the serial-number of the control module";
+            "Activate Secure Boot";           
+          leaf serial-number {
+            type string;
+            description
+              "Indicates the serial-number of the control module";
+          }
+          leaf confirmation-code {
+            type string;
+            description
+              "Indicates the secure-boot command confirmation-code";
+          }
         }
-        leaf confirmation-code {
-          type string;
+        container update {
           description
-            "Indicates the secure-boot command confirmation-code";
-        }
-        leaf url {
+            "Update UEFI Secure Boot authorized database (db), Key Exchange Key (KEK), Platform Key (PK)";
+          leaf serial-number {
+            type string;
+            description
+              "Indicates the serial-number of the control module";
+          }
+          leaf confirmation-code {
+            type string;
+            description
+              "Indicates the secure-boot command confirmation-code";
+          }
+          leaf url {
             type string;
             description
               "Indicates the absolute URL location of the Modification Dataset that contains UEFI variable updates";
+          }        
         }
-        leaf control {
-          type string {
-            pattern 'A|B';
-          }
+        container revoke {
           description
-            "Slot identifier for the control module";
-        }        
-      }
-      container revoke {
-        description
           "Update UEFI Secure Boot forbidden database (dbx)";
-        leaf serial-number {
-          type string;
-          description
-            "Indicates the serial-number of the control module";
-        }
-        leaf confirmation-code {
-          type string;
-          description
-            "Indicates the secure-boot command confirmation-code";
-        }
-        leaf control {
-          type string {
-            pattern 'A|B';
+          leaf serial-number {
+            type string;
+            description
+              "Indicates the serial-number of the control module";
           }
-          description
-            "Slot identifier for the control module";
+          leaf confirmation-code {
+            type string;
+            description
+              "Indicates the secure-boot command confirmation-code";
+          }
         }
       }
     }

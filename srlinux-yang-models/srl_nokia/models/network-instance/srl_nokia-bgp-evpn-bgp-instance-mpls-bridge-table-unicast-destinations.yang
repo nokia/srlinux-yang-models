@@ -20,6 +20,10 @@ module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
   description
     "Model for bridge-table unicast destinations on the bgp-evpn mpls instance";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -176,7 +180,7 @@ module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
   grouping evpn-mpls-bridge-table-unicast-destinations-destination-top {
     list destination {
       config false;
-      key "tep evi-label";
+      key "tep evi-label tunnel-id";
       leaf tep {
         srl_nokia-ext:show-importance high;
         type srl_nokia-comm:ip-address;
@@ -188,6 +192,12 @@ module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
         srl_nokia-ext:show-importance "high";
         description 
           "EVI label of the destination.";
+      }
+      leaf tunnel-id {
+        type uint64;
+        srl_nokia-ext:show-importance "high";
+        description 
+          "tunnel identitier of the destination.";
       }
       leaf destination-index {
         type uint64;
@@ -199,7 +209,6 @@ module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
         srl_nokia-ext:show-importance "high";
         type enumeration {
           enum "no-destination-index";
-          enum "egress-label-allocation-failure";
         }
         description 
            "The reason why the evpn-mpls destination is not programmed.";
@@ -208,10 +217,10 @@ module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
       uses evpn-mpls-bridge-table-mac-table-top;
     }
   }
-  grouping evpn-mpls-bridge-table--es-destination-next-hops-top {
+  grouping evpn-mpls-bridge-table-es-destination-next-hops-top {
     list destination {
       config false;
-      key "tep evi-label";
+      key "tep evi-label tunnel-id";
       leaf tep {
         srl_nokia-ext:show-importance high;
         type srl_nokia-comm:ip-address;
@@ -222,7 +231,13 @@ module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
         type srl_nokia-comm:mpls-label-non-reserved;
         srl_nokia-ext:show-importance "high";
         description 
-          "EVI label of the destination.";
+          "EVI label of this next-hop.";
+      }
+      leaf tunnel-id {
+        type uint64;
+        srl_nokia-ext:show-importance "high";
+        description 
+          "tunnel identitier of the next-hop.";
       }
     }
   }
@@ -243,7 +258,7 @@ module srl_nokia-bgp-evpn-bgp-instance-mpls-bridge-table-unicast-destinations {
         description
           "A system-wide unique identifier of this evpn-mpls destination object (system allocated).";
       }
-      uses evpn-mpls-bridge-table--es-destination-next-hops-top;
+      uses evpn-mpls-bridge-table-es-destination-next-hops-top;
       uses evpn-mpls-unicast-bridge-table-statistics-top;
       uses evpn-mpls-bridge-table-mac-table-top;
     }

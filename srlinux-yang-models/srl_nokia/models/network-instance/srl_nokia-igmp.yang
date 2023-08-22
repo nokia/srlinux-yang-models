@@ -31,6 +31,10 @@ module srl_nokia-igmp {
   description
     "This yang file models configuration and state of the igmp protocol";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -97,7 +101,7 @@ module srl_nokia-igmp {
       description
         "Start of the group range.";
       must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*'))" {
-        error-message "Not a valid IPv4 multicast addres";
+        error-message "Not a valid IPv4 multicast address";
       }
       must "not ((. >= '224.0.0.0') and (. <= '224.0.0.255'))" {
         error-message "Must not be in the reserved multicast address range 224.0.0.0 to 224.0.0.255";
@@ -108,7 +112,7 @@ module srl_nokia-igmp {
       description
         "End of the group range.";
       must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*'))" {
-        error-message "Not a valid IPv4 multicast addres";
+        error-message "Not a valid IPv4 multicast address";
       }
       must "not ((. >= '224.0.0.0') and (. <= '224.0.0.255'))" {
         error-message "Must not be in the reserved multicast address range 224.0.0.0 to 224.0.0.255";
@@ -145,7 +149,7 @@ module srl_nokia-igmp {
               description
                 "Multicast source address";
               must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
-                error-message "Not a valid IPv4 unicast addres";
+                error-message "Not a valid IPv4 unicast address";
               }
             }
           }
@@ -169,7 +173,9 @@ module srl_nokia-igmp {
           leaf name {
             description
               "Trace for interface with this name";
-            type srl_nokia-comm:subinterface-all;
+            type leafref {
+              path "../../../../../interface/interface-name";
+            }
           }
           leaf all {
             description
@@ -251,7 +257,9 @@ module srl_nokia-igmp {
             leaf name {
               description
                 "Trace for interface with this name";
-              type srl_nokia-comm:subinterface-all;
+              type leafref {
+                path "../../../../interface/interface-name";
+              }
             }
             leaf all {
               description
@@ -410,7 +418,7 @@ module srl_nokia-igmp {
                 description
                   "Multicast source address";
                 must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
-                  error-message "Not a valid IPv4 unicast addres";
+                  error-message "Not a valid IPv4 unicast address";
                 }
               }
             }
@@ -808,20 +816,12 @@ module srl_nokia-igmp {
           list forwarding-interface {
             config false;
             key "interface-name";
-            leaf interface-name {
-              description
-                "Name of the interface on which this source is forwarded";
-              type string;
-            }
+            uses igmp-interface-key;
           }
           list blocked-interface {
             config false;
             key "interface-name";
-            leaf interface-name {
-              description
-                "Name of the interface on which this source is blocked";
-              type string;
-            }
+            uses igmp-interface-key;
           }
         }
       }

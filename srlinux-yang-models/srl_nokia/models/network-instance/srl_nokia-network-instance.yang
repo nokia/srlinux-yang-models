@@ -15,6 +15,7 @@ module srl_nokia-network-instance {
   import srl_nokia-bridge-table-mac-duplication { prefix srl_nokia-bridge-table-mac-duplication; }
   import srl_nokia-bridge-table-mac-limit { prefix srl_nokia-bridge-table-mac-limit; }
   import srl_nokia-bridge-table-shg { prefix srl_nokia-bridge-table-shg; }
+  import srl_nokia-connection-point { prefix srl_nokia-connection-point; }
   import srl_nokia-extensions { prefix srl_nokia-ext; }
   import srl_nokia-features { prefix srl-feat; }
   import srl_nokia-routing-policy { prefix srl-rpol; }
@@ -28,6 +29,10 @@ module srl_nokia-network-instance {
   description
     "This yang file gives a description of a network-instance. This may be a Layer 3 forwarding construct such as a virtual routing and forwarding (VRF) instance, or a Layer 2 instance such as a virtual switch instance (VSI). Mixed Layer 2 and Layer 3 instances are also supported.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -66,7 +71,9 @@ module srl_nokia-network-instance {
   }
 
   typedef network-instance-subintf-name {
-    type string;
+    type string {
+      length "1..255";
+    }
     description
       "User defined name or reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
   }
@@ -108,6 +115,13 @@ module srl_nokia-network-instance {
     base ni-type;
     description
       "A private Layer 2 only switching instance.";
+  }
+
+  identity vpws {
+    if-feature srl-feat:vpws;
+    base ni-type;
+    description
+      "A private Layer 2 point-to-point instance.";
   }
 
   grouping network-instance-top {
@@ -174,6 +188,23 @@ module srl_nokia-network-instance {
            When the mac-vrf has an associated irb subinterface, if the configured irb ip-mtu exceeds the oper-mac-vrf-mtu minus 14 bytes (Ethernet header), then the irb subinterface will remain operationally down. 
 
            The oper-mac-vrf-mtu is only available in mac-vrf network-instances.";
+      }
+
+      leaf oper-vpws-mtu {
+        if-feature "srl-feat:vpws";
+        config false;
+        type uint16 {
+          range "1492..9500";
+        }
+        units bytes;
+        description
+          "Operational l2-mtu of the vpws network-instance
+
+           Derived from the l2-mtu of the bridged subinterface
+           associated to the vpws, minus the vlan tags associated
+           to that subinterface.
+
+           The oper-vpws-mtu is only available in vpws network-instances.";
       }
 
       leaf description {
@@ -469,6 +500,15 @@ module srl_nokia-network-instance {
             "network instance allocated sub interface index";
         }
         uses interface-bridge-table-top;
+        leaf connection-point {
+          if-feature "srl-feat:connection-point";
+          type leafref { 
+            path "../../srl_nokia-netinst:connection-point/srl_nokia-netinst:name"; 
+          }
+          must "not(starts-with(.,'irb'))" { 
+            error-message "connection-point not allowed on IRB interfaces";
+          }
+        }
       }
       container system-ipv4-address {
         config false;
@@ -602,6 +642,10 @@ module srl_nokia-network-instance {
       container tunnel-table {
           config false;
       }
+      container multicast-forwarding-information-base {
+          config false;
+      }
+      uses srl_nokia-connection-point:connection-point-top;
     }
   }
 

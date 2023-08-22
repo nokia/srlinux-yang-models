@@ -29,6 +29,10 @@ module srl_nokia-isis {
     description
         "This yang file models configuration and state of the IS-IS protocol";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -563,6 +567,163 @@ module srl_nokia-isis {
         }
     }
 
+    grouping isis-instance-lfa {
+        container loopfree-alternate {
+            description
+              "Loopfree-alternate related context for the instance.";
+
+            leaf admin-state {
+                description
+                    "When set, loopfree-alternate protection is enabled for 
+                     the ISIS instance. Enables ability to seek for LFA, 
+                     doesn't guarantee LFA protection.";
+                type srl_nokia-comm:admin-state;
+                default "disable";
+                must "(. = 'disable') or (../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                    error-message "LFA is supported only in the default network instance";
+                }
+            }
+
+            leaf augment-route-table {
+                description
+                  "Extend remote LFA next-hop resolution path entry to RTM 
+                   such that tunnel can be used in SPF decisions";
+                type boolean;
+                default false;
+            }
+ 
+            container exclude {
+                description 
+                  "Set the exclude context for LFA SPF computation";
+
+                leaf-list prefix-policy {
+                    description 
+                      "Policy to exclude prefixes from LFA SPF calculation";
+                    type leafref {
+                        path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+                    }
+                    max-elements 5;
+                    ordered-by user;
+                }
+            }
+
+            container multi-homed-prefix {
+                description
+                  "Multi-homed-prefix context";
+
+                leaf admin-state {
+                    description
+                      "When set, multi-homed prefix context is enabled for 
+                      the ISIS instance";
+                    type srl_nokia-comm:admin-state;
+                    default "disable";
+                    must "(. = 'disable') or (../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "LFA related configuration is only supported in the default network instance";
+                    }
+                }
+
+                leaf preference {
+                    description
+                      "Backup preference of a multi-homed prefix";
+                    type enumeration {
+                        enum "none" {
+                            value 0;
+                        }
+                        enum "all" {
+                            value 1;
+                        }
+                    }
+                    default "none";
+                }
+            }
+
+            container remote-lfa {
+                description "Remote LFA context";
+
+                leaf admin-state {
+                    description
+                      "When set, remote lfa protection is enabled for the 
+                       ISIS instance. Enables ability to seek for an eligible 
+                       remote-LFA node (P,Q intersection), doesn't guarantee
+                       existance of remote-LFA protection.";
+                    type srl_nokia-comm:admin-state;
+                    default "disable";
+                    must "(. = 'disable') or (../../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "RLFA is supported only in the default network instance";
+                    }
+                }
+
+                leaf max-pq-cost {
+                    description
+                      "Maximum cost of destination node during reverse SPF calculation";
+                    type uint32;
+                    default "4261412864";
+                }
+
+                container node-protect {
+                    description
+                      "Node protect context";
+
+                    leaf admin-state {
+                        description
+                          "When set, the IS-IS instance enables node protection 
+                           using remote lfa. Remote LFA seeks for a viable P,Q 
+                           intersection that can protect against node failures.";
+                        type srl_nokia-comm:admin-state;
+                        default "disable";
+                    }
+
+                    leaf max-pq-nodes {
+                        description 
+                          "Maximum number of PQ nodes found in the LFA SPFs. 
+                           Value 0 disables node protect";
+                        type uint32 {
+                            range "1..32"; 
+                        }
+                        default "16";
+                    }
+                }
+            }
+
+            container ti-lfa {
+                description "ti-lfa context";
+
+                leaf admin-state {
+                    description
+                      "When set, ti-lfa protection is enabled for the ISIS instance. 
+                       ti-LFA seeks for a viable P,Q intersection based on 
+                       constraints including max ti-lfa labels.";
+                    type srl_nokia-comm:admin-state;
+                    default "disable";
+                    must "(. = 'disable') or (../../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+                        error-message "TI-LFA is supported only in the default network instance";
+                    }
+                }
+
+                leaf max-sr-policy-lfa-labels {
+                    description
+                      "Maximum number of labels the TI-LFA backup path can use";
+                    type uint32 {
+                        range "0..3";
+                    }
+                    default "2";
+                }
+            
+                container node-protect {
+                    description "Node-protect context";
+
+                    leaf admin-state {
+                        description
+                          "When set to enabled, the IS-IS instance 
+                           enables ti-lfa node protection.";
+                        type srl_nokia-comm:admin-state;
+                        default "disable";
+                    }
+                }
+            }
+        }
+    }
+
     grouping isis-interface-authentication {
         container authentication {
             description
@@ -637,27 +798,6 @@ module srl_nokia-isis {
                 range "0..127";
             }
             default "64";
-        }
-
-        container weighted-ecmp {
-            leaf load-balancing-weight {
-                description
-                    "The load-balancing weight of the interface, which applies when weighted ECMP is enabled and the interface is part of a multipath set.";
-                type union {
-                    type uint32 {
-                        range "1..4294967295";
-                    }
-                    type enumeration {
-                        enum "auto" {
-                            description "Load-balancing weight is based on the bandwidth of the parent interface (port or LAG)";
-                        }
-                        enum "none" {
-                            description "The interface should not participate in weighted ECMP";
-                        }
-                    }
-                }
-                default "auto";
-            }
         }
 
         container timers {
@@ -765,6 +905,14 @@ module srl_nokia-isis {
         leaf passive {
             description
               "When set to true the interface is configured as a passive interface and does not send IIH PDUs or try to form an adjacency with other routers.";
+            type boolean;
+            default false;
+        }
+
+        leaf loopfree-alternate-exclude {
+            if-feature srl-feat:isis-lfa;
+            description
+                "Enable/disable Loopfree Alternative at interface level.";
             type boolean;
             default false;
         }
@@ -891,7 +1039,7 @@ module srl_nokia-isis {
                                     
                        The (primary) IPv4 address of this interface is advertised as a prefix SID with the node-SID flag set. The associated label is derived from the label index configured in this container.";
 
-                    must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo'))" {
+                    must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo'))" {
                         error-message "The node SID can only be associated with the system0.0 or loopback subinterface";
                     }
 
@@ -917,7 +1065,7 @@ module srl_nokia-isis {
                                     
                        The (primary) IPv6 address of this interface is advertised as a prefix SID with the node-SID flag set. The associated label is derived from the label index configured in this container.";
 
-                    must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo'))" {
+                    must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo'))" {
                         error-message "The node SID can only be associated with the system0.0 or loopback subinterface";
                     }
 
@@ -943,7 +1091,7 @@ module srl_nokia-isis {
                       "The IPv4 adjacency SID associated with the interface";
                     uses adj-sid-common;
 
-                    must "not((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')))" {
+                    must "not((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))" {
                         error-message "The adjacency sid cannot be associated with the system0.0 or loopback subinterface";
                     }
                 }
@@ -955,10 +1103,32 @@ module srl_nokia-isis {
                       "The IPv6 adjacency SID associated with the interface";
                     uses adj-sid-common;
 
-                    must "not((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')))" {
+                    must "not((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))" {
                         error-message "The adjacency sid cannot be associated with the system0.0 or loopback subinterface";
                     }
                 }
+            }
+        }
+
+        container weighted-ecmp {
+            if-feature srl-feat:isis-ucmp;
+            leaf load-balancing-weight {
+                description
+                    "The load-balancing weight of the interface, which applies when weighted ECMP is enabled and the interface is part of a multipath set.";
+                type union {
+                    type uint32 {
+                        range "1..4294967295";
+                    }
+                    type enumeration {
+                        enum "auto" {
+                            description "Load-balancing weight is based on the bandwidth of the parent interface (port or LAG)";
+                        }
+                        enum "none" {
+                            description "The interface should not participate in weighted ECMP";
+                        }
+                    }
+                }
+                default "auto";
             }
         }
 
@@ -988,7 +1158,7 @@ module srl_nokia-isis {
             if-feature srl-feat:isis-mi;
             description
                 "ISIS instance number";
-            type uint64 {
+            type uint32 {
                 range "0..127";
             }
             default 0;
@@ -1019,6 +1189,7 @@ module srl_nokia-isis {
         }
 
         container weighted-ecmp {
+            if-feature srl-feat:isis-ucmp;
             leaf admin-state {
                 description
                     "Setting enable triggers weighted ECMP programming for all eligible multipath IS-IS routes associated with the instance
@@ -1030,14 +1201,17 @@ module srl_nokia-isis {
                 default "disable";
             }
             leaf max-ecmp-hash-buckets-per-next-hop-group {
-                type uint8 {
-                  range "1..128";
-                }
-                default 128;
                 description
                   "Specifies the maximum number of ECMP hash buckets per next-hop-group.
 
                   Weighted ECMP weights are normalized based on this number of hash buckets.";
+                type uint8 {
+                  range "1..128";
+                }
+                default 128;
+                must ". >= ../../max-ecmp-paths" {
+                    error-message "Hash buckets per ECMP next-hop-group cannot be less than the ECMP limit";
+                }
             }
         }
 
@@ -1422,6 +1596,10 @@ module srl_nokia-isis {
             }
         }
 
+        uses isis-instance-lfa {
+            if-feature srl-feat:isis-lfa;
+        }
+
         uses srl_nokia-te:igp-instance-te-advertisement {
           if-feature srl-feat:traffic-engineering;
         }
@@ -1436,6 +1614,14 @@ module srl_nokia-isis {
               "Specifies the metric style to be wide or narrow for the level";
             type isis-metric-style;
             default "wide";
+        }
+
+        leaf loopfree-alternate-exclude {
+            if-feature srl-feat:isis-lfa;
+            description
+              "Enable/disable LFA at ISIS level.";
+            type boolean;
+            default false;
         }
 
         container route-preference {
@@ -3287,6 +3473,7 @@ module srl_nokia-isis {
 
             list instance {
                 max-elements 1;
+
                 description
                   "List of IS-IS protocol instances associated with this 
                    network-instance.
@@ -3356,6 +3543,7 @@ module srl_nokia-isis {
                 }
 
                 list level-database {
+                    if-feature "srl-feat:isis-level-database";
                     config false;
                     description
                         "Link State database";

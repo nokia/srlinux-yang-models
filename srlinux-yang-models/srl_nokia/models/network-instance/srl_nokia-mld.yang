@@ -31,6 +31,10 @@ module srl_nokia-mld {
   description
     "This yang file models configuration and state of the mld protocol";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -100,7 +104,7 @@ module srl_nokia-mld {
         error-message "Not a valid IPv6 multicast address";
       }
       must "not (re-match(.,'[f]{2}[0-9a-f][0-3].*') or re-match(.,'[f]{2}[0-9a-f][f].*'))" {
-        error-message "Not a valid IPv6 multicast addres scope";
+        error-message "Not a valid IPv6 multicast address scope";
       }
     }
     leaf end {
@@ -111,7 +115,7 @@ module srl_nokia-mld {
         error-message "Not a valid IPv6 multicast address";
       }
       must "not (re-match(.,'[f]{2}[0-9a-f][0-3].*') or re-match(.,'[f]{2}[0-9a-f][f].*'))" {
-        error-message "Not a valid IPv6 multicast addres scope";
+        error-message "Not a valid IPv6 multicast address scope";
       }
     }
   }
@@ -177,7 +181,9 @@ module srl_nokia-mld {
           leaf name {
             description
               "Trace for interface with this name";
-            type srl_nokia-comm:subinterface-all;
+            type leafref {
+              path "../../../../../interface/interface-name";
+            }
           }
           leaf all {
             description
@@ -254,7 +260,9 @@ module srl_nokia-mld {
             leaf name {
               description
                 "Trace for interface with this name";
-              type srl_nokia-comm:subinterface-all;
+              type leafref {
+                path "../../../../interface/interface-name";
+              }
             }
             leaf all {
               description
@@ -792,20 +800,12 @@ module srl_nokia-mld {
           list forwarding-interface {
             config false;
             key "interface-name";
-            leaf interface-name {
-              description
-                "Name of the interface on which this source is forwarded";
-              type string;
-            }
+            uses mld-interface-key;
           }
           list blocked-interface {
             config false;
             key "interface-name";
-            leaf interface-name {
-              description
-                "Name of the interface on which this source is blocked";
-              type string;
-            }
+            uses mld-interface-key;
           }
         }
       }

@@ -16,6 +16,10 @@ module srl_nokia-qos-policers {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -33,7 +37,7 @@ module srl_nokia-qos-policers {
       "SRLinux 22.3.1";
   }
 
-  typedef future-violate-action {
+  typedef violate-action {
     description
       "Defines different actions when packet violate policer parameters.";
     type enumeration {
@@ -46,29 +50,6 @@ module srl_nokia-qos-policers {
         value 2;
         description
           "The violating packet will be marked as exceed.";
-      }
-    }
-  }
-
-  typedef adaptation-rule {
-    description
-      "Defines how the configured parameter (rate or buffer size) is mapped into HW defined values.";
-    default closest;
-    type enumeration {
-      enum "closest" {
-        value 1;
-        description
-           "Closest possible HW value is used.";
-      }
-      enum "lower" {
-        value 2;
-        description
-           "The configured values is aligned with closest lower HW value.";
-      }
-      enum "higher" {
-        value 3;
-        description
-           "The configured value is aligned with the closest higher HW value.";
       }
     }
   }
@@ -98,13 +79,13 @@ module srl_nokia-qos-policers {
         description
           "This container lists pre-defined threshold-separation-policies";
         config false;
-        list cir-threshold-separation-policy {
+        list threshold-separation-policy {
           description
-            "Lists configuration of pre-defined cir-threshold-separation policy";
+            "Lists configuration of pre-defined threshold-separation policy";
           key "name";
           leaf name {
             description
-              "System wide pre-defined cir-threshold-separation-policy";
+              "System wide pre-defined threshold-separation-policy name";
             type srl_nokia-comm:name;
           }
           list input-profile {
@@ -121,38 +102,12 @@ module srl_nokia-qos-policers {
                 range "0..8";
               }
               description
-                "Threshold level for the cir-bucket";
-            }
-          }
-        }
-        list pir-threshold-sepration-policy {
-          description
-            "Lists configuration of pre-defined pir-threshold-separation policy";
-          key "name";
-          leaf name {
-            description
-              "System wide pre-defined pir-threshold-separation-policy name.";
-            type srl_nokia-comm:name;
-          }
-          list input-profile {
-            description
-              "Profile of the packet.";
-            key "input-profile";
-            leaf input-profile {
-              type srl_nokia-comm:classify-profile;
-              description
-                "The profile the input packet was classified to, based on applicable classification criteria.";
-            }
-            leaf threshold {
-              type uint8 {
-                range "0..8";
-              }
-              description
-                "Threshold level for the pir-bucket.";
+                "Threshold level for the policer bucket";
             }
           }
         }
       } // container threshold-separation-policies
+
       list parent-policer-threshold-policy {
         description
           "List of policies defining parent-policer-thresholds and related parameters";
@@ -237,47 +192,47 @@ module srl_nokia-qos-policers {
           }
           container adaptation-rules {
             description
-              "Container defining adaptation rules for individal policer parameters";
+              "Container defining adaptation rules for individual policer parameters";
             leaf peak-rate {
               description
                 "Adaptation rule for peak-rate-kbps parameter";
-              type adaptation-rule;
+              type srl_nokia-comm:adaptation-rule;
               default "closest";
             }
             leaf committed-rate {
               description
                 "Adaptation rule for committed-rate-kbps parameter";
-              type adaptation-rule;
+              type srl_nokia-comm:adaptation-rule;
               default "closest";
             }
             leaf excess-rate {
               description
                 "Adaptation rule for excess-rate-kbs parameter";
-              type adaptation-rule;
+              type srl_nokia-comm:adaptation-rule;
               default "closest";
             }
             leaf maximum-burst-size {
               description
                 "Adaptation rule for maximum-burst-size parameter";
-              type adaptation-rule;
+              type srl_nokia-comm:adaptation-rule;
               default "closest";
             }
             leaf committed-burst-size {
               description
                 "Adaptation rule for committed-burst-size parameter.";
-              type adaptation-rule;
+              type srl_nokia-comm:adaptation-rule;
               default "closest";
             }
             leaf excess-burst-size {
               description
                 "Adaptation rule for excess-burst-size parameter.";
-              type adaptation-rule;
+              type srl_nokia-comm:adaptation-rule;
               default "closest";
             }
           }
           container pir-threshold-separation {
             description
-              "Container defining selection of one from pre-defined policer-threshold-separation templates.";
+              "Container defining selection of one from pre-defined policer-threshold-separation policies.";
             leaf inplus-separated {
               description
                 "Selecting a separate pir-bucket threshold for in-plus profile.";
@@ -324,7 +279,11 @@ module srl_nokia-qos-policers {
             default "0";
             description
               "The committed information rate (CIR) of the policer, defined in kilobits (1024 bits) per second.";
-            must '. <= ../peak-rate-kbps and . <= ../excess-rate-kbps' {
+            must "boolean(../peak-rate-kbps) or boolean(../excess-rate-kbps)" {
+                error-message "PIR or EIR should be configured";
+            }
+            must "not (boolean(../peak-rate-kbps) or boolean(../excess-rate-kbps)) or current() <= ../peak-rate-kbps
+                    or current() <= ../excess-rate-kbps" {
               error-message "CIR is always smaller than PIR or EIR";
             }
           }
@@ -371,7 +330,7 @@ module srl_nokia-qos-policers {
           leaf violate-action {
             description
               "Defines action when policer will evaluate the packet as violating.";
-            type future-violate-action;
+            type violate-action;
             default "drop";
           }
           leaf statistics-mode {
@@ -411,7 +370,7 @@ module srl_nokia-qos-policers {
                 "Defines peak-rate of the parent-policer";
             }
             leaf adaptation-rule {
-              type adaptation-rule;
+              type srl_nokia-comm:adaptation-rule;
               description
                 "Defines adaptation-rule for peak-rate of the parent-policer";
             }
@@ -452,18 +411,18 @@ module srl_nokia-qos-policers {
     } // policer-policies
   }
 
-  grouping future-policer-instance-state {
+  grouping policer-instance-state {
     leaf-list forwarding-class {
       config false;
       type string;
       description
         "The list of forwarding classes that map to this policer.";
     }
-    leaf pir-policer-threshold-separation-template {
+    leaf pir-policer-threshold-separation-policy {
       config false;
       type string;
       description
-        "The name of policer-threshold-separation template assigned to the policer.";
+        "The name of policer-threshold-separation policy assigned to the policer.";
     }
     leaf peak-rate-kbps {
       config false;
@@ -564,96 +523,6 @@ module srl_nokia-qos-policers {
           "The number of octets in packets discarded by the policer.
 
            Available in both statistics-modes";
-      }
-    }
-  }
-
-  grouping policer-instance-state {
-    leaf peak-rate-kbps {
-      config false;
-      type uint32;
-      units "kbps";
-      description
-        "The actual/operational peak information rate (PIR) of the policer as it is programmed into hardware.";
-    }
-    leaf committed-rate-kbps {
-      config false;
-      type uint32;
-      units "kbps";
-      description
-        "The actual/operational committed information rate (CIR) of the policer as it is programmed into hardware.";
-    }
-    leaf maximum-burst-size {
-      config false;
-      type uint32;
-      units "bytes";
-      description
-        "The actual/operational maximum PIR bucket depth in bytes as it is programmed into hardware.";
-    }
-    leaf committed-burst-size {
-      config false;
-      type uint32;
-      units "bytes";
-      description
-        "The actual/operational maximum CIR bucket depth in bytes as it is programmed into hardware.";
-    }
-    container statistics {
-      config false;
-      leaf accepted-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets that were accepted by the policer, counting all drop-probabilities at policer output
-
-           Not available in forwarding-focus mode";
-      }
-      leaf accepted-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets that were accepted by the policer, counting all drop-probabilities at policer output
-
-           Not available in forwarding-focus mode";
-      }
-      leaf violating-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets that were considered violating by the policer
-
-           Not available in forwarding-focus mode";
-      }
-      leaf violating-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets that were considered violating by the policer
-
-           Not available in forwarding-focus mode";
-      }
-      leaf committed-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets that were accepted with low drop-probability at policer output
-
-           Not available in violating-focus mode";
-      }
-      leaf committed-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets that were accepted with low drop-probability at policer output
-
-           Not available in violating-focus mode";
-      }
-      leaf exceeding-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets that were accepted with medium drop-probability at policer output
-
-           Not available in violating-focus mode";
-      }
-      leaf exceeding-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets that were accepted with medium drop-probability at policer output
-
-           Not available in violating-focus mode";
       }
     }
   }

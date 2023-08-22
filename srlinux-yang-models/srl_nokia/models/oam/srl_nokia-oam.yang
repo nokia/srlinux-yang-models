@@ -5,12 +5,6 @@ module srl_nokia-oam {
   namespace "urn:srl_nokia/oam";
   prefix "srl_nokia-oam";
 
-  import srl_nokia-extensions {
-    prefix srl-ext;
-  }
-  import srl_nokia-common {
-    prefix srl-comm;
-  }
   import srl_nokia-features { 
     prefix srl-feat; 
   }
@@ -26,22 +20,23 @@ module srl_nokia-oam {
      related to OAM (Operations, Administration and Maintenance)
      functionality.";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2021-11-30 {
     description
       "SRLinux 21.11.1";
   }
 
   container oam {
-    if-feature "srl-feat:oam";   
+    if-feature "srl-feat:oam";
     description
       "Enclosing container for OAM";
-
-    leaf-list features {
-      //srl-ext:first-released "20.6.1";
-      config false;
+    container performance-monitoring {
+      if-feature "srl-feat:oam-pm";
       description
-        "Features enabled on this platform";
-      type srl-comm:name;
+        "OAM Performance Monitoring";
     }
-  } 
+  }
 }

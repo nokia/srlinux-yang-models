@@ -8,6 +8,7 @@ module srl_nokia-ldp {
 
   import srl_nokia-common { prefix srl_nokia-comm; }
   import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-routing-policy { prefix srl-rpol; }
   import srl_nokia-system { prefix srl_nokia-system; }
   import srl_nokia-mpls-label-management { prefix srl_nokia-mplslbl; }
   import srl_nokia-features { prefix srl_nokia-feat; }
@@ -21,6 +22,10 @@ module srl_nokia-ldp {
   description
     "This YANG module defines the configuration and state components for the management of the MPLS Label Distribution Protocol (LDP).";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -307,6 +312,25 @@ module srl_nokia-ldp {
       }
     } // graceful-restart
   } // graceful-restart-config
+
+  grouping prefix-policy-config {
+      leaf export-prefix-policy {
+        if-feature srl_nokia-feat:ldp-prefix-policies;
+        description
+          "Apply an export prefix policy to filter advertised label bindings.";
+        type leafref {
+          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+        }
+      }
+      leaf import-prefix-policy {
+        if-feature srl_nokia-feat:ldp-prefix-policies;
+        description
+          "Apply an import prefix policy to filter received label bindings.";
+        type leafref {
+          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+        }
+      }
+  } // prefix-policy-config
 
   grouping ldp-peer-ref {
     description
@@ -772,7 +796,45 @@ module srl_nokia-ldp {
           "Returns the value that is being used as the LDP LSR ID. Currently, this is always the router ID of the default network-instance.";
       }
 
+      container loopfree-alternate {
+        if-feature srl_nokia-feat:ldp-lfa;
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default "disable";
+          description
+            "Administratively enable or disable Loop Free Alternates.";
+        }
+      }
+
+      list static-fec {
+        if-feature srl_nokia-feat:ldp-static-fec-pop;
+        description
+          "Configure static FEC.";
+        key fec-prefix;
+        leaf fec-prefix {
+          description
+            "Static FEC IP prefix.";
+            type srl_nokia-comm:ipv4-prefix;
+        }
+        leaf swap {
+          description
+            "Swap label. If false, label is popped.";
+          type boolean;
+          must ". = false()" {
+            error-message "Only pop operation is supported. Swap must be set to false";
+          }
+        }
+        leaf advertised-label {
+          config false;
+          description
+            "The value indicates the value of the label that was advertised to the upstream peer.";
+          type srl_nokia-comm:mpls-label-with-implicit-and-explicit-null;
+        }
+      }
+
       uses graceful-restart-config;
+
+      uses prefix-policy-config;
 
       container multipath {
         description
@@ -899,6 +961,13 @@ module srl_nokia-ldp {
               description
                 "Received label value.";
             }
+            leaf-list label-status {
+              description
+                "Label status.";
+              type enumeration {
+                enum "alternate-nh";
+              }
+            }
             leaf ingress-lsr-fec {
               description
                 "When set true, the router is an ingress LSR for the FEC.";
@@ -976,10 +1045,12 @@ module srl_nokia-ldp {
                 "The label type of the advertised label.";
             }
             leaf-list label-status {
+              description
+                "Label status.";
               type enumeration {
                 enum "released";
                 enum "withdrawn";
-                enum "withdraw-pending";
+                enum "wdraw-pending";
               }
             }
           } // advertised-prefix-fecs
@@ -1048,6 +1119,12 @@ module srl_nokia-ldp {
                    When set to false, the system interface IP address is used as the LSR ID";
                 type boolean;
                 default "false";
+              }
+              leaf enable-bfd {
+                if-feature srl_nokia-feat:ldp-bfd;
+                description "Enable BFD";
+                type boolean;
+                default false;
               }
 
               container hello-adjacencies {
@@ -1169,6 +1246,12 @@ module srl_nokia-ldp {
                    If not specified, the LSR ID is derived from the IPv4 address of the system interface";
                 type string;
               }
+              leaf enable-bfd {
+                if-feature srl_nokia-feat:ldp-bfd;
+                description "Enable BFD";
+                type boolean;
+                default false;
+              }
               uses extended-discovery-timers;
 
               container hello-adjacencies {
@@ -1268,6 +1351,9 @@ module srl_nokia-ldp {
             description
               "Reads true when the peer has sent more FECs than the configured limit.";
           }
+
+          uses prefix-policy-config;
+
           uses peer-state;
         } // list peer
       } // peers

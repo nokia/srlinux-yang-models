@@ -238,9 +238,22 @@
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/{config,state}/set-med",
-      "supported": false
-      //"srlinux": "/routing-policy/policy/statement/action/bgp/med/set",
-      //"transform" : "bgp-policy-action-med" // Support linked to feature flag routing_policy_bgp_med
+      "srlinux": "/routing-policy/policy/statement/action/bgp/med/set",
+      "type": "srl_nokia-common:bgp-set-med-type",
+      "mapping": [
+        {"IGP": "route-table-cost"},
+        {"__number__":"__number__"}
+      ],
+      "deviations": {
+        "add": {
+            "must": [
+            {
+              "expression": "not (starts-with(.,'+') or starts-with(.,'-'))",
+              "error-message": "+- med value not mapped to SRL"
+            }
+            ]
+        }
+      }
     },
     {
       "oc": "/routing-policy/policy-definitions/policy-definition/statements/statement/actions/bgp-actions/set-as-path-prepend",

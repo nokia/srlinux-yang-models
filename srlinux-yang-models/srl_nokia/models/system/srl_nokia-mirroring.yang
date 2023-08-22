@@ -23,6 +23,10 @@ module srl_nokia-mirroring {
   description
     "This module defines configuration and operational state data for mirroring (SPAN/ERSPAN).";
 
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -119,7 +123,6 @@ module srl_nokia-mirroring {
         description
           "The reason for the mirroring instance being operational down";
       }
-
       uses mirror-source-top;
       uses mirror-destination-top;
     }
@@ -293,6 +296,41 @@ module srl_nokia-mirroring {
             description
               "This leaf contains the operational state of the remote mirror tunnel";
           }
+        }
+      }
+      container statistics {
+        config false;
+        if-feature "srl-feat:trident4 or srl-feat:jericho2cp";
+
+        leaf ingress-mirrored-packets {
+          units "packets";
+          type srl-comm:zero-based-counter64;
+          description
+           "The number of ingress mirrored packets";
+        }
+
+        leaf egress-mirrored-packets {
+          if-feature "srl-feat:trident4";
+          units "packets";
+          type srl-comm:zero-based-counter64;
+          description
+           "The number of egress mirrored packets";
+        }
+
+        leaf ingress-mirrored-octets {
+          if-feature srl-feat:jericho2cp;
+          units "bytes";
+          type srl-comm:zero-based-counter64;
+          description
+            "The number of ingress mirrored octets";
+        }
+
+        leaf egress-mirrored-octets {
+          if-feature srl-feat:jericho2cp;
+          units "bytes";
+          type srl-comm:zero-based-counter64;
+          description
+            "The number of egress mirrored octets";
         }
       }
     }

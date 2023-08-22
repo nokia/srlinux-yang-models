@@ -15,6 +15,9 @@ module srl_nokia-pim {
   import srl_nokia-features {
     prefix srl_nokia-feat;
   }
+  import srl_nokia-mvpn-l3 {
+    prefix srl_nokia-mvpn;
+  }
 
   organization
     "Nokia";
@@ -25,8 +28,10 @@ module srl_nokia-pim {
   description
     "This yang file models configuration and state of the PIM protocol";
 
-  // instance
-
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -57,17 +62,6 @@ module srl_nokia-pim {
         "Administratively enable or disable PIM";
       default "enable";
     }
-    /*
-    leaf maximum-groups {
-      description
-        "Limit the number of accepted (S, G) and (*, G) PIM join states on the network-instance";
-      type uint32 {
-        range "1..16000";
-      }
-    }
-     */
-    // disabled for 22.11
-    //uses pim-policies;
     uses pim-ecmp;
   }
 
@@ -80,32 +74,6 @@ module srl_nokia-pim {
       type srl_nokia-comm:oper-state;
     }
   }
-
-  /* disabled for 22.11
-  grouping pim-policies {
-    container  import-policies{
-      description "Import policies.";
-      leaf-list join-policy {
-        description
-          "Policies that apply to the Join message";
-        type leafref {
-          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
-        }
-        max-elements 5;
-        ordered-by user;
-      }
-      leaf-list register-policy {
-        description
-          "Policies that apply to the register message";
-        type leafref {
-          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
-        }
-        max-elements 5;
-        ordered-by user;
-      }
-    }
-  }
-   */
 
   grouping pim-ecmp {
     description
@@ -255,6 +223,7 @@ module srl_nokia-pim {
   }
 
   // address-family
+
   grouping pim-address-family-statistics-state {
     container received {
       leaf candidate-rp-advertisement-messages {
@@ -274,7 +243,7 @@ module srl_nokia-pim {
         description
           "The number of control PDU drops
 
-          These can be on an operationally down interface or on an interface on which PIM is not enabled.";
+           These can be on an operationally down interface or on an interface on which PIM is not enabled.";
         type srl_nokia-comm:zero-based-counter32;
       }
     }
@@ -314,7 +283,7 @@ module srl_nokia-pim {
         description
           "The number of TTL dropped data PDUs
 
-          The number of multicast data packets which could not be encapsulated in Register messages because the Time To Live (TTL) was zero.";
+           The number of multicast data packets which could not be encapsulated in Register messages because the Time To Live (TTL) was zero.";
         type srl_nokia-comm:zero-based-counter32;
       }
     }
@@ -697,8 +666,42 @@ module srl_nokia-pim {
     }
   }
 
+  grouping pim-database-interface-flags {
+    leaf flags {
+      config false;
+      description
+        "Set of lists to which this interface belongs";
+      type bits {
+        bit immediate-oif-list {
+          position 0;
+        }
+        bit inherited-oif-list {
+          position 1;
+        }
+        bit inherited-rpt-oif-list {
+          position 2;
+        }
+        bit local-rx-include {
+          position 3;
+        }
+        bit local-rx-exclude {
+          position 4;
+        }
+        bit join-prune-list {
+          position 5;
+        }
+        bit lost-assert-list {
+          position 6;
+        }
+        bit sg-rpt-prune-oif-list {
+          position 7;
+        }
+      }
+    }
+  }
+
   grouping pim-database-interface {
-    list interface {
+    list outgoing-interface {
       config false;
       description
         "List of the PIM enabled interfaces for the Multicast entry <S,G>";
@@ -709,37 +712,26 @@ module srl_nokia-pim {
           "Router interface name";
         type srl_nokia-comm:subinterface-all;
       }
-      leaf flags {
+      uses pim-database-interface-flags;
+    }
+    container outgoing-tunnel-interface {
+      if-feature "srl_nokia-feat:l3-multicast-vpn";
+      config false;
+      description
+        "The outgoing PMSI for the database entry";
+      leaf name {
         config false;
         description
-          "Set of lists to which this interface belongs";
-        type bits {
-          bit immediate-oif-list {
-            position 0;
-          }
-          bit inherited-oif-list {
-            position 1;
-          }
-          bit inherited-rpt-oif-list {
-            position 2;
-          }
-          bit local-rx-include {
-            position 3;
-          }
-          bit local-rx-exclude {
-            position 4;
-          }
-          bit join-prune-list {
-            position 5;
-          }
-          bit lost-assert-list {
-            position 6;
-          }
-          bit sg-rpt-prune-oif-list {
-            position 7;
-          }
-        }
+          "The outgoing I-PMSI tunnel name";
+        type string;
       }
+      leaf s-pmsi-name {
+        config false;
+        description
+          "The outgoing S-PMSI tunnel name, if any, corresponding to the outgoing I-PMSI tunnel";
+        type string;
+      }
+      uses pim-database-interface-flags;
     }
   }
 
@@ -806,6 +798,7 @@ module srl_nokia-pim {
   }
 
   // interface
+
   grouping pim-interface-database-state {
     container database {
       config false;
@@ -1012,14 +1005,139 @@ module srl_nokia-pim {
             "The value is 'true' if the RPT bit is set and 'false' when the RPT bit is not set";
           type boolean;
         }
-        //leaf data-mt-interface-name {
-        //  config false;
-        //  description
-        //    "The interface name of the Multicast Tunnel(MT) interface
-        //     If the value is not set, it indicates that there is no data MT associated with this group-source interface to forward multicast traffic into the service provider network.
-        //     If the value is set, it indicates the data MT tunnel that is used to forward multicast traffic into the service provider network.";
-        //  type string;
-        //}
+      }
+    }
+  }
+
+  grouping pmsi-state {
+    container s-pmsi {
+      if-feature "srl_nokia-feat:l3-multicast-vpn";
+      config false;
+      description
+        "Selective Provider Multicast Service Interface (S-PMSI) tunnel state";
+      list mldp {
+        config false;
+        description
+          "List of mLDP S-PMSI tunnels";
+        key "root-address lsp-id";
+        leaf root-address {
+          description
+            "The extended tunnel address for the PMSI";
+          config false;
+          type srl_nokia-comm:ip-address;
+        }
+        leaf lsp-id {
+          description
+            "LSP Identifier for the S-PMSI";
+          config false;
+          type uint32;
+        }
+        leaf interface-name {
+          config false;
+          description
+            "Interface name of the S-PMSI";
+          type string;
+        }
+        leaf interface-type {
+          config false;
+          description
+            "PMSI tunnel type, either receiver or transmitter";
+          type srl_nokia-mvpn:provider-tunnel-type;
+        }
+        list customer-source-group {
+          config false;
+          description
+            "The list of the (C-S,C-G) mapped to the Data Multicast Tunnel (MT)";
+          key "group source";
+          leaf group {
+            config false;
+            description
+              "Multicast group IP address";
+            type srl_nokia-comm:ip-address;
+          }
+          leaf source {
+            description
+              "Source IP address";
+            type srl_nokia-comm:ip-address;
+            config false;
+          }
+          leaf current-forwarding-rate {
+            config false;
+            description
+              "Current forwarding rate for this (C-S, C-G) entry in bps";
+            type srl_nokia-comm:zero-based-counter64;
+            units "bps";
+          }
+          leaf cscg-state {
+            config false;
+            description
+              "The state of this PMSI (C-S,C-G)
+
+               If the S-PMSI is bound to a (C-S,C-G) on the ingress PE and if the PE is allocating a PMSI, the state will be 'tx-join-pending'.
+               The state will change to 'tx-joined' when the (C-S,C-G) traffic is switched over to the new S-PMSI.
+               If the S-PMSI is not bound to a (C-S,C-G) on the egress PE, the state will be 'rx-not-joined'.
+               The state will be 'rx-joined' if the (C-S,C-G) has bound to the S-PMSI.
+               Egress PE state will be 'rx-joined-tracking' if it receives SPMSI-AD with no tunnel information.";
+            type enumeration {
+              enum tx-join-pending {
+                value 0;
+              }
+              enum tx-joined {
+                value 1;
+              }
+              enum rx-not-joined {
+                value 2;
+              }
+              enum rx-joined {
+                value 3;
+              }
+              enum rx-joined-tracking {
+                value 4;
+              }
+            }
+          }
+          leaf data-rate-threshold {
+            config false;
+            description
+              "The threshold in kilobits per second (kbps) for (C-S,C-G) to switch to S-PMSI";
+            type uint32;
+            units "kbps";
+          }
+          leaf join-timer {
+            config false;
+            description
+              "The time interval before the Provider Edge (PE) router connected to the source, switches to the S-PMSI group
+
+               After providing sufficient time for all PE's to join the S-PMSI, the transmitting PE switches the given multicast stream to the S-PMSI.
+               The PE router connected to the source then starts encapsulating traffic using the S-PMSI group.";
+            type uint32;
+            units "seconds";
+          }
+          leaf hold-down-timer {
+            config false;
+            description
+              "The time interval before the PE router will switch back to the Default I-PMSI after it traffic rate goes below the data-rate-threshold
+
+               This is used to avoid (C-S, C-G) switching back and forth between SPMSI and IPMSI when traffic is bursty.";
+            type uint32;
+            units "seconds";
+          }
+          leaf expiry-timer {
+            config false;
+            description
+              "The time interval after which the Provider Edge (PE) router connected to the receivers time out SPMSI Join Tag Length Value (TLV) received and leave the S-PMSI group
+
+               This value must be consistent among all PE routers.";
+            type uint32;
+            units "seconds";
+          }
+          leaf up-time {
+            config false;
+            description
+              "Time elapsed since this (C-S,C-G) entry was created";
+            type srl_nokia-comm:date-and-time-delta;
+          }
+        }
       }
     }
   }
@@ -1105,8 +1223,8 @@ module srl_nokia-pim {
         description
           "The number of invalid PIM Register messages received on this interface
 
-          A Register message is invalid when the RP address in the message is not the RP for the group specified in the message.
-          If such a message arrives, a Invalid Register notification is sent.";
+           A Register message is invalid when the RP address in the message is not the RP for the group specified in the message.
+           If such a message arrives, a Invalid Register notification is sent.";
         type srl_nokia-comm:zero-based-counter32;
       }
       leaf neighbor-unknown {
@@ -1114,7 +1232,7 @@ module srl_nokia-pim {
         description
           "The number of PDUs dropped due to uknown neighborship
 
-          The number of PIM messages (other than Hello messages) which were received on this interface and were rejected because the adjacency with the neighbor router was not already established.";
+           The number of PIM messages (other than Hello messages) which were received on this interface and were rejected because the adjacency with the neighbor router was not already established.";
         type srl_nokia-comm:zero-based-counter32;
       }
       leaf bad-checksum-discard {
@@ -1146,8 +1264,8 @@ module srl_nokia-pim {
         description
           "The number of invalid PIM Join Prune messages received on this interface
 
-          A Join Prune message is invalid when the RP address in the message is not the RP for the group specified in the message.
-          If such a message arrives, a Invalid Join Prune notification is sent.";
+           A Join Prune message is invalid when the RP address in the message is not the RP for the group specified in the message.
+           If such a message arrives, a Invalid Join Prune notification is sent.";
         type srl_nokia-comm:zero-based-counter32;
       }
       leaf unknown-pdu-type {
@@ -1231,6 +1349,7 @@ module srl_nokia-pim {
     }
   }
 
+  /* Disabling BFD until we support MoFRR
   grouping pim-interface-bfd-liveness {
     leaf bfd-ipv4 {
       description
@@ -1249,6 +1368,7 @@ module srl_nokia-pim {
       default "false";
     }
   }
+  */
 
   grouping pim-interface-key {
     leaf interface-name {
@@ -1304,6 +1424,13 @@ module srl_nokia-pim {
       }
       default "30";
     }
+    leaf improved-assert {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Whether the improved assert processing is enabled.";
+      type boolean;
+      default "true";
+    }
     leaf hello-multiplier {
       srl_nokia-ext:show-importance "high";
       description
@@ -1330,7 +1457,8 @@ module srl_nokia-pim {
       reference
         "RFC7761 4.3.1 page 33";
     }
-    uses pim-interface-bfd-liveness;
+    /* Disabling BFD until we support MoFRR*/
+    /* uses pim-interface-bfd-liveness; */
   }
 
   grouping pim-interface-state {
@@ -1417,6 +1545,7 @@ module srl_nokia-pim {
   }
 
   // neighbor
+
   grouping pim-neighbor-state {
     description
       "PIM neighbor state";
@@ -1486,7 +1615,7 @@ module srl_nokia-pim {
       description
         "The time since when the neighbor has come up
 
-        This value indicates the time since this PIM neighbor (last) became a neighbor of the local router.";
+         This value indicates the time since this PIM neighbor (last) became a neighbor of the local router.";
       type srl_nokia-comm:date-and-time-delta;
     }
     leaf expiry-time {
@@ -1834,6 +1963,7 @@ module srl_nokia-pim {
         uses pim-interface-state;
       }
       uses pim-database-top;
+      uses pmsi-state;
       uses pim-global-ssm-config;
       uses pim-global-rp-config;
       uses pim-global-spt-switchover-config;
