@@ -27,10 +27,13 @@ module srl_nokia-p4rt-server {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state data related to the P4Runtime server";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2022-06-30 {
     description
       "SRLinux 22.6.1";
@@ -79,6 +82,7 @@ module srl_nokia-p4rt-server {
       leaf tls-profile {
         type leafref {
           path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
+          require-instance false;
         }
         srl-ext:show-importance "high";
         description
@@ -109,8 +113,8 @@ module srl_nokia-p4rt-server {
         type srl-comm:ip-address;
         description
           "List of IP addresses the P4Runtime server will listen on within the network instance
-          
-          By default the P4Runtime server will listen on all addresses in the network-instance.";
+
+           By default the P4Runtime server will listen on all addresses in the network-instance.";
       }
       leaf port {
         type srl-comm:port-number;
@@ -120,9 +124,9 @@ module srl_nokia-p4rt-server {
           "TCP port the P4Runtime server will listen on for incoming connections";
       }
       leaf tls-profile {
-        mandatory true;
         type leafref {
           path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
+          require-instance false;
         }
         srl-ext:show-importance "high";
         description
@@ -141,13 +145,14 @@ module srl_nokia-p4rt-server {
         enum request;
         enum response;
         enum common;
+        enum grpc;
       }
     }
   }
 
   grouping p4rt-server-top {
     container p4rt-server {
-      if-feature srl-feat:p4rt;
+      if-feature "srl-feat:p4rt";
       description
         "Configures the P4Runtime service";
       presence "Configures the P4Runtime service";
@@ -191,7 +196,7 @@ module srl_nokia-p4rt-server {
         description
           "Set a limit on the number of simultaneous active P4Runtime sessions
 
-          A session is defined as an individual RPC invocation, which could result in a single client generating multiple sessions.";
+           A session is defined as an individual RPC invocation, which could result in a single client generating multiple sessions.";
       }
       list client {
         config false;
@@ -217,7 +222,7 @@ module srl_nokia-p4rt-server {
           description
             "Indicates if this client is the primary for the specified forwarding complex
 
-            Only a single primary per forwarding complex is supported";
+             Only a single primary per forwarding complex is supported";
         }
         container forwarding-complex {
           leaf location {
@@ -225,14 +230,14 @@ module srl_nokia-p4rt-server {
             description
               "The normalized location for this forwarding-complex
 
-              This is the slot number and complex number seperated by a '/', 0 indexed. For example '1/0', or '1/1' representing two forwarding complexes on slot 1.";
+               This is the slot number and complex number seperated by a '/', 0 indexed. For example '1/0', or '1/1' representing two forwarding complexes on slot 1.";
           }
           leaf id {
             type uint64;
             description
               "The P4Runtime ID of the forwarding complex for which this client has established itself
 
-              This is the value configured at /platform/linecard/forwarding-complex/p4rt/id, or a system derived default.";
+               This is the value configured at /platform/linecard/forwarding-complex/p4rt/id, or a system derived default.";
           }
         }
         leaf user {

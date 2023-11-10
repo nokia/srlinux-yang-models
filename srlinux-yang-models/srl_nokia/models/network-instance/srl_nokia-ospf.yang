@@ -44,11 +44,8 @@ module srl_nokia-ospf {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This yang file models configuration and state of the OSPF protocol";
-
-  // Groupings
 
   revision 2023-07-31 {
     description
@@ -356,7 +353,7 @@ module srl_nokia-ospf {
       leaf link-state-id {
         type srl_nokia-comm:ipv4-address;
       }
-    } // end lsdb
+    }
   }
 
   grouping ospf-packet-tracing-config {
@@ -398,7 +395,7 @@ module srl_nokia-ospf {
               "Enable tracing of OSPF link-state Ack packets";
           }
         }
-      } // end type
+      }
       leaf modifier {
         type enumeration {
           enum ingress {
@@ -422,7 +419,7 @@ module srl_nokia-ospf {
               "To enable tracing for the sent packets.";
           }
         }
-      } // end modifier
+      }
       leaf detail {
         type empty;
         description
@@ -475,7 +472,7 @@ module srl_nokia-ospf {
         uses ospf-packet-tracing-config;
       }
     }
-  } // grouping ospf-interface-trace-options
+  }
 
   grouping ospf-interface-config {
     leaf advertise-router-capability {
@@ -501,7 +498,6 @@ module srl_nokia-ospf {
     }
     leaf interface-type {
       type srl_nokia-ospf-types:interface-type;
-      //sros-ext:immutable;
       description
         "Interface type to broadcast or point-to-point";
     }
@@ -607,7 +603,7 @@ module srl_nokia-ospf {
     }
     uses ospf-interface-trace-options;
     uses ospf-neighbor-state;
-  } // ospf-interface-config
+  }
 
   grouping ospf-interface-state {
     leaf oper-state {
@@ -680,7 +676,7 @@ module srl_nokia-ospf {
         "the value of link-lsa-count indicates the total number of link-scope link-state advertisements in this link's link-state database.";
       type yang:gauge32;
     }
-  } // ospf-interface-state
+  }
 
   grouping ospf-interface-statistics {
     leaf events {
@@ -695,7 +691,7 @@ module srl_nokia-ospf {
         "the value of last-event-time indicates the value of sys-up-time when an event was last associated with this OSPF interface.";
       type srl_nokia-comm:date-and-time;
     }
-  } // ospf-interface-statistics
+  }
 
   grouping ospf-interface-lsa-totals {
     container lsa-totals {
@@ -723,7 +719,7 @@ module srl_nokia-ospf {
         type yang:gauge32;
       }
     }
-  } // ospf-interface-lsa-totals
+  }
 
   grouping ospf-interface-packet-counts {
     container packets {
@@ -904,7 +900,7 @@ module srl_nokia-ospf {
         type yang:counter32;
       }
     }
-  } // ospf-interface-packet-counts
+  }
 
   grouping ospf-area-structure {
     leaf advertise-router-capability {
@@ -1007,7 +1003,7 @@ module srl_nokia-ospf {
           description
             "Advertise summarized range of addresses to other areas";
         }
-      } // area-range list
+      }
       container originate-default-route {
         presence "Enable/disable generation of default route and its LSA type (3 or 7) into the NSSA";
         description
@@ -1024,8 +1020,8 @@ module srl_nokia-ospf {
           description
             "Default route to remove if there is no adjacency";
         }
-      } // container originate-default-route  
-    } // container nssa
+      }
+    }
     list area-range {
       key "ip-prefix-mask";
       description
@@ -1050,7 +1046,7 @@ module srl_nokia-ospf {
         description
           "Advertise summarized range of addresses to other areas";
       }
-    } // area-range list
+    }
     uses srl_nokia-te:igp-area-level-tedb {
       if-feature "srl-feat:traffic-engineering-ospf";
     }
@@ -1122,7 +1118,7 @@ module srl_nokia-ospf {
           description
             "Hold time between the first and second LSA generation";
         }
-      } // container lsa-generate}
+      }
       container spf-wait {
         description
           "Enter the spf-wait context";
@@ -1153,8 +1149,8 @@ module srl_nokia-ospf {
           description
             "Hold time between the first and second SPF calculation";
         }
-      } // container spf-wait
-    } // container timers
+      }
+    }
   }
 
   grouping ospf-spf-tracing-config {
@@ -1192,7 +1188,7 @@ module srl_nokia-ospf {
         uses ospf-lsdb-tracing-config;
       }
     }
-  } // grouping ospf-global-trace-options
+  }
 
   grouping ospf-global-top {
     description
@@ -1454,7 +1450,7 @@ module srl_nokia-ospf {
     uses srl_nokia-te:protocol-instance-tedb {
       if-feature "srl-feat:traffic-engineering-ospf";
     }
-  } //ospf-global-top
+  }
 
   grouping ospf-as-lsa-totals {
     container lsa-totals {
@@ -1482,7 +1478,7 @@ module srl_nokia-ospf {
         type yang:gauge32;
       }
     }
-  } // ospf-as-lsa-totals
+  }
 
   grouping ospf-global-state {
     leaf oper-state {
@@ -1821,7 +1817,7 @@ module srl_nokia-ospf {
         }
       }
     }
-  } //ospf-global-state
+  }
 
   grouping ospf-area-state {
     leaf full-spf-runs {
@@ -2026,7 +2022,7 @@ module srl_nokia-ospf {
           error-message "Must have router-id defined in network-instance or in ospf-instance and it can not be 0.0.0.0";
         }
         must "(./version = 'srl_nokia-ospf-types:ospf-v2') or (./traffic-engineering/advertisement = false())" {
-          srl_nokia-ext:if-feature srl_nokia-features:traffic-engineering-ospf;
+          srl_nokia-ext:if-feature "srl_nokia-features:traffic-engineering-ospf";
           error-message "No traffic-engineering support for OSPFv3";
         }
         list area {

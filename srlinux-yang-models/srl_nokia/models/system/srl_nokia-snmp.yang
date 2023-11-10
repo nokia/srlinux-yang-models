@@ -1,8 +1,5 @@
 module srl_nokia-snmp {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/snmp";
   prefix srl_nokia-snmp;
 
@@ -27,10 +24,13 @@ module srl_nokia-snmp {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines SNMP configuration and state";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -52,43 +52,13 @@ module srl_nokia-snmp {
       "SRLinux 19.11.1";
   }
 
-  typedef snmp-version {
-    type enumeration {
-      enum v1 {
-        description
-          "Version v1 of SNMP";
-      }
-      enum v2c {
-        description
-          "Version v2c of SNMP";
-      }
-      enum both {
-        description
-          "Version v1 and v2c of SNMP";
-      }
-    }
-    description
-      "Version of SNMP for the SNMP server to use";
-  }
-
-  typedef community-permission {
-    type enumeration {
-      enum r {
-        description
-          "Permit read only access for this community";
-      }
-    }
-    description
-      "Permission to apply to this community";
-  }
-
   typedef engine-id {
     type srl-comm:hex-string {
       pattern '([0-9a-fA-F]){2}(:([0-9a-fA-F]){2}){4,31}';
     }
     description
       "The engine ID specified as a list of colon-specified
-      hexadecimal octets, e.g., '80:00:02:b8:04:61:62:63'.";
+       hexadecimal octets, e.g., '80:00:02:b8:04:61:62:63'.";
     reference
       "RFC 3411: An Architecture for Describing Simple Network
          Management Protocol (SNMP) Management Frameworks";
@@ -96,12 +66,42 @@ module srl_nokia-snmp {
 
   typedef auth-protocol {
     type enumeration {
-      enum MD5;
-      enum SHA;
-      enum SHA-224;
-      enum SHA-256;
-      enum SHA-384;
-      enum SHA-512;
+      enum hmac-md5-96 {
+        description
+          "MD5";
+        reference
+          "RFC3414";
+      }
+      enum hmac-sha1-96 {
+        description
+          "SHA";
+        reference
+          "RFC3414";
+      }
+      enum hmac-sha2-224 {
+        description
+          "SHA-224";
+        reference
+          "RFC7630";
+      }
+      enum hmac-sha2-256 {
+        description
+          "SHA-256";
+        reference
+          "RFC7630";
+      }
+      enum hmac-sha2-384 {
+        description
+          "SHA-384";
+        reference
+          "RFC7630";
+      }
+      enum hmac-sha2-512 {
+        description
+          "SHA-512";
+        reference
+          "RFC7630";
+      }
     }
     description
       "Authentication protocol used for authenticated SNMPv3 messages";
@@ -109,8 +109,30 @@ module srl_nokia-snmp {
 
   typedef priv-protocol {
     type enumeration {
-      enum DES;
-      enum AES;
+      enum cbc-des {
+        description
+          "DES";
+        reference
+          "RFC3414";
+      }
+      enum cfb128-aes-128 {
+        description
+          "AES";
+        reference
+          "RFC3826";
+      }
+      enum cfb128-aes-192 {
+        description
+          "AES-192";
+        reference
+          "draft-blumenthal-aes-usm-04";
+      }
+      enum cfb128-aes-256 {
+        description
+          "AES-256";
+        reference
+          "draft-blumenthal-aes-usm-04";
+      }
     }
     description
       "Privacy protocol used for encrypted SNMPv3 messages";
@@ -126,75 +148,53 @@ module srl_nokia-snmp {
       "Security level used for SNMPv3 messages";
   }
 
-  typedef mibs {
-    type enumeration {
-      enum system;
-      enum interfaces;
-      enum timetra-bgp-mib;
-      enum timetra-chassis-mib;
-    }
-    description
-      "SNMP MIB tables that can be accessed";
-  }
-
-  grouping community-entry { // new version, used when snmp-v3 is enabled
-    leaf id {
-      type uint32;
+  grouping community-entry {
+    leaf name {
+      type srl-comm:name-without-space;
       description
-          "Unique identifier for the SNMP community.";
+        "Unique name for the SNMP community.";
     }
     leaf description {
       type srl-comm:description;
       description
         "Description for the SNMP community";
     }
-    leaf name {
+    leaf community {
       description
-        "Name of the SNMP community";
-      type srl-comm:name {
+        "SNMPv1 and SNMPv2c community";
+      type srl-comm:name-without-space {
         srl-ext:generated-class-name "SecretKey";
       }
       mandatory true;
     }
-    leaf permission {
+    leaf-list prefix-list {
       description
-        "Permissions to allocate to this community";
-      type community-permission;
-      default "r";
-    }
-    leaf version {
-      description
-        "SNMP version to use with this community";
-      type snmp-version;
-      default "both";
-    }
-    leaf prefix {
-      description
-        "Prefix where this community can be used.
-        
+        "Prefixes where this community can be used, both IPv4 and IPv6 addresses.
+
          A /32 or /128 mask can be used to limit it to a single ip-address";
       type srl-comm:ip-prefix;
+      ordered-by system;
+      max-elements 16;
     }
   }
 
-  grouping community-interface { // new version, used when snmp-v3 is enabled
-    list community {
-      key "id";
+  grouping community-interface {
+    list community-entry {
+      key "name";
       description
         "List of configured SNMPv1 and v2 communities";
       uses community-entry;
       must "../security-level = 'no-auth-no-priv'" {
-        error-message "SNMP communities can only be used in a group when security-level is set to 'no-auth-no-priv'";
+        error-message "SNMP communities can only be used in an access-group when security-level is set to 'no-auth-no-priv'";
       }
     }
   }
 
-  grouping community-interface-nolist { // old version, used when snmp-v3 is not yet enabled
+  grouping community-interface-nolist {
     leaf community {
       type srl-comm:name {
         srl-ext:generated-class-name "SecretKey";
       }
-     mandatory true;
     }
   }
 
@@ -202,7 +202,7 @@ module srl_nokia-snmp {
     leaf name {
       description
         "Name of the SNMPv3 user";
-      type srl-comm:name;
+      type srl-comm:name-without-space;
     }
     leaf description {
       type srl-comm:description;
@@ -214,7 +214,7 @@ module srl_nokia-snmp {
         "Authentication parameters for this user.";
       leaf protocol {
         type auth-protocol;
-        default MD5;
+        default "hmac-md5-96";
         description
           "Authentication protocol used by this user.";
       }
@@ -225,10 +225,10 @@ module srl_nokia-snmp {
         }
         mandatory true;
         description
-            "The user authentication password, supplied either as cleartext or as a hashed value.
+          "The user authentication password, supplied either as cleartext or as a hashed value.
 
-            If provided as cleartext, the system will hash the value on input, storing only the hashed value.
-            If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+           If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
       }
     }
     container privacy {
@@ -236,12 +236,24 @@ module srl_nokia-snmp {
         "Privacy parameters for this user.";
       leaf protocol {
         type priv-protocol;
-        default DES;
+        default "cbc-des";
         description
           "Privacy protocol used by this user.";
-        //must "not((. = 'none') and (../../../security-level = 'auth-priv'))" {
-        //  error-message "SNMPv3 privacy protocol must be enabled in a group when security-level is set to 'auth-priv'";
-        //}
+        must "not((../../authentication/protocol = 'hmac-md5-96') and (../../privacy/protocol = 'cfb128-aes-192'))" {
+          error-message "Combination of hmac-md5-96 and cfb128-aes-192 isn't valid : authentication hash hasn't enough bytes (16) to be used as encryption key (24)";
+        }
+        must "not((../../authentication/protocol = 'hmac-md5-96') and (../../privacy/protocol = 'cfb128-aes-256'))" {
+          error-message "Combination of hmac-md5-96 and cfb128-aes-256 isn't valid : authentication hash hasn't enough bytes (16) to be used as encryption key (32)";
+        }
+        must "not((../../authentication/protocol = 'hmac-sha1-96') and (../../privacy/protocol = 'cfb128-aes-192'))" {
+          error-message "Combination of hmac-sha1-96 and cfb128-aes-192 isn't valid : authentication hash hasn't enough bytes (20) to be used as encryption key (24)";
+        }
+        must "not((../../authentication/protocol = 'hmac-sha1-96') and (../../privacy/protocol = 'cfb128-aes-256'))" {
+          error-message "Combination of hmac-sha1-96 and cfb128-aes-256 isn't valid : authentication hash hasn't enough bytes (20) to be used as encryption key (32)";
+        }
+        must "not((../../authentication/protocol = 'hmac-sha2-224') and (../../privacy/protocol = 'cfb128-aes-256'))" {
+          error-message "Combination of hmac-sha2-224 and cfb128-aes-256 isn't valid : authentication hash hasn't enough bytes (28) to be used as encryption key (32)";
+        }
       }
       leaf password {
         type string {
@@ -258,7 +270,7 @@ module srl_nokia-snmp {
   }
 
   grouping user-interface {
-    list user {
+    list security-entry {
       key "name";
       description
         "List of configured SNMPv3 users";
@@ -266,26 +278,22 @@ module srl_nokia-snmp {
     }
   }
 
-  grouping view-interface {
-    leaf-list access-views-readonly {
-      type mibs;
-      ordered-by system;
-      description
-        "List of SNMP MIBs that can be accessed by this group.";
-      min-elements 1;
-    }
-  }
-
-  grouping group-entry {
+  grouping access-group-entry {
     leaf name {
-      type srl-comm:name;
+      type srl-comm:name-without-space;
       description
         "Name of the SNMP access-group";
     }
     leaf description {
       type srl-comm:description;
       description
-        "Description for this group";
+        "Description for this access-group";
+    }
+    leaf admin-state {
+      type srl-comm:admin-state;
+      default "enable";
+      description
+        "Enables the SNMP access-group";
     }
     uses community-interface;
     uses user-interface;
@@ -293,18 +301,17 @@ module srl_nokia-snmp {
       type security-level;
       mandatory true;
       description
-        "Minimum security level required for this group.";
+        "Minimum security level required for this access-group.";
     }
-    uses view-interface;
   }
 
-  grouping group-interface {
-    list group {
+  grouping access-group-interface {
+    list access-group {
       if-feature "srl_nokia-feat:snmp-v3";
       description
         "List of configured SNMP access-groups";
       key "name";
-      uses group-entry;
+      uses access-group-entry;
     }
   }
 
@@ -319,22 +326,16 @@ module srl_nokia-snmp {
       default "::";
       description
         "List of IP addresses for the SNMP server to listen on within the network-instance";
+      max-elements 16;
     }
-    /*leaf-list trace-options {
-    description
-    "List of enabled trace-options";
-        type identityref {
-            base srl-snmp-trace:snmp-trace-option;
-        }
-    }*/
     leaf engine-id {
       if-feature "srl_nokia-feat:snmp-v3";
       type engine-id;
-        description
-          "The local SNMP engine's administratively assigned unique identifier.
+      description
+        "The local SNMP engine's administratively assigned unique identifier.
 
-           If this leaf is not set, the device automatically calculates an engine ID,
-           as described in RFC 3411.";
+         If this leaf is not set, the device automatically calculates an engine ID,
+         as described in RFC 3411.";
     }
   }
 
@@ -367,6 +368,7 @@ module srl_nokia-snmp {
       description
         "List of network-instances to run an SNMP server in";
       key "name";
+      max-elements 5;
       uses network-instance-entry;
     }
   }
@@ -376,8 +378,8 @@ module srl_nokia-snmp {
       description
         "Top-level container for SNMP configuration and state";
       presence "Configure SNMP";
-      uses community-interface-nolist; // old version, not for snmp-v3
-      uses group-interface; // new version, for snmp-v3
+      uses community-interface-nolist;
+      uses access-group-interface;
       uses network-instance-interface;
     }
   }

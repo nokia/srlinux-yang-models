@@ -27,10 +27,13 @@ module srl_nokia-mld-snooping {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This yang file models configuration and state of the mld snooping protocol on mac-vrf";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -889,7 +892,7 @@ module srl_nokia-mld-snooping {
         description
           "Multicast group membership";
         leaf group {
-          type srl_nokia-comm:ipv4-address;
+          type srl_nokia-comm:ipv6-address;
           description
             "Multicast address";
         }
@@ -900,7 +903,7 @@ module srl_nokia-mld-snooping {
           description
             "Source addresses of multicast";
           leaf source {
-            type srl_nokia-comm:ipv4-address;
+            type srl_nokia-comm:ipv6-address;
             description
               "Source address of multicast";
           }
@@ -1053,7 +1056,7 @@ module srl_nokia-mld-snooping {
         config false;
         key "vtep vni";
         leaf vtep {
-          srl_nokia-ext:show-importance high;
+          srl_nokia-ext:show-importance "high";
           type srl_nokia-comm:ip-address;
           description
             "The IP address that identifies the remote VXLAN Termination Endpoint (VTEP).";
@@ -1063,19 +1066,20 @@ module srl_nokia-mld-snooping {
             range "1..16777215";
           }
           srl_nokia-ext:show-importance "high";
-          description 
+          description
             "VXLAN Network Identifier of the destination.";
         }
         leaf index {
-          srl_nokia-ext:show-importance high;
+          srl_nokia-ext:show-importance "high";
           type uint64;
           description
             "the next-hop-group-id (system allocated) for resolving the VXLAN termination endpoint";
         }
         uses mld-snooping-evpn-interface-state;
-      }      
+      }
     }
   }
+
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
     uses mld-snooping-top;
   }

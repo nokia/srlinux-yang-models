@@ -27,10 +27,13 @@ module srl_nokia-platform-acl {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state related to ACL resources in the system";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -163,23 +166,44 @@ module srl_nokia-platform-acl {
     description
       "Resource pool of stats entries shared by egress IPv4/IPv6/MAC TCAM entries, and CPM-filter IPv4/IPv6/MAC TCAM entries
 
-      Egress Ipv4 -> uses single stat counter
-      Egress Ipv6 -> uses single stat counter
-      Egress MAC -> uses single stat counter
-      Cpm Ipv4 -> uses two stat counters
-      Cpm Ipv6 -> uses two stat counters
-      Cpm MAC -> uses two stat counters";
+       Egress Ipv4 -> uses single stat counter
+       Egress Ipv6 -> uses single stat counter
+       Egress MAC -> uses single stat counter
+       Cpm Ipv4 -> uses two stat counters
+       Cpm Ipv6 -> uses two stat counters
+       Cpm MAC -> uses two stat counters";
   }
 
   identity input-acl-qos-template-policers {
-    if-feature "srl_feat:acl-policer-resource-utilization";
+    if-feature "srl_feat:trident4";
     base acl-resources;
     description
       "This resource is used every time an IPv4 or IPv6 input subinterface filter entry uses a rate-limit policer, or subinterface policer-template is used.";
   }
 
+  identity input-qos-template-policers {
+    if-feature "srl_feat:trident3";
+    base acl-resources;
+    description
+      "This resource is used every time a QoS subinterface policer-template is used.";
+  }
+
+  identity input-acl-ipv4-policers {
+    if-feature "srl_feat:trident3";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 input subinterface filter entry uses a rate-limit policer.";
+  }
+
+  identity input-acl-ipv6-policers {
+    if-feature "srl_feat:trident3";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv6 input subinterface filter entry uses a rate-limit policer.";
+  }
+
   identity output-acl-cpm-filter-policers {
-    if-feature "srl_feat:acl-policer-resource-utilization and (not srl_feat:trident3)";
+    if-feature "srl_feat:trident4";
     base acl-resources;
     description
       "This resource is used every time an IPv4 or IPv6 output subinterface filter or CPM filter entry uses a rate-limit policer.";

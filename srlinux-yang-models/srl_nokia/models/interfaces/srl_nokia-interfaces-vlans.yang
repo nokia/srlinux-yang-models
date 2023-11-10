@@ -1,8 +1,5 @@
 module srl_nokia-interfaces-vlans {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/interfaces/vlans";
   prefix srl_nokia-if-vlan;
 
@@ -18,14 +15,15 @@ module srl_nokia-interfaces-vlans {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "Model for managing VLANs
 
      This model describes management of VLAN parameters under SRL Interfaces";
 
-  // identity statements
-
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -99,8 +97,6 @@ module srl_nokia-interfaces-vlans {
        This value is only applicable where the TPID of a packet is
        being matched.";
   }
-
-  // typedef statements
 
   typedef vlan-id {
     type uint16 {
@@ -223,14 +219,28 @@ module srl_nokia-interfaces-vlans {
     description
       "match criteria for a double tag";
     leaf inner-vlan-id {
-      type vlan-id;
+      type union {
+        type vlan-id;
+        type enumeration {
+          enum any;
+          enum optional;
+        }
+      }
       description
         "VLAN identifier for single-tagged packets.";
+      mandatory true;
     }
     leaf outer-vlan-id {
-      type vlan-id;
+      type union {
+        type vlan-id;
+        type enumeration {
+          enum any;
+          enum optional;
+        }
+      }
       description
         "VLAN identifier for single-tagged packets.";
+      mandatory true;
     }
   }
 
@@ -338,7 +348,9 @@ module srl_nokia-interfaces-vlans {
       container single-tagged {
         presence "Match single-tagged packets with a specific vlan-id.";
         description
-          "When  present, tagged frames with a specific, non-zero, outer VLAN ID are associated to the subinterface. (The outer VLAN-ID tag is considered service delimiting and it is stripped at ingress and restored/added on egress.).";
+          "When  present, tagged frames with a specific, non-zero, outer VLAN ID are associated to the subinterface
+
+           The outer VLAN-ID tag is considered service delimiting and it is by default stripped at ingress and restored/added on egress.";
         uses vlan-single-tagged-params;
       }
       container untagged {
@@ -346,8 +358,8 @@ module srl_nokia-interfaces-vlans {
         presence "Match untagged packets.";
         description
           "When  present, untagged frames and VLAN ID 0 priority tagged frames are associated to the subinterface when it belongs to an interface with vlan-tagging enabled.";
-        must 'not(../single-tagged) and not(../single-tagged-range)' {
-          error-message "untagged and single-tagged or single-tagged-range cannot be configured together";
+        must 'not(../single-tagged)' {
+          error-message "untagged and single-tagged cannot be configured together";
         }
         must '(../../../../vlan-tagging = true())' {
           error-message "untagged only configurable if vlan-tagging enabled on parent interface";
@@ -356,19 +368,13 @@ module srl_nokia-interfaces-vlans {
           error-message "untagged only allowed with type bridged";
         }
       }
-      /* container single-tagged-list {
-        description
-            "Match single-tagged packets with a list of VLAN identifiers.";
-      
-        uses vlan-single-tagged-list-params;
-      } */
       container single-tagged-range {
         if-feature "srl_nokia-feat:dot1q-vlan-ranges";
         presence "Match single-tagged packets with a vlan-id in specified ranges.";
         description
-          "When  present, tagged frames with a specific, non-zero, outer VLAN ID contained in a specified set of range are 
+          "When  present, tagged frames with a specific, non-zero, outer VLAN ID contained in a specified set of range are
            associated to the subinterface.
-           
+
            The outer VLAN ID tag of the frame is not stripped off on ingress, and no tag is pushed on egress.";
         must 'not(../single-tagged) and not(../untagged)' {
           error-message "single-tagged-range and single-tagged or untagged cannot be configured together";
@@ -378,40 +384,29 @@ module srl_nokia-interfaces-vlans {
         }
         must "(../../../srl_nokia-if:type = 'srl_nokia-if:bridged')" {
           error-message "single-tagged-range only allowed with type bridged";
-        }   
+        }
         uses vlan-single-tagged-range-params;
       }
-      /* container double-tagged {
+      container double-tagged {
+        if-feature "srl_nokia-feat:qinq";
+        presence "Match double-tagged packets with specific outer and inner vlan-id values";
         description
-            "Match a double-tagged packets with a single set of VLAN identifiers.";
-      
+          "When present, double-tagged frames with a specific, non-zero, outer and inner VLAN ID values are
+           associated to the subinterface
+
+           The outer and inner VLAN ID tags are considered service delimiting tags and are by default stripped
+           at ingress and restored/added on egress.";
+        must 'not(../single-tagged) and not(../single-tagged-range) and not (../untagged)' {
+          error-message "double-tagged and single-tagged or single-tagged-range or untagged cannot be configured together";
+        }
+        must '(../../../../vlan-tagging = true())' {
+          error-message "double-tagged only configurable if vlan-tagging enabled on parent interface";
+        }
+        must "(../../../srl_nokia-if:type = 'srl_nokia-if:bridged')" {
+          error-message "double-tagged only allowed with type bridged";
+        }
         uses vlan-double-tagged-params;
       }
-      container double-tagged-inner-list {
-        description
-            "Match a double-tagged packets with a list of inner VLAN identifiers.";
-        uses vlan-double-tagged-inner-list-params;
-      }
-      container double-tagged-outer-list {
-        description
-            "Match a double-tagged packets with a list of outer VLAN identifiers.";
-        uses vlan-double-tagged-outer-list-params;
-      }
-      container double-tagged-inner-range {
-        description
-            "Match a double-tagged packets with a range of inner VLAN identifiers.";
-        uses vlan-double-tagged-inner-range-params;
-      }
-      container double-tagged-outer-range {
-        description
-            "Match a double-tagged packets with a range of outer VLAN identifiers.";
-        uses vlan-double-tagged-outer-range-params;
-      }
-      container double-tagged-inner-outer-range {
-        description
-            "Match a double-tagged packets with a range of inner & outer VLAN identifiers.";
-        uses vlan-double-tagged-inner-outer-range-params;
-      } */
     }
   }
 
@@ -492,7 +487,6 @@ module srl_nokia-interfaces-vlans {
       must 'not(../breakout-mode)' {
         error-message "tpid not configurable when breakout-mode is enabled";
       }
-      // default TPID_0X8100;
       description
         "Optionally set the tag protocol identifier field (TPID) that
          is accepted on the VLAN";
@@ -518,8 +512,6 @@ module srl_nokia-interfaces-vlans {
         }
       }
       uses vlan-match-top;
-      /* uses vlan-ingress-mapping-top; */
-      /* uses vlan-egress-mapping-top; */
     }
   }
 
@@ -536,8 +528,6 @@ module srl_nokia-interfaces-vlans {
       must 'not(../breakout-mode)' {
         error-message "vlan-tagging not configurable when breakout-mode is enabled";
       }
-      // default false;
-      // vlan-tagging is not applicable for all interfaces, so default can not be applied here
     }
   }
 

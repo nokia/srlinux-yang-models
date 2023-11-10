@@ -15,11 +15,14 @@ module srl_nokia-oam-pm {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This YANG module contains the common OAM Performance Monitoring architectural
      components that will be used by the technology specific modules.";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -81,8 +84,21 @@ module srl_nokia-oam-pm {
         type srl_nokia-pm-types:measurement-interval-clock-offset;
         default "0";
         units "seconds";
+        must "../boundary-type = 'clock-aligned' or . = 0" {
+          error-message "the clock-offset is only supported for boundary-type clock-aligned";
+        }
+        must "(../mi-duration  = '1-minute' and . < 60) or
+              (../mi-duration  = '5-minutes' and . < 300) or
+              (../mi-duration  = '15-minutes' and . < 900) or
+              (../mi-duration  = '1-hour' and . < 3600) or
+              (../mi-duration  = '1-day' and . < 86400)" {
+          error-message "The clock-offset must be less than the length of the measurement interval duration";
+        }
         description
-          "Aligning the measurement interval using an offset for the start, considering the boundary-type";
+          "Aligning the measurement interval using an offset for the start, considering the boundary-type
+
+           The clock-offset must be '0' when the boundary-type value is not 'clock-aligned'.  When the boundary-type
+           is 'clock-aligned' the value of the clock-offset must be less than the duration of the measurement-interval";
       }
       leaf intervals-stored {
         type srl_nokia-pm-types:measurement-interval-stored;
@@ -106,13 +122,11 @@ module srl_nokia-oam-pm {
       }
       container threshold-alerts {
         description
-          "Assigning and enabling configured events to the measurement interval";
+          "Enabling configured events for the measurement interval";
         leaf loss-event {
-          type leafref {
-            path "../../../../loss/loss-events-template/loss-events-template-name";
-          }
+          type srl_nokia-comm:admin-state;
           description
-            "The loss event template associated with this loss test session and measurement interval";
+            "Enable the loss events associated with the loss test session for this measurement interval";
         }
         leaf delay-event {
           type srl_nokia-comm:admin-state;
@@ -142,7 +156,6 @@ module srl_nokia-oam-pm {
          Test IDs are protocol specific.  The same value may be re-used for different protocols but not
          for the same protocol.  When the value 'auto' is configured the test-id is dynamically
          assigned from the upper 32-bit range, [2147483648..4294967296]";
-      //management server must ensure configured test-ids may be reused for different protocols but not within the same protocol.   
     }
     leaf test-duration {
       type uint32 {
@@ -197,6 +210,12 @@ module srl_nokia-oam-pm {
         description
           "A description of the bin group";
       }
+      leaf reference-count {
+        config false;
+        type uint32;
+        description
+          "The number of OAM-PM test sessions referencing the bin-group";
+      }
       list bin-type {
         key "bin-metric";
         leaf bin-metric {
@@ -228,8 +247,6 @@ module srl_nokia-oam-pm {
             description
               "The number of the bin";
           }
-          //Management server must prevent the deletion of a bin that is within the bin-count.  There can be no holes.  The only way a bin can be deleted is
-          //by changing the bin-count.  Individual bins in this range must always be present
           leaf lower-bound {
             type uint32 {
               range "0|1..4294967295";
@@ -261,7 +278,6 @@ module srl_nokia-oam-pm {
                If configuration of a lower bin will cause a conflict with a higher bin lower-bound value the commit will fail.  A
                single commit would be required to avoid these conflicts.";
           }
-          //NOTE TO ENGINEERING management server must enforce must consecutive bins do not have conflicting lower bounds                            
         }
         list delay-event {
           key "direction";
@@ -358,12 +374,6 @@ module srl_nokia-oam-pm {
 
                Results mapped to these bins do not impact the delay metric average values.";
           }
-        }
-        leaf reference-count {
-          config false;
-          type uint32;
-          description
-            "The number of OAM-PM test sessions referencing the bin-group";
         }
       }
     }
@@ -519,8 +529,8 @@ module srl_nokia-oam-pm {
       }
       container forward {
         leaf minimum {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Minimum delay metric in the forward direction, from source to reflector
 
@@ -528,8 +538,8 @@ module srl_nokia-oam-pm {
                   interval number, and bin type.";
         }
         leaf maximum {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Maximum delay metric in the forward direction, from source to reflector
 
@@ -537,8 +547,8 @@ module srl_nokia-oam-pm {
                         interval number, and bin type.";
         }
         leaf average {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Average delay metric in the forward direction, from source to reflector
 
@@ -548,8 +558,8 @@ module srl_nokia-oam-pm {
       }
       container backward {
         leaf minimum {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Minimum delay metric in the backward direction, from reflector to source
 
@@ -557,8 +567,8 @@ module srl_nokia-oam-pm {
                   interval number, and bin type.";
         }
         leaf maximum {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Maximum delay metric in the backward direction, from reflector to source
 
@@ -566,8 +576,8 @@ module srl_nokia-oam-pm {
                   interval number, and bin type.";
         }
         leaf average {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Average delay metric in the backward direction, from reflector to source
 
@@ -577,8 +587,8 @@ module srl_nokia-oam-pm {
       }
       container round-trip {
         leaf minimum {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Minimum delay metric round trip, source computed based on four timestamps
 
@@ -586,8 +596,8 @@ module srl_nokia-oam-pm {
                   interval number, and bin type.";
         }
         leaf maximum {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Maximum delay metric round trip, source computed based on four timestamps
 
@@ -595,8 +605,8 @@ module srl_nokia-oam-pm {
                   interval number, and bin type.";
         }
         leaf average {
-          type srl_nokia-comm:gauge64;
-          units "nanoseconds";
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
           description
             "Average delay metric round trip, source computed based on four timestamps
 
@@ -730,8 +740,6 @@ module srl_nokia-oam-pm {
          will increment the HLI/CHLI counters during times of unavailability.";
     }
     container timing {
-      //NOTE TO ENGINEERING - management server must ensure that the following is true (frames-per-delta-t*consecutive-delta-t*(interval/1000000)<=10
-      //the availability window cannot exceed 10s
       description
         "Enter the timing context used to configure availability options";
       leaf frames-per-delta-t {
@@ -745,7 +753,7 @@ module srl_nokia-oam-pm {
            The lenght of the delta-t window is frames-per-delta-t *  the probe interval.";
       }
       leaf consecutive-delta-t {
-        type uint32 {
+        type uint8 {
           range "2..10";
         }
         default "10";
@@ -756,10 +764,13 @@ module srl_nokia-oam-pm {
            state values than the current state";
       }
       leaf chli-threshold {
-        type uint32 {
+        type uint8 {
           range "1..9";
         }
         default "5";
+        must '. < ../consecutive-delta-t' {
+          error-message "The CHLI threshold must be smaller than consecutive-delta-t value";
+        }
         description
           "Consecutive High Loss Interval (CHLI) threshold
 
@@ -892,7 +903,7 @@ module srl_nokia-oam-pm {
           "Enter the undetermined unavailability event list instance";
         uses loss-counter-thresholds;
       }
-    } // container loss-events
+    }
   }
 
   grouping loss-events-state {

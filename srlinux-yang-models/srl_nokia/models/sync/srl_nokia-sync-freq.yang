@@ -9,8 +9,8 @@ module srl_nokia-sync-freq {
   import srl_nokia-sync-types {
     prefix srl_nokia-sync-types;
   }
-  import srl_nokia-features {
-    prefix srl_nokia-feat;
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
   }
 
   organization
@@ -19,6 +19,10 @@ module srl_nokia-sync-freq {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -49,7 +53,7 @@ module srl_nokia-sync-freq {
         "List of line references configured for frequency";
       leaf instance-number {
         type uint8 {
-          range "1..2";
+          range "1..5";
         }
         description
           "The instance number of the each line reference";
@@ -57,8 +61,11 @@ module srl_nokia-sync-freq {
       leaf admin-state {
         type srl_nokia-comm:admin-state;
         default "disable";
+        must "(((../source/interface) ) or (. = 'disable'))" {
+          error-message "Admin state enabled only allowed if frequency source is specified";
+        }
         description
-          "Configure the administrative state of this frequency reference instance.";
+          "Configure the administrative state of this frequency reference instance";
       }
       leaf oper-state {
         type srl_nokia-comm:oper-state;
@@ -66,11 +73,27 @@ module srl_nokia-sync-freq {
         description
           "Indicates the operational state of this line reference";
       }
-      leaf underlying-interface {
-        type srl_nokia-comm:interface-freq;
+      container source {
         description
-          "Reference to the configured underlying interface for frequency recovery
-           Options include line/client ports and dedicated syncE/PTP ports, if applicable.";
+          "Source for this input frequency reference
+
+          This shall be either a leafref to an interface or an application.  The leafref must point to an existing physical ethernet interface.";
+        choice interface-or-other {
+          mandatory true;
+          case interface {
+            leaf interface {
+              type leafref {
+                path "/srl_nokia-if:interface/srl_nokia-if:name";
+              }
+              must "starts-with(.,'eth')" {
+                error-message "Ethernet interfaces only";
+              }
+              must 'not (/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:breakout-mode)' {
+                error-message "Interfaces with breakout-mode configured are not supported";
+              }
+            }
+          }
+        }
       }
       leaf priority {
         type uint8 {

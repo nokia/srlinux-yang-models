@@ -6,6 +6,9 @@ module srl_nokia-sync {
   import srl_nokia-system {
     prefix srl-system;
   }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
   import srl_nokia-sync-ptp {
     prefix srl_nokia-sync-ptp;
   }
@@ -14,7 +17,7 @@ module srl_nokia-sync {
   }
   import srl_nokia-sync-interfaces {
     prefix srl_nokia-sync-interfaces;
-  }  
+  }
   import srl_nokia-features {
     prefix srl_nokia-feat;
   }
@@ -25,6 +28,10 @@ module srl_nokia-sync {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -48,10 +55,9 @@ module srl_nokia-sync {
 
   grouping sync-top {
     container sync {
-      if-feature "srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:future-0-0";
+      if-feature "srl_nokia-feat:sync";
       description
         "Context to configure sync parameters and report sessions state";
-
       container freq-references {
         uses srl_nokia-sync-freq:freq-references-top;
       }
@@ -62,13 +68,13 @@ module srl_nokia-sync {
         uses srl_nokia-sync-ptp:ptp-instance-top;
       }
       container gnss {
-        if-feature "srl_nokia-feat:future-0-0";
+        if-feature "srl_nokia-feat:sync-gnss";
         uses srl_nokia-sync-interfaces:gnss-interface-top;
       }
       container one-pps {
-        if-feature "srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:future-0-0";
+        if-feature "srl_nokia-feat:sync-one-pps";
         uses srl_nokia-sync-interfaces:one-pps-interface-top;
-      } 
+      }
     }
   }
 
