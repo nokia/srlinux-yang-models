@@ -6,22 +6,20 @@ module srl_nokia-tools-platform-secure-boot {
   import srl_nokia-tools-platform {
     prefix srl-tools-platform;
   }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
 
+  import srl_nokia-features {
+   prefix srl-feat;
+  }
+  
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "Model for operational commands for Platform Trust: Secure Boot.";
-
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
+    
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -46,8 +44,9 @@ module srl_nokia-tools-platform-secure-boot {
             "Slot identifier for the control module";
         }
         container activate {
+          if-feature "srl-feat:secure-boot-field-activated";
           description
-            "Activate Secure Boot";
+            "Activate Secure Boot";           
           leaf serial-number {
             type string;
             description
@@ -72,10 +71,15 @@ module srl_nokia-tools-platform-secure-boot {
             description
               "Indicates the secure-boot command confirmation-code";
           }
+          leaf url {
+            type string;
+            description
+              "Indicates the absolute URL location of the Modification Dataset that contains UEFI variable updates";
+          }        
         }
         container revoke {
           description
-            "Update UEFI Secure Boot forbidden database (dbx), Key Exchange Key (KEK), Platform Key (PK)";
+          "Update UEFI Secure Boot forbidden database (dbx)";
           leaf serial-number {
             type string;
             description

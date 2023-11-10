@@ -1,11 +1,17 @@
 module srl_nokia-tools-qos-policers {
-  yang-version 1.1;
-  namespace "urn:srl_nokia/tools-qos-policers";
-  prefix srl_nokia-tools-qos-policers;
+    yang-version 1.1;
+    namespace "urn:srl_nokia/tools-qos-policers";
+    prefix srl_nokia-tools-qos-policers;
 
-  import srl_nokia-tools-qos {
-    prefix srl_nokia-tools-qos;
-  }
+    import srl_nokia-tools-interfaces {
+        prefix srl_nokia-tools-if;
+    }
+    import srl_nokia-tools-qos {
+        prefix srl_nokia-tools-qos;
+    }
+    import srl_nokia-features {
+        prefix srl-feat;
+    }
 
   organization
     "Nokia";
@@ -13,10 +19,6 @@ module srl_nokia-tools-qos-policers {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -30,28 +32,29 @@ module srl_nokia-tools-qos-policers {
       "SRLinux 22.6.1";
   }
 
-  grouping tools-policer-policies-top {
-    container policer-policies {
-      leaf clear {
-        type empty;
-      }
-      list policer {
-        description
-          "The list of policer instances belonging to the policer-policy definition.";
-        key "policer-id";
-        leaf policer-id {
-          type uint8 {
-            range "0..31";
-          }
+    grouping tools-policer-policies-top {
+        container policer-policies {
+            leaf clear {
+                type empty;
+            }
+            list policer {
+                description
+                    "The list of policer instances belonging to the policer-policy definition.";
+                key "policer-id";
+                leaf policer-id {
+                    type uint8 {
+                        range "0..31";
+                    }
+                }
+                leaf clear {
+                    type empty;
+                }
+            }
         }
-        leaf clear {
-          type empty;
-        }
-      }
     }
-  }
 
-  augment "/srl_nokia-tools-qos:qos/srl_nokia-tools-qos:interfaces/srl_nokia-tools-qos:interface/srl_nokia-tools-qos:input" {
-    uses tools-policer-policies-top;
-  }
+    augment "/srl_nokia-tools-qos:qos/srl_nokia-tools-qos:interfaces/srl_nokia-tools-qos:interface/srl_nokia-tools-qos:input" {
+        uses tools-policer-policies-top;
+    }
 }
+

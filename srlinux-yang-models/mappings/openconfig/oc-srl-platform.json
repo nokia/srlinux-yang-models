@@ -208,7 +208,7 @@
       // {
       //   "oc": "/components/component/state/switchover-ready",
       //   "srl": "/platform/redundancy/synchronization/state"
-      //   "special-handling": "populate only for controller card"
+      //   "sepcial-handling": "populate only for controller card"
       // },
     },
     {
@@ -252,14 +252,6 @@
       //   "srlinux": "/platform/*/temperature/instant,/interface/transceiver/temperature/latest-value"
       // },
       // {
-      //   "oc": "/components/component/state/temperature/max",
-      //   "srlinux": "/platform/*/temperature/maximum,/interface/transceiver/temperature/maximum"
-      // },
-      // {
-      //   "oc": "/components/component/state/temperature/max-time",
-      //   "srlinux": "/platform/*/temperature/maximum-time,/interface/transceiver/temperature/maximum-time"
-      // },
-      // {
       //   "oc": "/components/component/state/temperature/alarm-status",
       //   "srlinux": "/platform/*/temperature/alarm-status,/interface/transceiver/temperature/low-warning-condition"
       // },
@@ -277,11 +269,19 @@
       "supported": false
     },
     {
+      "oc": "/components/component/state/temperature/max",
+      "supported": false
+    },
+    {
       "oc": "/components/component/state/temperature/interval",
       "supported": false
     },
     {
       "oc": "/components/component/state/temperature/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/temperature/max-time",
       "supported": false
     },
     {
@@ -394,81 +394,41 @@
     },
     {
       "oc": "/components/component/port/oc-port:breakout-mode",
-      "srlinux": ""
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups",
-      "srlinux": ""
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group",
-      "srlinux": "/interface/breakout-mode",
-      "ancestor-key-override-transform": "breakout-mode-ancestor-key-override",
-      "feature-flagged": true
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:index",
-      "srlinux": "",
-      "transform": "null-key-transform",
-      "feature-flagged": true
-
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}",
-      "srlinux": "",
-      "feature-flagged": true
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:index",
-      "srlinux": "",
-      "feature-flagged": true,
-      "deviations": {
-        "add": {
-            "must": [
-              {
-                  "expression": ". = 1",
-                  "error-message": "only single group with index 1 is supported"
-              }
-            ]
-        }
-      }
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:num-breakouts",
-      "srlinux": "/interface/breakout-mode/num-breakout-ports",
-      "feature-flagged": true,
-      "mapping": [
-        {"2":"2"},
-        {"3":"3"},
-        {"4":"4"},
-        {"8":"8"}
-      ]
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:breakout-speed",
-      "srlinux": "/interface/breakout-mode/breakout-port-speed",
-      "feature-flagged": true,
-      "mapping": [
-        {"SPEED_10MB":""},
-        {"SPEED_100MB":""},
-        {"SPEED_1GB":""},
-        {"SPEED_2500MB":""},
-        {"SPEED_5GB":""},
-        {"SPEED_10GB":"10G"},
-        {"SPEED_25GB":"25G"},
-        {"SPEED_40GB":""},
-        {"SPEED_50GB":""},
-        {"SPEED_100GB":"100G"},
-        {"SPEED_200GB":""},
-        {"SPEED_400GB":""},
-        {"SPEED_600GB":""},
-        {"SPEED_800GB":""},
-        {"SPEED_UNKNOWN":""}
-      ]
-    },
-    {
-      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:num-physical-channels",
       "supported": false
+      // "srlinux": "/interface/breakout-mode"
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:{config,state}",
+      "supported": false
+      // "srlinux": ""
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:{config,state}/oc-port:num-channels",
+      "supported": false
+      // "srlinux": "/interface/breakout-mode/num-channels",
+      // "transform": "enum-to-uint8"
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:{config,state}/oc-port:channel-speed",
+      "supported": false
+    //   "srlinux": "/interface/breakout-mode/channel-speed",
+    //   "mapping": [
+    //     {"SPEED_10MB":""},
+    //     {"SPEED_100MB":""},
+    //     {"SPEED_1GB":""},
+    //     {"SPEED_2500MB":""},
+    //     {"SPEED_5GB":""},
+    //     {"SPEED_10GB":"10G"},
+    //     {"SPEED_25GB":"25G"},
+    //     {"SPEED_40GB":""},
+    //     {"SPEED_50GB":""},
+    //     {"SPEED_100GB":"100G"},
+    //     {"SPEED_200GB":""},
+    //     {"SPEED_400GB":""},
+    //     {"SPEED_600GB":""},
+    //     {"SPEED_800GB":""},
+    //     {"SPEED_UNKNOWN":""}
+    // ]
     },
     {
       "oc": "/components/component/power-supply",
@@ -919,7 +879,7 @@
     {
       "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel",
       "srlinux": "/interface/transceiver/channel",
-      "ancestor-key-override-transform": "transceiver-ancestor-key-override",
+      "pretranslate-transform":"srl-oc-components-transceiver-transform",
       "feature-flagged": true
     },
     {
@@ -930,6 +890,7 @@
     {
       "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:{config,state}",
       "srlinux": "",
+      "pretranslate-transform":"srl-oc-components-transceiver-transform",
       "feature-flagged": true
     },
     {
@@ -975,6 +936,7 @@
     {
       "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power",
       "srlinux": "/interface/transceiver/channel/output-power",
+      "pretranslate-transform":"srl-oc-components-transceiver-transform",
       "feature-flagged": true
     },
     {
@@ -1009,6 +971,7 @@
     {
       "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:input-power",
       "srlinux": "/interface/transceiver/channel/input-power",
+      "pretranslate-transform":"srl-oc-components-transceiver-transform",
       "feature-flagged": true
     },
     {
@@ -1043,6 +1006,7 @@
     {
       "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current",
       "srlinux": "/interface/transceiver/channel/laser-bias-current",
+      "pretranslate-transform":"srl-oc-components-transceiver-transform",
       "feature-flagged": true
     },
     {
@@ -1077,94 +1041,7 @@
     },
     {
       "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:thresholds",
-      "srlinux": ""
-    },
-    // This handles:
-    // {
-    //   "oc": "/components/component/trasceiver/thresholds/threshold",
-    //   "srlinux": "/interface/transceiver/channel[index==1]",
-    //   "special-handling": "returns all children as leaves within both input-power and output-power are needed"
-    // }
-    {
-      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:thresholds/oc-transceiver:threshold",
-      "pretranslate-transform": "oc-component-transceiver-thresholds-transform"
-    },
-    {
-      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:thresholds/oc-transceiver:threshold/state",
-      "pretranslate-transform": "oc-component-transceiver-thresholds-transform"
-    },
-    // This handles:
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/input-power/low-warning-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==WARNING]/input-power-lower"
-    // },
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/input-power/high-warning-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==WARNING]/input-power-upper"
-    // },
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/output-power/low-warning-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==WARNING]/output-power-lower"
-    // },
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/output-power/upper-warning-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==WARNING]/output-power-upper"
-    // },
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/input-power/low-alarm-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==CRITICAL]/input-power-lower"
-    // },
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/input-power/high-alarm-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==CRITICAL]/input-power-upper"
-    // },
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/output-power/low-alarm-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==CRITICAL]/output-power-lower"
-    // },
-    // {
-    //   "srlinux": "/interface/transceiver/channel[index==1]/output-power/upper-alarm-threshold",
-    //   "oc": "/components/component/trasceiver/thresholds/threshold[severity==CRITICAL]/output-power-upper"
-    // },
-    {
-      "srlinux": "/interface/transceiver/channel/input-power/low-warning-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
-    },
-    {
-      "srlinux": "/interface/transceiver/channel/input-power/high-warning-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
-    },
-    {
-      "srlinux": "/interface/transceiver/channel/output-power/low-warning-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
-    },
-    {
-      "srlinux": "/interface/transceiver/channel/output-power/high-warning-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
-    },
-    {
-      "srlinux": "/interface/transceiver/channel/input-power/low-alarm-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
-    },
-    {
-      "srlinux": "/interface/transceiver/channel/input-power/high-alarm-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
-    },
-    {
-      "srlinux": "/interface/transceiver/channel/output-power/low-alarm-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
-    },
-    {
-      "srlinux": "/interface/transceiver/channel/output-power/high-alarm-threshold",
-      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
-      "feature-flagged": true
+      "supported": false
     },
     {
       "oc": "/components/component/software-module",

@@ -6,28 +6,27 @@ module srl_nokia-platform-secure-boot {
   import srl_nokia-platform {
     prefix srl-platform;
   }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
 
+  import srl_nokia-features {
+   prefix srl-feat;
+  }
+  
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "Model for operational states for Platform Trust: Secure Boot";
-
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
+    
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
   }
 
-  grouping secure-boot-database-variable {
+  grouping secure-boot-database-variable
+  {
     list certificate {
       key "index";
       config false;
@@ -51,7 +50,7 @@ module srl_nokia-platform-secure-boot {
         "List of SHA-1 hash digests";
       leaf index {
         type uint32;
-        description
+        description 
           "The index of the hash";
       }
       leaf digest-value {
@@ -63,11 +62,10 @@ module srl_nokia-platform-secure-boot {
     list sha256-hash {
       key "index";
       config false;
-      description
-        "List of SHA-256 hash digests";
+      description "List of SHA-256 hash digests";
       leaf index {
         type uint32;
-        description
+        description        
           "The index of the hash";
       }
       leaf digest-value {
@@ -99,7 +97,8 @@ module srl_nokia-platform-secure-boot {
     }
   }
 
-  grouping secure-boot-variables-status {
+  grouping secure-boot-variables-status
+  {
     leaf modification-dataset-present {
       type boolean;
       description
@@ -109,70 +108,67 @@ module srl_nokia-platform-secure-boot {
       type boolean;
       description
         "The status of the modification dataset
-         true = the modification dataset is valid
-         false = the modification dataset is invalid";
+        true = the modification dataset is valid
+        false = the modification dataset is invalid";
     }
     leaf up-to-date {
       type boolean;
       description
         "Status of the Secure Boot variables programmed in the control module compared to the current modification dataset
-         true = UEFI variables are up to date
-         false = UEFI variable update required";
+        true = UEFI variables are up to date
+        false = UEFI variable update required";
     }
     leaf dbx-update-required {
       type boolean;
       description
         "The forbidden database (dbx) update status compared to the modification dataset
-         true = the forbidden database (dbx) is not up to date, update required
-         false = the forbidden database (dbx) is up to date";
+        true = the forbidden database (dbx) is not up to date, update required
+        false = the forbidden database (dbx) is up to date";
     }
     leaf db-update-required {
       type boolean;
       description
         "The authorized database (db) update status compared to the modification dataset
-         true = the authorized database (db) is not up to date, update required
-         false = the authorized database (db) is up to date";
+        true = the authorized database (db) is not up to date, update required
+        false = the authorized database (db) is up to date";
     }
     leaf pk-update-required {
       type boolean;
       description
         "The Platform Key (PK) update status compared to the modification dataset
-         true = the Platform Key is not up to date, update required
-         false = the Platform Key is up to date";
+        true = the Platform Key is not up to date, update required
+        false = the Platform Key is up to date";
     }
     leaf kek-update-required {
       type boolean;
       description
         "The Key Exchange Key database (KEK) update status compared to the modification dataset
-         true = the Key Exchange Key database (KEK) is not up to date, update required
-         false = the Key Exchange Key database (KEK) is up to date";
+        true = the Key Exchange Key database (KEK) is not up to date, update required
+        false = the Key Exchange Key database (KEK) is up to date";
     }
     leaf modification-dataset-db-conflict {
       type boolean;
       description
         "The authorized databse (db) conflict status between the modification dataset and the current running image
-         true = conflict
-         false = no conflict";
+        true = conflict
+        false = no conflict";
     }
     leaf modification-dataset-dbx-conflict {
       type boolean;
       description
         "The forbidden databse (dbx) conflict status between the modification dataset and the current running image
-         true = conflict
-         false = no conflict";
-    }
-    leaf modification-dataset-digest {
-      type binary;
-      description
-        "The SHA256 digest of the modification dataset file";
+        true = conflict
+        false = no conflict";      
     }
   }
 
   grouping secure-boot-state-top {
     container secure-boot {
+      if-feature "srl-feat:secure-boot";
       config false;
       description
         "State information related to Secure Boot";
+      
       list control {
         key "slot";
         leaf slot {
@@ -223,6 +219,6 @@ module srl_nokia-platform-secure-boot {
   }
 
   augment "/srl-platform:platform/srl-platform:trust" {
-    uses secure-boot-state-top;
+      uses secure-boot-state-top;
   }
 }

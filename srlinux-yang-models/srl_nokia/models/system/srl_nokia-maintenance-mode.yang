@@ -1,5 +1,8 @@
 module srl_nokia-maintenance-mode {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/maintenance-mode";
   prefix srl-m-mode;
 
@@ -12,6 +15,9 @@ module srl_nokia-maintenance-mode {
   import srl_nokia-bgp {
     prefix srl-bgp;
   }
+
+  // import some basic types
+
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
@@ -27,6 +33,7 @@ module srl_nokia-maintenance-mode {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data
      for Maintenance Mode.";
@@ -61,8 +68,9 @@ module srl_nokia-maintenance-mode {
           "Container for specifying the BGP members of the maintenance group";
         list network-instance {
           description
-            "List of network instances with one or more peers to be placed in maintenance mode";
-          key "name";
+              "List of network instances with one or more peers to be placed in maintenance mode";
+          
+        key "name";
           leaf name {
             type leafref {
               path "/srl-netinst:network-instance/srl-netinst:name";
@@ -110,7 +118,6 @@ module srl_nokia-maintenance-mode {
       }
     }
   }
-
   grouping group-top {
     description
       "Top-level grouping for Maintenance Mode Group";
@@ -132,9 +139,9 @@ module srl_nokia-maintenance-mode {
           description
             "Enable or disable maintenance mode for this group
 
-             The enable setting is blocked if there is another maintenance group with at least one BGP session in its scope that overlaps with this maintenance group and that other maintenance group is currently in maintenance mode.
+            The enable setting is blocked if there is another maintenance group with at least one BGP session in its scope that overlaps with this maintenance group and that other maintenance group is currently in maintenance mode.
 
-             While a maintenance group is in maintenance mode it is not possible to modify the BGP configuration of its members.";
+            While a maintenance group is in maintenance mode it is not possible to modify the BGP configuration of its members.";
         }
       }
       leaf maintenance-profile {
@@ -146,6 +153,7 @@ module srl_nokia-maintenance-mode {
       }
       uses group-members-top;
     }
+    // list group
   }
 
   grouping profile-top {
@@ -156,7 +164,7 @@ module srl_nokia-maintenance-mode {
       leaf name {
         type srl_nokia-comm:name;
         description
-          "Name of the maintenance profile";
+            "Name of the maintenance profile";
       }
       container bgp {
         description
@@ -180,7 +188,7 @@ module srl_nokia-maintenance-mode {
         if-feature "srl-feat:isis-maint-mode";
         description
           "Container for ISIS configurations.";
-        container overload {
+        container overload { 
           description
             "Container for ISIS overload configurations.";
           leaf set-bit {
@@ -200,8 +208,9 @@ module srl_nokia-maintenance-mode {
           }
         }
       }
-    }
-  }
+    } 
+    // list profile
+  }  // profile-top
 
   grouping maintenance-top {
     description

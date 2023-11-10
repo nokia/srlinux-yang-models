@@ -1,5 +1,8 @@
 module srl_nokia-next-hop-groups {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/next-hop-groups";
   prefix srl_nokia-next-hop-groups;
 
@@ -18,13 +21,10 @@ module srl_nokia-next-hop-groups {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This yang file gives a description of next-hop-groups configuration.";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2022-03-31 {
     description
       "SRLinux 22.3.1";
@@ -76,20 +76,20 @@ module srl_nokia-next-hop-groups {
         list nexthop {
           max-elements 128;
           key "index";
+
           must 'not(../blackhole)' {
             error-message "Blackhole and nexthop cannot co-exist within a group";
           }
+
           leaf index {
             type uint16;
             description
               "Numerical index of the next-hop member";
           }
           leaf ip-address {
-            type srl_nokia-comm:ip-address-with-zone;
+            type srl_nokia-comm:ip-address;
             description
-              "The next-hop IPv4 or IPv6 address
-
-               If the IPv6 address is a link-local address then the zoned format must be used";
+              "The next-hop IPv4 or IPv6 address";
           }
           leaf admin-state {
             type srl_nokia-comm:admin-state;
@@ -100,9 +100,6 @@ module srl_nokia-next-hop-groups {
           leaf resolve {
             type boolean;
             default "true";
-            must 'not(. and re-match(../ip-address, "[^%]+%[^%]+"))' {
-              error-message "resolve should be set to false for link-local nexthops.";
-            }
             description
               "When set to true, the router is allowed to use any route to resolve the nexthop address to an outgoing interface
 

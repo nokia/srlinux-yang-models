@@ -12,6 +12,7 @@ module srl_nokia-tools-platform {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "Model for operational commands for platform.";
 
@@ -70,7 +71,7 @@ module srl_nokia-tools-platform {
       "Grouping for force leaf used with reboots";
     leaf cancel {
       type empty;
-      must 'not(../delay)' {
+      must "not(../delay)" {
         error-message "cancel cannot be used with a delay";
       }
       description
@@ -83,10 +84,10 @@ module srl_nokia-tools-platform {
       "Grouping for force leaf used with reboots";
     leaf cancel {
       type empty;
-      must 'not(../delay)' {
+      must "not(../delay)" {
         error-message "cancel cannot be used with a delay";
       }
-      must 'not(../force)' {
+      must "not(../force)" {
         error-message "cancel cannot be used with force";
       }
       description
@@ -107,7 +108,7 @@ module srl_nokia-tools-platform {
     container reboot {
       if-feature "srl-feat:chassis";
       presence "Trigger or cancel a reboot of this component";
-      description
+      description 
         "Trigger or a reboot of this component";
       uses reboot-options;
       uses reboot-options-no-force;
@@ -120,7 +121,7 @@ module srl_nokia-tools-platform {
     container reboot {
       if-feature "srl-feat:chassis";
       presence "Trigger or cancel a reboot of this component";
-      description
+      description 
         "Trigger or a reboot of this component";
       uses reboot-options;
       uses reboot-options-force;
@@ -141,7 +142,7 @@ module srl_nokia-tools-platform {
       description
         "The amount of time to delay the reboot
 
-         During this period, the reboot can be cancelled.";
+        During this period, the reboot can be cancelled.";
     }
   }
 
@@ -152,6 +153,7 @@ module srl_nokia-tools-platform {
       if-feature "srl-feat:disk-encryption";
       description
         "Operational commands related to Disk Encryption";
+
       list control {
         description
           "Operational commands related Secure Boot for control modules";
@@ -163,18 +165,24 @@ module srl_nokia-tools-platform {
           description
             "Slot identifier for the control module";
         }
+
         container activate {
           presence "Activate Disk Encryption on control module";
-          description
-            "Activate Disk Encryption on control module";
+          description "Activate Disk Encryption on control module";
+          // must "reboot" {
+          //  error-message "Missing reboot option";
+          // }
           leaf reboot {
             type empty;
           }
         }
+
         container generate-recovery-key {
           presence "Generate Disk Encryption recovery key for a control module";
-          description
-            "Generate Disk Encryption recovery key for a control module";
+          description "Generate Disk Encryption recovery key for a control module";
+          // must "reboot" {
+          //  error-message "Missing reboot option";
+          // }
           leaf reboot {
             type empty;
           }
@@ -191,6 +199,7 @@ module srl_nokia-tools-platform {
         presence "Trigger a reboot of the chassis";
         description
           "Trigger a reboot of the chassis";
+
         uses reboot-options;
         uses reboot-options-force;
         container warm {

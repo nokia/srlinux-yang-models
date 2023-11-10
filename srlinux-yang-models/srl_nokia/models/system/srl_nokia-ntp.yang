@@ -1,5 +1,8 @@
 module srl_nokia-ntp {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/ntp";
   prefix srl_nokia-ntp;
 
@@ -21,13 +24,10 @@ module srl_nokia-ntp {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This module defines NTP configuration and state";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -47,13 +47,9 @@ module srl_nokia-ntp {
 
   grouping server-entry {
     leaf address {
-      type srl-comm:host;
+      type srl-comm:ip-address;
       description
-        "Domain or IP address of the NTP server
-
-         IP address may be either IPv4 or IPv6.
-
-         Domain resolution requires working DNS configuration in the same network-instance.";
+        "IP address of the NTP server, may be either IPv4 or IPv6";
     }
     leaf iburst {
       type boolean;
@@ -116,9 +112,7 @@ module srl_nokia-ntp {
         "Dispersion (epsilon) represents the maximum error inherent in the measurement";
     }
     leaf poll-interval {
-      type uint16 {
-        range "16..3600";
-      }
+      type uint16;
       units "seconds";
       config false;
       description
@@ -157,7 +151,7 @@ module srl_nokia-ntp {
       }
       leaf synchronized {
         type union {
-          type srl-comm:host;
+          type srl-comm:ip-address;
           type string {
             pattern 'unsynchronized';
           }
@@ -178,11 +172,6 @@ module srl_nokia-ntp {
         description
           "Reference to a configured network-instance";
         mandatory true;
-      }
-      leaf source-address {
-        type srl-comm:ip-address;
-        description
-          "Source address for NTP to use for messages sent to a remote server";
       }
       uses server-config;
     }

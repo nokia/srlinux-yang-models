@@ -18,13 +18,10 @@ module srl_nokia-load-balancing {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data related to ECMP and other load-balancing options.";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -53,18 +50,18 @@ module srl_nokia-load-balancing {
   grouping generic-load-balancing {
     container load-balancing {
       if-feature "not srl_nokia-feat:platform-vsrl";
-      description
-        "Adjust system-wide ECMP load balancing options.";
+      description "Adjust system-wide ECMP load balancing options.";
       container hash-options {
         if-feature "not srl_nokia-feat:future-0-0";
-        must 'destination-address = source-address' {
-          error-message "Destination address and source address hashing cannot be set differently on this platform";
-          srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
+        must "destination-address = source-address" {
+            error-message "Destination address and source address hashing cannot be set differently on this platform";
+            srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
         }
-        must 'destination-port = source-port' {
-          error-message "Destination address and source port hashing cannot be set differently on this platform";
-          srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
+        must "destination-port = source-port" {
+            error-message "Destination address and source port hashing cannot be set differently on this platform";
+            srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
         }
+
         description
           "Container for packet header fields and other inputs used in hashing calculations";
         leaf hash-seed {
@@ -115,6 +112,7 @@ module srl_nokia-load-balancing {
         }
         leaf vlan {
           if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:trident4 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:tomahawk4";
+
           description
             "Include the received VLAN ID in the hash calculation";
           type boolean;
@@ -127,28 +125,23 @@ module srl_nokia-load-balancing {
           default "false";
         }
       }
+
       leaf lsr-profile {
-        description
-          "Adjust system-wide LSR ECMP load balancing options.";
+        description "Adjust system-wide LSR ECMP load balancing options.";
         if-feature "srl_nokia-feat:future-0-0";
         type enumeration {
           enum label-stack {
             description
-              "LSR load balancing based on only the label stack.
-
-               The datapath searches for BoS=1 or up until hash label search depth is reached";
+                "LSR load balancing based on only the label stack where node searches for BoS=1 or up until hash label search depth is reached";
           }
           enum label-eth-or-ip-l4-teid {
             description
               "LSR load balancing based on the label stack and Eth or IP headers
 
-               The datapath performs Eth speculation after BoS=1 or once max label stack depth is reached.
-               Irrespective of the outcome of the Eth speculation further attempts IPv4/6 speculation based on first nibble, includes source and destination IP address, followed by UDP/TCP check
-               for inclusion of soruce and destination ports and includes GTP/TEID when UDP or TCP port is 2123 or 2152.
-               When Ethernet header speculation yields a positive outcome, source and destination MAC together with up to two VLANs are included in the hash";
+              Node performs IPv4/6 speculation based on first nibble, includes source and destination IP address, followed by UDP/TCP check for inclusion of soruce and destination ports and includes GTP/TEID when UDP or TCP port is 2123 or 2152. Alternatively node attempts Ethernet header speculation for inclusion of source and destination MAC together with up to two VLANs";
           }
         }
-        default "label-stack";
+        default "label-eth-or-ip-l4-teid";
       }
     }
   }

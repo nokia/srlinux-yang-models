@@ -153,8 +153,9 @@
     // },
     {
       "oc": "/system/ntp",
-      "srlinux": "/system/srl_nokia-ntp:ntp"
-      // network-instance is a mandatory field and must be set via SRL interface
+      "srlinux": "/system/srl_nokia-ntp:ntp",
+      "finalize-transform": "srl-set-field-to-value{network-instance=mgmt}"
+      // network-instance is a mandatory field - default it to the mgmt network-instance for OC
     },
     {
       "oc": "/system/ntp/{config,state}",
@@ -183,8 +184,9 @@
     },
     {
       "oc": "/system/ntp/servers/server",
-      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server"
-      // network-instance is a mandatory field and must be set via SRL interface
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server",
+      "finalize-transform": "srl-set-field-to-value{../network-instance=mgmt}"
+      // network-instance is a mandatory field - default it to the mgmt network-instance for OC
     },
     {
       "oc": "/system/ntp/servers/server/address",
@@ -196,7 +198,8 @@
     },
     {
       "oc": "/system/ntp/servers/server/{config,state}/address",
-      "srlinux": ""
+      "srlinux": "",
+      "type": "srl_nokia-common:ip-address"
     },
     {
       "oc": "/system/ntp/servers/server/{config,state}/port",
@@ -280,15 +283,22 @@
       }
     },
     {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/services",
       "srlinux": "/system/srl-gnmi-server:gnmi-server/srl-gnmi-server:network-instance/srl-gnmi-server:services",
-      "pretranslate-transform": "srl-system-gnmi-services-transform"
-      // This handles:
-      // mapping single OC service of GNMI to SRL services of gnmi, gnsi, gnoi
+      "feature-flagged": true
     },
     {
-      "oc": "/system/grpc-servers/grpc-server/{config,state}/services",
-      "pretranslate-transform": "oc-system-gnmi-services-transform",
-      "state-request-from-here": true
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/services/services",
+      "srlinux": "/system/srl-gnmi-server:gnmi-server/srl-gnmi-server:network-instance/srl-gnmi-server:services/srl-gnmi-server:services",
+      "mapping": [
+        {"GNMI" : "gnmi"},
+        // others like GNOI/GNSI are unsupported in oc
+        {"GNOI" : "gnoi"},
+        {"GNSI" : "gnsi"},
+        // P4RT on the other hand is not yet supported in srl under gnmi-server
+        {"P4RT" : "p4rt"}
+      ],
+      "feature-flagged": true
     },
     {
       "oc": "/system/grpc-servers/grpc-server/{config,state}/enable",

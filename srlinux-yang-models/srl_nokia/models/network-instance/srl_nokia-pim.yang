@@ -24,6 +24,7 @@ module srl_nokia-pim {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This yang file models configuration and state of the PIM protocol";
 
@@ -211,7 +212,7 @@ module srl_nokia-pim {
             type enumeration {
               enum infinity {
                 value -1;
-              }
+              } // mapped to 4294967295
             }
           }
           units "kbps";
@@ -220,6 +221,8 @@ module srl_nokia-pim {
       }
     }
   }
+
+  // address-family
 
   grouping pim-address-family-statistics-state {
     container received {
@@ -794,6 +797,8 @@ module srl_nokia-pim {
     }
   }
 
+  // interface
+
   grouping pim-interface-database-state {
     container database {
       config false;
@@ -1308,6 +1313,22 @@ module srl_nokia-pim {
         type srl_nokia-comm:zero-based-counter32;
       }
     }
+    /* disabled for 22.11
+    leaf join-policy-drops {
+      config false;
+      description
+        "The number of Join Prune PDU drops due to policy mismatch
+    
+        The number of times the join policy match resulted in dropping Join-Prune message or one of the source group contained in the message.";
+      type yang:counter32;
+    }
+    leaf register-policy-drops {
+      config false;
+      description
+        "The number of times the register policy match resulted in dropping Register Message";
+      type yang:counter32;
+    }
+     */
     leaf sg-count {
       config false;
       description
@@ -1327,6 +1348,27 @@ module srl_nokia-pim {
       type srl_nokia-comm:zero-based-counter32;
     }
   }
+
+  /* Disabling BFD until we support MoFRR
+  grouping pim-interface-bfd-liveness {
+    leaf bfd-ipv4 {
+      description
+        "IPv4 BFD detection
+
+         The value of this object specifies whether Bidirectional Forwarding Detection (BFD) is enabled for IPv4 on this PIM interface.";
+      type boolean;
+      default "false";
+    }
+    leaf bfd-ipv6 {
+      description
+        "IPv6 BFD detection
+
+         The value of this object specifies whether Bidirectional Forwarding Detection (BFD) is enabled for IPv6 on this PIM interface.";
+      type boolean;
+      default "false";
+    }
+  }
+  */
 
   grouping pim-interface-key {
     leaf interface-name {
@@ -1415,6 +1457,8 @@ module srl_nokia-pim {
       reference
         "RFC7761 4.3.1 page 33";
     }
+    /* Disabling BFD until we support MoFRR*/
+    /* uses pim-interface-bfd-liveness; */
   }
 
   grouping pim-interface-state {
@@ -1499,6 +1543,8 @@ module srl_nokia-pim {
     uses pim-neighbors;
     uses pim-interface-database-state;
   }
+
+  // neighbor
 
   grouping pim-neighbor-state {
     description

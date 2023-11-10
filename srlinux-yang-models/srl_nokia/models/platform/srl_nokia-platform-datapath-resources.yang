@@ -27,13 +27,10 @@ module srl_nokia-platform-datapath-resources {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state related to datapath resources in the system";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -86,16 +83,16 @@ module srl_nokia-platform-datapath-resources {
     description
       "IP longest prefix match route resources.
 
-       Jericho2:
+      Jericho2:
         Every installed IPv4 and IPv6 route counts as one used route.
 
-       Trident3 and Tomahawk3:
+      Trident3 and Tomahawk3:
         In ALPM-disabled mode:
           Reports the number of half-wide entries. An IPv4 route requires a half-wide entry. An IPv6 route that is /64 or less requires a single-wide entry (2 half-wide entries). An IPv6 route that is more than /64 requires a double-wide entry (4 half-wide entries).
         In ALPM mode:
           Every IPv4 route counts as 1 used route and every IPv6 route (regardless of prefix length) counts as 2 used routes.
 
-       Trident4:
+      Trident4:
         Every IPv4 route counts as 1 used route and every IPv6 route (regardless of prefix length) counts as 4 used routes.";
   }
 
@@ -108,26 +105,18 @@ module srl_nokia-platform-datapath-resources {
        Reports the number of entries used in the MAC lookup table. On TD3, free entries reflects the total number of entries remaining in shared + dedicated UFT banks";
   }
 
-  identity mac-next-hops {
+  identity direct-next-hops {
     base xdp-datapath-resources;
     description
-      "Direct MAC next-hop resources
-
-       A resource consumed by every next-hop of a gRIBI route that is specified as an interface name plus MAC address";
-  }
-
-  identity direct-ip-next-hops {
-    base xdp-datapath-resources;
-    description
-      "Direct IP next-hop resources.
+      "Direct next-hop resources.
 
        Reports the number of entries, where 1 entry is used for every next-hop of an IP or MPLS route that is resolved directly to a local interface. This does not consider underlying ASIC resources.";
   }
 
-  identity indirect-ip-next-hops {
+  identity indirect-next-hops {
     base xdp-datapath-resources;
     description
-      "Indirect IP next-hop resources.
+      "Indirect next-hop resources.
 
        Reports the number of entries, where 1 entry is used for every next-hop of an IP route that is resolved by a non-local route. This does not consider underlying ASIC resources.";
   }
@@ -225,22 +214,13 @@ module srl_nokia-platform-datapath-resources {
       "One resource is used for every MPLS ILM entry that performs either a 'swap' or a 'pop' operation.";
   }
 
-  identity originating-tunnels {
+  identity tunnels {
     base xdp-datapath-resources;
     if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:trident4 or srl_nokia-feat:platform-vsrl or srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
-      "Originating tunnel resources
+      "Tunnel resources. One tunnel resource is used per VXLAN or MPLS tunnel endpoint.
 
-       One resource is used for every VXLAN, LDP, SR-ISIS or gRIBI tunnel originating on this node as head-end. On TD3 and TD4 systems this equates to a DVP resource.";
-  }
-
-  identity terminating-tunnels {
-    base xdp-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
-    description
-      "Terminating tunnel resources
-
-       One resource is used for every gRIBI tunnel terminating entry on this node.";
+       On TD3 and TD4 systems this equates to a DVP resource.";
   }
 
   identity asic-datapath-resources {
@@ -389,63 +369,54 @@ module srl_nokia-platform-datapath-resources {
     base asic-datapath-resources;
     if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
-      "Level 1 (top level) ECMP group resources.";
+      "L1 ECMP group resources.
+
+       ECMP FEC resources are divided into L1 ECMP FEC resources and L2 ECMP FEC resources. This counts the number of entries used in the L1 partition.";
   }
 
   identity level-2-ecmp-groups {
     base asic-datapath-resources;
     if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
-      "Level 2 (middle level) ECMP group resources.";
-  }
+      "L2 ECMP group resources.
 
-  identity level-3-ecmp-groups {
-    base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
-    description
-      "Level 3 (bottom level) ECMP group resources.";
+       ECMP FEC resources are divided into L1 ECMP FEC resources and L2 ECMP FEC resources. This counts the number of entries used in the L2 partition.";
   }
 
   identity level-1-ecmp-members {
     base asic-datapath-resources;
     if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
-      "Level 1 (top level) ECMP member resources.";
+      "L1 ECMP member resources.
+
+       ECMP FEC member resources are divided into L1 and L2 resources. This counts the number of entries used in the L1 partition.";
   }
 
   identity level-2-ecmp-members {
     base asic-datapath-resources;
     if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
-      "Level 2 (middle level) ECMP member resources.";
-  }
+      "L2 ECMP member resources.
 
-  identity level-3-ecmp-members {
-    base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
-    description
-      "Level 3 (bottom level) ECMP member resources.";
+       ECMP FEC member resources are divided into L1 and L2 resources. This counts the number of entries used in the L2 partition.";
   }
 
   identity level-1-non-ecmp-fecs {
     base asic-datapath-resources;
     if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
-      "Level 1 (top level) non-ECMP FEC resources.";
+      "L1 non-ECMP FEC resources.
+
+       Non-ECMP FEC resources are divided into L1 and L2 resources. This counts the number of entries used in the L1 partition.";
   }
 
   identity level-2-non-ecmp-fecs {
     base asic-datapath-resources;
     if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
     description
-      "Level 2 (middle level) non-ECMP FEC resources.";
-  }
+      "L2 non-ECMP FEC resources.
 
-  identity level-3-non-ecmp-fecs {
-    base asic-datapath-resources;
-    if-feature "srl_nokia-feat:jericho2 or srl_nokia-feat:jericho2cp";
-    description
-      "Level 3 (bottom level) non-ECMP FEC resources.";
+       Non-ECMP FEC resources are divided into L1 and L2 resources. This counts the number of entries used in the L2 partition.";
   }
 
   grouping datapath-resource-monitoring {

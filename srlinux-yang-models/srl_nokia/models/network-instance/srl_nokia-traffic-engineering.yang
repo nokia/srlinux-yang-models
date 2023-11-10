@@ -1,33 +1,26 @@
 module srl_nokia-traffic-engineering {
-  yang-version 1.1;
-  namespace "urn:srl_nokia/te";
-  prefix srl_nokia-te;
 
-  import srl_nokia-common {
-    prefix srl_nokia-comm;
-  }
-  import srl_nokia-network-instance {
-    prefix srl_nokia-netinst;
-  }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
-  import srl_nokia-interfaces {
-    prefix srl_nokia-if;
-  }
+  yang-version 1.1;
+
+  // namespace
+  namespace "urn:srl_nokia/te";
+
+  prefix "srl_nokia-te";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-interfaces { prefix srl_nokia-if; }
 
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "Configuration and state related to the use and propagation of TE information.";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -56,7 +49,7 @@ module srl_nokia-traffic-engineering {
       leaf advertisement {
         description
           "A setting of false means that no TE-related TLVs and subTLVs should be added to LSAs or LSPs originated by this IGP instance.
-           A setting of true means that TE-related TLVs and subTLVs should be added to LSAs or LSPs originated by this IGP instance.";
+          A setting of true means that TE-related TLVs and subTLVs should be added to LSAs or LSPs originated by this IGP instance.";
         type boolean;
         default "false";
       }
@@ -67,7 +60,7 @@ module srl_nokia-traffic-engineering {
         description
           "The advertisement mode for TE link attributes.
 
-           A setting of true means that TE properties should be advertised in legacy mode as defined in RFC 8919 and RFC 8920.";
+          A setting of true means that TE properties should be advertised in legacy mode as defined in RFC 8919 and RFC 8920.";
         type boolean;
         default "true";
       }
@@ -123,8 +116,8 @@ module srl_nokia-traffic-engineering {
       description
         "When set to true, topology and TE information related to this area or level should nkot be imported into the TE database in a format that supports export as BGP-LS routes";
       type boolean;
-      must '. = false() or (. = true() and ../../te-database-install/bgp-ls)';
-      default "false";
+      must ". = false() or (. = true() and ../../te-database-install/bgp-ls)";
+      default false;
     }
   }
 
@@ -143,11 +136,13 @@ module srl_nokia-traffic-engineering {
         description
           "A routable IPv4 address to identify the router uniquely in a TE domain.";
         type srl_nokia-comm:ipv4-address;
+        //TODO: need a new type that restricts input to a routable IPv4 address
       }
       leaf ipv6-te-router-id {
         description
           "A routable IPv6 address to identify the router uniquely in a TE domain.";
         type srl_nokia-comm:ipv6-address;
+        //TODO: need a new type that restricts input to a routable IPv6 address
       }
       container admin-groups {
         description
@@ -155,21 +150,22 @@ module srl_nokia-traffic-engineering {
         list group {
           description
             "List of admin groups defined for this network instance.";
-          key "name";
+          key name;
           leaf name {
             description
               "The name of the admin group";
             type srl_nokia-comm:name;
           }
+          // leaf application-name
           leaf bit-position {
-            mandatory true;
+            mandatory "true";
             type uint32 {
               range "0..31";
             }
             description
               "The bit-position value for the admin-group.
 
-               The value for the admin group is an integer that represents one of the bit positions in the admin-group bitmask.";
+              The value for the admin group is an integer that represents one of the bit positions in the admin-group bitmask.";
           }
         }
       }
@@ -179,14 +175,15 @@ module srl_nokia-traffic-engineering {
         list group {
           description
             "List of shared risk link groups defined for this network instance.";
-          key "name";
+          key name;
           leaf name {
             description
               "The name of the shared risk link group";
             type srl_nokia-comm:name;
           }
+          // leaf application-name
           leaf value {
-            mandatory true;
+            mandatory "true";
             type uint32;
             description
               "Group ID for the SRLG";
@@ -200,25 +197,21 @@ module srl_nokia-traffic-engineering {
         leaf interface-name {
           type srl_nokia-netinst:network-instance-subintf-name;
           description
-            "Name of a subinterface";
-          must "../interface-ref/interface or not((. = 'system0.0') or (starts-with(., 'lo')))" {
-            error-message "Traffic-Engineering config is not allowed on the system0 or a loopback interface";
-          }
+            "Name of the IS-IS interface";
         }
         container interface-ref {
           description
             "Reference to a subinterface";
+
           leaf interface {
             type leafref {
               path "/srl_nokia-if:interface/srl_nokia-if:name";
             }
             description
               "Reference to a base interface, for example a port or LAG";
-            must '../subinterface' {
+
+            must "../subinterface" {
               error-message "subinterface must be configured when interface is set";
-            }
-            must "not((. = 'system0') or (starts-with(., 'lo')))" {
-              error-message "Traffic-Engineering config is not allowed on the system0 or a loopback interface";
             }
           }
           leaf subinterface {
@@ -228,8 +221,9 @@ module srl_nokia-traffic-engineering {
             description
               "Reference to a subinterface
 
-               This requires the base interface to be specified using the interface leaf in this container.";
-            must '../interface' {
+              This requires the base interface to be specified using the interface leaf in this container.";
+
+            must "../interface" {
               error-message "interface must be configured when subinterface is set";
             }
           }
@@ -265,17 +259,16 @@ module srl_nokia-traffic-engineering {
             range "1..16777215";
           }
         }
+        // application-specific
       }
     }
   }
-
   augment "/srl_nokia-netinst:network-instance" {
-    if-feature "srl-feat:traffic-engineering";
+    if-feature srl-feat:traffic-engineering;
     uses net-instance-te;
   }
-
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-netinst:directly-connected" {
-    if-feature "srl-feat:traffic-engineering-bgpls-directly-connected";
+    if-feature srl-feat:traffic-engineering-bgpls-directly-connected;
     uses direct-tedb;
   }
 }

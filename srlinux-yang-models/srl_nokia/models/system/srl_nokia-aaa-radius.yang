@@ -1,5 +1,8 @@
 module srl_nokia-aaa-radius {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/aaa-radius";
   prefix srl-aaa-radius;
 
@@ -21,10 +24,18 @@ module srl_nokia-aaa-radius {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data
-     related to the RADIUS protocol for authentication,
-     authorization, and accounting.";
+    related to the RADIUS protocol for authentication,
+    authorization, and accounting.";
+
+  // extension statements
+  // feature statements
+  // identity statements
+  // typedef statements
+
+  // grouping statements
 
   revision 2023-07-31 {
     description
@@ -38,6 +49,7 @@ module srl_nokia-aaa-radius {
   grouping aaa-radius-server-config {
     description
       "Configuration data for a RADIUS server";
+
     leaf auth-port {
       type srl-comm:port-number;
       default "1812";
@@ -47,6 +59,7 @@ module srl_nokia-aaa-radius {
       description
         "Port number for authentication requests";
     }
+
     leaf acct-port {
       type srl-comm:port-number;
       default "1813";
@@ -56,6 +69,7 @@ module srl_nokia-aaa-radius {
       description
         "Port number for accounting requests";
     }
+
     leaf secret-key {
       type srl-comm:routing-password;
       must '../../../type = "srl-aaa-types:radius"' {
@@ -64,6 +78,13 @@ module srl_nokia-aaa-radius {
       description
         "The unencrypted shared key used between the system and server";
     }
+
+//    leaf source-address {
+//      type oc-inet:ip-address;
+//      description
+//        "Source IP address to use in messages to the RADIUS server";
+//    }
+
     leaf retransmit-attempts {
       type uint8;
       default "3";
@@ -78,10 +99,12 @@ module srl_nokia-aaa-radius {
   grouping aaa-radius-server-top {
     description
       "Top-level grouping for RADIUS server data";
+
     container radius {
       description
         "Top-level container for RADIUS server data";
-      uses aaa-radius-server-config;
+
+        uses aaa-radius-server-config;
     }
   }
 }

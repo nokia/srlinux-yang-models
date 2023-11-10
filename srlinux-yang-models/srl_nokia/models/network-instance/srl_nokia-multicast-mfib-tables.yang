@@ -1,26 +1,20 @@
 module srl_nokia-multicast-mfib-tables {
   yang-version 1.1;
+
   namespace "urn:srl_nokia/network-instance/mfib-tables";
   prefix srl_nokia-multicast-mfib-tables;
 
-  import srl_nokia-common {
-    prefix srl_nokia-comm;
-  }
-  import srl_nokia-extensions {
-    prefix srl_nokia-ext;
-  }
-  import srl_nokia-network-instance {
-    prefix srl_nokia-netinst;
-  }
-  import srl_nokia-features {
-    prefix srl_nokia-feat;
-  }
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-features { prefix srl_nokia-feat; }
 
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "A model describing the Multicast Forwarding Information Base (MFIB) of a network instance";
 
@@ -50,7 +44,7 @@ module srl_nokia-multicast-mfib-tables {
         type srl_nokia-comm:date-and-time-delta;
         description
           "Last update of this MFIB entry";
-      }
+      }    
       list outgoing-interface {
         description
           "List of the outgoing interfaces for this MFIB entry";
@@ -63,30 +57,31 @@ module srl_nokia-multicast-mfib-tables {
         leaf forward {
           srl_nokia-ext:show-importance "high";
           type boolean;
-          description
-            "Whether the outgoing interface is in forwarding state";
+          description "Whether the outgoing interface is in forwarding state";
         }
       }
       list outgoing-next-hop-group {
         description
           "List of the outgoing tunnel next-hop-groups associated with this MFIB entry";
         key "index";
-        leaf index {
+        leaf index 
+        {
           type uint64;
           description
-            "Next-hop-group allocated index";
+             "Next-hop-group allocated index";
         }
         leaf forward {
           srl_nokia-ext:show-importance "high";
           type boolean;
-          description
+          description 
             "Whether the outgoing next-hop-group is in forwarding state";
         }
-      }
+      }      
     }
   }
 
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:multicast-forwarding-information-base" {
+    //if-feature "srl_nokia-feat:mfib";
     uses network-instance-mfib-table-top;
   }
 }

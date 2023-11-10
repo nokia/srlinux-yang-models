@@ -1,57 +1,34 @@
 module srl_nokia-network-instance {
-  yang-version 1.1;
-  namespace "urn:srl_nokia/network-instance";
-  prefix srl_nokia-netinst;
 
-  import srl_nokia-common {
-    prefix srl_nokia-comm;
-  }
-  import srl_nokia-icmp {
-    prefix srl_nokia-icmp;
-  }
-  import srl_nokia-interfaces {
-    prefix srl_nokia-if;
-  }
-  import srl_nokia-bridge-table {
-    prefix srl_nokia-bridge-table;
-  }
-  import srl_nokia-bridge-table-mac-learning {
-    prefix srl_nokia-bridge-table-mac-learning;
-  }
-  import srl_nokia-bridge-table-mac-duplication {
-    prefix srl_nokia-bridge-table-mac-duplication;
-  }
-  import srl_nokia-bridge-table-mac-limit {
-    prefix srl_nokia-bridge-table-mac-limit;
-  }
-  import srl_nokia-bridge-table-shg {
-    prefix srl_nokia-bridge-table-shg;
-  }
-  import srl_nokia-connection-point {
-    prefix srl_nokia-connection-point;
-  }
-  import srl_nokia-extensions {
-    prefix srl_nokia-ext;
-  }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
-  import srl_nokia-routing-policy {
-    prefix srl-rpol;
-  }
+  yang-version 1.1;
+
+  // namespace
+  namespace "urn:srl_nokia/network-instance";
+
+  prefix "srl_nokia-netinst";
+
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-icmp { prefix srl_nokia-icmp; }
+  import srl_nokia-interfaces { prefix srl_nokia-if;}
+  import srl_nokia-bridge-table { prefix srl_nokia-bridge-table; }
+  import srl_nokia-bridge-table-mac-learning { prefix srl_nokia-bridge-table-mac-learning; }
+  import srl_nokia-bridge-table-mac-duplication { prefix srl_nokia-bridge-table-mac-duplication; }
+  import srl_nokia-bridge-table-mac-limit { prefix srl_nokia-bridge-table-mac-limit; }
+  import srl_nokia-bridge-table-shg { prefix srl_nokia-bridge-table-shg; }
+  import srl_nokia-connection-point { prefix srl_nokia-connection-point; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-routing-policy { prefix srl-rpol; }
 
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This yang file gives a description of a network-instance. This may be a Layer 3 forwarding construct such as a virtual routing and forwarding (VRF) instance, or a Layer 2 instance such as a virtual switch instance (VSI). Mixed Layer 2 and Layer 3 instances are also supported.";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -100,10 +77,9 @@ module srl_nokia-network-instance {
     description
       "User defined name or reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
   }
-
   typedef network-instance-vxlan-if-ref {
     type string {
-      length "8..17";
+      length "8..17";  // based on the pattern below
       pattern '(vxlan(0|1[0-9][0-9]|2([0-4][0-9]|5[0-5])|[1-9][0-9]|[1-9])\.(0|[1-9](\d){0,8}))';
     }
     description
@@ -135,14 +111,14 @@ module srl_nokia-network-instance {
   }
 
   identity mac-vrf {
-    if-feature "srl-feat:bridged";
+    if-feature srl-feat:bridged;
     base ni-type;
     description
       "A private Layer 2 only switching instance.";
   }
 
   identity vpws {
-    if-feature "srl-feat:vpws";
+    if-feature srl-feat:vpws;
     base ni-type;
     description
       "A private Layer 2 point-to-point instance.";
@@ -151,15 +127,17 @@ module srl_nokia-network-instance {
   grouping network-instance-top {
     description
       "Top-level grouping containing a list of network instances.";
+
     list network-instance {
       key "name";
-      description
-        "Network instances configured on the local system";
+      description "Network instances configured on the local system";
+
       leaf name {
         type srl_nokia-comm:restricted-name;
         description
-          "A unique name identifying the network instance";
+            "A unique name identifying the network instance";
       }
+
       leaf type {
         type identityref {
           base ni-type;
@@ -170,49 +148,55 @@ module srl_nokia-network-instance {
            indicates the type of forwarding entries that should be
            supported by this network instance";
       }
+
       leaf admin-state {
         type srl_nokia-comm:admin-state;
+
         default "enable";
         description
           "This leaf contains the configured, desired state of the
            network instance.";
       }
+
       leaf oper-state {
         config false;
         type srl_nokia-comm:oper-state;
         description
           "This leaf contains the operational state of the network instance.";
       }
+
       leaf oper-down-reason {
         config false;
         type enumeration {
-          enum admin-down;
-          enum no-mcid;
+          enum "admin-down";
+          enum "no-mcid";
         }
         description
           "The reason the network-instance is down";
       }
+
       leaf oper-mac-vrf-mtu {
         config false;
         type uint16 {
           range "1492..9500";
         }
-        units "bytes";
+        units bytes;
         description
-          "Operational l2-mtu of the mac-vrf network-instance. Calculated as the lowest l2-mtu of the bridged subinterfaces associated to the mac-vrf, minus the vlan tags associated
+          "Operational l2-mtu of the mac-vrf network-instance. Calculated as the lowest l2-mtu of the bridged subinterfaces associated to the mac-vrf, minus the vlan tags associated 
            to that subinterface (lowest mtu subinterface).
 
-           When the mac-vrf has an associated irb subinterface, if the configured irb ip-mtu exceeds the oper-mac-vrf-mtu minus 14 bytes (Ethernet header), then the irb subinterface will remain operationally down.
+           When the mac-vrf has an associated irb subinterface, if the configured irb ip-mtu exceeds the oper-mac-vrf-mtu minus 14 bytes (Ethernet header), then the irb subinterface will remain operationally down. 
 
            The oper-mac-vrf-mtu is only available in mac-vrf network-instances.";
       }
+
       leaf oper-vpws-mtu {
         if-feature "srl-feat:vpws";
         config false;
         type uint16 {
           range "1492..9500";
         }
-        units "bytes";
+        units bytes;
         description
           "Operational l2-mtu of the vpws network-instance
 
@@ -222,11 +206,13 @@ module srl_nokia-network-instance {
 
            The oper-vpws-mtu is only available in vpws network-instances.";
       }
+
       leaf description {
         type srl_nokia-comm:description;
         description
           "A user-entered description of this network instance.";
       }
+
       leaf router-id {
         type srl_nokia-comm:dotted-quad;
         must "(../type = 'srl_nokia-netinst:ip-vrf' or ../type = 'srl_nokia-netinst:default')" {
@@ -237,6 +223,7 @@ module srl_nokia-network-instance {
            used within associated routing protocols or signalling
            routing information in another network instance";
       }
+
       container mpls-forwarding {
         leaf forward-received-packets {
           type boolean;
@@ -246,11 +233,12 @@ module srl_nokia-network-instance {
           description
             "When set to true, MPLS packets received on any subinterface of the network-instance will be forwarded according to the matching ILM entries.
 
-             When set to false, MPLS packets are discarded if received on any subinterface of the network-instance.
+            When set to false, MPLS packets are discarded if received on any subinterface of the network-instance.
 
-             In the default network-instance the default is 'true'.";
+            In the default network-instance the default is 'true'.";
         }
       }
+
       container ip-forwarding {
         must "(../type = 'srl_nokia-netinst:ip-vrf' or ../type = 'srl_nokia-netinst:default')" {
           error-message "Ip-forwarding configuration is not possible on network-instance of types other than ip-vrf or default";
@@ -284,6 +272,7 @@ module srl_nokia-network-instance {
           }
         }
       }
+
       container ip-load-balancing {
         if-feature "srl-feat:jericho2 or srl-feat:jericho2cp or srl-feat:trident3 or srl-feat:trident4";
         description
@@ -294,7 +283,7 @@ module srl_nokia-network-instance {
           must "(../../type = 'srl_nokia-netinst:ip-vrf' or ../../type = 'srl_nokia-netinst:default')" {
             error-message "Resilient-hash-prefix configuration is not possible on network-instance of types other than ip-vrf or default";
           }
-          key "ip-prefix";
+          key ip-prefix;
           leaf ip-prefix {
             type srl_nokia-comm:ip-prefix;
             description
@@ -304,26 +293,27 @@ module srl_nokia-network-instance {
             type uint8 {
               range "1..32";
             }
-            default "1";
+            default 1;
             description
               "The number of times each next-hop is repeated in the fill pattern if there are max-paths ECMP next-hops
 
-               A larger number consumes more resources but provides more granularity when flows need to be moved. Note that hash-buckets-per-path * max-paths must be less than or equal to 128.";
+              A larger number consumes more resources but provides more granularity when flows need to be moved. Note that hash-buckets-per-path * max-paths must be less than or equal to 128.";
           }
           leaf max-paths {
             type uint8 {
               range "1..64";
             }
-            default "1";
+            default 1;
             description
               "The maximum number of ECMP next-hops per route associated with the resilient-hash prefix
 
-               If a matching route has more than this number of ECMP next-hops only the first N are used, where N is the value of this parameter. Note that hash-buckets-per-path * max-paths must be less than or equal to 128.";
+              If a matching route has more than this number of ECMP next-hops only the first N are used, where N is the value of this parameter. Note that hash-buckets-per-path * max-paths must be less than or equal to 128.";
           }
         }
       }
+
       container inter-instance-policies {
-        if-feature "srl-feat:route-leaking";
+        if-feature srl-feat:route-leaking;
         description
           "Policies for leaking routes between this network instance and other network instances";
         container apply-policy {
@@ -333,7 +323,7 @@ module srl_nokia-network-instance {
             description
               "Policy used to specify the routes leaked by other NIs that should be imported into this NI";
             type leafref {
-              path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+                path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
             }
             must "../../../srl_nokia-netinst:type = 'ip-vrf' or ../../../srl_nokia-netinst:type = 'default'" {
               error-message "Route leaking is only suported in the default and ip-vrf network-instances";
@@ -343,7 +333,7 @@ module srl_nokia-network-instance {
             description
               "Policy used to specify the routes of this NI that should be made available for leaking to other NIs";
             type leafref {
-              path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+                path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
             }
             must "../../../srl_nokia-netinst:type = 'ip-vrf' or ../../../srl_nokia-netinst:type = 'default'" {
               error-message "Route leaking is only suported in the default and ip-vrf network-instances";
@@ -351,26 +341,27 @@ module srl_nokia-network-instance {
           }
         }
       }
+
       grouping interface-bridge-table-top {
         container bridge-table {
           presence "Configure interface bridge-table parameters under a network-instance";
-          if-feature "srl-feat:bridged";
+          if-feature srl-feat:bridged;
           must "../../type = 'srl_nokia-netinst:mac-vrf'" {
             error-message "Bridge-table configuration is only possible on network-instance of type mac-vrf";
           }
           leaf split-horizon-group {
             if-feature "srl-feat:bridged and srl-feat:bt-split-horizon-groups";
-            type leafref {
-              path "../../../srl_nokia-netinst:bridge-table/srl_nokia-netinst:split-horizon-group/srl_nokia-netinst:name";
+            type leafref { 
+              path "../../../srl_nokia-netinst:bridge-table/srl_nokia-netinst:split-horizon-group/srl_nokia-netinst:name"; 
             }
-            must "not(starts-with(.,'irb'))" {
+            must "not(starts-with(.,'irb'))" { 
               error-message "split-horizon-group not allowed on IRB interfaces";
             }
           }
           leaf mac-relearn-only {
             config false;
             type boolean;
-            default "true";
+            default true;
             description
               "The value of this leaf indicates that the interface will not
                learn any new mac addresses, but will relearn any that are already
@@ -392,26 +383,28 @@ module srl_nokia-network-instance {
           leaf oper-mac-learning-disabled-reason {
             config false;
             type enumeration {
-              enum admin-disabled;
-              enum mac-dup-detected;
+              enum "admin-disabled";
+              enum "mac-dup-detected";
             }
             description
               "The reason for the mac-learning being disabled on this interface";
           }
         }
       }
-
       list interface {
         key "name";
-        description
-          "List of subinterfaces used by this network-instance";
+
+        description "List of subinterfaces used by this network-instance";
+
         must "../type != 'srl_nokia-netinst:host'" {
           error-message "Interfaces cannot be added to a network instance of type host";
         }
+
         leaf name {
           type srl_nokia-netinst:network-instance-subintf-name;
           description
             "Name of the subinterface bound to this network-instance";
+
           must "./interface-ref/interface or not(starts-with(.,'lo') and ../../type = 'srl_nokia-netinst:mac-vrf')" {
             error-message "Loopback interfaces cannot be configured on network-instance of type mac-vrf";
           }
@@ -428,17 +421,19 @@ module srl_nokia-network-instance {
             error-message "IRB interfaces cannot be configured with proxy-nd";
           }
         }
+
         container interface-ref {
           if-feature "srl-feat:interface-references";
-          description
-            "Reference to a subinterface";
+          description "Reference to a subinterface";
+
           leaf interface {
             type leafref {
               path "/srl_nokia-if:interface/srl_nokia-if:name";
             }
             description
               "Reference to a base interface, for example a port or LAG";
-            must '../subinterface >= 0' {
+
+            must "../subinterface >= 0" {
               error-message "subinterface must be configured when interface is set";
             }
             must "not(starts-with(.,'lo') and ../../../type = 'srl_nokia-netinst:mac-vrf')" {
@@ -457,6 +452,7 @@ module srl_nokia-network-instance {
               error-message "IRB interfaces cannot be configured with proxy-nd";
             }
           }
+
           leaf subinterface {
             type leafref {
               path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
@@ -464,11 +460,13 @@ module srl_nokia-network-instance {
             description
               "Reference to a subinterface
                This requires the base interface to be specified using the interface leaf in this container.";
-            must '../interface' {
+
+            must "../interface" {
               error-message "interface must be configured when subinterface is set";
             }
           }
         }
+
         leaf oper-state {
           config false;
           type srl_nokia-comm:oper-state;
@@ -478,18 +476,18 @@ module srl_nokia-network-instance {
         leaf oper-down-reason {
           config false;
           type enumeration {
-            enum ip-addr-missing;
-            enum ip-addr-overlap;
-            enum subif-down;
-            enum net-inst-down;
-            enum vrf-type-mismatch;
-            enum mac-dup-detected;
-            enum associated-mac-vrf-down;
-            enum mac-vrf-association-missing;
-            enum ip-vrf-association-missing;
-            enum associated-ip-vrf-down;
-            enum evpn-mh-standby;
-            enum interface-ref-missing;
+            enum "ip-addr-missing";
+            enum "ip-addr-overlap";
+            enum "subif-down";
+            enum "net-inst-down";
+            enum "vrf-type-mismatch";
+            enum "mac-dup-detected";
+            enum "associated-mac-vrf-down";
+            enum "mac-vrf-association-missing";
+            enum "ip-vrf-association-missing";
+            enum "associated-ip-vrf-down";
+            enum "evpn-mh-standby";
+            enum "interface-ref-missing";
           }
           description
             "The reason for the interface being down in the network-instance";
@@ -497,17 +495,17 @@ module srl_nokia-network-instance {
         leaf index {
           config false;
           type uint64;
-          default "0";
+          default 0;
           description
             "network instance allocated sub interface index";
         }
         uses interface-bridge-table-top;
         leaf connection-point {
           if-feature "srl-feat:connection-point";
-          type leafref {
-            path "../../srl_nokia-netinst:connection-point/srl_nokia-netinst:name";
+          type leafref { 
+            path "../../srl_nokia-netinst:connection-point/srl_nokia-netinst:name"; 
           }
-          must "not(starts-with(.,'irb'))" {
+          must "not(starts-with(.,'irb'))" { 
             error-message "connection-point not allowed on IRB interfaces";
           }
         }
@@ -525,8 +523,8 @@ module srl_nokia-network-instance {
           description
             "The reason why the default network instance does not have a system IPv4 address";
           type enumeration {
-            enum system-interface-not-bound;
-            enum system-interface-has-no-ipv4-address;
+            enum "system-interface-not-bound";
+            enum "system-interface-has-no-ipv4-address";
           }
         }
       }
@@ -543,20 +541,20 @@ module srl_nokia-network-instance {
           description
             "The reason why the default network instance does not have a system IPv6 address";
           type enumeration {
-            enum system-interface-not-bound;
-            enum system-interface-has-no-ipv6-address;
+            enum "system-interface-not-bound";
+            enum "system-interface-has-no-ipv6-address";
           }
         }
       }
       list vxlan-interface {
-        if-feature "srl-feat:vxlan";
+        if-feature "srl-feat:vxlan"; 
         key "name";
         max-elements 1;
-        must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/srl_nokia-netinst:name]/srl_nokia-netinst:type != "srl_nokia-netinst:default")' {
-          error-message "The bgp-evpn configuration is not possible on network-instance of type default.";
-        }
-        description
-          "List of vxlan-interfaces used by this network-instance";
+          must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/srl_nokia-netinst:name]/srl_nokia-netinst:type != "srl_nokia-netinst:default")' {
+              error-message "The bgp-evpn configuration is not possible on network-instance of type default.";
+          }
+        
+        description "List of vxlan-interfaces used by this network-instance";
         leaf name {
           type srl_nokia-netinst:network-instance-vxlan-if-ref;
           must "(starts-with(.,'vxlan'))" {
@@ -577,46 +575,57 @@ module srl_nokia-network-instance {
         leaf oper-down-reason {
           config false;
           type enumeration {
-            enum vxlan-tunnel-down;
-            enum net-inst-down;
-            enum vxlan-if-default-net-inst-source-address-missing;
-            enum vxlan-if-default-net-inst-source-if-down;
-            enum vrf-type-mismatch;
-            enum no-mcid;
+            enum "vxlan-tunnel-down";
+            enum "net-inst-down";
+            enum "vxlan-if-default-net-inst-source-address-missing"; // The vxlan-interface source ip must be in the default netinst
+            enum "vxlan-if-default-net-inst-source-if-down"; // The vxlan-interface source sub-interface must be up
+            enum "vrf-type-mismatch";
+            enum "no-mcid";
           }
           description
             "The reason for the vxlan-interface being down in the network-instance";
         }
       }
+
+      // Hook icmp and icmp6 containers
       uses srl_nokia-icmp:icmp-top;
       uses srl_nokia-icmp:icmp6-top;
+
       container protocols {
         description
           "The routing protocols that are enabled for this
            network-instance.";
+
+        // Protocols are augmented into this spot
         container bgp-evpn {
-          if-feature "srl-feat:evpn";
+          if-feature "srl-feat:evpn"; 
           presence "Configure BGP-EVPN";
+          // bgp-evpn are augmented into this spot
           must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type != "srl_nokia-netinst:default")' {
-            error-message "The bgp-evpn configuration is not possible on network-instance of type default.";
+              error-message "The bgp-evpn configuration is not possible on network-instance of type default.";
           }
         }
+
         container bgp-ipvpn {
-          if-feature "srl-feat:ipvpn";
+          if-feature "srl-feat:ipvpn"; 
           presence "Configure BGP-IPVPN";
+          // bgp-ipvpn are augmented into this spot
           must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:ip-vrf")' {
-            error-message "The bgp-ipvpn configuration is only possible on network-instance of type ip-vrf";
+            error-message "Bridge-table configuration is only possible on network-instance of type ip-vrf";
           }
         }
+
         container directly-connected {
-          if-feature "srl-feat:traffic-engineering-bgpls-directly-connected";
+          if-feature srl-feat:traffic-engineering-bgpls-directly-connected;
           description
             "Container for handling directly connected routes as a pseudo-protocol";
         }
       }
+
       container bridge-table {
+        // bridge-table augmented here
         presence "Configure bridge-table";
-        if-feature "srl-feat:bridged";
+        if-feature srl-feat:bridged;
         must "../type = 'srl_nokia-netinst:mac-vrf'" {
           error-message "Bridge-table configuration is only possible on network-instance of type mac-vrf";
         }
@@ -626,14 +635,15 @@ module srl_nokia-network-instance {
         uses srl_nokia-bridge-table-mac-limit:bridge-table-mac-limit-top;
         uses srl_nokia-bridge-table-shg:bridge-table-split-horizon-groups-top;
       }
+
       container route-table {
-        config false;
+          config false;
       }
       container tunnel-table {
-        config false;
+          config false;
       }
       container multicast-forwarding-information-base {
-        config false;
+          config false;
       }
       uses srl_nokia-connection-point:connection-point-top;
     }

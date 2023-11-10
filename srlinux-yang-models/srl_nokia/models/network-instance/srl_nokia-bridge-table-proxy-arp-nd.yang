@@ -1,36 +1,26 @@
 module srl_nokia-bridge-table-proxy-arp-nd {
+
   yang-version 1.1;
+
+  // namespace
   namespace "urn:srl_nokia/network-instance/bridge-table/proxy-arp-nd";
-  prefix srl_nokia-bridge-table-proxy-arp-nd;
+  prefix "srl_nokia-bridge-table-proxy-arp-nd";
 
-  import srl_nokia-common {
-    prefix srl_nokia-comm;
-  }
-  import srl_nokia-extensions {
-    prefix srl_nokia-ext;
-  }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
-  import srl_nokia-network-instance {
-    prefix srl_nokia-netinst;
-  }
-  import srl_nokia-routing-policy {
-    prefix srl_nokia-routing-pol;
-  }
-
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-extensions { prefix srl_nokia-ext; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-routing-policy { prefix srl_nokia-routing-pol; }
+  
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This yang file gives a description of bridge table proxy arp and nd configuration.";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -89,28 +79,28 @@ module srl_nokia-bridge-table-proxy-arp-nd {
 
   typedef neighbor-type {
     type enumeration {
-      enum router {
-        value 1;
+      enum router { 
+        value 1; 
       }
-      enum host {
-        value 2;
+      enum host { 
+        value 2; 
       }
     }
     description
       "The type of the neighbor entry.";
-  }
+  } 
 
   typedef immutable {
     type boolean;
-    default "false";
-    description
+    default false;
+    description 
       "Whether the immutable flag is set in the arp-nd extended community while advertising in bgp-evpn";
   }
 
   typedef override {
     type boolean;
-    default "false";
-    description
+    default false;
+    description 
       "Whether the override flag is set in the arp-nd extended community while advertising in bgp-evpn";
   }
 
@@ -135,62 +125,61 @@ module srl_nokia-bridge-table-proxy-arp-nd {
   grouping bridge-table-proxy-arp-evpn-flood-config {
     container flood {
       if-feature "srl-feat:l2-proxy-arp-nd-control-flood-on-evpn";
-      description
+      description 
         "How ARP frames received on a proxy service are flooded into the EVPN network";
       leaf unknown-arp-req {
         type boolean;
-        default "true";
-        description
+        default true;
+        description 
           "Whether to flood ARP requests (with source squelching) when there is no hit in the bridge-table-proxy-arp table";
       }
       leaf gratuitous-arp {
-        description
+        description 
           "Whether to flood GARP requests or replies into EVPN";
         type boolean;
-        default "true";
+        default true;
       }
     }
-  }
+  } // bridge-table-proxy-arp-evpn-flood-config
 
   grouping bridge-table-proxy-arp-evpn-config {
     container evpn {
-      description
+      description 
         "How proxy arp interacts with evpn";
       uses bridge-table-proxy-arp-nd-evpn-internal-tag-config;
       uses bridge-table-proxy-arp-evpn-flood-config;
     }
-  }
+  } // bridge-table-proxy-arp-evpn-config
 
   grouping bridge-table-proxy-arp-nd-common-dupdetect-config {
     container ip-duplication {
-      description
-        "Configuration of the proxy ARP/ND IP duplication procedures";
+      description "Configuration of the proxy ARP/ND IP duplication procedures";
       leaf monitoring-window {
         type uint32 {
           range "1..15";
         }
-        default "3";
+        default 3;
         units "minutes";
-        description
+        description 
           "Monitoring window for detecting duplication on a given ip address in the proxy ARP/ND table
 
-           An IP is declared duplicate if it exceeds the num-moves within the monitoring-window.";
+          An IP is declared duplicate if it exceeds the num-moves within the monitoring-window.";
       }
       leaf num-moves {
         type uint32 {
           range "3..10";
         }
-        default "5";
-        description
-          "Number of moves in the proxy ARP/ND table that an IP is allowed within the monitoring-window
-
+        default 5;
+        description 
+          "Number of moves in the proxy ARP/ND table that an IP is allowed within the monitoring-window 
+          
            When the number of moves exceeds this value, the IP address is declared duplicate.";
       }
       leaf hold-down-time {
         type union {
           type enumeration {
-            enum indefinite {
-              value 0;
+            enum "indefinite" { 
+              value 0; 
             }
           }
           type uint32 {
@@ -198,102 +187,96 @@ module srl_nokia-bridge-table-proxy-arp-nd {
           }
         }
         units "minutes";
-        default "9";
-        description
+        default 9;
+        description 
           "Time to wait from the moment an IP is declared duplicate to the time the IP is removed from the proxy ARP/ND table
 
            When the duplicate IP is removed, the monitoring process for the IP address is restarted.";
       }
       leaf anti-spoof-mac {
-        description
-          "MAC address associated with the optional anti-spoofing mechanism";
+        description "MAC address associated with the optional anti-spoofing mechanism";
         type srl_nokia-comm:mac-address;
       }
       leaf static-blackhole {
         description
           "Whether the anti-spoof MAC is programmed as a black hole static-mac in the mac-table";
         type boolean;
-        default "false";
+        default false;
       }
     }
-  }
-
+  } // bridge-table-proxy-arp-nd-common-dupdetect-config
   grouping bridge-table-proxy-arp-trace-options {
     container trace-options {
-      description
-        "Debug trace-options for Proxy-ARP";
+      description "Debug trace-options for Proxy-ARP";
       list flag {
-        key "name";
-        description
-          "Tracing parameters";
+        key name;
+        description "Tracing parameters";
         leaf name {
           type enumeration {
-            enum request {
+            enum "request" {
               value 1;
-              description
-                "Trace all ARP request protocol packets snooped or generated for proxy-ARP";
+              description "Trace all ARP request protocol packets snooped or generated for proxy-ARP";
             }
-            enum reply {
+            enum "reply" {
               value 2;
-              description
-                "Trace all ARP reply protocol packets snooped or generated for proxy-ARP";
+              description "Trace all ARP reply protocol packets snooped or generated for proxy-ARP";
             }
           }
         }
         leaf modifier {
-          mandatory true;
+          mandatory "true";
           type enumeration {
-            enum detail {
+            enum "detail" {
               value 0;
-              description
-                "Enables detailed tracing
-
+              description 
+                "Enables detailed tracing 
+                
                  Includes both, received and sent packets.";
             }
-            enum receive {
+            enum "receive" {
               value 1;
               description
                 "Enables tracing for the received packets";
             }
-            enum send {
+            enum "send" {
               value 2;
-              description
+              description 
                 "Enables tracing for the sent packets";
             }
           }
         }
       }
     }
-  }
+  } // bridge-table-proxy-arp-trace-options
 
   grouping bridge-table-proxy-arp-nd-common-dynamic-learning-config {
     container dynamic-learning {
       leaf admin-state {
-        type srl_nokia-comm:admin-state;
-        default "disable";
-        description
-          "Configurable state of the learning procedures for dynamic ARP/ND entries
-
-           The dynamic ARP/ND entries are learned out of snooped GARP/ARP/ND messages on bridged sub-interfaces.
-           These entries will be shown as dynamic, as opposed to EVPN entries or static entries. If the admin-state
-           is disabled, the existing ARP/ND entries in the proxy table will be kept (and refreshed).";
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Configurable state of the learning procedures for dynamic ARP/ND entries
+        
+         The dynamic ARP/ND entries are learned out of snooped GARP/ARP/ND messages on bridged sub-interfaces. 
+         These entries will be shown as dynamic, as opposed to EVPN entries or static entries. If the admin-state 
+         is disabled, the existing ARP/ND entries in the proxy table will be kept (and refreshed).";
       }
       leaf age-time {
         type union {
           type enumeration {
-            enum never {
+            enum "never" {
               value 0;
             }
           }
           type uint32 {
             range "60..86400";
           }
-        }
-        default "never";
+        }     
+        default never;
         units "seconds";
-        description
+        description 
           "Aging timer value for the proxy entries
-
+          
            When the aging expires, the entry is flushed.";
       }
       leaf send-refresh {
@@ -302,20 +285,21 @@ module srl_nokia-bridge-table-proxy-arp-nd {
             range "120..86400";
           }
           type enumeration {
-            enum never {
-              value 0;
+            enum never { 
+              value 0; 
             }
           }
         }
-        default "never";
-        description
-          "Configures the proxy refresh interval
-
+        default never;
+        description 
+          "Configures the proxy refresh interval 
+          
            The interval determines the frequency at which the system generates three ARP Requests or Neighbor Solicitations
            with the intend to refresh the proxy entry. The refresh is sent within the age-time window.";
+
       }
     }
-  }
+  } // bridge-table-proxy-arp-nd-common-dynamic-learning-config
 
   grouping bridge-table-proxy-arp-nd-common-cfg {
     leaf admin-state {
@@ -328,23 +312,23 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       type uint32 {
         range "1..8192";
       }
-      default "250";
-      description
+      default 250;
+      description 
         "Maximum number of entries allowed in the proxy table of the network-instance";
     }
     leaf oper-down-reason {
       config false;
       type enumeration {
-        enum admin-down;
-        enum no-mcid;
-        enum tag-set-not-resolved;
+        enum "admin-down";
+        enum "no-mcid";
+        enum "tag-set-not-resolved";
       }
       description
         "The reason the proxy-type is down on the network-instance";
     }
     uses bridge-table-proxy-arp-nd-common-dynamic-learning-config;
     uses bridge-table-proxy-arp-nd-common-dupdetect-config;
-  }
+  } // bridge-table-proxy-arp-nd-common-cfg
 
   grouping bridge-table-proxy-arp-cfg {
     uses bridge-table-proxy-arp-nd-common-cfg;
@@ -352,17 +336,17 @@ module srl_nokia-bridge-table-proxy-arp-nd {
     uses bridge-table-proxy-arp-trace-options;
     leaf process-arp-probes {
       type boolean;
-      default "true";
+      default true;
       description
         "Determines whether the router processes ARP probe messages.
-
-         When set to true, ARP probe messages used by the hosts for Duplicate Address Detection
+        
+         When set to true, ARP probe messages used by the hosts for Duplicate Address Detection 
          are processed, replied if a proxy-arp entry is hit or reinjected into the data path.
          When set to false, ARP probe messages are flooded to the remote nodes if unknown-arp-requests
          are configured to be flooded. ARP probe messages are identified as ARP Requests that use IP
          address 0.0.0.0 as sender's address.";
     }
-  }
+  } // bridge-table-proxy-arp-cfg
 
   grouping bridge-table-proxy-duplicate-entries-common-top {
     leaf link-layer-address {
@@ -380,15 +364,15 @@ module srl_nokia-bridge-table-proxy-arp-nd {
     leaf hold-down-time-remaining {
       type union {
         type enumeration {
-          enum indefinite {
+          enum "indefinite" {
             value 1;
           }
         }
         type uint64;
-      }
+      }     
       units "seconds";
       srl_nokia-ext:show-importance "high";
-      description
+      description 
         "Remaining hold down time for the duplicate proxy entry";
     }
     leaf state {
@@ -440,16 +424,14 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       type union {
         type uint64;
         type enumeration {
-          enum disabled {
-            value -1;
-          }
+          enum "disabled"  { value -1; }
         }
       }
       units "seconds";
       srl_nokia-ext:show-importance "high";
-      description
+      description 
         "The remaining age time for learnt proxy entry";
-    }
+    }     
     leaf state {
       type neighbor-state;
       srl_nokia-ext:show-importance "high";
@@ -578,34 +560,34 @@ module srl_nokia-bridge-table-proxy-arp-nd {
   }
 
   grouping bridge-table-proxy-table-statistics-type-top {
-    leaf total-entries {
-      config false;
-      type srl_nokia-comm:zero-based-counter64;
-      srl_nokia-ext:show-importance "high";
-      description
-        "The total number of proxy ARP entries.";
-    }
-    leaf active-entries {
-      config false;
-      type srl_nokia-comm:zero-based-counter64;
-      srl_nokia-ext:show-importance "high";
-      description
-        "The total number of active proxy ARP entries.";
-    }
-    leaf in-active-entries {
-      config false;
-      type srl_nokia-comm:zero-based-counter64;
-      srl_nokia-ext:show-importance "high";
-      description
-        "The total number of inactive proxy ARP entries.";
-    }
-    leaf pending-entries {
-      config false;
-      type srl_nokia-comm:zero-based-counter64;
-      srl_nokia-ext:show-importance "high";
-      description
-        "The total number of pending proxy ARP entries.";
-    }
+      leaf total-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of proxy ARP entries.";
+      }
+      leaf active-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of active proxy ARP entries.";
+      }
+      leaf in-active-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of inactive proxy ARP entries.";
+      }
+      leaf pending-entries {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of pending proxy ARP entries.";
+      }
   }
 
   grouping bridge-table-proxy-table-statistics-top {
@@ -690,7 +672,7 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       uses bridge-table-proxy-arp-evpn-entries-top;
       uses bridge-table-proxy-table-statistics-top;
     }
-  }
+  } // bridge-table-proxy-arp-top
 
   grouping bridge-table-proxy-nd-duplicate-entries-top {
     container duplicate-entries {
@@ -832,7 +814,7 @@ module srl_nokia-bridge-table-proxy-arp-nd {
           srl_nokia-ext:show-importance "high";
           description
             "The type of the neighbor entry";
-          default "router";
+          default router;
         }
         leaf evpn-override {
           config false;
@@ -848,102 +830,91 @@ module srl_nokia-bridge-table-proxy-arp-nd {
   grouping bridge-table-proxy-nd-evpn-flood-config {
     container flood {
       if-feature "srl-feat:l2-proxy-arp-nd-control-flood-on-evpn";
-      description
+      description 
         "How Neighbor Discovery frames received on a proxy service are flooded into the EVPN network";
       leaf unknown-neighbor-solicitation {
-        description
+        description 
           "Whether to flood Neighbor Solicitation (NS) messages (with source squelching) into the EVPN network";
         type boolean;
-        default "true";
+        default true;
       }
       leaf unknown-neighbor-advertise-router {
-        description
+        description 
           "Whether to flood Neighbor Advertisement (NA) replies, for type router, into the EVPN network";
         type boolean;
-        default "true";
+        default true;
       }
       leaf unknown-neighbor-advertise-host {
-        description
+        description 
           "Whether to flood Neighbor Advertisement (NA) replies, for type host, into the EVPN network";
         type boolean;
-        default "true";
+        default true;
       }
     }
-  }
+  } // bridge-table-proxy-nd-evpn-flood-config
 
   grouping bridge-table-proxy-nd-evpn-config {
     container evpn {
-      description
+      description 
         "How proxy ARP/ND interacts with EVPN";
       leaf advertise-neighbor-type {
-        description
+        description 
           "Whether to advertise router entries or host entries into EVPN MAC/IP routes
-
+          
            It also specifies whether to reply to Neighbor Solicitations for EVPN entries with the router flag set or unset.";
         type enumeration {
-          enum router {
-            value 1;
-          }
-          enum host {
-            value 2;
-          }
-          enum router-host {
+          enum router { value 1; }
+          enum host { value 2; }
+          enum router-host { 
             if-feature "srl-feat:evpn-mac-ip-adv-arp-nd-ext-comm";
-            value 3;
+            value 3; 
           }
         }
-        default "router";
+        default router;
       }
       uses bridge-table-proxy-arp-nd-evpn-internal-tag-config;
       uses bridge-table-proxy-nd-evpn-flood-config;
     }
-  }
+  } // bridge-table-proxy-nd-evpn-config
 
   grouping bridge-table-proxy-nd-trace-options {
     container trace-options {
-      description
-        "Debug traceoptions for Proxy-ARP";
+      description "Debug traceoptions for Proxy-ARP";
       list flag {
-        key "name";
-        description
-          "Tracing parameters";
+        key name;
+        description "Tracing parameters";
         leaf name {
           type enumeration {
-            enum solicitation {
+            enum "solicitation" {
               value 1;
-              description
-                "Trace all Neighbor Solicitation packets snooped or generated for proxy ND";
+              description "Trace all Neighbor Solicitation packets snooped or generated for proxy ND";
             }
-            enum advertisement {
+            enum "advertisement" {
               value 2;
-              description
-                "Trace all Neighbor Advertisement packets snooped or generated for proxy ND";
+              description "Trace all Neighbor Advertisement packets snooped or generated for proxy ND";
             }
           }
         }
         leaf modifier {
-          mandatory true;
+          mandatory "true";
           type enumeration {
-            enum detail {
+            enum "detail" {
               value 0;
-              description
-                "To enable detailed tracing, including both received and sent packets";
+              description "To enable detailed tracing, including both received and sent packets";
             }
-            enum receive {
+            enum "receive" {
               value 1;
-              description
-                "To enable tracing for the received packets";
+              description "To enable tracing for the received packets";
             }
-            enum send {
+            enum "send" {
               value 2;
-              description
-                "To enable tracing for the sent packets";
+              description "To enable tracing for the sent packets";
             }
           }
         }
       }
     }
-  }
+  } // bridge-table-proxy-nd-trace-options
 
   grouping bridge-table-proxy-nd-cfg {
     uses bridge-table-proxy-arp-nd-common-cfg;
@@ -951,16 +922,16 @@ module srl_nokia-bridge-table-proxy-arp-nd {
     uses bridge-table-proxy-nd-trace-options;
     leaf process-dad-neighbor-solicitations {
       type boolean;
-      default "true";
+      default true;
       description
         "Determines whether the router processes Neighbor Soliciation DAD messages
-
-         When set to true, Neighbor Soliciation DAD messages used by the hosts for Duplicate Address Detection
+        
+         When set to true, Neighbor Soliciation DAD messages used by the hosts for Duplicate Address Detection 
          are processed, replied if a proxy ND entry is hit, or reinjected into the data path. When set to false,
          Neighbor Solicitation DAD messages are flooded to the remote nodes if unknown-neighbor-solicitation
          is configured so that unknown Neighbor Solicitation messages are flooded.";
     }
-  }
+  } // bridge-table-proxy-nd-cfg
 
   grouping bridge-table-proxy-nd-top {
     container proxy-nd {
@@ -974,7 +945,7 @@ module srl_nokia-bridge-table-proxy-arp-nd {
       uses bridge-table-proxy-nd-evpn-entries-top;
       uses bridge-table-proxy-table-statistics-top;
     }
-  }
+  } // bridge-table-proxy-nd-top
 
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:bridge-table" {
     uses bridge-table-proxy-arp-top;

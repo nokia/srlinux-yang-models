@@ -24,13 +24,10 @@ module srl_nokia-routing-policy {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "YANG model for route policies. It supports widely used constructs for managing how routes are imported, exported, and modified across different routing protocols.";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -138,11 +135,9 @@ module srl_nokia-routing-policy {
       type union {
         type srl_nokia-pol-types:bgp-std-community-well-known-type;
         type srl_nokia-pol-types:bgp-std-community-type;
-        type srl_nokia-pol-types:bgp-large-community-type;
-        type srl_nokia-pol-types:bgp-ext-community-type;
-        type srl_nokia-pol-types:bgp-ext-community-regexp-type;
-        type srl_nokia-pol-types:bgp-large-community-regexp-type;
         type srl_nokia-pol-types:bgp-std-community-regexp-type;
+        type srl_nokia-pol-types:bgp-large-community-type;
+        type srl_nokia-pol-types:bgp-large-community-regexp-type;
       }
       description
         "A standard BGP community value, regular expression or well-known name or else a large BGP community value or regular expression";
@@ -167,11 +162,10 @@ module srl_nokia-routing-policy {
     description
       "Configuration and state for tag-sets";
     list tag-set {
-      if-feature "srl_nokia-feat:route-internal-tags";
       key "name";
       max-elements 255;
       description
-        "List of administrative tag sets";
+          "List of administrative tag sets";
       leaf name {
         type srl_nokia-comm:name;
         description
@@ -187,8 +181,7 @@ module srl_nokia-routing-policy {
   }
 
   grouping tags-action {
-    description
-      "Group containing actions related to tags";
+    description "Group containing actions related to tags";
     container internal-tags {
       if-feature "srl_nokia-feat:route-internal-tags";
       description
@@ -214,9 +207,9 @@ module srl_nokia-routing-policy {
         description
           "Overwrite the route preference with the specified value
 
-           The IP route table preference is sometimes called the administrative distance of the route. In general, when comparing any two routes, the route with the lower preference is the one that is activated and used for forwarding.
+          The IP route table preference is sometimes called the administrative distance of the route. In general, when comparing any two routes, the route with the lower preference is the one that is activated and used for forwarding.
 
-           This action has an effect only in BGP import policies and VRF import policies";
+          This action has an effect only in BGP import policies and VRF import policies";
       }
     }
   }
@@ -265,7 +258,7 @@ module srl_nokia-routing-policy {
               "The number of repetitions of the prepended AS number";
           }
         }
-      }
+      } // container as-path
       container communities {
         description
           "Modify BGP communities attached to routes";
@@ -345,8 +338,8 @@ module srl_nokia-routing-policy {
           "Select the final disposition for the route.";
       }
       uses common-action-top;
-    }
-  }
+    } // container default-action
+  } // grouping default-action-top
 
   grouping match-prefix-set {
     description
@@ -362,6 +355,7 @@ module srl_nokia-routing-policy {
 
   grouping match-bgp-evpn {
     container evpn {
+      //srl_nokia-ext:first-released "20.12.1";
       description
         "Container for match conditions that are specific to BGP EVPN routes.";
       leaf-list route-type {
@@ -430,7 +424,7 @@ module srl_nokia-routing-policy {
       description
         "The name of an address family
 
-         A route meets this condition if the prefix belongs to one of the indicated address families.";
+        A route meets this condition if the prefix belongs to one of the indicated address families.";
     }
     leaf protocol {
       type identityref {
@@ -537,7 +531,8 @@ module srl_nokia-routing-policy {
 
   grouping action-top {
     description
-      "Top-level grouping for policy actions";
+       "Top-level grouping for policy actions";
+
     container action {
       srl_nokia-ext:first-released "19.11.1";
       description
@@ -557,8 +552,10 @@ module srl_nokia-routing-policy {
     list statement {
       key "name";
       ordered-by user;
+      // requires a unique id for lists
       description
         "Policy statements group conditions and actions within a policy definition.  They are evaluated in configuration order.";
+
       leaf name {
         type srl_nokia-comm:name;
         description

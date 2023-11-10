@@ -1,29 +1,22 @@
 module srl_nokia-policy-forwarding {
   yang-version 1.1;
-  namespace "urn:srl_nokia/policy-forwarding";
-  prefix srl_nokia-pol-fwd;
 
-  import srl_nokia-packet-match-types {
-    prefix srl_nokia-pkt-match-types;
-  }
-  import srl_nokia-network-instance {
-    prefix srl_nokia-netinst;
-  }
-  import srl_nokia-common {
-    prefix srl_nokia-comm;
-  }
-  import srl_nokia-features {
-    prefix srl-feat;
-  }
-  import srl_nokia-interfaces {
-    prefix srl_nokia-if;
-  }
+  namespace "urn:srl_nokia/policy-forwarding";
+
+  prefix "srl_nokia-pol-fwd";
+
+  import srl_nokia-packet-match-types { prefix srl_nokia-pkt-match-types; }
+  import srl_nokia-network-instance { prefix srl_nokia-netinst; }
+  import srl_nokia-common { prefix srl_nokia-comm; }
+  import srl_nokia-features { prefix srl-feat; }
+  import srl_nokia-interfaces { prefix srl_nokia-if; }
 
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data for policy-forwarding related objects.";
 
@@ -78,7 +71,7 @@ module srl_nokia-policy-forwarding {
         description
           "Container for match conditions associated with IPv4 header fields
 
-           If no match conditions are provided then no IPv4 packets are matched.";
+          If no match conditions are provided then no IPv4 packets are matched.";
         leaf protocol {
           description
             "An IPv4 packet matches this condition if its IP protocol type field matches the specified value";
@@ -94,7 +87,7 @@ module srl_nokia-policy-forwarding {
             "Packet matching criteria based on source IPv4 address";
           leaf prefix {
             description
-              "Match a packet if its source IP address is within the specified IPv4 prefix.";
+                "Match a packet if its source IP address is within the specified IPv4 prefix.";
             type srl_nokia-comm:ipv4-prefix;
           }
         }
@@ -106,8 +99,10 @@ module srl_nokia-policy-forwarding {
     list policy {
       max-elements 4;
       key "policy-id";
+
       description
         "A forwarding policy is defined to have a set of match criteria, allowing particular fields of a packet's header to be matched, and a set of forwarding actions which determines how the local system should forward the packet.";
+
       leaf policy-id {
         type srl_nokia-comm:name;
         description
@@ -115,8 +110,7 @@ module srl_nokia-policy-forwarding {
       }
       leaf description {
         type srl_nokia-comm:description;
-        description
-          "Description string for the policy";
+        description "Description string for the policy";
       }
       leaf type {
         type enumeration {
@@ -143,9 +137,8 @@ module srl_nokia-policy-forwarding {
           "The number of TCAM entries required to implement this entire policy.";
       }
       list rule {
-        description
-          "List of policy forwarding rules.";
-        key "sequence-id";
+        description "List of policy forwarding rules.";
+        key sequence-id;
         leaf sequence-id {
           type srl_nokia-comm:rule-sequence-id;
           description
@@ -162,6 +155,7 @@ module srl_nokia-policy-forwarding {
           description
             "The number of TCAM entries required to implement this rule.";
         }
+
         uses pf-action-config;
         uses pf-match-config;
       }
@@ -171,27 +165,32 @@ module srl_nokia-policy-forwarding {
   grouping pf-interfaces {
     list interface {
       key "subinterface";
+
       description
         "List of subinterfaces that use the policy forwarding policy.";
+
       leaf subinterface {
         type srl_nokia-netinst:network-instance-subintf-name;
         description
           "Name of the subinterface.";
       }
+
       container interface-ref {
         if-feature "srl-feat:interface-references";
-        description
-          "Reference to a subinterface";
+        description "Reference to a subinterface";
+
         leaf interface {
           type leafref {
             path "/srl_nokia-if:interface/srl_nokia-if:name";
           }
           description
             "Reference to a base interface, for example a port or LAG";
-          must '../subinterface >= 0' {
+
+          must "../subinterface >= 0" {
             error-message "subinterface must be configured when interface is set";
           }
         }
+
         leaf subinterface {
           type leafref {
             path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
@@ -199,17 +198,20 @@ module srl_nokia-policy-forwarding {
           description
             "Reference to a subinterface
              This requires the base interface to be specified using the interface leaf in this container.";
-          must '../interface' {
+
+          must "../interface" {
             error-message "interface must be configured when subinterface is set";
           }
         }
       }
+
       leaf apply-forwarding-policy {
         type leafref {
+        // We are at /network-instance/policy-forwarding/interface/apply-forwarding-policy
           path "../../policy/policy-id";
         }
         description
-          "The policy to be applied on the interface. Packets ingress on the referenced interface should be compared to the match criteria within the specified policy, and in the case that these criteria are met, the forwarding actions specified applied.";
+        "The policy to be applied on the interface. Packets ingress on the referenced interface should be compared to the match criteria within the specified policy, and in the case that these criteria are met, the forwarding actions specified applied.";
       }
     }
   }
@@ -229,4 +231,5 @@ module srl_nokia-policy-forwarding {
   augment "/srl_nokia-netinst:network-instance" {
     uses policy-forwarding-top;
   }
+
 }

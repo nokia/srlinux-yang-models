@@ -1,7 +1,12 @@
 module srl_nokia-aaa {
   yang-version 1.1;
+
+  // namespace
+
   namespace "urn:srl_nokia/aaa";
   prefix srl-aaa;
+
+  // imports
 
   import srl_nokia-aaa-types {
     prefix srl-aaa-types;
@@ -36,15 +41,14 @@ module srl_nokia-aaa {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
+
   description
     "This module defines configuration and operational state data related to authorization, authentication, and accounting (AAA) management.
 
      Portions of this model reuse data definitions or structure from RFC 7317 - A YANG Data Model for System Management";
 
-  revision 2023-10-31 {
-    description
-      "SRLinux 23.10.1";
-  }
+  // grouping statements
+
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -135,7 +139,7 @@ module srl_nokia-aaa {
       key "address";
       max-elements 5;
       must '../type = "srl-aaa-types:tacacs" or ../type = "srl-aaa-types:radius"' {
-        error-message "Server configuration is allowed only for 'tacacs' and 'radius' server type";
+          error-message "Server configuration is allowed only for 'tacacs' and 'radius' server type";
       }
       description
         "List of AAA servers to use within this server-group
@@ -332,12 +336,14 @@ module srl_nokia-aaa {
     }
     leaf-list ssh-key {
       max-elements 32;
-      type string;
+      type string {
+        pattern 'ssh-rsa .*';
+      }
       ordered-by user;
       description
-        "SSH public key(s) for the user
+        "SSH public key(s) for the user (RSA)
 
-         If defined, the user may login to the system over SSH with this key. This should use the SSH public authorized key format.";
+         If defined, the user may login to the system over SSH with this key. This field includes the 'ssh-rsa' leader, as would normally be found in a SSH key.";
     }
   }
 
@@ -353,7 +359,7 @@ module srl_nokia-aaa {
         description
           "Indicates if a lockout is active for the user
 
-           Lockouts can occur after successive failed logins, and can be cleared by 'tools system aaa authentication user <username> unlock'";
+          Lockouts can occur after successive failed logins, and can be cleared by 'tools system aaa authentication user <username> unlock'";
       }
       leaf start {
         type srl-comm:date-and-time;
@@ -403,14 +409,14 @@ module srl_nokia-aaa {
     leaf-list spiffe-ids {
       if-feature "srl-feat:aaa-spiffe-id";
       type string {
-        pattern '^spiffe://.*';
+        pattern "^spiffe://.*";
       }
       description
         "The SPIFFE ID list for the user, including the spiffe:// URI
 
-         This list of IDs is evaluated by TLS-consuming servers (e.g. gNMI, JSON-RPC) that use a TLS server-profile with authenticate-client set to true.
+        This list of IDs is evaluated by TLS-consuming servers (e.g. gNMI, JSON-RPC) that use a TLS server-profile with authenticate-client set to true.
 
-         If a match is found in any incoming offered client certificates, the provider of the certificate is associated with this local user, and given resulting permissions.";
+        If a match is found in any incoming offered client certificates, the provider of the certificate is associated with this local user, and given resulting permissions.";
     }
   }
 
@@ -430,34 +436,23 @@ module srl_nokia-aaa {
     leaf password {
       type srl-comm:user-password;
       description
-        "The user password, supplied either as cleartext or as a hashed value
+          "The user password, supplied either as cleartext or as a hashed value
 
-         If provided as cleartext, the system will hash the value on input, storing only the hashed value.
-         If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+          If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+          If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
     }
     leaf-list role {
       max-elements 32;
       type leafref {
         path "../../../authorization/role/rolename";
       }
-      ordered-by user;
       description
         "List of roles to assign to this user
 
          The most specific rule for a particular role takes precedence.
          Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
     }
-    leaf superuser {
-      if-feature "srl-feat:aaa-superuser";
-      type boolean;
-      default "false";
-      description
-        "Indicates that this user is a superuser
 
-         A superuser is granted implicit authorization to all YANG paths, has the ability to execute all CLI plugins, and by default is permitted to access the device through any interface.
-
-         Additionally, users with the superuser attribute are able to execute 'sudo' in bash. A user may also be assigned a role or list of roles, but these are only evaluated for service authorization.";
-    }
     uses aaa-authentication-spiffe;
     uses aaa-authentication-user-ssh;
     uses aaa-authentication-user-state;
@@ -496,30 +491,18 @@ module srl_nokia-aaa {
         enum gnsi;
         enum gribi;
         enum netconf {
-          if-feature "srl-feat:netconf";
+            if-feature "srl-feat:netconf";
         }
         enum p4rt {
-          if-feature "srl-feat:p4rt";
+            if-feature "srl-feat:p4rt";
         }
         enum json-rpc;
         enum ftp;
-        enum grpc-reflection;
       }
       description
         "Services that members of this role are authorized for
 
          Services are additive, if a user is a member of multiple roles, the available services are merged.";
-    }
-    leaf superuser {
-      if-feature "srl-feat:aaa-superuser";
-      type boolean;
-      default "false";
-      description
-        "Indicates if users with this role are given superuser
-
-         A superuser is granted implicit authorization to all YANG paths, has the ability to execute all CLI plugins, and by default is permitted to access the device through any interface.
-
-         Additionally, users with the superuser attribute are able to execute 'sudo' in bash. A user may also be assigned a role or list of roles, but these are only evaluated for service authorization.";
     }
     container tacacs {
       srl-ext:first-released "21.11.1";
@@ -529,7 +512,7 @@ module srl_nokia-aaa {
         description
           "The TACACS+ priv-lvl to map to this role
 
-           All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
+          All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
         type uint8 {
           range "0..15";
         }
@@ -542,13 +525,13 @@ module srl_nokia-aaa {
         "Top-level container for cli plugin configuration";
       leaf load-global-plugins {
         type boolean;
-        default "true";
+        default true;
         description
           "Specifies whether cli should load plugins from global plugin directory (from /etc/opt/srlinux/cli/plugins/).";
       }
       leaf load-user-plugins {
         type boolean;
-        default "true";
+        default true;
         description
           "Specifies whether cli should load plugins from user home directory (from ~/cli/plugins/).";
       }
@@ -557,22 +540,22 @@ module srl_nokia-aaa {
         type string;
         max-elements 100;
         description
-          "List of cli commands that are denied for this role
+            "List of cli commands that are denied for this role
 
-           Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
-           of line). Empty deny-command-list means anything that is not in allow-command-list is denied. If both lists
-           are empty then everything is allowed.";
+             Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
+             of line). Empty deny-command-list means anything that is not in allow-command-list is denied. If both lists
+             are empty then everything is allowed.";
       }
       leaf-list allow-command-list {
         srl-ext:no-globbing;
         type string;
         max-elements 100;
         description
-          "List of cli commands that are allowed for this role
+            "List of cli commands that are allowed for this role
 
-           Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
-           of line). Empty allow-command-list means anything that is not in deny-command-list is allowed. If both
-           lists are empty then everything is allowed.";
+             Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
+             of line). Empty allow-command-list means anything that is not in deny-command-list is allowed. If both
+             lists are empty then everything is allowed.";
       }
     }
   }
@@ -608,8 +591,8 @@ module srl_nokia-aaa {
         description
           "The admin password, supplied either as cleartext or as a hashed value
 
-           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
-           If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+          If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+          If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
       }
       leaf-list role {
         if-feature "srl-feat:admin-user-roles";
@@ -622,17 +605,6 @@ module srl_nokia-aaa {
 
            The most specific rule for a particular role takes precedence.
            Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
-      }
-      leaf superuser {
-        if-feature "srl-feat:aaa-superuser";
-        type boolean;
-        default "true";
-        description
-          "Indicates if the admin user is a superuser
-
-           A superuser is granted implicit authorization to all YANG paths, has the ability to execute all CLI plugins, and by default is permitted to access the device through any interface.
-
-           Additionally, users with the superuser attribute are able to execute 'sudo' in bash. A user may also be assigned a role or list of roles, but these are only evaluated for service authorization.";
       }
       uses aaa-authentication-spiffe;
       uses aaa-authentication-user-ssh;
@@ -663,8 +635,8 @@ module srl_nokia-aaa {
         description
           "The linuxadmin password, supplied either as cleartext or as a hashed value
 
-           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
-           If provided as a hashed value, the value should include any '$' characters, for example '$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0'.";
+          If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+          If provided as a hashed value, the value should include any '$' characters, for example '$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0'.";
       }
       uses aaa-authentication-user-ssh;
     }
@@ -775,6 +747,8 @@ module srl_nokia-aaa {
       description
         "Top-level container for authorization configuration and operational state data";
       uses aaa-authorization-role-top;
+      // uses aaa-authorization-methods-config;
+      // uses aaa-authorization-events-top;
     }
   }
 
@@ -850,6 +824,7 @@ module srl_nokia-aaa {
       srl-ext:first-released "19.11.1";
       description
         "Top-level container for AAA services";
+      // uses aaa-traceoptions;
       uses aaa-authentication-top;
       uses aaa-authorization-top;
       uses aaa-accounting-top;
