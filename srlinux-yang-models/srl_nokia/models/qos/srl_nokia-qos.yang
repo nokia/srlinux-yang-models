@@ -22,10 +22,10 @@ module srl_nokia-qos {
     prefix srl_nokia-qos-policers;
   }
   import srl_nokia-system {
-      prefix srl_nokia-system;
+    prefix srl_nokia-system;
   }
   import srl_nokia-openconfig {
-      prefix srl_nokia-openconfig;
+    prefix srl_nokia-openconfig;
   }
 
   organization
@@ -34,6 +34,10 @@ module srl_nokia-qos {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -87,28 +91,6 @@ module srl_nokia-qos {
     }
   }
 
-  typedef drop-probability {
-    description
-      "The various drop probability classifications that can be applied to a packet";
-    type enumeration {
-      enum low {
-        value 1;
-        description
-          "Traffic that should be dropped last when there is congestion. Internally this is traffic that is colored green.";
-      }
-      enum medium {
-        value 2;
-        description
-          "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
-      }
-      enum high {
-        value 3;
-        description
-          "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
-      }
-    }
-  }
-
   typedef wred-drop-probability {
     description
       "The various drop probability classifications that can apply to an Wred slope";
@@ -129,7 +111,6 @@ module srl_nokia-qos {
           "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
       }
       enum all {
-        if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
         value 4;
         description
           "All traffic, consisting of traffic marked low, medium and high drop-probability.";
@@ -169,23 +150,43 @@ module srl_nokia-qos {
   }
 
   typedef wred-traffic-type {
-     type enumeration {
-       enum tcp {
-         value 0;
-         description
-           "Refers to IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
-       }
-       enum non-tcp {
-         value 1;
-         description
-           "Refers to all packets that are not IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
-       }
-       enum all {
-         value 2;
-         description
-           "Refers to all traffic, whether it is TCP or non-TCP.";
-       }
-     }
+    type enumeration {
+      enum tcp {
+        value 1;
+        description
+          "Refers to IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
+      }
+      enum non-tcp {
+        value 2;
+        description
+          "Refers to all packets that are not IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
+      }
+      enum all {
+        value 3;
+        description
+          "Refers to all traffic, whether it is TCP or non-TCP.";
+      }
+    }
+  }
+
+  typedef wred-profile {
+    type enumeration {
+      enum in {
+        value 1;
+        description
+          "The key for wred-slope corresponding to packets with profile 'in'";
+      }
+      enum out {
+        value 2;
+        description
+          "The key for wred-slope corresponding to packets with profile 'out'";
+      }
+      enum exceed {
+        value 3;
+        description
+          "The key for wred-slope corresponding to packets with profile 'exceed'";
+      }
+    }
   }
 
   typedef future-cbs-size {
@@ -263,7 +264,8 @@ module srl_nokia-qos {
       uses qos-classifier-top;
       uses qos-rewrite-top;
       uses scheduler-policies-top {
-        if-feature "srl-feat:scheduler-policies and srl-feat:future-0-0";
+        if-feature "srl-feat:openconfig-qos";
+        if-feature "srl-feat:scheduler-policies or srl-feat:future-0-0";
       }
       uses preserve-dscp-top {
         if-feature "srl-feat:jericho2cp";
@@ -272,6 +274,10 @@ module srl_nokia-qos {
         if-feature "srl-feat:openconfig-qos";
       }
       uses qos-buffer-management {
+        if-feature "srl-feat:openconfig-qos";
+      }
+      uses forwarding-complexes {
+        if-feature "srl-feat:future-0-0";
         if-feature "srl-feat:openconfig-qos";
       }
     }
@@ -399,19 +405,18 @@ module srl_nokia-qos {
   grouping qos-interface-queue-root-top {
     container queues {
       presence "queues";
-      must 'not(../../interface-ref/subinterface)' {
-        error-message "configuring of a queue only permitted for interfaces"; 
+      must 'string(../../interface-ref/subinterface) = ""' {
+        error-message "configuring of a queue only permitted for interfaces";
       }
       description
         "Container for a list of queues that are instantiated on an interface.";
       list queue {
         key "queue-name";
-        //TODO move the must to grouping
         uses qos-queue-leaf-queue-name {
           refine "queue-name" {
-            must "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue[srl_nokia-qos:name=current()]/srl_nokia-qos:name = current() or
-                 /srl_nokia-system:system/srl_nokia-system:management/srl_nokia-openconfig:openconfig/srl_nokia-openconfig:admin-state != 'enable'" {
-                 error-message "default queues cannot be used when openconfig is enabled";
+            must "/srl_nokia-system:system/srl_nokia-system:management/srl_nokia-openconfig:openconfig/srl_nokia-openconfig:admin-state != 'enable' or
+                  /srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue[srl_nokia-qos:name=current()]/srl_nokia-qos:name = current()" {
+              error-message "default queues cannot be used when openconfig is enabled";
             }
           }
         }
@@ -426,6 +431,11 @@ module srl_nokia-qos {
             "The queue management profile that is to be used for the queue on the interface.
 
              For example, the system may use a profile which specifies that WRED curves are used for setting an ECN mark in the IP header instead of dropping a packet in order to signal impending congestion and for determining when there is sufficient congestion to tail drop packets.";
+          must "string(../../../buffer-allocation-profile) != '' and
+                /qos/buffer-management/buffer-allocation-profile[name=current()/../../../buffer-allocation-profile]/queues/queue[queue-name=current()/../queue-name]/queue-name = ../queue-name and
+                /qos/buffer-management/buffer-allocation-profile[name=current()/../../../buffer-allocation-profile]/queues/queue[queue-name=current()/../queue-name]/maximum-burst-size != 0" {
+            error-message "cannot be configured without setting maximum burst size";
+          }
         }
         leaf-list forwarding-class {
           config false;
@@ -434,8 +444,9 @@ module srl_nokia-qos {
             "The list of forwarding classes that map to this queue.";
         }
         leaf queue-type {
-          if-feature srl-feat:future-0-0;
-          description 
+          if-feature "srl-feat:future-0-0";
+          config false;
+          description
             "Indicates whether given queue is local to subinterface or interface-queue";
           type enumeration {
             enum local;
@@ -448,7 +459,7 @@ module srl_nokia-qos {
           list wred-slope {
             description
               "List of WRED slopes.";
-            key "traffic-type drop-probability";
+            key "traffic-type drop-probability enable-ecn";
             leaf traffic-type {
               description
                 "The traffic type to which the WRED slope applies.";
@@ -459,14 +470,10 @@ module srl_nokia-qos {
                 "The drop probability to which the WRED slope applies.";
               type wred-drop-probability;
             }
-            leaf slope-enabled {
-              description
-                "Reads true if the slope is enabled.
-
-                 A disabled slope has min-threshold-bytes = max-threshold-bytes = max-probability = 0";
+            leaf drop {
               type boolean;
             }
-            leaf ecn-enable {
+            leaf enable-ecn {
               type boolean;
             }
             leaf min-threshold-bytes {
@@ -489,7 +496,7 @@ module srl_nokia-qos {
                  On 7250 IXR-6/10 there can be a significant difference between the configured value and the operational value.";
             }
           }
-        } // active-queue-management
+        }
         container queue-depth {
           config false;
           srl_nokia-ext:first-released "20.12.1";
@@ -519,40 +526,34 @@ module srl_nokia-qos {
             description
               "The operational hardware value of the high threshold in bytes.";
           }
-        } // queue-depth
+        }
         container scheduling {
           description
             "Container for queue scheduling parameters";
+          config false;
           leaf peak-rate-percent {
             srl_nokia-ext:first-released "20.6.1";
             if-feature "not srl-feat:future-0-0";
             type uint8 {
               range "1..100";
             }
-            default "100";
             description
               "The maximum percentage of port bandwidth that is available to the traffic in this queue during the PIR scheduling loop. The default is 100.";
-            must 'not(../../../../scheduler/scheduler-policy)';
           }
           leaf peak-rate-bps {
             srl_nokia-ext:first-released "20.6.1";
-            config false;
             type uint64;
             description
               "The actual/operational peak rate in bits per second.";
           }
           leaf strict-priority {
-            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
             type boolean;
             description
               "When set to true the queue is serviced as a strict priority queue, regardless of whether a weight is configured or its value. When set to false the queue is serviced using WRR, even if the queue does not have a configured weight; in this case the default weight value of 1 is used.
 
                For unicast queues the implicit default value is true";
-            must 'not(../../../../scheduler/scheduler-policy)';
           }
           leaf weight {
-            srl_nokia-ext:first-released "20.6.1";
-            if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
             type uint8 {
               range "1..255";
             }
@@ -560,11 +561,9 @@ module srl_nokia-qos {
               "Configures the relative weight of a DWRR queue.
 
                For unicast queues the implicit default value is 1";
-            must 'not(../../../../scheduler/scheduler-policy)';
           }
           leaf scheduling-class {
             if-feature "srl-feat:future-0-0";
-            config false;
             description
               "The scheduling-class for output-queue";
             type uint8 {
@@ -574,7 +573,6 @@ module srl_nokia-qos {
           leaf scheduler-node {
             srl_nokia-ext:first-released "20.12.1";
             if-feature "not srl-feat:future-0-0";
-            config false;
             description
               "The scheduler node to which the queue is connected. The mappings are fixed and not user-configurable.
 
@@ -600,11 +598,9 @@ module srl_nokia-qos {
                multicast-2 -> node 6
                multicast-3 -> node 9
               ";
-            type leafref {
-              path "../../../../scheduler/tier/node/node-number";
-            }
+            type scheduler-node-id;
           }
-        } // scheduling
+        }
         container queue-statistics {
           if-feature "not srl-feat:platform-7220-d1";
           config false;
@@ -642,11 +638,10 @@ module srl_nokia-qos {
   grouping qos-interface-scheduler-top {
     container scheduler {
       presence "scheduler";
-      must 'not(../../interface-ref/subinterface)' {
+      must 'string(../../interface-ref/subinterface) = ""' {
         error-message "Attachment of a scheduler only permitted for interfaces";
         srl_nokia-ext:if-feature "not srl_nokia-features:future-0-0";
       }
-      // need to revise this must statement as in future systems this statetemnt is not correct
       srl_nokia-ext:first-released "20.12.1";
       description
         "Output traffic scheduler options";
@@ -660,9 +655,6 @@ module srl_nokia-qos {
         }
       }
       leaf sched-class-scheduling-policy {
-        must 'not(../../../interface-ref/subinterface)' {
-          error-message "Attachment of a sched-class-scheduling-policy only permitted for interfaces";
-        }
         if-feature "srl-feat:future-0-0";
         if-feature "not srl-feat:scheduler-policies";
         description
@@ -670,13 +662,16 @@ module srl_nokia-qos {
         type leafref {
           path "/srl_nokia-qos:qos/srl_nokia-qos:scheduler-policies/srl_nokia-qos:sched-class-scheduling-policy/srl_nokia-qos:name";
         }
+        must 'string(../../../interface-ref/subinterface) = ""' {
+          error-message "Attachment of a sched-class-scheduling-policy not permitted for sub-interfaces";
+        }
       }
       list virtual-interface {
         if-feature "srl-feat:future-0-0";
         description
           "Virtual interface for the purpose of SVLAN level scheduling";
         key "name";
-        max-elements 128; // Check with Joe and Malick
+        max-elements 128;
         leaf name {
           description
             "Virtual interface name";
@@ -689,60 +684,20 @@ module srl_nokia-qos {
           type leafref {
             path "/srl_nokia-qos:qos/srl_nokia-qos:scheduler-policies/srl_nokia-qos:sched-class-scheduling-policy/srl_nokia-qos:name";
           }
-        }
-      }
-      // non future objects follow
-      choice policy-or-nodes {
-        if-feature "not srl-feat:future-0-0";
-        case policy {
-          leaf scheduler-policy {
-            if-feature "srl-feat:scheduler-policies";
-            description
-              "The scheduler policy to be applied to traffic on this interface.";
-            type leafref {
-              path "/srl_nokia-qos:qos/srl_nokia-qos:scheduler-policies/srl_nokia-qos:scheduler-policy/srl_nokia-qos:name";
-            }
+          must 'string(../../../../interface-ref/subinterface) = ""' {
+            error-message "Attachment of a sched-class-scheduling-policy, not permitted for virtual-interfaces under sub-interfaces";
           }
         }
-        case nodes {
-          list tier {
-            max-elements 1;
-            description
-              "List of output traffic scheduler tiers or levels";
-            key "level";
-            leaf level {
-              type scheduler-level;
-              must '. = 1' {
-                error-message "Only one scheduler level supported";
-              }
-            }
-            list node {
-              max-elements 12;
-              description
-                "List of scheduler nodes at the specified scheduler level";
-              key "node-number";
-              leaf node-number {
-                description
-                  "An identifier of the scheduler node. Within a scheduler tier, higher-numbered nodes are served before lower-numbererd nodes.";
-                type scheduler-node-id;
-              }
-              leaf strict-priority {
-                description
-                  "A true value configures the node for strict priority scheduling, whether or not a weight is also configured.  When set to false the node is serviced using DWRR, even if the node does not have a configured weight; in this case the default weight value of 1 is used.";
-                type boolean;
-              }
-              leaf weight {
-                description
-                  "The DWRR weight assigned to the scheduler node";
-                type uint8 {
-                  range "1..127";
-                }
-                default "1";
-              }
-            } // node
-          } // tier
-        } // case
-      } // choice
+      }
+      leaf scheduler-policy {
+        if-feature "srl-feat:scheduler-policies";
+        if-feature "not srl-feat:future-0-0";
+        description
+          "The scheduler policy to be applied to traffic on this interface.";
+        type leafref {
+          path "/srl_nokia-qos:qos/srl_nokia-qos:scheduler-policies/srl_nokia-qos:scheduler-policy/srl_nokia-qos:name";
+        }
+      }
     }
   }
 
@@ -777,9 +732,9 @@ module srl_nokia-qos {
 
   grouping qos-subinterface-classifier-top {
     container default {
-        must '(../../../interface-ref/subinterface)' {
-            error-message "Attachment of a subinterface input, not permitted for interfaces";
-        }
+      must 'string(../../../interface-ref/subinterface) != ""' {
+        error-message "Attachment of a subinterface input, not permitted for interfaces";
+      }
       presence "subinterface-classifier-default";
       uses qos-forwarding-class-leaf-forwarding-class;
       must "/srl_nokia-if:interface[srl_nokia-if:name=current()/../../../interface-ref/interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()/../../../interface-ref/subinterface]/srl_nokia-if:type = 'srl_nokia-if:bridged' or not (./forwarding-class)" {
@@ -790,7 +745,7 @@ module srl_nokia-qos {
         if-feature "not srl-feat:future-0-0";
         description
           "The default drop-probability for packets arriving on this subinterface that do not match any classification rule.";
-        type drop-probability;
+        type srl_nokia-comm:drop-probability;
         must "/srl_nokia-if:interface[srl_nokia-if:name=current()/../../../../interface-ref/interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()/../../../../interface-ref/subinterface]/srl_nokia-if:type = 'srl_nokia-if:bridged' " {
           error-message "default-drop-probability allowed with type bridged only";
         }
@@ -922,7 +877,7 @@ module srl_nokia-qos {
     }
     container rewrite-rules {
       presence "rewrite-rules";
-      must '(../../interface-ref/subinterface)' {
+      must 'string(../../interface-ref/subinterface) != ""' {
         error-message "Attachment of rewrite-rules only permitted for subinterfaces";
       }
       leaf ipv4-dscp-policy {
@@ -1005,8 +960,8 @@ module srl_nokia-qos {
   grouping qos-interface-input-top {
     container input {
       presence "qos-subinterface-input";
-      must '(../interface-ref/subinterface)' {
-          error-message "Attachment of a subinterface input, not permitted for interfaces";
+      must 'string(../interface-ref/subinterface) != ""' {
+        error-message "Attachment of a subinterface input, not permitted for interfaces";
       }
       description
         "Top-level container for QoS configuration and state relating to ingress traffic on the subinterface";
@@ -1028,12 +983,18 @@ module srl_nokia-qos {
     container output {
       description
         "Top-level container for QoS configuration and state relating to egress traffic on the interface or subinterface";
+      leaf interface-pool-policy {
+        if-feature "srl-feat:future-0-0";
+        description
+          "Interface-pool-policy assigned to the interface";
+        type leafref {
+          path "../../../../buffer-management/interface-pool-policy/name";
+        }
+      }
       uses qos-interface-queue-root-top;
       uses qos-interface-scheduler-top;
       uses qos-subinterface-output-top;
-      uses qos-interface-buffer-allocation {
-        if-feature "not srl-feat:future-0-0";
-      }
+      uses qos-interface-buffer-allocation;
     }
   }
 
@@ -1060,6 +1021,12 @@ module srl_nokia-qos {
             }
             description
               "Reference to a base interface, for example a port or LAG";
+            must 'not (/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:ethernet/srl_nokia-if:aggregate-id)' {
+              error-message "qos configuration is not supported on LAG member ports";
+            }
+            must 'not (/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:breakout-mode)' {
+              error-message "Interfaces with breakout-mode configured are not supported";
+            }
           }
           leaf subinterface {
             type leafref {
@@ -1080,6 +1047,50 @@ module srl_nokia-qos {
     }
   }
 
+  grouping forwarding-complexes {
+    container forwarding-complexes {
+      description
+        "Parameters related to QoS configuration at forwarding-comples level";
+      list linecard {
+        description
+          "Container for QoS linecard configuration";
+        key "slot";
+        leaf slot {
+          type uint8 {
+            range "1..8";
+          }
+          description
+            "Numeric identifier for the linecard";
+        }
+        list forwarding-complex {
+          description
+            "List of forwarding complexes on the card";
+          key "name";
+          leaf name {
+            description
+              "Forwarding-complex name";
+            type enumeration {
+              enum 0;
+              enum 1;
+            }
+          }
+          container output {
+            description
+              "QoS ouput parameters at forwarding-complex level";
+            leaf fp-pool-policy {
+              description
+                "FP-pool-policy assigned to the forwarding-complex";
+              type leafref {
+                path "../../../../../buffer-management/fp-pool-policy/name";
+              }
+              default "default";
+            }
+          }
+        }
+      }
+    }
+  }
+
   grouping qos-queue-management-profile-wred-config {
     leaf min-threshold {
       type uint64;
@@ -1093,31 +1104,39 @@ module srl_nokia-qos {
       description
         "The maximum threshold parameter for a RED-managed queue. When the average queue length exceeds the max-threshold, the packets are dropped (or marked if ECN is enabled).";
     }
-    leaf enable-ecn {
-      type boolean;
-      default "false";
+    leaf min-threshold-percent {
+      type srl_nokia-comm:percentage;
       description
-        "When this leaf is true and the number of packets in the queue is between the minimum threshold and the maximum threshold, if the ECN field on the packet indicates that the endpoints are ECN capable and the WRED algorithm determines that the packet should have been dropped based on the drop probability, the CE bits for the packet are changed to 1, and the packet is transmitted.
-        When set to false, the such packets will be discarded based on wred-slope.";
-      //must 'current() = false() or re-match(current()/../traffic-type,"all")' {
-      //   error-message "traffic-type must be 'all' to enable ecn ";
-      //}
+        "The percentage of the MBS that corresponds to the WRED mininum threshold parameter.";
+      must 'string(../min-threshold) = ""' {
+        error-message "percentage and absolute values cannot be configured together";
+      }
+    }
+    leaf max-threshold-percent {
+      type srl_nokia-comm:percentage;
+      must 'string(../max-threshold) = ""' {
+        error-message "percentage and absolute values cannot be configured together";
+      }
+      description
+        "The percentage of the MBS that corresponds to the WRED maximum threshold parameter.";
     }
     leaf slope-enabled {
       description
-        "Reads true if the slope is enabled.
-
-        A disabled slope has min-threshold-bytes = max-threshold-bytes = max-probability = 0";
+        "Reads true if traffic is dropped by WRED.";
       type boolean;
-      default true;
-      must ". = false() or ../enable-ecn = false()" {
-          error-message "slope and ecn cannot be enabled together";
-      }
     }
     leaf max-drop-probability-percent {
       type srl_nokia-comm:percentage;
       description
         "The probability with which packets are dropped or marked at max-threshold.";
+    }
+    leaf weight-factor {
+      config false;
+      type uint32 {
+        range "0..15";
+      }
+      description
+        "Actual Weight factor used in the calculation of the current (average weighted) queue depth.";
     }
   }
 
@@ -1125,6 +1144,35 @@ module srl_nokia-qos {
     container buffer-management {
       description
         "Container for the list of configured queue management profiles.";
+      container committed-burst-size-table {
+        if-feature "srl-feat:future-0-0";
+        description
+          "Defines possible committed-burst sizes";
+        leaf alt-0 {
+          type uint32;
+          units "bytes";
+          description
+            "ALT-0 committed-burst-size";
+        }
+        leaf alt-1 {
+          type uint32;
+          units "bytes";
+          description
+            "ALT-1 committed-burst-size";
+        }
+        leaf alt-2 {
+          type uint32;
+          units "bytes";
+          description
+            "ALT-2 committed-burst-size";
+        }
+        leaf alt-3 {
+          type uint32;
+          units "bytes";
+          description
+            "ALT-3 committed-burst-size";
+        }
+      }
       list queue-management-profile {
         if-feature "not srl-feat:future-0-0";
         key "name";
@@ -1134,41 +1182,61 @@ module srl_nokia-qos {
           type srl_nokia-comm:name;
           description
             "Unique string name used for the queue management profile.";
+          must ". != 'default'" {
+            error-message "name 'default' is reserved";
+          }
         }
         leaf weight-factor {
-            type uint8 {
-              range "0..15";
-            }
-            default "0";
-            description
-              "Weight factor to use in the calculation of the current (average weighted) queue depth.";
+          type uint32 {
+            range "0..15";
+          }
+          default "0";
+          description
+            "Weight factor to use in the calculation of the current (average weighted) queue depth.";
         }
         container wred {
           description
             "Configuration and operational state parameters relating to Weighted Random Early Detection (WRED).";
           list wred-slope {
             description
-             "List of WRED slopes.";
-            key "traffic-type drop-probability";
+              "List of WRED slopes.";
+            key "traffic-type drop-probability enable-ecn";
             leaf traffic-type {
               description
                 "The traffic type to which the WRED slope applies.";
               type wred-traffic-type;
+              must ". = 'all' or
+                    not (../../wred-slope[drop-probability=current()/../drop-probability][traffic-type='all'][enable-ecn=current()/../enable-ecn])" {
+                error-message "traffic-type 'all' cannot be configured with 'tcp' or 'non-tcp'";
+              }
             }
             leaf drop-probability {
               description
                 "The drop probability to which the WRED slope applies.";
               type wred-drop-probability;
-              //must 'current() = "all" or ../enable-ecn = false()' {
-              //    srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
-              //}
+              must ". = 'all' or
+                    not (../../wred-slope[traffic-type=current()/../traffic-type][drop-probability='all'][enable-ecn=current()/../enable-ecn])" {
+                error-message "drop-probability 'all' cannot be configured with 'low' or 'medium' or 'high'";
+              }
+            }
+            leaf enable-ecn {
+              type boolean;
+              description
+                "When this leaf is true and the number of packets in the queue is between the minimum threshold and the maximum threshold, if the ECN field on the packet indicates that the endpoints are ECN capable and the WRED algorithm determines that the packet should have been dropped based on the drop probability, the CE bits for the packet are changed to 1, and the packet is transmitted.
+                 When set to false, the such packets will be discarded based on wred-slope.";
+              must "current() = false() or string(../traffic-type) = 'all' " {
+                error-message "traffic-type must be 'all' to enable ecn ";
+              }
+              must "current() = false() or string(../drop-probability) = 'all' " {
+                error-message "drop-probability must be 'all' to enable ecn ";
+                srl_nokia-ext:if-feature "srl_nokia-features:jericho2 or srl_nokia-features:jericho2cp";
+              }
             }
             uses qos-queue-management-profile-wred-config;
-          }  
+          }
         }
-      } // queue-management-profile
+      }
       list buffer-allocation-profile {
-        if-feature "not srl-feat:future-0-0";
         key "name";
         description
           "The name of a buffer-allocation-profile.";
@@ -1176,6 +1244,9 @@ module srl_nokia-qos {
           type srl_nokia-comm:name;
           description
             "Unique string name used for the buffer-allocation-profile.";
+          must ". != 'default'" {
+            error-message "name 'default' is reserved";
+          }
         }
         container queues {
           description
@@ -1196,10 +1267,34 @@ module srl_nokia-qos {
 
                  On 7220-D2/D3/D5/H2/H3 this parameter applies to an egress queue and the default value of zero instructs the forwarding chip to apply its own limit based on 'alpha'. A non-zero value disables 'alpha'. The alpha value  is 5 (0.25 multiplier of shared buffer space) for unicast queues and 4 (0.125 multiplier of shared buffer space) for multicast queues.
 
+                 On 7730 this parameter applies to egress-queue and setting value to 0 means default value (still need to determine that)
+
                  Must be non-zero/non-default in order to add the active-queue-management presence container.";
             }
+            leaf mbs-adaptation-rule {
+              if-feature "srl-feat:future-0-0";
+              description
+                "Defines how the user-configured values will be adjusted to available hardware values";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
+            leaf committed-burst-size {
+              if-feature "srl-feat:future-0-0";
+              type uint32;
+              units "bytes";
+              default "0";
+              description
+                "Committed queue length expressed in bytes";
+            }
+            leaf cbs-adaptation-rule {
+              if-feature "srl-feat:future-0-0";
+              description
+                "Defines how the user-configured values will be adjusted to values defined by committed-burst-size-table";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
             leaf high-threshold-bytes {
-              if-feature "not (srl-feat:trident4 or srl-feat:tomahawk4)";
+              if-feature "not (srl-feat:trident4 or srl-feat:tomahawk4 or srl-feat:future-0-0)";
               type uint32;
               must '. <= ../maximum-burst-size';
               default "0";
@@ -1214,8 +1309,199 @@ module srl_nokia-qos {
             }
           }
         }
-      } // buffer-allocation-profile
-    } // buffer-management
+      }
+      list slope-policy {
+        if-feature "srl-feat:future-0-0";
+        max-elements 64;
+        description
+          "List of slope-policies";
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Unique string name used for the slope-policy";
+        }
+        list wred-slope {
+          key "wred-profile";
+          leaf wred-profile {
+            description
+              "The key for individual wred-slopes ";
+            type wred-profile;
+          }
+          leaf slope-enabled {
+            type boolean;
+            default "false";
+            description
+              "Enables/disables the corresponding wred-slope";
+          }
+          leaf min-threshold-percent {
+            type srl_nokia-comm:percentage;
+            default "85";
+            description
+              "The buffer threshold defining when the drop-probability starts rising from zero for the corresponding wred-slope";
+          }
+          leaf max-threshold-percent {
+            type srl_nokia-comm:percentage;
+            default "100";
+            description
+              "The buffer threshold defining when the drop-probability reaches its max-probabilty value for the corresponding wred-slope";
+          }
+          leaf max-probability {
+            type srl_nokia-comm:percentage;
+            default "80";
+            description
+              "The drop probability at max-threshold level for the corresponding wred-slope";
+          }
+        }
+      }
+      list fp-pool-policy {
+        if-feature "srl-feat:future-0-0";
+        max-elements 3;
+        description
+          "List of fp-pool-policies";
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Unique string name used for the fp-pool-policy. There is a default fp-pool-policy named 'default', as a reserved name not usable for user-defined fp-pool-policies";
+        }
+        leaf system-reserve-percentage {
+          type srl_nokia-comm:percentage;
+          default "10";
+          description
+            "The ammount of the global buffer-pool reserved for system generated traffic expressed as percentage of total available buffer space. The sum of all root-pools and system-reserved has to be 100%";
+        }
+        container root-tier {
+          description
+            "Parameters related to root-tier buffers";
+          leaf default-slope-policy {
+            type leafref {
+              path "../../../slope-policy/name";
+            }
+            default "default";
+            description
+              "Slope-policy associated with all root-tier buffer pools";
+          }
+          list root-pool {
+            description
+              "List of root-tier pools";
+            key "index";
+            leaf index {
+              type uint8 {
+                range "0..4";
+              }
+              description
+                "Root-pool index";
+            }
+            leaf allocation-weight {
+              type srl_nokia-comm:percentage;
+              description
+                "The amount of the vailable egress buffer space allocated to this root-pool. The sum of all root-pools and system-reserved has to be 100%";
+            }
+            container mid-pool-members {
+              description
+                "List of mid-pool members participating in this given root-pool";
+              list mid-pool-member {
+                description
+                  "Mid-pool member";
+                key "index";
+                leaf index {
+                  type uint8 {
+                    range "0..7";
+                  }
+                  description
+                    "Mid-pool index";
+                }
+              }
+            }
+          }
+        }
+        container mid-tier {
+          description
+            "Mid-pool parameters definition";
+          list mid-pool {
+            description
+              "Mid-pool definition";
+            key "index";
+            leaf index {
+              type uint8 {
+                range "0..7";
+              }
+              description
+                "Mid-pool index";
+            }
+            leaf allocation-percentage-size {
+              type srl_nokia-comm:percentage;
+              description
+                "The size of the mid-pool as a percentage of root-pool";
+            }
+            leaf slope-policy {
+              type leafref {
+                path "../../../../slope-policy/name";
+              }
+              default "default";
+              description
+                "The slope-policy attached to the given mid-pool";
+            }
+          }
+        }
+      }
+      list interface-pool-policy {
+        if-feature "srl-feat:future-0-0";
+        description
+          "List of interface-pool policies";
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Unique string name used for the interface-pool-policy";
+        }
+        list interface-pool {
+          description
+            "List of interface-pools.
+             The interface-pools are directly mapped to mid-pools in 1:1 fashion";
+          key "index";
+          leaf index {
+            type uint8 {
+              range "0..7";
+            }
+          }
+          leaf slope-policy {
+            description
+              "Slope policy associated with the given interface-pool";
+            type leafref {
+              path "../../../slope-policy/name";
+            }
+            default "default";
+          }
+          container allocation-size {
+            description
+              "Interface-pool size definition";
+            leaf explicit-percentage {
+              type srl_nokia-comm:percentage;
+              description
+                "Interface-pool size as percentage of mid-pool. The value equal '0' means that bw-proportinal distribution is used";
+              default "0";
+            }
+            container bw-proportional {
+              description
+                "Defines how the mid-pool size is shared between individual interface-pools taking into account interface-speed";
+              leaf over-subscription-factor {
+                description
+                  "Factor defining how much of the over-subscription for the given interface-pool is allowed, when its size is calculated as a proportion of the corresponding interface-speed.
+
+                   This parameter is ignored whenever 'explicit-percentage' is set to non-zero value";
+                type decimal64 {
+                  fraction-digits 2;
+                  range "0..10";
+                }
+                default "1.25";
+              }
+            }
+          }
+        }
+      }
+    }
   }
 
   grouping queue-names-config {
@@ -1273,6 +1559,16 @@ module srl_nokia-qos {
           }
           description
             "The queue index (offset). If this value is not specified it is derived from the forwarding-class mapping (based on the forwarding-class-index).";
+        }
+        leaf interface-pool {
+          if-feature "srl-feat:openconfig-qos";
+          if-feature "srl-feat:future-0-0";
+          description
+            "Interface-pool the queue is assigned to at interface-level";
+          mandatory true;
+          type leafref {
+            path "../../../buffer-management/interface-pool-policy/interface-pool/index";
+          }
         }
       }
     }
@@ -1352,6 +1648,15 @@ module srl_nokia-qos {
           }
         }
         container output {
+          leaf slope-policy {
+            if-feature "srl-feat:openconfig-qos";
+            if-feature "srl-feat:future-0-0";
+            description
+              "Assigns slope policy to interface-level forwarding-class";
+            type leafref {
+              path "../../../../buffer-management/slope-policy/name";
+            }
+          }
           leaf queue {
             if-feature "srl-feat:future-0-0";
             mandatory true;
@@ -1453,6 +1758,14 @@ module srl_nokia-qos {
       list forwarding-class {
         key "name";
         uses qos-forwarding-class-leaf-name;
+        leaf slope-policy {
+          if-feature "srl-feat:openconfig-qos";
+          description
+            "Slope-policy assigned to the forarding-class";
+          type leafref {
+            path "../../../buffer-management/slope-policy/name";
+          }
+        }
         container queue {
           description
             "Container used to define whether local subinterface should be created or re-direction to remote queue at interface level should be used.";
@@ -1468,6 +1781,15 @@ module srl_nokia-qos {
             description
               "The re-direction to interface level queue";
           }
+          leaf interface-pool {
+            if-feature "srl-feat:openconfig-qos";
+            description
+              "Interface-pool the queue is assigned to at subinterface level";
+            mandatory true;
+            type leafref {
+              path "../../../../buffer-management/interface-pool-policy/interface-pool/index";
+            }
+          }
         }
       }
     }
@@ -1478,7 +1800,6 @@ module srl_nokia-qos {
       if-feature "not srl-feat:future-0-0";
       srl_nokia-ext:first-released "20.12.1";
       presence "When present ECN marking is enabled globally (on all interfaces)";
-      // leaf-list supported-protocols
       leaf ecn-dscp-policy {
         if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
         mandatory true;
@@ -1687,7 +2008,7 @@ module srl_nokia-qos {
           }
         }
       }
-    } // resource-management
+    }
     container system-generated-traffic {
       description
         "Defines mapping of dscp values into forwarding-class and profile for system generated traffic";
@@ -1780,23 +2101,26 @@ module srl_nokia-qos {
                   if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:trident4 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
                   description
                     "Refers to IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
+                  value 1;
                 }
                 enum non-tcp {
                   if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:trident4 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
                   description
                     "Refers to all packets that are not IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
+                  value 2;
                 }
                 enum all {
                   if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
                   description
                     "Refers to all traffic, whether it is TCP or non-TCP.";
+                  value 3;
                 }
               }
             }
             leaf drop-probability {
               description
                 "The drop probability to which the WRED slope applies.";
-              type drop-probability;
+              type srl_nokia-comm:drop-probability;
             }
             leaf min-threshold-percent {
               type srl_nokia-comm:percentage;
@@ -1861,10 +2185,10 @@ module srl_nokia-qos {
                  A slope is disabled by setting min-threshold-percent=100, max-threshold-percent=100 and max-probability=0.";
             }
           }
-        } // active-queue-management
-      } // queue-template
-    } // queue-templates
-  } // queue-templates-top
+        }
+      }
+    }
+  }
 
   grouping scheduler-policies-top {
     container scheduler-policies {
@@ -1879,6 +2203,9 @@ module srl_nokia-qos {
           type srl_nokia-comm:name;
           description
             "Name for the scheduler policy.";
+          must ". != 'default'" {
+            error-message "name 'default' is reserved";
+          }
         }
         list scheduler {
           key "sequence";
@@ -1886,13 +2213,10 @@ module srl_nokia-qos {
             "List of defined QoS traffic schedulers.";
           leaf sequence {
             type uint32 {
-              range "0..2";
+              range "0..1";
             }
             description
               "Sequence number for the scheduler within the scheduler policy. Schedulers are processed from lowest sequence to highest.";
-            must '. != 2' {
-              error-message "Scheduler with sequence 2 is not a configurable scheduler";
-            }
             must "(. = 0 and ../priority = 'strict') or (. = 1 and ../priority != 'strict')" {
               error-message "scheduler with sequence 0 must be strict priority and scheduler with sequence 1 must be weighted RR";
             }
@@ -1917,53 +2241,61 @@ module srl_nokia-qos {
                 "User-defined identifier for the scheduler input";
             }
             leaf input-type {
-                type enumeration {
-                    enum queue;
-                }
-                default "queue";
+              type enumeration {
+                enum queue;
+              }
+              default "queue";
             }
-            //TODO move the must to grouping
             uses qos-queue-leaf-queue-name {
               refine "queue-name" {
                 mandatory true;
-                must "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue[srl_nokia-qos:name=current()]/srl_nokia-qos:name = current() or
-                    /srl_nokia-system:system/srl_nokia-system:management/srl_nokia-openconfig:openconfig/srl_nokia-openconfig:admin-state != 'enable'" {
-                     error-message "default queues cannot be used when openconfig is enabled";
+                must "/srl_nokia-system:system/srl_nokia-system:management/srl_nokia-openconfig:openconfig/srl_nokia-openconfig:admin-state != 'enable' or
+                      /srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue[srl_nokia-qos:name=current()]/srl_nokia-qos:name = current()" {
+                  error-message "default queues cannot be used when openconfig is enabled";
                 }
               }
+            }
+            leaf peak-rate-percent {
+              srl_nokia-ext:first-released "20.6.1";
+              type uint8 {
+                range "1..100";
+              }
+              default "100";
+              description
+                "The maximum percentage of port bandwidth that is available to the traffic in this queue during the PIR scheduling loop. The default is 100.";
             }
             leaf weight {
               type uint8;
               description
                 "For weighted round-robin schedulers, this leaf indicates the weight of the corresponding input.";
-              must "../../priority != 'strict'";
             }
           }
         }
       }
-      container committed-burst-size-table {
+      container scheduling-priority-mapping-table {
         if-feature "srl-feat:future-0-0";
         description
-          "Defines possible committed-burst sizes";
-        leaf default {
-          type uint64; //add bytes and kilobytes units
+          "This table maps individual scheduling-classes into scheduling-priority.
+
+           This table is global for the whole system";
+        list scheduling-class {
           description
-            "Default committed-burst-size";
-        }
-        leaf alt-1 {
-          type uint64; //add bytes and kilobytes units
-          description
-            "ALT-1 committed-burst-size";
-        }
-        leaf alt-2 {
-          type uint64; //add bytes and kilobytes units
-          description
-            "ALT-2 committed-burst-size";
-        }
-        leaf alt-3 {
-          type uint64; //add bytes and kilobytes units
-          description
-            "ALT-3 committed-burst-size";
+            "List of scheduling-classes";
+          key "index";
+          leaf index {
+            description
+              "Scheduling-class index";
+            type uint8 {
+              range "0..7";
+            }
+          }
+          leaf scheduling-priority {
+            description
+              "Scheduling-priority assigned to the scheduling-class";
+            type uint8 {
+              range "0..2";
+            }
+          }
         }
       }
       list queue-scheduling-policy {
@@ -1980,8 +2312,8 @@ module srl_nokia-qos {
         list queue {
           description
             "The queue parameters that is the input to the scheduler";
-          key "name";
-          uses qos-queue-leaf-name;
+          key "queue-name";
+          uses qos-queue-leaf-queue-name;
           container queue-depth {
             description
               "Definition of queue-depth related parameters";
@@ -2073,14 +2405,24 @@ module srl_nokia-qos {
               range "0..1";
             }
             default "0";
+            must "(. = 0) or (. = 1 and ../inputs/inputs = 'auto-input')" {
+              error-message "tier 1 scheduler must have auto-inputs configured";
+            }
+            must "(. = 1) or (. = 0 and ../inputs/inputs != 'auto-input')" {
+              error-message "tier 0 scheduler can not have auto-inputs configured";
+            }
           }
           leaf output-weight {
+            if-feature "srl-feat:future-0-0";
             description
               "Output weight of the scheduler";
             type uint8 {
               range "1..127";
             }
             default "1";
+            must '. = 1 or ../tier = 0' {
+              error-message "output-weight only supported on tier 0 schedulers";
+            }
           }
           leaf burst-allowance {
             description
@@ -2137,12 +2479,22 @@ module srl_nokia-qos {
                 leaf-list queue {
                   description
                     "List of queues which are input to the scheduler";
-                  type leafref {
-                    path "../../../queue/name";
+                  type union {
+                    type leafref {
+                      path "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue/srl_nokia-qos:name";
+                    }
+                    type srl_nokia-comm:default-queue-name;
+                  }
+                  must "/srl_nokia-qos:qos/srl_nokia-qos:queues/srl_nokia-qos:queue[srl_nokia-qos:name=current()]/srl_nokia-qos:name = current() or
+                        re-match(.,'queue-[0-9]|queue-1[0-3]')" {
+                    error-message "queue doesn't exist";
+                    srl_nokia-ext:if-feature "srl_nokia-features:future-0-0";
+                  }
+                  must '../../../queue[srl_nokia-qos:queue-name=current()]/srl_nokia-qos:queue-name = current()' {
+                    error-message "queue must be defined within this policy";
                   }
                 }
-                // need a must statetement which allows queue being an input only to tier-0 scheduler 
-              } // case queue-list
+              }
               case auto-input {
                 leaf inputs {
                   description
@@ -2151,11 +2503,11 @@ module srl_nokia-qos {
                     enum auto-input;
                   }
                 }
-              } // case auto-input
-            } // choice
-          } //inputs
-        } // scheduler
-      } // queue-scheduling-policy
+              }
+            }
+          }
+        }
+      }
       list sched-class-scheduling-policy {
         if-feature "srl-feat:future-0-0";
         description
@@ -2244,8 +2596,7 @@ module srl_nokia-qos {
                     range "0..7";
                   }
                 }
-                // need must statetement that scheduling-class can be input only to tier-0 scheduler
-              } // case scheduling-class
+              }
               case auto-input {
                 leaf inputs {
                   description
@@ -2254,8 +2605,8 @@ module srl_nokia-qos {
                     enum auto-input;
                   }
                 }
-              } // case auto-input
-            } // choice
+              }
+            }
           }
         }
       }
@@ -2354,7 +2705,7 @@ module srl_nokia-qos {
         leaf drop-probability {
           srl_nokia-ext:first-released "20.12.1";
           if-feature "not srl-feat:future-0-0";
-          type drop-probability;
+          type srl_nokia-comm:drop-probability;
           description
             "The drop probability to which the DSCP value is mapped";
         }
@@ -2409,7 +2760,7 @@ module srl_nokia-qos {
         leaf drop-probability {
           srl_nokia-ext:first-released "21.6.3";
           if-feature "not srl-feat:future-0-0";
-          type drop-probability;
+          type srl_nokia-comm:drop-probability;
           description
             "The drop probability to which the traffic-class value is mapped";
         }
@@ -2461,7 +2812,7 @@ module srl_nokia-qos {
         uses qos-forwarding-class-leaf-forwarding-class;
         leaf drop-probability {
           if-feature "not srl-feat:future-0-0";
-          type drop-probability;
+          type srl_nokia-comm:drop-probability;
           description
             "The drop probability to which the dot1p value is mapped";
         }
@@ -2536,7 +2887,7 @@ module srl_nokia-qos {
           if-feature "not srl-feat:future-0-0";
           key "drop-probability";
           leaf drop-probability {
-            type drop-probability;
+            type srl_nokia-comm:drop-probability;
             description
               "A drop probability level within the FC for which a different remarking is desired.";
           }
@@ -2683,7 +3034,7 @@ module srl_nokia-qos {
           if-feature "not srl-feat:future-0-0";
           key "drop-probability";
           leaf drop-probability {
-            type drop-probability;
+            type srl_nokia-comm:drop-probability;
             description
               "A drop probability level within the FC for which a different remarking is desired.";
           }
@@ -2740,7 +3091,7 @@ module srl_nokia-qos {
           if-feature "not srl-feat:future-0-0";
           key "drop-probability";
           leaf drop-probability {
-            type drop-probability;
+            type srl_nokia-comm:drop-probability;
             description
               "A drop probability level within the FC for which a different remarking is desired.";
           }
@@ -2826,7 +3177,7 @@ module srl_nokia-qos {
       if-feature "not srl-feat:platform-7220-d1";
       srl_nokia-ext:first-released "19.11.1";
       presence "Enables configuration of QoS parameters for the interface";
-      must "not (/srl_nokia-qos:qos/srl_nokia-qos:interfaces)" {
+      must 'not (/srl_nokia-qos:qos/srl_nokia-qos:interfaces)' {
         error-message "oc cli cannot be configured together with legacy cli";
       }
       must "starts-with(../srl_nokia-if:name, 'ethernet') or starts-with(../srl_nokia-if:name, 'lag')" {
@@ -2842,47 +3193,43 @@ module srl_nokia-qos {
           srl_nokia-ext:first-released "20.12.1";
           description
             "Output traffic scheduler options";
-          choice policy-or-nodes {
-            case nodes {
-              list tier {
-                max-elements 1;
+          list tier {
+            max-elements 1;
+            description
+              "List of output traffic scheduler tiers or levels";
+            key "level";
+            leaf level {
+              type scheduler-level;
+              must '. = 1' {
+                error-message "Only one scheduler level supported";
+              }
+            }
+            list node {
+              max-elements 12;
+              description
+                "List of scheduler nodes at the specified scheduler level";
+              key "node-number";
+              leaf node-number {
                 description
-                  "List of output traffic scheduler tiers or levels";
-                key "level";
-                leaf level {
-                  type scheduler-level;
-                  must '. = 1' {
-                    error-message "Only one scheduler level supported";
-                  }
+                  "An identifier of the scheduler node. Within a scheduler tier, higher-numbered nodes are served before lower-numbererd nodes.";
+                type scheduler-node-id;
+              }
+              leaf strict-priority {
+                description
+                  "A true value configures the node for strict priority scheduling, whether or not a weight is also configured.  When set to false the node is serviced using DWRR, even if the node does not have a configured weight; in this case the default weight value of 1 is used.";
+                type boolean;
+              }
+              leaf weight {
+                description
+                  "The DWRR weight assigned to the scheduler node";
+                type uint8 {
+                  range "1..127";
                 }
-                list node {
-                  max-elements 12;
-                  description
-                    "List of scheduler nodes at the specified scheduler level";
-                  key "node-number";
-                  leaf node-number {
-                    description
-                      "An identifier of the scheduler node. Within a scheduler tier, higher-numbered nodes are served before lower-numbererd nodes.";
-                    type scheduler-node-id;
-                  }
-                  leaf strict-priority {
-                    description
-                      "A true value configures the node for strict priority scheduling, whether or not a weight is also configured.  When set to false the node is serviced using DWRR, even if the node does not have a configured weight; in this case the default weight value of 1 is used.";
-                    type boolean;
-                  }
-                  leaf weight {
-                    description
-                      "The DWRR weight assigned to the scheduler node";
-                    type uint8 {
-                      range "1..127";
-                    }
-                    default "1";
-                  }
-                } // node
-              } // tier
-            } // case
-          } // choice
-        } // scheduler
+                default "1";
+              }
+            }
+          }
+        }
         list queue {
           srl_nokia-ext:first-released "19.11.1";
           description
@@ -2907,17 +3254,17 @@ module srl_nokia-qos {
                   "The traffic type to which the WRED slope applies.";
                 type enumeration {
                   enum tcp {
-                    value 0;
+                    value 1;
                     description
                       "Refers to IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
                   }
                   enum non-tcp {
-                    value 1;
+                    value 2;
                     description
                       "Refers to all packets that are not IPv4/IPv6 packets with a protocol/next-header indicating a value of 6.";
                   }
                   enum all {
-                    value 2;
+                    value 3;
                     description
                       "Refers to all traffic, whether it is TCP or non-TCP.";
                   }
@@ -2926,7 +3273,7 @@ module srl_nokia-qos {
               leaf drop-probability {
                 description
                   "The drop probability to which the WRED slope applies.";
-                type drop-probability;
+                type srl_nokia-comm:drop-probability;
               }
               leaf slope-enabled {
                 description
@@ -2990,8 +3337,8 @@ module srl_nokia-qos {
 
                    On 7250 IXR-6/10 there can be a significant difference between the configured value and the operational value.";
               }
-            } // ecn-slope
-          } // active-queue-management
+            }
+          }
           container queue-depth {
             config false;
             srl_nokia-ext:first-released "20.12.1";
@@ -3014,7 +3361,7 @@ module srl_nokia-qos {
               description
                 "The operational hardware value of the high threshold in bytes.";
             }
-          } // queue-depth
+          }
           container scheduling {
             description
               "Container for queue scheduling parameters";
@@ -3026,7 +3373,6 @@ module srl_nokia-qos {
               default "100";
               description
                 "The maximum percentage of port bandwidth that is available to the traffic in this queue during the PIR scheduling loop. The default is 100.";
-              must 'not(../../../scheduler/scheduler-policy)';
             }
             leaf peak-rate-bps {
               srl_nokia-ext:first-released "20.6.1";
@@ -3042,7 +3388,6 @@ module srl_nokia-qos {
                 "When set to true the queue is serviced as a strict priority queue, regardless of whether a weight is configured or its value. When set to false the queue is serviced using WRR, even if the queue does not have a configured weight; in this case the default weight value of 1 is used.
 
                  For unicast queues the implicit default value is true";
-              must 'not(../../../scheduler/scheduler-policy)';
             }
             leaf weight {
               srl_nokia-ext:first-released "20.6.1";
@@ -3054,7 +3399,6 @@ module srl_nokia-qos {
                 "Configures the relative weight of a DWRR queue.
 
                  For unicast queues the implicit default value is 1";
-              must 'not(../../../scheduler/scheduler-policy)';
             }
             leaf scheduler-node {
               srl_nokia-ext:first-released "20.12.1";
@@ -3088,7 +3432,7 @@ module srl_nokia-qos {
                 path "../../../scheduler/tier/node/node-number";
               }
             }
-          } // scheduling
+          }
           leaf template {
             srl_nokia-ext:first-released "20.12.1";
             if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:trident4 or srl-feat:platform-7220-h2 or srl-feat:platform-7220-h3 or srl-feat:platform-7220-h4";
@@ -3110,12 +3454,11 @@ module srl_nokia-qos {
               "The name of a queue-template to apply to the set of associated VOQs.
 
                If a queue has no voq-template, the default queue-template is applied";
-            // TO-DO: must statement to block this if the queue-type is multicast
           }
-        } // queue
+        }
         uses queue-stats;
-      } // output
-    } // qos
+      }
+    }
   }
 
   grouping queue-stats-group {
@@ -3202,13 +3545,13 @@ module srl_nokia-qos {
 
          On 7250-IXR (Jericho2-based) systems unicast packet drops related to egress port congestion should show up in the VOQ stats.This statistics is an aggregate of VOQ and EGT drops";
     }
-    leaf egt-dropped-packets {
+    leaf egq-dropped-packets {
       if-feature "not srl-feat:future-0-0";
       type srl_nokia-comm:zero-based-counter64;
       description
         "Number of packets dropped by the queue at egress";
     }
-    leaf egt-dropped-octets {
+    leaf egq-dropped-octets {
       if-feature "not srl-feat:future-0-0";
       type srl_nokia-comm:zero-based-counter64;
       description
@@ -3227,7 +3570,7 @@ module srl_nokia-qos {
         description
           "The operational hardware value of the high threshold in bytes.";
       }
-    } // queue-depth
+    }
     list virtual-output-queue {
       if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
       description
@@ -3253,23 +3596,23 @@ module srl_nokia-qos {
           description
             "The operational hardware value of the high threshold in bytes.";
         }
-      } // queue-depth
+      }
       container low-drop-probability {
         description
-            "The unicast statistics from the VOQ to the egress queue that were classified as low drop-probability. This reads 0 when the IMM associated with the VOQ is not inserted and it resets to 0 whenever the IMM associated with the VOQ is removed.";
-          uses queue-stats-group;
+          "The unicast statistics from the VOQ to the egress queue that were classified as low drop-probability. This reads 0 when the IMM associated with the VOQ is not inserted and it resets to 0 whenever the IMM associated with the VOQ is removed.";
+        uses queue-stats-group;
       }
       container medium-drop-probability {
         description
-            "The unicast statistics from the VOQ to the egress queue that were classified as medium drop-probability. This reads 0 when the IMM associated with the VOQ is not inserted and it resets to 0 whenever the IMM associated with the VOQ is removed.";
-          uses queue-stats-group;
+          "The unicast statistics from the VOQ to the egress queue that were classified as medium drop-probability. This reads 0 when the IMM associated with the VOQ is not inserted and it resets to 0 whenever the IMM associated with the VOQ is removed.";
+        uses queue-stats-group;
       }
       container high-drop-probability {
         description
-            "The unicast statistics unicast packets transmitted from the VOQ to the egress queue that were classified as high drop-probability. This reads 0 when the IMM associated with the VOQ is not inserted and it resets to 0 whenever the IMM associated with the VOQ is removed.";
-          uses queue-stats-group;
+          "The unicast statistics unicast packets transmitted from the VOQ to the egress queue that were classified as high drop-probability. This reads 0 when the IMM associated with the VOQ is not inserted and it resets to 0 whenever the IMM associated with the VOQ is removed.";
+        uses queue-stats-group;
       }
-    } // virtual-output-queue
+    }
   }
 
   grouping queue-stats {
@@ -3345,7 +3688,7 @@ module srl_nokia-qos {
               description
                 "The operational hardware value of the high threshold in bytes.";
             }
-          } // queue-depth
+          }
           container forwarded-packets {
             srl_nokia-ext:first-released "20.12.1";
             leaf low-drop-probability {
@@ -3418,8 +3761,8 @@ module srl_nokia-qos {
                 "The number of octets in unicast packets dropped in the VOQ due to the congestion at the egress port/queue that were classified as high drop-probability. This reads 0 when the IMM associated with the VOQ is not inserted and it resets to 0 whenever the IMM associated with the VOQ is removed.";
             }
           }
-        } // virtual-output-queue
-      } // queue
+        }
+      }
     }
   }
 
@@ -3428,7 +3771,7 @@ module srl_nokia-qos {
       srl_nokia-ext:first-released "19.11.1";
       presence "Enables configuration of QoS parameters for the subinterface";
       if-feature "not srl-feat:platform-7220-d1";
-      must "not (/srl_nokia-qos:qos/srl_nokia-qos:interfaces)" {
+      must 'not (/srl_nokia-qos:qos/srl_nokia-qos:interfaces)' {
         error-message "oc cli cannot be configured together with legacy cli";
       }
       container input {
@@ -3455,7 +3798,7 @@ module srl_nokia-qos {
           leaf default-drop-probability {
             description
               "The default drop-probability for packets arriving on this subinterface that do not match any classification rule.";
-            type drop-probability;
+            type srl_nokia-comm:drop-probability;
             must "../../../../srl_nokia-if:type = 'srl_nokia-if:bridged'" {
               error-message "default-drop-probability allowed with type bridged only";
             }
@@ -3512,8 +3855,8 @@ module srl_nokia-qos {
             description
               "Reference to the name of an MPLS traffic-class mapping policy";
           }
-        }  
-      }  
+        }
+      }
       container output {
         srl_nokia-ext:first-released "19.11.1";
         container rewrite-rules {

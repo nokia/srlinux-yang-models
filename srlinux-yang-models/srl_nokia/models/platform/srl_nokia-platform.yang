@@ -1,8 +1,5 @@
 module srl_nokia-platform {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/platform";
   prefix srl_nokia-platform;
 
@@ -21,10 +18,13 @@ module srl_nokia-platform {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state data related to platform components.";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -118,20 +118,41 @@ module srl_nokia-platform {
     }
   }
 
+  grouping component-temperature-common {
+    leaf instant {
+      srl-ext:delivery-node-override "true";
+      srl-ext:stream-mode "sample=5";
+      type srl-comm:temperature;
+      description
+        "Represents the highest current temperature of any sensor on this component
+
+         Note that as multiple sensors may feed in, that this field and the margin field may be referencing different sensors.";
+    }
+    leaf maximum {
+      type srl-comm:temperature;
+      description
+        "Represents the highest temperature any sensor on this component has reached since it booted";
+    }
+    leaf maximum-time {
+      type srl-comm:date-and-time-delta;
+      description
+        "Indicates the time this component reached the temperature referenced in the maximum field";
+    }
+    leaf alarm-status {
+      type boolean;
+      description
+        "Indicates if a temperature sensor of this component is currently in an alarm state
+
+         An alarm state is triggered if the margin is <=2 degrees, indicating that a thermal protection shut down is imminent unless adequate system cooling is provided to bring the temperature sensor back into safe operating ranges.";
+    }
+  }
+
   grouping component-temperature-state-top {
     container temperature {
       config false;
       description
         "State related to temperature for this component";
-      leaf instant {
-        srl-ext:delivery-node-override "true";
-        srl-ext:stream-mode "sample=5";
-        type srl-comm:temperature;
-        description
-          "Represents the highest temperature of any sensor on this component
-
-           Note that as multiple sensors may feed in, that this field and the margin field may be referencing different sensors.";
-      }
+      uses component-temperature-common;
       leaf margin {
         srl-ext:delivery-node-override "true";
         srl-ext:stream-mode "sample=5";
@@ -141,13 +162,6 @@ module srl_nokia-platform {
 
            The margin is the delta between the current sensor temperature and the thermal protection threshold for that sensor. Note that as multiple sensors may feed in, that this field and the instant field may be referencing different sensors.";
       }
-      leaf alarm-status {
-        type boolean;
-        description
-          "Indicates if a temperature sensor of this component is currently in an alarm state
-
-           An alarm state is triggered if the margin field is <=2 degrees, indicating that a thermal protection shut down is imminent unless adequate system cooling is provided to bring the temperature sensor back into safe operating ranges.";
-      }
     }
   }
 
@@ -156,18 +170,7 @@ module srl_nokia-platform {
       config false;
       description
         "State related to temperature for this component";
-      leaf instant {
-        srl-ext:delivery-node-override "true";
-        srl-ext:stream-mode "sample=5";
-        type srl-comm:temperature;
-        description
-          "The current temperature of this component";
-      }
-      leaf alarm-status {
-        type boolean;
-        description
-          "Indicates if the temperature of this component is currently in an alarm state";
-      }
+      uses component-temperature-common;
     }
   }
 
@@ -189,10 +192,10 @@ module srl_nokia-platform {
       config false;
       description
         "Indicates the date and time this component will reboot
-        
-        If empty, no delayed reboots are queued for this component.
-        
-        A non empty value implies that a delayed reboot operation has been triggered for this component, which can be aborted using 'tools platform <component> reboot cancel'.";
+
+         If empty, no delayed reboots are queued for this component.
+
+         A non empty value implies that a delayed reboot operation has been triggered for this component, which can be aborted using 'tools platform <component> reboot cancel'.";
     }
   }
 
@@ -212,8 +215,8 @@ module srl_nokia-platform {
   grouping component-common-eeprom {
     description
       "Grouping for components that have a full featured EEPROM
-      
-      failure-reason is also included here for model simplicity";
+
+       failure-reason is also included here for model simplicity";
     leaf failure-reason {
       type string;
       config false;
@@ -317,7 +320,6 @@ module srl_nokia-platform {
     description
       "Enclosing container for platform components";
     container trust {
-      if-feature "srl-feat:secure-boot or srl-feat:measured-boot or srl-feat:disk-encryption";
       description
         "State information related to Platform Trust";
       config false;

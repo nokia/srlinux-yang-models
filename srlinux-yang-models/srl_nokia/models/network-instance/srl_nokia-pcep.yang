@@ -1,8 +1,5 @@
 module srl_nokia-pcep {
   yang-version 1.1;
-
-  // namespace
-
   namespace "urn:srl_nokia/pcep";
   prefix srl_nokia-pcep;
 
@@ -33,11 +30,8 @@ module srl_nokia-pcep {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "Configuration and state related to the use and propagation of Path Computation Element(PCC) information.";
-
-  // Enums
 
   revision 2023-07-31 {
     description
@@ -151,8 +145,6 @@ module srl_nokia-pcep {
       range "1..4294967295";
     }
   }
-
-  // State
 
   grouping pcep-pcc-and-pce-state {
     leaf-list capabilities {
@@ -268,7 +260,7 @@ module srl_nokia-pcep {
         "The maximum number of unrecognized requests and replies that any session on this PCEP entity is willing to accept per minute before terminating the session.";
       type uint32;
     }
-  } //grouping pcep-pcc-and-pce-state
+  }
 
   grouping pcep-pcc-and-pce-peer-state {
     leaf speaker-id {
@@ -314,7 +306,7 @@ module srl_nokia-pcep {
       type uint32;
       units "seconds";
     }
-  } //grouping pcep-pcc-and-pce-peer-state
+  }
 
   grouping pcep-pcc-lsp-update-key {
     leaf pce-id {
@@ -322,7 +314,7 @@ module srl_nokia-pcep {
         "The unique identifier for PCE";
       type pce-id;
     }
-  } //grouping pcep-pcc-lsp-update-key
+  }
 
   grouping pcep-pcc-lsp-update-state {
     leaf lsp-id {
@@ -506,7 +498,7 @@ module srl_nokia-pcep {
         }
       }
     }
-  } //grouping pcep-pcc-lsp-update-state
+  }
 
   grouping pcep-pcc-path-request-key {
     leaf request-id {
@@ -516,7 +508,7 @@ module srl_nokia-pcep {
         range "1..max";
       }
     }
-  } //grouping pcep-pcc-path-request-key
+  }
 
   grouping pcep-pcc-path-request-state {
     leaf lsp-type {
@@ -772,7 +764,7 @@ module srl_nokia-pcep {
       max-elements 5;
       ordered-by user;
     }
-  } //grouping pcep-pcc-path-request-state
+  }
 
   grouping pcep-pcc-and-pce-peer-statistics-state {
     leaf num-pcrpt-sent {
@@ -919,7 +911,7 @@ module srl_nokia-pcep {
         "The number of PC initiated messages received from this peer.";
       type srl_nokia-comm:zero-based-counter32;
     }
-  } //pcep-pcc-and-pce-peer-statistics-state
+  }
 
   grouping pcep-pcc-state {
     uses pcep-pcc-and-pce-state;
@@ -939,33 +931,31 @@ module srl_nokia-pcep {
       uses pcep-pcc-path-request-key;
       uses pcep-pcc-path-request-state;
     }
-  } //grouping pcep-pcc-state
+  }
 
   grouping pcep-pce-peer-state {
     uses pcep-pcc-and-pce-peer-state;
     leaf oper-state {
-        type srl_nokia-comm:oper-state;
-        config false;
-        description
-          "Details the operational state of the Pcep Pcc Peer";
-      }
-      leaf is-overloaded {
-        config false;
-        description
-            "The value indicates whether this peer is overloaded with the processing
-             of existing requests and is unable to handle new requests leading
-             to unacceptable response times";
-        type boolean;
-      }
+      type srl_nokia-comm:oper-state;
+      config false;
+      description
+        "Details the operational state of the Pcep Pcc Peer";
+    }
+    leaf is-overloaded {
+      config false;
+      description
+        "The value indicates whether this peer is overloaded with the processing
+         of existing requests and is unable to handle new requests leading
+         to unacceptable response times";
+      type boolean;
+    }
     container statistics {
       config false;
       description
         "Holds statistics of messages send to peer";
       uses pcep-pcc-and-pce-peer-statistics-state;
     }
-  } //pcep-pce-peer-state
-
-  // Config
+  }
 
   grouping pcep-pcc-and-pce-peer-key {
     leaf ip-address {
@@ -973,7 +963,7 @@ module srl_nokia-pcep {
         "The address of the PCE peer";
       type srl_nokia-comm:ip-address-excluding-all-zero;
     }
-  } //grouping pcep-pcc-and-pce-peer-key
+  }
 
   grouping pcep-pcc-assoc-key {
     leaf association-name {
@@ -993,7 +983,6 @@ module srl_nokia-pcep {
     leaf keepalive {
       description
         "Configure keepalive";
-      //TO-DO: need better description
       type uint32 {
         range "1..255";
       }
@@ -1003,13 +992,12 @@ module srl_nokia-pcep {
     leaf unknown-message-rate {
       description
         "Configure unknown message rate";
-      //TO-DO: need better description
       type uint32 {
         range "1..255";
       }
       default "10";
     }
-  } //grouping pcep-pcc-pce-common
+  }
 
   grouping pcep-pcc-config {
     uses pcep-pcc-pce-common;
@@ -1046,14 +1034,12 @@ module srl_nokia-pcep {
       leaf timer {
         description
           "Configure state-timer";
-        //TO-DO: need better description
         type uint32 {
           range "1..3600";
         }
         units "seconds";
         default "180";
         must '(. > ../../redelegation-timer)';
-        //TO-DO: correct error message
       }
       leaf timer-action {
         description
@@ -1095,7 +1081,7 @@ module srl_nokia-pcep {
         uses pcep-pcc-policy-assoc-config;
       }
     }
-  } //grouping pcep-pcc-config
+  }
 
   grouping pcep-pcc-peer-config {
     leaf admin-state {
@@ -1107,7 +1093,6 @@ module srl_nokia-pcep {
     leaf local-address {
       description
         "Configure local IP";
-      //TO-DO: need better description
       type srl_nokia-comm:ip-address-excluding-all-zero;
     }
     leaf preference {
@@ -1163,7 +1148,7 @@ module srl_nokia-pcep {
         error-message "Only keychain of type tcp-ao can be assigned";
       }
     }
-  } //grouping pcep-pcc-peer-config
+  }
 
   grouping pcep-pcc-diversity-assoc-config {
     leaf association-id {
@@ -1182,7 +1167,6 @@ module srl_nokia-pcep {
     leaf disjointness-reference {
       description
         "Refers to shortest path or not";
-      //TO-DO: Need better description
       type boolean;
       default "false";
     }
@@ -1221,7 +1205,7 @@ module srl_nokia-pcep {
       }
       default "none";
     }
-  } // pcep-pcc-diversity-assoc-config
+  }
 
   grouping pcep-pcc-policy-assoc-config {
     leaf association-id {
@@ -1237,7 +1221,7 @@ module srl_nokia-pcep {
         "Associaiton Source for the association";
       type srl_nokia-comm:ip-address-excluding-all-zero;
     }
-  } // pcep-pcc-policy-assoc-config
+  }
 
   grouping pcep-pcc-top {
     container pcc {
@@ -1249,14 +1233,13 @@ module srl_nokia-pcep {
         description
           "Configure peer parameters for PCC";
         max-elements 2;
-        //ordered-by-user
         key "ip-address";
         uses pcep-pcc-and-pce-peer-key;
         uses pcep-pcc-peer-config;
         uses pcep-pce-peer-state;
       }
     }
-  } // pcep-pcc-top
+  }
 
   grouping pcep-top {
     description
@@ -1269,7 +1252,6 @@ module srl_nokia-pcep {
       must "current()/../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
         error-message "PCEP configuration only supported with network instance type default";
       }
-      // Pcc config and state
       uses pcep-pcc-top;
     }
   }

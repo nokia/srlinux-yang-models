@@ -6,9 +6,11 @@ module srl_nokia-lsp-ping-trace {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
-
   import srl_nokia-oam {
     prefix srl_nokia-oam;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
   }
 
   organization
@@ -16,10 +18,13 @@ module srl_nokia-lsp-ping-trace {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "Model for LSP ping and trace telemetry state";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -31,52 +36,52 @@ module srl_nokia-lsp-ping-trace {
 
   typedef return-code {
     type enumeration {
-      enum "no-return-code" {
+      enum no-return-code {
         value 0;
       }
-      enum "malformed-echo-request-received" {
+      enum malformed-echo-request-received {
         value 1;
       }
-      enum "one-or-more-tlvs-not-understood" {
+      enum one-or-more-tlvs-not-understood {
         value 2;
       }
-      enum "replying-router-is-egress-for-fec-at-stack-depth-n" {
+      enum replying-router-is-egress-for-fec-at-stack-depth-n {
         value 3;
       }
-      enum "replying-router-has-no-mapping-for-fec-at-stack-depth-n" {
+      enum replying-router-has-no-mapping-for-fec-at-stack-depth-n {
         value 4;
       }
-      enum "downstream-mapping-mismatch" {
+      enum downstream-mapping-mismatch {
         value 5;
       }
-      enum "upstream-interface-index-unknown" {
+      enum upstream-interface-index-unknown {
         value 6;
       }
-      enum "reserved" {
+      enum reserved {
         value 7;
       }
-      enum "label-switched-at-stack-depth-n" {
+      enum label-switched-at-stack-depth-n {
         value 8;
       }
-      enum "label-switched-but-no-MPLS-at-stack-depth-n" {
+      enum label-switched-but-no-MPLS-at-stack-depth-n {
         value 9;
       }
-      enum "fec-does-not-use-given-label-at-stack-depth-n" {
+      enum fec-does-not-use-given-label-at-stack-depth-n {
         value 10;
       }
-      enum "no-label-entry-at-stack-depth-n" {
+      enum no-label-entry-at-stack-depth-n {
         value 11;
       }
-      enum "protocol-unavailable-at-stack-depth-n" {
+      enum protocol-unavailable-at-stack-depth-n {
         value 12;
       }
-      enum "premature-termination" {
+      enum premature-termination {
         value 13;
       }
-      enum "ddmap-tlv-has-return-code-subcode-details" {
+      enum ddmap-tlv-has-return-code-subcode-details {
         value 14;
       }
-      enum "label-switched-with-fec-change" {
+      enum label-switched-with-fec-change {
         value 15;
       }
     }
@@ -87,11 +92,16 @@ module srl_nokia-lsp-ping-trace {
       max-elements 10;
       description
         "List of recent sessions (up to 10) with saved LSP ping results for the prefix";
-      key id;
+      key "id";
       leaf id {
         description
           "The system-assigned session ID";
         type uint16;
+      }
+      leaf test-status {
+        description
+          "Indicates if the test is still running (true) or not (false)";
+        type boolean;
       }
       container statistics {
         description
@@ -128,7 +138,7 @@ module srl_nokia-lsp-ping-trace {
       list sequence {
         description
           "List of probes sent during the test";
-        key sequence-id;
+        key "sequence-id";
         leaf sequence-id {
           description
             "Sequence ID of the probe, starting with 1 and incrementing by 1";
@@ -136,9 +146,34 @@ module srl_nokia-lsp-ping-trace {
         }
         leaf payload-size {
           description
-            "The size of the echo-request message sent (not counting Ethernet, MPLS, IP or UDP headers)"; 
+            "The size of the echo-request message sent (not counting Ethernet, MPLS, IP or UDP headers)";
           type uint16;
           units "bytes";
+        }
+        leaf request-sent {
+          description
+            "True when it is possible for the datapath to send the request message";
+          type boolean;
+        }
+        leaf send-failure-reason {
+          description
+            "Indicates the reason why the OAM manager could not send the request message";
+          type enumeration {
+            enum timeout;
+            enum source-ip-not-local;
+            enum invalid-prefix;
+            enum sr-prefix-is-local;
+            enum ldp-prefix-is-local;
+            enum invalid-dest-ip;
+            enum dest-address-type-mismatch;
+            enum next-hop-ip-not-found;
+            enum next-hop-if-name-not-found;
+            enum packet-size-too-big;
+            enum far-end-unreachable;
+            enum prefix-unknown;
+            enum ds-map-not-supported;
+            enum unexpected-error;
+          }
         }
         leaf out-interface {
           description
@@ -155,41 +190,67 @@ module srl_nokia-lsp-ping-trace {
       max-elements 10;
       description
         "List of recent sessions (up to 10) with saved LSP trace results for the prefix";
-      key id;
+      key "id";
       leaf id {
         description
           "The system-assigned session ID";
         type uint16;
       }
+      leaf test-status {
+        description
+          "Indicates if the test is still running (true) or not (false)";
+        type boolean;
+      }
       list hop {
         description
           "List of hops traced";
-        key hop-index;
+        key "hop-index";
         leaf hop-index {
           description
             "The hop index, starting at minimum-mpls-ttl and incrementing by 1 up to maximum-mpls-ttl or until the destination is reached";
           type uint8;
         }
         leaf payload-size {
-            description
+          description
             "The size of the echo-request message sent (not counting Ethernet, MPLS, IP or UDP headers)";
-            type uint16;
-            units "bytes";
+          type uint16;
+          units "bytes";
         }
         leaf probes-sent {
-            config false;
-            description "The numnber of echo-request messages sent to the hop until a reply was received";
-            type uint8 {
-                range "1..10";
-            }
+          config false;
+          description
+            "The numnber of echo-request messages sent to the hop until a reply was received";
+          type uint8 {
+            range "1..10";
+          }
+        }
+        leaf last-probe-send-failure-reason {
+          description
+            "Indicates the reason why the OAM manager could not send the request message";
+          type enumeration {
+            enum timeout;
+            enum source-ip-not-local;
+            enum invalid-prefix;
+            enum sr-prefix-is-local;
+            enum ldp-prefix-is-local;
+            enum invalid-dest-ip;
+            enum dest-address-type-mismatch;
+            enum next-hop-ip-not-found;
+            enum next-hop-if-name-not-found;
+            enum packet-size-too-big;
+            enum far-end-unreachable;
+            enum prefix-unknown;
+            enum ds-map-not-supported;
+            enum unexpected-error;
+          }
         }
         uses ping-trace-reply;
         list downstream-detailed-mapping {
           description
             "List of DDMAP TLVs included in the echo-reply from this hop
 
-            The first one (with id 1) will be used by the sender.";
-          key id;
+             The first one (with id 1) will be used by the sender.";
+          key "id";
           leaf id {
             description
               "Identifier of the DDMAP TLV";
@@ -204,16 +265,16 @@ module srl_nokia-lsp-ping-trace {
             description
               "Indicates the addressing of the downstream interface";
             type enumeration {
-              enum "ipv4-numbered" {
+              enum ipv4-numbered {
                 value 1;
               }
-              enum "ipv4-unnumbered" {
+              enum ipv4-unnumbered {
                 value 2;
               }
-              enum "ipv6-numbered" {
+              enum ipv6-numbered {
                 value 3;
               }
-              enum "ipv6-unnumbered" {
+              enum ipv6-unnumbered {
                 value 4;
               }
             }
@@ -231,7 +292,7 @@ module srl_nokia-lsp-ping-trace {
           list mpls-label {
             description
               "List of labels in the label stack that would have appeared if this router were forwarding the packet through this downstream interface";
-            key index;
+            key "index";
             leaf index {
               description
                 "Index of label stack entry, starting at 1 (topmost label)";
@@ -246,32 +307,35 @@ module srl_nokia-lsp-ping-trace {
               description
                 "The label distribution protocol for the downstream label";
               type enumeration {
-                enum "unknown" {
+                enum unknown {
                   value 0;
                 }
-                enum "static" {
+                enum static {
                   value 1;
                 }
-                enum "bgp" {
+                enum bgp {
                   value 2;
                 }
-                enum "ldp" {
+                enum ldp {
                   value 3;
                 }
-                enum "rsvp-te" {
+                enum rsvp-te {
                   value 4;
                 }
-                enum "ospf" {
+                enum ospf {
                   value 5;
-                  reference "RFC 8287";
+                  reference
+                    "RFC 8287";
                 }
-                enum "isis" {
+                enum isis {
                   value 6;
-                  reference "RFC 8287";
+                  reference
+                    "RFC 8287";
                 }
-                enum "ospfv3" {
+                enum ospfv3 {
                   value 7;
-                  reference "RFC 9214";
+                  reference
+                    "RFC 9214";
                 }
               }
             }
@@ -330,13 +394,12 @@ module srl_nokia-lsp-ping-trace {
       description
         "Container of LSP ping results for different SR-ISIS tunnels";
       list prefix-sid {
-        key prefix;
-
+        key "prefix";
         leaf prefix {
           description
             "The IPv4 or IPv6 prefix associated with the SID
 
-            This is the destination that was pinged.";
+             This is the destination that was pinged.";
           type srl_nokia-comm:ip-prefix;
         }
         uses ping-session-info;
@@ -349,13 +412,12 @@ module srl_nokia-lsp-ping-trace {
       description
         "Container of LSP trace results for different SR-ISIS tunnels";
       list prefix-sid {
-        key prefix;
-
+        key "prefix";
         leaf prefix {
           description
             "The IPv4 or IPv6 prefix associated with the SID
 
-            This is the destination that was traced.";
+             This is the destination that was traced.";
           type srl_nokia-comm:ip-prefix;
         }
         uses trace-session-info;
@@ -368,13 +430,12 @@ module srl_nokia-lsp-ping-trace {
       description
         "Container of LSP ping results for different LDP tunnels";
       list fec {
-        key fec-ip;
-
+        key "fec-ip";
         leaf fec-ip {
           description
-            "The IPv4 or IPv6 prefix associated with the fec 
+            "The IPv4 or IPv6 prefix associated with the fec
 
-            This is the destination that was pinged.";
+             This is the destination that was pinged.";
           type srl_nokia-comm:ip-prefix;
         }
         uses ping-session-info;
@@ -387,13 +448,12 @@ module srl_nokia-lsp-ping-trace {
       description
         "Container of LSP trace results for different LDP tunnels";
       list fec {
-        key fec-ip;
-
+        key "fec-ip";
         leaf fec-ip {
           description
             "The IPv4 or IPv6 prefix associated with the fec
 
-            This is the destination that was traced.";
+             This is the destination that was traced.";
           type srl_nokia-comm:ip-prefix;
         }
         uses trace-session-info;
@@ -403,6 +463,7 @@ module srl_nokia-lsp-ping-trace {
 
   grouping lsp-ping-top {
     container lsp-ping {
+      if-feature "srl_nokia-feat:mpls-oam";
       config false;
       description
         "Container of last ping results for different MPLS and segment routing tunnels";
@@ -413,6 +474,7 @@ module srl_nokia-lsp-ping-trace {
 
   grouping lsp-trace-top {
     container lsp-trace {
+      if-feature "srl_nokia-feat:mpls-oam";
       config false;
       description
         "Container of last trace results for different MPLS and segment routing tunnels";

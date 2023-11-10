@@ -1,27 +1,37 @@
 module srl_nokia-bgp-evpn {
-
   yang-version 1.1;
-
   namespace "urn:srl_nokia/network-instance/protocols/bgp-evpn";
+  prefix srl_nokia-bgp-evpn;
 
-  prefix "srl_nokia-bgp-evpn";
-
-    import srl_nokia-common { prefix srl_nokia-comm; }
-    import srl_nokia-network-instance { prefix srl_nokia-netinst; }
-    import srl_nokia-extensions { prefix srl_nokia-ext; }
-    import srl_nokia-bgp-vpn { prefix srl_bgp-vpn; }
-    import srl_nokia-routing-policy { prefix srl_nokia-routing-pol; }
-    import srl_nokia-features { prefix srl-feat; }
-    import srl_nokia-connection-point { prefix srl_nokia-connection-point; }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-bgp-vpn {
+    prefix srl_bgp-vpn;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-routing-pol;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-connection-point {
+    prefix srl_nokia-connection-point;
+  }
 
   organization
     "Nokia";
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
-    description
-      "This yang file models configuration and state of the bgp-evpn protocol";
+  description
+    "This yang file models configuration and state of the bgp-evpn protocol";
 
   revision 2023-07-31 {
     description
@@ -55,6 +65,7 @@ module srl_nokia-bgp-evpn {
       range "0..16777215";
     }
   }
+
   grouping evpn-unequal-ecmp {
     description
       "Grouping containing the configuration and state for unequal ECMP";
@@ -68,16 +79,18 @@ module srl_nokia-bgp-evpn {
               range "1..128";
             }
             type enumeration {
-              enum dynamic { value -1; }
+              enum dynamic {
+                value -1;
+              }
             }
           }
           default "dynamic";
           description
-            "Determines the weight to be advertised in the evpn-link-bandwidth extended community 
-            
+            "Determines the weight to be advertised in the evpn-link-bandwidth extended community
+
              If set to dynamic, the weight is dynamically set based on the number of BGP PE-CE paths
-             for the IP Prefix that is advertised in an EVPN IP Prefix route. Alternatively, the 
-             weight can be set to a fixed integer value in the range 1..128. The dynamic weight only 
+             for the IP Prefix that is advertised in an EVPN IP Prefix route. Alternatively, the
+             weight can be set to a fixed integer value in the range 1..128. The dynamic weight only
              considers BGP PE-CE paths.";
         }
         leaf maximum-dynamic-weight {
@@ -86,9 +99,9 @@ module srl_nokia-bgp-evpn {
           }
           default "128";
           description
-            "Determines the maximum weight to be advertised in the evpn-link-bandwidth extended community 
-            
-             If weight 'dynamic' is configured, the actual advertised weight is the minimum of the number 
+            "Determines the maximum weight to be advertised in the evpn-link-bandwidth extended community
+
+             If weight 'dynamic' is configured, the actual advertised weight is the minimum of the number
              of BGP PE-CE paths for the prefix and the configured maximum weight.";
         }
       }
@@ -98,13 +111,13 @@ module srl_nokia-bgp-evpn {
           default "disable";
           description
             "Setting enable triggers weighted ECMP programming for all elegible multipath EVPN IFL routes
-            
-             When set to enable, the router processes the evpn-link-bandwidth extended community when installing 
-             an ECMP set for an EVPN IP-Prefix route in the ip-vrf route table. Flows to an IP Prefix received 
-             with a weight and a zero-ESI are sprayed based on the weight. If the EVPN IP Prefix route 
+
+             When set to enable, the router processes the evpn-link-bandwidth extended community when installing
+             an ECMP set for an EVPN IP-Prefix route in the ip-vrf route table. Flows to an IP Prefix received
+             with a weight and a zero-ESI are sprayed based on the weight. If the EVPN IP Prefix route
              received with the weight has a non-zero ESI, the weight is divided into the number of PEs attached
-             to the Ethernet Segment (and rounded up if the result is not an integer). The command also enables 
-             the weighted ECMP functionality for BGP CEs that are configured with the parameter evpn-link-bandwidth 
+             to the Ethernet Segment (and rounded up if the result is not an integer). The command also enables
+             the weighted ECMP functionality for BGP CEs that are configured with the parameter evpn-link-bandwidth
              add-weight-to-received-bgp-routes <weight>.";
         }
         leaf max-ecmp-hash-buckets-per-next-hop-group {
@@ -120,8 +133,10 @@ module srl_nokia-bgp-evpn {
       }
     }
   }
+
   grouping bgp-evpn-routes {
-    description "Grouping containing bgp-evpn route configuration and state.";
+    description
+      "Grouping containing bgp-evpn route configuration and state.";
     container routes {
       container bridge-table {
         presence "Configure evpn routes advertised for the bridge-table";
@@ -131,28 +146,29 @@ module srl_nokia-bgp-evpn {
         container mac-ip {
           leaf advertise {
             type boolean;
-            default true;
+            default "true";
             description
               "If set to true then local mac's and local mac-ip pairs will be advertised in this evpn instance";
           }
           leaf advertise-arp-nd-only-with-mac-table-entry {
             if-feature "srl-feat:evpn-advertise-arp-nd-only-with-mac-table-entry";
             type boolean;
-            default false;
+            default "false";
             description
               "If set to true then local mac-ip records will be advertised in this evpn instance only when we have a local mac in the mac-table";
           }
           leaf advertise-arp-nd-extended-community {
             if-feature "srl-feat:evpn-mac-ip-adv-arp-nd-ext-comm";
-            description "ARP/ND extended community";
+            description
+              "ARP/ND extended community";
             type boolean;
-            default false;
+            default "false";
           }
         }
         container inclusive-mcast {
           leaf advertise {
             type boolean;
-            default true;
+            default "true";
             description
               "If set to true an inclusive multicast route will be advertised in this evpn instance.";
           }
@@ -160,29 +176,29 @@ module srl_nokia-bgp-evpn {
             type srl_nokia-comm:ip-address;
             description
               "The originating ip-address that the inclusive multicast route will be advertised with in this evpn instance";
-          }       
+          }
         }
         leaf next-hop {
           type srl_nokia-comm:next-hop-type;
           default "use-system-ipv4-address";
           description
             "The ip-address that will be used as the bgp next-hop for all routes advertised in this evpn instance.";
-        } 
+        }
         leaf vlan-aware-bundle-eth-tag {
           if-feature "srl-feat:bt-evpn-vlan-aware-bundle-interop";
           type ethernet-tag-id;
-          default 0;
+          default "0";
           description
-            "Configures the Ethernet Tag ID to be encoded in the EVPN routes for control-plane interoperability mode 
-            with VLAN-aware bundle services.
+            "Configures the Ethernet Tag ID to be encoded in the EVPN routes for control-plane interoperability mode
+             with VLAN-aware bundle services.
 
-            When set to a non-zero value, all the EVPN routes advertised for the MAC-VRF will be advertised with this value
-            into the ethernet-tag-id field of the routes.
+             When set to a non-zero value, all the EVPN routes advertised for the MAC-VRF will be advertised with this value
+             into the ethernet-tag-id field of the routes.
 
-            On reception of EVPN routes with non-zero ethernet-tag-id, BGP will import the routes based on the import 
-            route-target as usual. However, the system checks the received ethernet-tag-id field and will process only 
-            those routes whose ethernet-tag-id match the local vlan-aware-bundle-eth-tag value.";
-          reference 
+             On reception of EVPN routes with non-zero ethernet-tag-id, BGP will import the routes based on the import
+             route-target as usual. However, the system checks the received ethernet-tag-id field and will process only
+             those routes whose ethernet-tag-id match the local vlan-aware-bundle-eth-tag value.";
+          reference
             "RFC7432";
         }
       }
@@ -194,13 +210,13 @@ module srl_nokia-bgp-evpn {
         container mac-ip {
           leaf advertise-gateway-mac {
             type boolean;
-            default false;
+            default "false";
             description
-              "If set to true in an ip-vrf where bgp-evpn is enabled, a MAC/IP route containing the gateway-MAC 
+              "If set to true in an ip-vrf where bgp-evpn is enabled, a MAC/IP route containing the gateway-MAC
                is advertised.
-             
+
                This gateway-MAC matches the MAC advertised along with the EVPN IFL routes type 5 for the ip-vrf
-               network-instance. This advertisement is needed so that the EVPN IFL (Interface-Less) model in the 
+               network-instance. This advertisement is needed so that the EVPN IFL (Interface-Less) model in the
                ip-vrf can interoperate with a remote system working in EVPN IFF (Interface-ful) Unnumbered mode.";
           }
         }
@@ -210,11 +226,12 @@ module srl_nokia-bgp-evpn {
       }
     }
   }
+
   grouping next-hop-resolution {
     description
       "Options for controlling next-hop resolution procedures for VPN families";
     container next-hop-resolution {
-      description 
+      description
         "Options related to the resolution of IPv4 or IPv6 BGP next-hops to Tunnels";
       leaf-list allowed-tunnel-types {
         type identityref {
@@ -228,6 +245,7 @@ module srl_nokia-bgp-evpn {
       }
     }
   }
+
   grouping evpn-mpls-bridge-table-group-top {
     container bridge-table {
       presence "Bridge table config and state for evpn-mpls";
@@ -236,8 +254,8 @@ module srl_nokia-bgp-evpn {
       }
       leaf split-horizon-group {
         if-feature "srl-feat:bridged and srl-feat:bt-split-horizon-groups and srl-feat:evpn-mpls-shg";
-        type leafref { 
-          path "../../../../../../srl_nokia-netinst:bridge-table/srl_nokia-netinst:split-horizon-group/srl_nokia-netinst:name"; 
+        type leafref {
+          path "../../../../../../srl_nokia-netinst:bridge-table/srl_nokia-netinst:split-horizon-group/srl_nokia-netinst:name";
         }
         description
           "The split-horizon-group associated to the evpn-mpls instance";
@@ -245,25 +263,26 @@ module srl_nokia-bgp-evpn {
       leaf ingress-multicast-mpls-label {
         config false;
         type srl_nokia-comm:mpls-label-non-reserved;
-        description 
+        description
           "The ingress label allocated for Broadcast, Unknown unicast and Multicast traffic
 
-           The ingress multicast mpls label is advertised by the EVPN Inclusive 
+           The ingress multicast mpls label is advertised by the EVPN Inclusive
            Multicast Ethernet Tag (IMET) route and it is expected on received
            EVPN packets that were generated as BUM packets.";
       }
       leaf ingress-unicast-mpls-label {
         config false;
         type srl_nokia-comm:mpls-label-non-reserved;
-        description 
+        description
           "The ingress label allocated for unicast traffic
 
-           The ingress unicast mpls label is advertised by the EVPN MAC/IP 
-           Advertisement routes and it is expected on received EVPN packets 
+           The ingress unicast mpls label is advertised by the EVPN MAC/IP
+           Advertisement routes and it is expected on received EVPN packets
            that were generated as unicast packets.";
       }
     }
   }
+
   grouping evpn-mpls-route-table-group-top {
     container route-table {
       presence "Route table config and state for evpn-mpls";
@@ -273,14 +292,15 @@ module srl_nokia-bgp-evpn {
       leaf ingress-mpls-label {
         config false;
         type srl_nokia-comm:mpls-label-non-reserved;
-        description 
+        description
           "The ingress label allocated for Routed traffic
 
-           The ingress mpls label is advertised by the Route-Type 5(RT5) 
+           The ingress mpls label is advertised by the Route-Type 5(RT5)
            route and it is expected on received routed EVPN packets.";
       }
     }
   }
+
   grouping evpn-vpws {
     description
       "Parameters related to EVPN VPWS services";
@@ -300,8 +320,8 @@ module srl_nokia-bgp-evpn {
           key "name";
           max-elements 1;
           description
-            "A local attachment circuit in the VPWS  
-        
+            "A local attachment circuit in the VPWS
+
              Each local attachment circuit is identified in EVPN with an
              Ethernet Tag that is advertised in the Auto Discovery per EVI
              route. Configurable on network instances of type vpws.";
@@ -314,28 +334,28 @@ module srl_nokia-bgp-evpn {
             type ethernet-tag-id;
             description
               "The Ethernet Tag ID advertised in the Auto Discovery per EVI route
-              
+
                The Ethernet Tag ID identifies the local attachment circuit in the
                EVPN control plane.";
-            mandatory "true";
+            mandatory true;
           }
           leaf connection-point {
             if-feature "srl-feat:connection-point";
-            type leafref { 
-              path "../../../../../../../srl_nokia-netinst:connection-point/srl_nokia-netinst:name"; 
+            type leafref {
+              path "../../../../../../../srl_nokia-netinst:connection-point/srl_nokia-netinst:name";
             }
             description
               "The connection-point associated to the local attachement circuit";
-            mandatory "true";
+            mandatory true;
           }
           leaf ingress-mpls-label {
             config false;
             type srl_nokia-comm:mpls-label-non-reserved;
-            description 
+            description
               "The ingress label allocated for EVPN VPWS traffic
 
-               The ingress mpls label is advertised by the EVPN Auto-Discovery 
-               per EVI routes and it is expected on received EVPN packets 
+               The ingress mpls label is advertised by the EVPN Auto-Discovery
+               per EVI routes and it is expected on received EVPN packets
                for the VPWS network instance.";
           }
         }
@@ -347,11 +367,11 @@ module srl_nokia-bgp-evpn {
           key "name";
           max-elements 1;
           description
-            "A remote attachment circuit in the VPWS  
-        
+            "A remote attachment circuit in the VPWS
+
              Each remote attachment circuit is identified in EVPN with an
              Ethernet Tag that is received in the Auto Discovery per EVI
-             route from the remote PE. Configurable on network instances 
+             route from the remote PE. Configurable on network instances
              of type vpws.";
           leaf name {
             type srl_nokia-comm:name;
@@ -362,24 +382,25 @@ module srl_nokia-bgp-evpn {
             type ethernet-tag-id;
             description
               "The Ethernet Tag ID received in the Auto Discovery per EVI route
-              
+
                The Ethernet Tag ID identifies the remote attachment circuit in the
                EVPN control plane.";
-            mandatory "true";
+            mandatory true;
           }
           leaf connection-point {
             if-feature "srl-feat:connection-point";
-            type leafref { 
-              path "../../../../../../../srl_nokia-netinst:connection-point/srl_nokia-netinst:name"; 
+            type leafref {
+              path "../../../../../../../srl_nokia-netinst:connection-point/srl_nokia-netinst:name";
             }
             description
               "The connection-point associated to the local attachement circuit";
-            mandatory "true";
+            mandatory true;
           }
         }
       }
     }
   }
+
   grouping route-internal-tags {
     description
       "Grouping containing the configuration of internal tags";
@@ -397,6 +418,7 @@ module srl_nokia-bgp-evpn {
       }
     }
   }
+
   grouping network-instance-mpls-attributes {
     description
       "Grouping containing the configuration and state of network instance mpls attributes";
@@ -405,22 +427,24 @@ module srl_nokia-bgp-evpn {
       must '. = false() or (. = true() and (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf" or "srl_nokia-netinst:vpws"))' {
         error-message "The control-word can only be enabled on network-instances of type mac-vrf or vpws";
       }
-      default false;
+      default "false";
       description
-        "Configures the use of control-word for EVPN MPLS packets 
-        
+        "Configures the use of control-word for EVPN MPLS packets
+
          When set to true, the router pushes the control-word below the bottom of the stack label. This
          prevents the Provider routers from mistakenly decode the payload of EVPN packets as an IP header
          and misorder packets of the same flow.";
     }
   }
+
   grouping bgp-evpn-top {
     description
       "Top-level grouping containing the bgp-evpn configuration and state.";
     list bgp-instance {
       key "id";
       max-elements 1;
-      description "bgp evpn instances configured in net-instance";
+      description
+        "bgp evpn instances configured in net-instance";
       leaf id {
         type leafref {
           path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_bgp-vpn:bgp-vpn/srl_bgp-vpn:bgp-instance/srl_bgp-vpn:id";
@@ -438,7 +462,7 @@ module srl_nokia-bgp-evpn {
             value 1;
           }
           enum mpls {
-            if-feature "srl-feat:mpls and srl-feat:evpn-mpls"; 
+            if-feature "srl-feat:mpls and srl-feat:evpn-mpls";
             value 2;
           }
         }
@@ -448,37 +472,37 @@ module srl_nokia-bgp-evpn {
       }
       uses evpn-vpws;
       leaf vxlan-interface {
-        if-feature "srl-feat:vxlan"; 
+        if-feature "srl-feat:vxlan";
         must "../encapsulation-type = 'vxlan'" {
           error-message "supported only when encapsulation is vxlan";
         }
         type leafref {
-          path "../../../../srl_nokia-netinst:vxlan-interface/srl_nokia-netinst:name"; 
+          path "../../../../srl_nokia-netinst:vxlan-interface/srl_nokia-netinst:name";
         }
         description
           "Identifier of vxlan-interface used in this bgp-instance.";
       }
       leaf evi {
         type srl_nokia-comm:evi;
-        description 
-          "EVPN Instance identifier associated to the bgp-evpn instance. 
-           
-           Used for auto-derivation of: 
-           - the bgp-instance route distinguisher in the format <ip-address>:evi (where 'ip-address' is the ipv4 address 
+        description
+          "EVPN Instance identifier associated to the bgp-evpn instance.
+
+           Used for auto-derivation of:
+           - the bgp-instance route distinguisher in the format <ip-address>:evi (where 'ip-address' is the ipv4 address
              associated to the subinterface lo0.1.
-           - the bgp-instance route target in the format <asn>:<evi>, where 'asn' is the autonomous-system configured in 
+           - the bgp-instance route target in the format <asn>:<evi>, where 'asn' is the autonomous-system configured in
              the network-instance default (under /protocols/bgp/autonomous-system).
 
            In addition, the evi value is used for the EVPN Multi-Homing Designated Forwarder (DF) Election.";
-        mandatory "true";
+        mandatory true;
       }
       leaf ecmp {
         type uint8 {
           range "1..8";
         }
-        default 1;
-        description 
-          "The supported range of ECMP values for layer-2 aliasing (in mac-vrf instances) or layer-3 ecmp (in routed 
+        default "1";
+        description
+          "The supported range of ECMP values for layer-2 aliasing (in mac-vrf instances) or layer-3 ecmp (in routed
            instances).";
       }
       uses route-internal-tags;
@@ -493,19 +517,19 @@ module srl_nokia-bgp-evpn {
         config false;
         srl_nokia-ext:show-importance "high";
         type enumeration {
-          enum "admin-disabled";
-          enum "no-nexthop-address";
-          enum "no-evi";
-          enum "network-instance-oper-down";
-          enum "no-vxlan-interface";
-          enum "ethernet-segment-multiple-subinterfaces";
-          enum "vxlan_interface_no_source_ip_address";
-          enum "bgp-vpn-instance-oper-down";
-          enum "no-mpls-label";
-          enum "no-mcid";
-          enum "no-local-attachment-circuit";
-          enum "no-remote-attachment-circuit";
-          enum "tag-set-not-resolved";
+          enum admin-disabled;
+          enum no-nexthop-address;
+          enum no-evi;
+          enum network-instance-oper-down;
+          enum no-vxlan-interface;
+          enum ethernet-segment-multiple-subinterfaces;
+          enum vxlan_interface_no_source_ip_address;
+          enum bgp-vpn-instance-oper-down;
+          enum no-mpls-label;
+          enum no-mcid;
+          enum no-local-attachment-circuit;
+          enum no-remote-attachment-circuit;
+          enum tag-set-not-resolved;
         }
         description
           "The reason for the bgp-instance being down";
@@ -519,10 +543,10 @@ module srl_nokia-bgp-evpn {
         uses network-instance-mpls-attributes;
         uses evpn-mpls-bridge-table-group-top;
         uses evpn-mpls-route-table-group-top;
-        uses next-hop-resolution;        
+        uses next-hop-resolution;
       }
       uses bgp-evpn-routes;
-    } 
+    }
   }
 
   augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-netinst:bgp-evpn" {

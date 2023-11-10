@@ -20,13 +20,8 @@ submodule srl_nokia-ospf-lsdb {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This yang file models configuration and state of the OSPFv2 protocol";
-
-  // typedef statements
-  // identities
-  //Groupings
 
   revision 2023-03-31 {
     description
@@ -159,7 +154,7 @@ submodule srl_nokia-ospf-lsdb {
          LSA. Encoding for OSPF TOS are described in RFC2328.";
     }
     leaf metric {
-      type srl_nokia-ospf-types:ospf-metric-large ;
+      type srl_nokia-ospf-types:ospf-metric-large;
       description
         "The metric value to be used for the TOS specified. This value
          represents the cost of use of the link for the specific type
@@ -194,7 +189,6 @@ submodule srl_nokia-ospf-lsdb {
   grouping ospf-lsdb-lsa-state {
     description
       "Generic parameters of an OSPFv2 LSA";
-    // jjac todo remove this
     leaf advertisement {
       description
         "Contents of the link state advertisement in hex, including the header.";
@@ -368,12 +362,11 @@ submodule srl_nokia-ospf-lsdb {
             description
               "TLV entry in the Grace LSA, advertised by a system undergoing
                graceful restart";
-            // unkeyed list
             uses ospfv2-lsdb-opaque-grace-state;
             uses ospfv2-lsdb-common-unknown-tlv-structure;
           }
         }
-      } // grace LSA
+      }
       container router-information {
         when "../type = 'srl_nokia-ospf-types:router-information'" {
           description
@@ -389,7 +382,6 @@ submodule srl_nokia-ospf-lsdb {
           list tlv {
             description
               "TLV entry in the Router Information LSA";
-            // unkeyed list
             uses ospfv2-lsdb-opaque-ri-state;
             uses ospfv2-lsdb-common-unknown-tlv-structure;
             container informational-capabilities {
@@ -417,7 +409,7 @@ submodule srl_nokia-ospf-lsdb {
             }
           }
         }
-      } // router-information
+      }
       container extended-prefix {
         when "../type = 'srl_nokia-ospf-types:ospfv2-extended-prefix'" {
           description
@@ -434,7 +426,6 @@ submodule srl_nokia-ospf-lsdb {
           description
             "TLVs contained within the Extended Prefix LSA";
           list tlv {
-            // unkeyed list
             description
               "A TLV contained within the extended prefix LSA";
             uses ospfv2-lsdb-extended-prefix-tlv-state;
@@ -452,7 +443,7 @@ submodule srl_nokia-ospf-lsdb {
             uses ospfv2-lsdb-common-unknown-tlv-structure;
           }
         }
-      } // extended-prefix
+      }
       container extended-link {
         description
           "The OSPFv2 Extended Link Opaque LSA, used to encapsulate TLV
@@ -470,7 +461,7 @@ submodule srl_nokia-ospf-lsdb {
             uses ospfv2-lsdb-common-unknown-tlv-structure;
           }
         }
-      } // extended-link
+      }
       uses ospfv2-lsdb-common-unknown-tlv-structure;
     }
   }
@@ -515,7 +506,7 @@ submodule srl_nokia-ospf-lsdb {
       type srl_nokia-ospf-types:ospf-metric-large;
       description
         "The cost of utilising this network specified independent of TOS";
-      }
+    }
   }
 
   grouping ospfv2-lsdb-asexternal-lsa-common-parameters {
@@ -570,7 +561,7 @@ submodule srl_nokia-ospf-lsdb {
         "The type of metric included within the AS External LSA.";
     }
     leaf metric {
-      type srl_nokia-ospf-types:ospf-metric-large ;
+      type srl_nokia-ospf-types:ospf-metric-large;
       description
         "The cost to reach the external network specified. The exact
          interpretation of this cost is dependent on the type of
@@ -938,8 +929,6 @@ submodule srl_nokia-ospf-lsdb {
     description
       "Structural grouping for per-area LSDB contents";
     container lsdb {
-      // Top-level RO, if this were ever to become writeable then
-      // the state containers lower down need config false added
       config false;
       description
         "The link-state database for the OSPFv2 area";
@@ -1026,8 +1015,6 @@ submodule srl_nokia-ospf-lsdb {
     description
       "Structural grouping for AS-scope LSDB contents";
     container lsdb {
-      // Top-level RO, if this were ever to become writeable then
-      // the state containers lower down need config false added
       config false;
       description
         "The link-state database for the OSPF AS";
@@ -1062,7 +1049,6 @@ submodule srl_nokia-ospf-lsdb {
                    type.";
               }
               uses ospf-lsdb-lsa-state;
-
               uses ospfv2-lsdb-asexternal-lsa-structure {
                 when "../../type = 'srl_nokia-ospf-types:as-external-lsa'" {
                   description
@@ -1089,8 +1075,6 @@ submodule srl_nokia-ospf-lsdb {
     description
       "Structural grouping for link-scope LSDB contents";
     container lsdb {
-      // Top-level RO, if this were ever to become writeable then
-      // the state containers lower down need config false added
       config false;
       description
         "The link-state database for the OSPF interface link";

@@ -18,10 +18,13 @@ module srl_nokia-tools-ldp {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "Model for LDP operational commands";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2021-06-30 {
     description
       "SRLinux 21.6.1";
@@ -29,7 +32,7 @@ module srl_nokia-tools-ldp {
 
   grouping ldp-tools-top {
     container ldp {
-      if-feature srl_nokia-feat:ldp;
+      if-feature "srl_nokia-feat:ldp";
       presence "Configure the LDP protocol";
       description
         "Operational tools commands for LDP.";
@@ -39,15 +42,35 @@ module srl_nokia-tools-ldp {
             key "name";
             leaf name {
               type srl_nokia-comm:subinterface-eth-lag;
-                description
-                  "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+              description
+                "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
             }
             container ipv4 {
               container statistics {
                 leaf clear {
                   type empty;
                   description
-                    "Resets all the LDP instance state counters to zero";
+                    "Resets all the LDP interface IPv4 counters to zero";
+                }
+              }
+            }
+          }
+        }
+        container targeted {
+          if-feature "srl_nokia-feat:ldp-targeted";
+          container ipv4 {
+            list target {
+              key "remote-address";
+              leaf remote-address {
+                type srl_nokia-comm:ipv4-address;
+                description
+                  "Reference to neighbor address of the targeted LDP adjacency.";
+              }
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Resets all the LDP target counters to zero";
                 }
               }
             }
@@ -93,10 +116,10 @@ module srl_nokia-tools-ldp {
             "Resets all the LDP instance state counters to zero";
         }
       }
-
     }
   }
+
   augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {
-      uses ldp-tools-top;
+    uses ldp-tools-top;
   }
 }

@@ -6,6 +6,9 @@ module srl_nokia-qos-policers {
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
   import srl_nokia-features {
     prefix srl-feat;
   }
@@ -16,6 +19,10 @@ module srl_nokia-qos-policers {
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -56,20 +63,21 @@ module srl_nokia-qos-policers {
 
   typedef policer-algorithm-type {
     description
-       "Defines the choice between different policer-algorithms.";
+      "Defines the choice between different policer-algorithms.";
     type enumeration {
-      enum "trtcm1" {
+      enum trtcm1 {
         value 1;
         description
-           "This enumeration refers to Two-rate Three-color marker as defined by RFC 2698.";
+          "This enumeration refers to Two-rate Three-color marker as defined by RFC 2698.";
       }
-      enum "trtcm2" {
+      enum trtcm2 {
         value 2;
         description
-           "This enumeration refers to Two-rate Three-color marker as defined by RFC 4115.";
+          "This enumeration refers to Two-rate Three-color marker as defined by RFC 4115.";
       }
     }
   }
+
   grouping policer-policies-top {
     container policer-policies {
       if-feature "srl-feat:future-0-0";
@@ -106,8 +114,7 @@ module srl_nokia-qos-policers {
             }
           }
         }
-      } // container threshold-separation-policies
-
+      }
       list parent-policer-threshold-policy {
         description
           "List of policies defining parent-policer-thresholds and related parameters";
@@ -135,33 +142,7 @@ module srl_nokia-qos-policers {
           units "bytes";
           default "9000";
         }
-        container advanced-configuration {
-          description
-            "Container defining advanced configuration parameters for parent-policer.";
-          leaf average-packet-length {
-            description
-              "Defines average packet length expected on the given subinterface this policy is applied to.";
-            type uint32 {
-              range "64..9000";
-            }
-            units "bytes";
-            default "500";
-          }
-          leaf average-rate-divider {
-            description
-              "Defines the divider factor for parent-policer rate.";
-            type uint8 {
-              range "1..100";
-            }
-            default "1";
-          }
-          leaf fast-snap-mode {
-            description
-              "awaiting Brian's feedback.";
-            type boolean;
-          }
-        }
-      } // parent-policer-threshold-policy
+      }
       list policer-policy {
         description
           "List of policer policies";
@@ -263,69 +244,66 @@ module srl_nokia-qos-policers {
             }
           }
           leaf peak-rate-kbps {
-            type uint32;
+            type uint32 {
+              range "64..800000000";
+            }
             units "kbps";
+            default "64";
             description
               "The peak information rate (PIR) of the policer, defined in kilobits (1024 bits) per second.
 
                This parameter is ignored if 'algorithm-type' is set to 'trtcm2'.";
-            must '../algorithm-type != trtcm2' {
-              error-message "not valid if 'algorithm-type' is set to 'trtcm2'";
-            }
           }
           leaf committed-rate-kbps {
-            type uint32;
+            type uint32 {
+              range "0|64..800000000";
+            }
             units "kbps";
-            default "0";
+            default "64";
             description
               "The committed information rate (CIR) of the policer, defined in kilobits (1024 bits) per second.";
-            must "boolean(../peak-rate-kbps) or boolean(../excess-rate-kbps)" {
-                error-message "PIR or EIR should be configured";
-            }
-            must "not (boolean(../peak-rate-kbps) or boolean(../excess-rate-kbps)) or current() <= ../peak-rate-kbps
-                    or current() <= ../excess-rate-kbps" {
-              error-message "CIR is always smaller than PIR or EIR";
-            }
           }
           leaf excess-rate-kbps {
-            type uint32;
+            type uint32 {
+              range "64..800000000";
+            }
             units "kbps";
+            default "64";
             description
               "The excess information rate (EIR) of the policer, defined in kilobits (1024 bits) per second.
 
                This parameter is ignored if 'algorithm-type' is set to 'trtcm1'.";
-            must '../algorithm-type != trtcm1' {
-              error-message "not valid if 'algorithm-type' is set to 'trtcm1'";
-            }
           }
           leaf maximum-burst-size {
-            type uint32;
+            type uint32 {
+              range "1..253952";
+            }
             units "bytes";
+            default "40000";
             description
               "Maximum PIR bucket depth in bytes.
 
                This parameter is ignored if 'algorithm-type' is set to 'trtcm2'.";
-            must '../algorithm-type != trtcm2' {
-              error-message "not valid if 'algorithm-type' is set to 'trtcm2'";
-            }
           }
           leaf committed-burst-size {
-            type uint32;
+            type uint32 {
+              range "1..253952";
+            }
             units "bytes";
-            default "0";
+            default "40000";
             description
               "Maximum CIR bucket depth in bytes.";
           }
           leaf excess-burst-size {
-            type uint32;
+            type uint32 {
+              range "1..253952";
+            }
             units "bytes";
+            default "40000";
             description
               "Maximum EIR bucket depth in bytes.
 
                This parameter is ignored if 'algorithm-type' is set to 'trtcm1'.";
-            must '../algorithm-type != trtcm1' {
-              error-message "not valid if 'algorithm-type' is set to 'trtcm1'";
-            }
           }
           leaf violate-action {
             description
@@ -348,7 +326,7 @@ module srl_nokia-qos-policers {
             }
             default "minimal";
           }
-        } //policer
+        }
         container parent-policer {
           description
             "Container with options to define aggeregate parent-policer parameters";
@@ -406,9 +384,82 @@ module srl_nokia-qos-policers {
               }
             }
           }
-        } //parent-policer
-      } //policer-policy
-    } // policer-policies
+        }
+      }
+    }
+  }
+
+  grouping policer-counters {
+    leaf accepted-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were accepted by the policer, counting all input profiles.
+
+         Not available in extended statistics-mode.";
+    }
+    leaf accepted-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were accepted by the policer, counting all input profiles.
+
+         Not available in extended statistics-mode.";
+    }
+    leaf accepted-inplus-in-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were considered as Green by the policer and their input profiles were 'inplus' or 'in'.
+
+         Not available in minimal statistics-mode.";
+    }
+    leaf accepted-inplus-in-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were considered as Green by the policer and their input profiles were 'inplus' or 'in'.
+
+         Not available in minimal statistics-mode.";
+    }
+    leaf accepted-out-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were considered Yellow having input profile 'inplus' or 'in', and packets that were considered Green and Yellow having input profile 'out'.
+
+         Not available in minimal statistics-mode.";
+    }
+    leaf accepted-out-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were considered Yellow having input profile 'inplus' or 'in', and packets that were considered Green and Yellow having input profile 'out'.
+
+         Not available in minimal statistics-mode.";
+    }
+    leaf accepted-exceed-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were accepted having input profile 'exceed'.
+
+         Not available in minimal statistics-mode.";
+    }
+    leaf accepted-exceed-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were accepted having input profile 'exceed'.
+
+         Not available in minimal statistics-mode.";
+    }
+    leaf discarded-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets discarded by the policer.
+
+         Available in both statistics-modes";
+    }
+    leaf discarded-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets discarded by the policer.
+
+         Available in both statistics-modes";
+    }
   }
 
   grouping policer-instance-state {
@@ -452,77 +503,45 @@ module srl_nokia-qos-policers {
       description
         "The actual/operational maximum CIR bucket depth in bytes as it is programmed into hardware.";
     }
-    container statistics {
+    container policer-statistics {
       config false;
-      leaf accepted-packets {
-        type srl_nokia-comm:zero-based-counter64;
+      description
+        "The statistics per subinterface policers";
+      container aggregate-statisctics {
+        srl_nokia-ext:delivery-node-override "true";
         description
-          "The number of packets that were accepted by the policer, counting all input profiles.
-
-           Not available in extended statistics-mode.";
+          "The aggregate statistics per subinterface policers";
+        uses policer-counters;
       }
-      leaf accepted-octets {
-        type srl_nokia-comm:zero-based-counter64;
+      container per-lag-member-statistics {
         description
-          "The number of octets in packets that were accepted by the policer, counting all input profiles.
-
-           Not available in extended statistics-mode.";
-      }
-      leaf accepted-inplus-in-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets that were considered as Green by the policer and their input profiles were 'inplus' or 'in'.
-
-           Not available in minimal statistics-mode.";
-      }
-      leaf accepted-inplus-in-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets that were considered as Green by the policer and their input profiles were 'inplus' or 'in'.
-
-           Not available in minimal statistics-mode.";
-      }
-      leaf accepted-out-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets that were considered Yellow having input profile 'inplus' or 'in', and packets that were considered Green and Yellow having input profile 'out'.
-
-           Not available in minimal statistics-mode.";
-      }
-      leaf accepted-out-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets that were considered Yellow having input profile 'inplus' or 'in', and packets that were considered Green and Yellow having input profile 'out'.
-
-           Not available in minimal statistics-mode.";
-      }
-      leaf accepted-exceed-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets that were accepted having input profile 'exceed'.
-
-           Not available in minimal statistics-mode.";
-      }
-      leaf accepted-exceed-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets that were accepted having input profile 'exceed'.
-
-           Not available in minimal statistics-mode.";
-      }
-      leaf discarded-packets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of packets discarded by the policer.
-
-           Available in both statistics-modes";
-      }
-      leaf discarded-octets {
-        type srl_nokia-comm:zero-based-counter64;
-        description
-          "The number of octets in packets discarded by the policer.
-
-           Available in both statistics-modes";
+          "The subinterface policer stats per member-fp";
+        list linecard {
+          description
+            "Line-card within the system";
+          key "slot";
+          leaf slot {
+            type uint8 {
+              range "1..8";
+            }
+            description
+              "Numeric identifier for the linecard";
+          }
+          list forwarding-complex {
+            description
+              "Forwarding complex on the card";
+            key "name";
+            leaf name {
+              description
+                "Forwarding-complex name";
+              type enumeration {
+                enum 0;
+                enum 1;
+              }
+            }
+            uses policer-counters;
+          }
+        }
       }
     }
   }

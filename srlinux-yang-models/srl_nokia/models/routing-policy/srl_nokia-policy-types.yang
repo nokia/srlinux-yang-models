@@ -12,14 +12,15 @@ module srl_nokia-policy-types {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module contains general data definitions for use in routing
      policy.  It can be imported by modules that contain protocol-
      specific policy match and actions.";
 
-  //Temporary definition to support only ext1 and ext2 ospf path types for 20.12
-
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -58,10 +59,12 @@ module srl_nokia-policy-types {
   typedef policy-result-type {
     type enumeration {
       enum accept {
-        description "Policy accepts the route";
+        description
+          "Policy accepts the route";
       }
       enum reject {
-        description "Policy rejects the route";
+        description
+          "Policy rejects the route";
       }
     }
     description
@@ -142,17 +145,6 @@ module srl_nokia-policy-types {
       "RFC1997";
   }
 
-  /*  identity no-peer {
-      base bgp-well-known-community;
-      description
-        "An autonomous system receiving NLRI tagged with this community
-        is advised not to readvertise the NLRI to external bi-lateral
-        peer autonomous systems. An AS may also filter received NLRI
-        from bilateral peer sessions when they are tagged with this
-        community value";
-      reference "RFC3765";
-      }*/
-
   typedef bgp-std-community-type {
     type string {
       pattern '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}'
@@ -168,8 +160,7 @@ module srl_nokia-policy-types {
 
   typedef bgp-std-community-regexp-type {
     type string {
-      //      pattern '.*[0-9]+.*:.*[0-9*]+.*';
-      pattern '.*:.*';
+      pattern '[0-9$()*+,.^{}\[\]\-\|?\\]+:[0-9$()*+,.^{}\[\]\-\|?\\]+';
     }
     description
       "Type definition for regular expressions that match standard BGP communities";
@@ -187,7 +178,18 @@ module srl_nokia-policy-types {
 
   typedef bgp-large-community-type {
     type string {
-      pattern '([1-9][0-9]{0,9}):([1-9][0-9]{0,9}):([1-9][0-9]{0,9})';
+      pattern '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
+            + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
+            + '429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|'
+            + '[1-9][0-9]{1,8}|[0-9]):'
+            + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
+            + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
+            + '429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|'
+            + '[1-9][0-9]{1,8}|[0-9]):'
+            + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
+            + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
+            + '429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|'
+            + '[1-9][0-9]{1,8}|[0-9])';
     }
     description
       "Type definition for large commmunity values represented as a string of the form A:B:C where A, B and C are integers between 0 and 4294967295";
@@ -197,8 +199,7 @@ module srl_nokia-policy-types {
 
   typedef bgp-large-community-regexp-type {
     type string {
-      //      pattern '.*[0-9]+.*:.*[0-9*]+.*:.*[0-9*]+.*';
-      pattern '.*:.*:.*';
+      pattern '[0-9$()*+,.^{}\[\]\-\|?\\]+:[0-9$()*+,.^{}\[\]\-\|?\\]+:[0-9$()*+,.^{}\[\]\-\|?\\]+';
     }
     description
       "Type definition for regular expressions that match large BGP communities";
@@ -207,37 +208,6 @@ module srl_nokia-policy-types {
   typedef bgp-ext-community-type {
     type union {
       type string {
-        // Type 1: 2-octet global and 4-octet local
-        //         (AS number)        (Integer)
-        pattern '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}'
-              + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9]):'
-              + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
-              + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
-              + '429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|'
-              + '[1-9][0-9]{1,8}|[0-9])';
-      }
-      type string {
-        // Type 2: 4-octet global and 2-octet local
-        //         (ipv4-address)     (integer)
-        pattern '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'
-              + '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|'
-              + '2[0-4][0-9]|25[0-5]):'
-              + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}'
-              + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
-      }
-      type string {
-        // RFC5668: 4-octet global and 2-octet local
-        //            (AS number)        (integer)
-        pattern '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
-              + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
-              + '429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|'
-              + '[1-9][0-9]{1,8}|[0-9]):'
-              + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}'
-              + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
-      }
-      type string {
-        // route-target with Type 1
-        // route-target:(ASN):(local-part)
         pattern 'target:'
               + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}'
               + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9]):'
@@ -247,8 +217,6 @@ module srl_nokia-policy-types {
               + '[1-9][0-9]{1,8}|[0-9])';
       }
       type string {
-        // route-target with Type 2
-        // route-target:(IPv4):(local-part)
         pattern 'target:'
               + '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'
               + '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|'
@@ -257,7 +225,6 @@ module srl_nokia-policy-types {
               + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
       }
       type string {
-        // 4-byte AS Type 1 route-target
         pattern 'target:'
               + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
               + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
@@ -268,7 +235,6 @@ module srl_nokia-policy-types {
               + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
       }
       type string {
-        // route-origin with Type 1
         pattern 'origin:'
               + '(6553[0-5]|655[0-2][0-9]|654[0-9]{2}|65[0-4][0-9]{2}'
               + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9]):'
@@ -278,7 +244,6 @@ module srl_nokia-policy-types {
               + '[1-9][0-9]{1,8}|[0-9])';
       }
       type string {
-        // route-origin with Type 2
         pattern 'origin:'
               + '(([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|'
               + '25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9][0-9]|'
@@ -287,7 +252,6 @@ module srl_nokia-policy-types {
               + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
       }
       type string {
-        // 4-byte AS Type 1 route-origin
         pattern 'origin:'
               + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
               + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
@@ -298,12 +262,11 @@ module srl_nokia-policy-types {
               + '|6[0-4][0-9]{3}|[1-5][0-9]{4}|[1-9][0-9]{1,3}|[0-9])';
       }
       type string {
-        // Extended Color Community
         pattern 'color:'
               + '[0-1]{2}:'
               + '(429496729[0-5]|42949672[0-8][0-9]|4294967[0-1][0-9]{2}'
               + '|429496[0-6][0-9]{3}|42949[0-5][0-9]{4}|4294[0-8][0-9]{5}|'
-              + '429[0-3][0-9]{6}|4[0-1][0-9]{7}|[1-3][0-9]{9}|'
+              + '429[0-3][0-9]{6}|42[0-8][0-9]{7}|4[0-1][0-9]{8}|[1-3][0-9]{9}|'
               + '[1-9][0-9]{1,8}|[0-9])';
       }
     }
@@ -311,9 +274,6 @@ module srl_nokia-policy-types {
       "Type definition for extended community attributes. In the case that
        common communities are utilised, they are represented as a string
        of the form:
-        - <2b AS>:<4b value> per RFC4360 section 3.1
-        - <4b IPv4>:<2b value> per RFC4360 section 3.2
-        - <4b AS>:<2b value> per RFC5668 section 2.
         - target:<2b AS>:<4b value> per RFC4360 section 4
         - target:<4b IPv4>:<2b value> per RFC4360 section 4
         - origin:<2b ASN>:<4b value> per RFC4360 section 5
@@ -324,6 +284,51 @@ module srl_nokia-policy-types {
       "RFC 4360 - BGP Extended Communities Attribute
        RFC 5668 - 4-Octet AS Specific BGP Extended Community
        draft-ietf-idr-segment-routing-te-policy";
+  }
+
+  typedef bgp-ext-community-regexp-type {
+    type union {
+      type string {
+        pattern 'target:.*:.*';
+      }
+      type string {
+        pattern 'origin:.*:.*';
+      }
+      type string {
+        pattern 'ext:.*:.*';
+      }
+      type string {
+        pattern 'bgp\-tunnel\-encap:.*';
+      }
+      type string {
+        pattern '[a-z]+:[0-9]+:[0-9]+';
+      }
+    }
+    description
+      "Type definition for extended community regular expressions
+
+      The format embeds two regular expressions separated by one colon ':' character; the first expression is applied to the as-value of the community string and the second to the local administrative value
+
+      Each regex is a sequence of terms and operators. A term can be:
+        - a single digit, such as '4'
+        - a range term composed of two elementary terms separated by the '-' character like '2-3'
+        - the dot '.' wild-card character which matches any elementary term or ':'
+        - a regular expression enclosed in parenthesis '( )'
+        - a choice of digits and/or ranges enclosed in square brackets; for example, [51-37] matches digit 5 or any single digit between 1 and 3 or the digit 7
+
+      Supported operators:
+      | - match term on the left of the operator or the term on the right of the operator
+      * - matches zero or more occurrences of the preceding term
+      ? - matches zero or one occurrence of the preceding term
+      + - matches one or more occurrences of the preceding term
+      {m,n} - matches least m and at most n repetitions of the term
+      {m} - matches exactly m repetitions of the term
+      {m,} - matches m or more repetitions of the term
+      ^ - matches the beginning of the string
+      $ - matches the end of the string
+      backslash - an escape character to indicate that the following character is a match criteria and not a grouping delimite
+
+    ";
   }
 
   typedef bgp-admin-tag {

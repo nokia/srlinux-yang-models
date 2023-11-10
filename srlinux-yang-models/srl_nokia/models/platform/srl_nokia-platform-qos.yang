@@ -27,10 +27,13 @@ module srl_nokia-platform-qos {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state related to QoS resources in the system";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -70,21 +73,52 @@ module srl_nokia-platform-qos {
   }
 
   identity classifier-profiles {
+    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
     base qos-resources;
     description
       "A classifier-profile resource is used every time a different combination of IPv4 DSCP classifier and IPv6 DSCP classifier is applied to an ingress subinterface of the 7250 IXR IMM. There are 16 of these resources and one is always used by the combination of the default IPv4 DSCP classifier and the default IPv6 DSCP classifier.";
   }
 
   identity rewrite-profiles {
+    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
     base qos-resources;
     description
       "On the 7250 IXR, a rewrite-profile resource is used every time a different combination of IPv4 DSCP rewrite-rule and IPv6 DSCP rewrite-rule is applied to an egress subinterface of the 7250 IXR IMM. There are 32 of these resources.";
   }
 
-  identity rewrite-policies {
+  identity dscp-classifier-policies {
+    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d4 or srl-feat:platform-7220-d5";
+    base qos-resources;
+    description
+      "Every user-defined DSCP classifier policy that is configured uses one of these resources";
+  }
+
+  identity dscp-mpls-rewrite-policies {
+    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
     base qos-resources;
     description
       "A rewrite-policy resource is used every time a different DSCP or MPLS traffic-class rewrite-rule policy is applied to an egress subinterface of the 7250 IXR IMM. There are 32 of these resources.";
+  }
+
+  identity dscp-rewrite-policies {
+    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d4 or srl-feat:platform-7220-d5";
+    base qos-resources;
+    description
+      "Every user-defined dscp rewrite policy that is configured uses one of these resources.";
+  }
+
+  identity dot1p-classifier-policies {
+    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d4 or srl-feat:platform-7220-d5";
+    base qos-resources;
+    description
+      "Every user-defined dot1p classifier policy that is configured uses one of these resources";
+  }
+
+  identity dot1p-rewrite-policies {
+    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d4 or srl-feat:platform-7220-d5";
+    base qos-resources;
+    description
+      "Every user-defined dot1p rewrite policy that is configured uses one of these resources";
   }
 
   grouping qos-resource-monitoring {
@@ -207,12 +241,12 @@ module srl_nokia-platform-qos {
   }
 
   augment "/srl_nokia-platform:platform/srl_nokia-platform-res-mon:resource-monitoring" {
-    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d4 or srl-feat:platform-7220-d5 or srl-feat:jericho2 or srl-feat:jericho2cp";
     uses qos-resource-monitoring;
   }
 
   augment "/srl_nokia-platform:platform/srl_nokia-platform-lc:linecard/srl_nokia-platform-lc:forwarding-complex" {
-    if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+    if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:platform-7220-d4 or srl-feat:platform-7220-d5 or srl-feat:jericho2 or srl-feat:jericho2cp";
     uses qos-utilization;
   }
 

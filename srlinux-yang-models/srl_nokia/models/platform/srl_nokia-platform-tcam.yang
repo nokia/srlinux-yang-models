@@ -27,10 +27,13 @@ module srl_nokia-platform-tcam {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state related to TCAM resources in the system";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-03-31 {
     description
       "SRLinux 23.3.1";
@@ -185,6 +188,17 @@ module srl_nokia-platform-tcam {
       "Resource pool of TCAM entries associated with IPv6 multi-field QoS classification entries, when applied to subinterface input";
   }
 
+  identity mrouter-mfib-redirect {
+    if-feature "srl_feat:future-0-0 and (srl_feat:platform-7220-d2 or srl_feat:platform-7220-d3 or srl_feat:trident4)";
+    base tcam-resources;
+    description
+      "Resource pool of TCAM entries used by multicast snooping protocols in MAC-VRF network-instances
+
+       One TCAM entry is used per multicast snooping protocol enabled in a MAC-VRF. For instance,
+       if igmp-snooping and mld-snooping are enabled on a MAC-VRF, two entries are used. If only
+       igmp-snooping is enabled, only one entry is used.";
+  }
+
   grouping tcam-resource-monitoring {
     container tcam {
       list resource {
@@ -202,7 +216,7 @@ module srl_nokia-platform-tcam {
           description
             "Sets the threshold that triggers the generation of a WARNING log whenever the utilization of the TCAM resource in any linecard/complex/core reaches this value in a rising direction
 
-            On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
+             On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
         }
         leaf falling-threshold-log {
           type srl_nokia-comm:percentage;
@@ -210,7 +224,7 @@ module srl_nokia-platform-tcam {
           description
             "Sets the threshold that triggers the generation of a NOTICE log whenever the utilization of the TCAM resource in any linecard/complex/core falls reaches this value in a falling direction.
 
-            On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
+             On platforms that support dynamic TCAM the utilization considers both free-dynamic and free-static.";
         }
       }
     }

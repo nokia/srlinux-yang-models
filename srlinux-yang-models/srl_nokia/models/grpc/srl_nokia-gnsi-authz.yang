@@ -24,14 +24,13 @@ module srl_nokia-gnsi-authz {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines configuration and operational state data related to the Authz service within gNSI.";
 
-  // copied counters from openconfig model
-  // renamed top level container to counters from authz-policy-counters
-  // removed rpcs and also state containers around rpc list
-
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -41,7 +40,6 @@ module srl_nokia-gnsi-authz {
     description
       "A collection of counters that were collected by the gNSI.authz
        module while evaluating access to a RPC.";
-
     leaf access-rejects {
       type uint64;
       description
@@ -71,13 +69,11 @@ module srl_nokia-gnsi-authz {
   grouping grpc-server-user-authz-policy-success-failure-counters {
     description
       "A collection of counters collected by the gNSI.authz module.";
-
     list rpc {
       description
         "A collection of counters collected by the gNSI.authz module
          for a RPC identified by the `name`.";
-
-      key name;
+      key "name";
       leaf name {
         type string;
         description
@@ -91,12 +87,10 @@ module srl_nokia-gnsi-authz {
   grouping grpc-server-authz-policy-success-failure-counters {
     description
       "A collection of counters collected by the gNSI.authz module.";
-
     container counters {
       description
         "A collection of counters collected by the gNSI.authz module.";
       config false;
-
       uses grpc-server-user-authz-policy-success-failure-counters;
     }
   }
@@ -109,28 +103,28 @@ module srl_nokia-gnsi-authz {
       description
         "Information relating to the active gRPC authorization policy
 
-        This policy is provided by the gNSI gRPC service, and can be changed using the gNSI.Authz.Rotate RPC";
+         This policy is provided by the gNSI gRPC service, and can be changed using the gNSI.Authz.Rotate RPC";
       leaf version {
         description
           "The version string as provided by the gNSI client at the time of uploading the policy
 
-          The maps to the version field within a UploadRequest message in the Authz protobuf.";
+           The maps to the version field within a UploadRequest message in the Authz protobuf.";
         type string;
       }
       leaf created-on {
         description
           "The created on timestamp as provided by the gNSI client at the time of uploading the policy
 
-          This maps to the created_on field within a UploadRequest message in the Authz protobuf.";
+           This maps to the created_on field within a UploadRequest message in the Authz protobuf.";
         type srl-comm:date-and-time;
       }
       leaf policy {
         description
           "The policy definition
 
-          This JSON string contains the full gRPC authorization rules conforming to the gRPC authorization policy schema:
+           This JSON string contains the full gRPC authorization rules conforming to the gRPC authorization policy schema:
 
-          This maps to the policy field within a UploadRequest message in the Authz protobuf.";
+           This maps to the policy field within a UploadRequest message in the Authz protobuf.";
         type string;
       }
       uses grpc-server-authz-policy-success-failure-counters;
@@ -139,8 +133,6 @@ module srl_nokia-gnsi-authz {
 
   augment "/srl-system:system/srl-aaa:aaa/srl-aaa:authorization" {
     if-feature "srl-feat:gnsi-authz";
-    srl-ext:first-released "23.3.1";
     uses authz-top;
   }
-
 }

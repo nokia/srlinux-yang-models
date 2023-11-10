@@ -30,11 +30,14 @@ module srl_nokia-oam-pm-ip {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This YANG module contains the management data definitions for
      IP Performance Monitoring.";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2023-07-31 {
     description
       "SRLinux 23.7.1";
@@ -266,6 +269,13 @@ module srl_nokia-oam-pm-ip {
           }
           container loss {
             uses srl_nokia-oam-pm:frame-loss-configuration;
+            leaf loss-event {
+              type leafref {
+                path "../../../../loss/loss-events-template/loss-events-template-name";
+              }
+              description
+                "The loss event template associated with this loss test session and measurement interval";
+            }
             list measurement-result {
               config false;
               description

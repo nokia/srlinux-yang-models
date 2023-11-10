@@ -18,10 +18,13 @@ module srl_nokia-tls {
   contact
     "Nokia SR Linux Support
      Web: <http://www.nokia.com>";
-
   description
     "This module defines TLS configuration";
 
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
   revision 2022-11-30 {
     description
       "SRLinux 22.11.1";
@@ -252,8 +255,7 @@ module srl_nokia-tls {
       leaf name {
         srl-ext:show-importance "high";
         type srl-comm:name {
-            // 8 chars are kept for .key.pem suffix (Linux supports only up to 255 charater long filenames)
-            length 1..247;
+          length "1..247";
         }
         description
           "Name of the TLS server-profile";
@@ -276,22 +278,31 @@ module srl_nokia-tls {
         type string;
         description
           "Base64 encoded certificate to use with the private key
-           this includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+
+           This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
       }
       leaf authenticate-client {
         default "false";
         srl-ext:show-importance "high";
         type boolean;
         description
-          "Defines if the server should authenticate the identity of connecting clients
-           using the trust anchor";
+          "Defines if the server should authenticate the identity of connecting clients using the trust anchor";
       }
       leaf trust-anchor {
         type string;
         srl-ext:show-importance "low";
         description
           "Base64 encoded certificate to use as a trust anchor
+
            This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+      }
+      leaf certificate-revocation-list {
+        type string;
+        srl-ext:show-importance "low";
+        description
+          "Base64 encoded certificate revocation list
+
+           This includes the '-----BEGIN X509 CRL' and '-----END X509 CRL' header and footer";
       }
       leaf-list cipher-list {
         ordered-by user;
@@ -299,11 +310,22 @@ module srl_nokia-tls {
         type identityref {
           base cipher-type;
         }
-        default ecdhe-rsa-aes128-gcm-sha256;
-        default ecdhe-rsa-aes256-gcm-sha384;
-
+        default "ecdhe-ecdsa-aes256-gcm-sha384";
+        default "ecdhe-ecdsa-aes128-gcm-sha256";
+        default "ecdhe-rsa-aes256-gcm-sha384";
+        default "ecdhe-rsa-aes128-gcm-sha256";
         description
-          "List of ciphers to use when negotiating TLS with clients";
+          "List of ciphers to use when negotiating TLS 1.2 with clients
+
+           TLS 1.3 cipher suites are always enabled:
+               tls_aes_256_gcm_sha384, tls_aes_128_gcm_sha256, tls_chacha20_poly1305_sha256";
+      }
+      leaf dynamic {
+        config false;
+        srl-ext:show-importance "high";
+        type boolean;
+        description
+          "Defines if the profile was dynamically created by service (for example gNSI Authz/Certz)";
       }
     }
   }
