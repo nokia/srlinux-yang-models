@@ -1,0 +1,59 @@
+module srl_nokia-tools-dhcp-server {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:dhcp:tools-dhcp-server";
+  prefix srl_nokia-tools-dhcp-server;
+
+  import srl_nokia-tools-system {
+    prefix srl_nokia_tools-system;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for dhcp server operational commands";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping tools-system-dhcp-server-top {
+    container dhcp-server {
+      presence "Performs DHCP server function";
+      list network-instance {
+        description
+          "List of network instances to run a dhcp server in";
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Network Instance";
+        }
+        container dhcpv4 {
+          container statistics {
+            leaf clear {
+              type empty;
+            }
+          }
+        }
+        container dhcpv6 {
+          container statistics {
+            leaf clear {
+              type empty;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia_tools-system:system" {
+    uses tools-system-dhcp-server-top;
+  }
+}

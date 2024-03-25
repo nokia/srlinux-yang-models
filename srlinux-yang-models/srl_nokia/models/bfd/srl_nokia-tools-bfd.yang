@@ -1,0 +1,151 @@
+module srl_nokia-tools-bfd {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:bfd:tools-bfd";
+  prefix srl_nokia-tools-bfd;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands on BFD sessions and statstics";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping tools-bfd-top {
+    description
+      "Tools grouping for BFD";
+    container bfd {
+      description
+        "Top-level grouping for bfd operational commands";
+      list peer {
+        key "local-discriminator";
+        description
+          "The list of local-discriminators associated with BFD";
+        leaf local-discriminator {
+          type uint32;
+          description
+            "BFD session local discriminator";
+        }
+        leaf clear {
+          type empty;
+          description
+            "Clear the associated BFD sessions
+
+             Clearing a BFD sessions causes the associated BFD sessions ot transition to a Down state";
+        }
+      }
+      container statistics {
+        list peer {
+          key "local-discriminator";
+          description
+            "The list of local-discriminators associated with BFD";
+          leaf local-discriminator {
+            type uint32;
+            description
+              "BFD session local discriminator";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear the BFD statistics associated with the BFD sessions";
+          }
+        }
+      }
+      container micro-bfd-sessions {
+        if-feature "srl_nokia-feat:lag";
+        list lag-interface {
+          key "name";
+          description
+            "Lag interface against which the clear command is to be executed";
+          leaf name {
+            must "starts-with(../name,'lag')" {
+              error-message "Must be a LAG interface";
+            }
+            type srl_nokia-comm:interface-all;
+            description
+              "Reference ID for associated lag interface
+               Example: lag1 (Reference Interface lag1).";
+          }
+          list member-interface {
+            key "name";
+            description
+              "List of member-interfaces to be cleared";
+            leaf name {
+              must "starts-with(../name,'ethernet') or starts-with(../name,'lif') or starts-with(../name,'enp')" {
+                error-message "Must be an ethernet, lif, or enp interface";
+              }
+              type srl_nokia-comm:interface-all;
+              description
+                "Reference ID for associated interface
+                 Example: ethernet-2/1 (Reference Interface ethernet-2/1).";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear the associated micro-BFD sessions
+
+                 Clearing a micro-BFD sessions causes the associated  sessions to transition to a Down state";
+            }
+          }
+        }
+        container statistics {
+          list lag-interface {
+            key "name";
+            description
+              "Lag interface against which the clear command is to be executed";
+            leaf name {
+              must "starts-with(../name,'lag')" {
+                error-message "Must be a LAG interface";
+              }
+              type srl_nokia-comm:interface-all;
+              description
+                "Reference ID for associated lag interface
+                 Example: lag1 (Reference Interface lag1).";
+            }
+            list member-interface {
+              key "name";
+              description
+                "List of member-interfaces to be cleared";
+              leaf name {
+                must "starts-with(../name,'ethernet') or starts-with(../name,'lif') or starts-with(../name,'enp')" {
+                  error-message "Must be an ethernet, lif, or enp interface";
+                }
+                type srl_nokia-comm:interface-all;
+                description
+                  "Reference ID for associated interface
+                   Example: ethernet-2/1 (Reference Interface ethernet-2/1).";
+              }
+              leaf clear {
+                type empty;
+                description
+                  "Clear the BFD statistics associated with the micro-BFD sessions";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  uses tools-bfd-top;
+}

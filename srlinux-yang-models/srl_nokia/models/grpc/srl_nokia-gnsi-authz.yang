@@ -1,0 +1,142 @@
+module srl_nokia-gnsi-authz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:aaa:gnsi-authz";
+  prefix srl-gnsi-authz;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-aaa {
+    prefix srl-aaa;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the Authz service within gNSI.";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping counters {
+    description
+      "A collection of counters that were collected by the gNSI.authz
+       module while evaluating access to a RPC.";
+    leaf access-rejects {
+      type uint64;
+      description
+        "The total number of times the gNSI.authz module denied access
+         to a RPC.";
+    }
+    leaf last-access-reject {
+      type srl-comm:date-and-time-delta;
+      description
+        "A timestamp of the last time the gNSI.authz denied access to
+         a RPC.";
+    }
+    leaf access-accepts {
+      type uint64;
+      description
+        "The total number of times the gNSI.authz module allowed access
+         to a RPC.";
+    }
+    leaf last-access-accept {
+      type srl-comm:date-and-time-delta;
+      description
+        "A timestamp of the last time the gNSI.authz allowed access to
+         a RPC.";
+    }
+  }
+
+  grouping grpc-server-user-authz-policy-success-failure-counters {
+    description
+      "A collection of counters collected by the gNSI.authz module.";
+    list rpc {
+      description
+        "A collection of counters collected by the gNSI.authz module
+         for a RPC identified by the `name`.";
+      key "name";
+      leaf name {
+        type string;
+        description
+          "The name of the RPC the counters were collected
+           for.";
+      }
+      uses counters;
+    }
+  }
+
+  grouping grpc-server-authz-policy-success-failure-counters {
+    description
+      "A collection of counters collected by the gNSI.authz module.";
+    container counters {
+      description
+        "A collection of counters collected by the gNSI.authz module.";
+      config false;
+      uses grpc-server-user-authz-policy-success-failure-counters;
+    }
+  }
+
+  grouping authz-top {
+    description
+      "Grouping of Authz state paths";
+    container authz-policy {
+      config false;
+      description
+        "Information relating to the active gRPC authorization policy
+
+         This policy is provided by the gNSI gRPC service, and can be changed using the gNSI.Authz.Rotate RPC";
+      leaf version {
+        description
+          "The version string as provided by the gNSI client at the time of uploading the policy
+
+           The maps to the version field within a UploadRequest message in the Authz protobuf.";
+        type string;
+      }
+      leaf created-on {
+        description
+          "The created on timestamp as provided by the gNSI client at the time of uploading the policy
+
+           This maps to the created_on field within a UploadRequest message in the Authz protobuf.";
+        type srl-comm:date-and-time-delta;
+      }
+      leaf policy {
+        description
+          "The policy definition
+
+           This JSON string contains the full gRPC authorization rules conforming to the gRPC authorization policy schema:
+
+           This maps to the policy field within a UploadRequest message in the Authz protobuf.";
+        type string;
+      }
+      uses grpc-server-authz-policy-success-failure-counters;
+    }
+  }
+
+  augment "/srl-system:system/srl-aaa:aaa/srl-aaa:authorization" {
+    if-feature "srl-feat:gnsi-authz";
+    uses authz-top;
+  }
+}

@@ -1,0 +1,311 @@
+module srl_nokia-event-handler {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:event:event-handler";
+  prefix srl-event-handler;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-aaa {
+    prefix srl-aaa;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the event handler";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  typedef eh-instance-oper-reason {
+    type enumeration {
+      enum admin-disabled {
+        description
+          "Event handler instance is admin-disabled";
+      }
+      enum failed-to-compile {
+        description
+          "Event handler failed to compile the script, indicating that the script likely has a syntax error";
+      }
+      enum exception {
+        description
+          "Event handler caught an exception in the last execution of the script";
+      }
+      enum timeout {
+        description
+          "The last execution of the script did not complete before a timeout occurred";
+      }
+      enum subscription-failed {
+        description
+          "Event handler was unable to subscribe to the provided paths";
+      }
+      enum script-unavailable {
+        description
+          "Event handler was unable to find the script on the filesystem";
+      }
+      enum script-error {
+        description
+          "The script returned something invalid";
+      }
+      enum missing-function {
+        description
+          "Event handler was unable to find a function named event_handler_main() in the provided script";
+      }
+      enum system-error {
+        description
+          "There was a failure in setting up the python environment";
+      }
+      enum ephemeral-action-failed {
+        description
+          "Event handler was unable to perform a ephemeral-path action in the previous execution";
+      }
+      enum cfg-action-failed {
+        description
+          "Event handler was unable to perform a cfg-path action in the previous execution";
+      }
+      enum tools-action-failed {
+        description
+          "Event handler was unable to perform a tools-path action in the previous execution";
+      }
+      enum state-action-failed {
+        description
+          "Event handler was unable to perform a state-path action in the previous execution";
+      }
+      enum script-action-failed {
+        description
+          "Event handler was unable to perform a script action in the previous execution";
+      }
+    }
+  }
+
+  grouping eh-statistics-top {
+    container statistics {
+      config false;
+      description
+        "Top-level container for event handler statistics";
+      leaf upython-duration {
+        type uint64;
+        units "milliseconds";
+        description
+          "Total time taken for all executions of this script to return output";
+      }
+      leaf execution-count {
+        type srl-comm:zero-based-counter64;
+        description
+          "Indicates the total number of executions of this script";
+      }
+      leaf execution-successes {
+        type srl-comm:zero-based-counter64;
+        description
+          "Indicates the total number of successful executions of this script";
+      }
+      leaf execution-timeouts {
+        type srl-comm:zero-based-counter64;
+        description
+          "Indicates the total number of timeouts in executions of this script";
+      }
+      leaf execution-errors {
+        type srl-comm:zero-based-counter64;
+        description
+          "Indicates the total number of errors in executions of this script";
+      }
+    }
+  }
+
+  grouping eh-execution-state {
+    leaf oper-down-reason {
+      type eh-instance-oper-reason;
+      config false;
+      srl-ext:show-importance "low";
+      description
+        "The reason this instance is or was in its last operational state";
+    }
+    leaf oper-down-reason-detail {
+      srl-ext:show-importance "low";
+      type string;
+      description
+        "Any additional detail event handler can provide around the last operational state of this instance";
+    }
+    leaf start-time {
+      type srl-comm:date-and-time-delta;
+      srl-ext:show-importance "high";
+      description
+        "The time this instance last started execution";
+    }
+    leaf end-time {
+      type srl-comm:date-and-time-delta;
+      srl-ext:show-importance "high";
+      description
+        "The time this instance last finished execution
+
+         This timestamp includes any actions provided as output from the execution";
+    }
+    leaf upython-duration {
+      type uint64;
+      units "microseconds";
+      description
+        "Time taken for the instance to return output";
+    }
+    leaf input {
+      type string;
+      description
+        "The input provided to the script";
+    }
+    leaf output {
+      type string;
+      description
+        "The output received from the script
+
+         If empty, no response was received.";
+    }
+    leaf stdout-stderr {
+      type string;
+      description
+        "The output printed on STDOUT or STDERR during this execution";
+    }
+  }
+
+  grouping eh-state-top {
+    leaf oper-state {
+      config false;
+      type srl-comm:oper-state;
+      srl-ext:show-importance "high";
+      description
+        "Details if this event handler instance is operationally available";
+    }
+    container last-execution {
+      config false;
+      description
+        "Operational state of the last execution of this instance";
+      uses eh-execution-state;
+    }
+    container last-errored-execution {
+      config false;
+      description
+        "Operational state of the last errored execution of this instance";
+      uses eh-execution-state;
+    }
+  }
+
+  grouping eh-top {
+    container event-handler {
+      presence "Start the event handler";
+      description
+        "Top-level container for configuration and state of event handler and event handling instances";
+      leaf run-as-user {
+        description
+          "The user to run event handler instances as
+
+           If no user is configured, scripts are executed as the 'admin' user.";
+        type leafref {
+          path "/srl-system:system/srl-aaa:aaa/srl-aaa:authentication/srl-aaa:user/srl-aaa:username";
+        }
+      }
+      list instance {
+        max-elements 20;
+        description
+          "List of all event handler instances
+
+           An event handler instance consists of a set of paths to be monitored for changes, and a Python script to execute if changes occur.";
+        key "name";
+        leaf name {
+          type srl-comm:name;
+          description
+            "A user-defined name for this event handler instance";
+        }
+        leaf admin-state {
+          type srl-comm:admin-state;
+          srl-ext:show-importance "high";
+          default "disable";
+          description
+            "Administratively enable or disable this event handler instance";
+        }
+        leaf-list paths {
+          max-elements 36;
+          srl-ext:no-globbing;
+          description
+            "List of valid YANG paths in CLI notation to monitor for changes
+
+             If any events are received on any of the provided paths, the configured script will be executed.
+
+             This path may include keys, wildcards, ranges, and other management server supported constructs.
+
+             E.g.
+                 \"interface * oper-state\"
+                 \"acl ipv4-filter foo* description\"";
+          type string {
+            pattern '[A-Za-z0-9 !@#$%^&()|+=`~.,/_:;?\-{}*\\\\"\[\]]+';
+          }
+        }
+        container options {
+          description
+            "Options to be passed on each execution of the script";
+          list object {
+            key "name";
+            leaf name {
+              type srl-comm:name;
+              description
+                "The name of this object";
+            }
+            choice object {
+              leaf-list values {
+                srl-ext:no-globbing;
+                ordered-by user;
+                description
+                  "List of values to associate with this object, these are serialized as a JSON array when provided as input to the script";
+                type string;
+              }
+              leaf value {
+                srl-ext:no-globbing;
+                description
+                  "A single value to associate with this object";
+                type string;
+              }
+            }
+          }
+        }
+        leaf upython-script {
+          description
+            "File name of a MicroPython script, including .py suffix
+
+             This script should exist in /etc/opt/srlinux/eventmgr or /opt/srlinux/eventmgr already.
+             Explicit paths outside of these two directories are not permitted.";
+          type string {
+            pattern '([^./][^/]*)|(\.[^\./]+)|(\.\.[^/])+';
+          }
+        }
+        uses eh-state-top;
+        uses eh-statistics-top;
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    srl-ext:first-released "22.3.1";
+    if-feature "srl-feat:event-handler";
+    uses eh-top;
+  }
+}

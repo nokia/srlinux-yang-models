@@ -1,0 +1,118 @@
+module srl_nokia-system-bridge-table-proxy-arp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:l2-proxy-arp-nd:system-bridge-table-proxy-arp";
+  prefix srl_nokia-system-bridge-table-proxy-arp;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-system-bridge-table {
+    prefix srl_nokia-system-bridge-table;
+  }
+  import srl_nokia-bridge-table-proxy-arp-nd {
+    prefix srl_nokia-bridge-table-proxy-arp-nd;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines system bridge-table proxy entry operational
+     state data.";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping bridge-table-proxy-table-statistics-type-common-top {
+    leaf total-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of proxy entries.";
+    }
+    leaf active-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of active proxy entries.";
+    }
+    leaf in-active-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of inactive proxy entries.";
+    }
+    leaf pending-entries {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The total number of pending proxy entries.";
+    }
+  }
+
+  grouping bridge-table-proxy-table-statistics-common-top {
+    container statistics {
+      config false;
+      uses bridge-table-proxy-table-statistics-type-common-top;
+      list neighbor-origin {
+        config false;
+        key "origin";
+        description
+          "the origin of the proxy entry installed in the table.";
+        leaf origin {
+          type srl_nokia-bridge-table-proxy-arp-nd:neighbor-origin;
+          srl_nokia-ext:show-importance "high";
+        }
+        uses bridge-table-proxy-table-statistics-type-common-top;
+      }
+    }
+  }
+
+  grouping bridge-table-proxy-arp-top {
+    container proxy-arp {
+      config false;
+      description
+        "system bridge-table proxy ARP entry information";
+      uses bridge-table-proxy-table-statistics-common-top;
+    }
+  }
+
+  grouping bridge-table-proxy-nd-top {
+    container proxy-nd {
+      config false;
+      description
+        "system bridge-table proxy ND entry information";
+      uses bridge-table-proxy-table-statistics-common-top;
+    }
+  }
+
+  augment "/srl-system:system/srl_nokia-system-bridge-table:bridge-table" {
+    uses bridge-table-proxy-arp-top;
+    uses bridge-table-proxy-nd-top;
+  }
+}

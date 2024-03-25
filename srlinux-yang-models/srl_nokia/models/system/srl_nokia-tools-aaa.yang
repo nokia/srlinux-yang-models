@@ -1,0 +1,106 @@
+module srl_nokia-tools-aaa {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:aaa:tools-aaa";
+  prefix srl-tools-aaa;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational commands related to AAA.";
+
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping aaa-tools-top {
+    container authentication {
+      description
+        "Operational commands related to authentication";
+      list session {
+        description
+          "List of active sessions in the system";
+        key "id";
+        leaf id {
+          description
+            "System generated session ID";
+          type int32;
+        }
+        leaf disconnect {
+          description
+            "Disconnect the cli session, requesting the cli to terminate";
+          type empty;
+        }
+      }
+      list user {
+        description
+          "List of local users including admin and linuxadmin";
+        key "username";
+        leaf username {
+          type string;
+        }
+        leaf unlock {
+          description
+            "Unlock the user, This will change its lockout state into false";
+          type empty;
+        }
+        leaf force-password-change {
+          if-feature "srl-feat:tools-force-pwd-change";
+          description
+            "Set change-on-first-login to true for this user
+
+             This command will only take effect if the feature change-on-first-login is currently set to true.";
+          type empty;
+        }
+      }
+      leaf force-all-user-password-change {
+        if-feature "srl-feat:tools-force-pwd-change";
+        description
+          "Set change-on-first-login to true for all users
+
+           This command will only take effect if the feature change-on-first-login is currently set to true.";
+        type empty;
+      }
+    }
+    container authorization {
+      if-feature "srl-feat:gnsi-authz";
+      description
+        "Operational commands relating to authorization";
+    }
+  }
+
+  grouping aaa-top {
+    container aaa {
+      presence "Configure tools system AAA";
+      srl-ext:first-released "21.11.1";
+      description
+        "Top-level container for operational commands related to AAA";
+      uses aaa-tools-top;
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    uses aaa-top;
+  }
+}

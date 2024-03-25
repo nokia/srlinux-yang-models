@@ -1,0 +1,121 @@
+module srl_nokia-platform-fan {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-fan";
+  prefix srl_nokia-platform-fan;
+
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to fans.";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping fan-state-top {
+    description
+      "Grouping for fan module state";
+    leaf id {
+      type uint8 {
+        range "1..255";
+      }
+      description
+        "Numeric identifier for the fan tray";
+    }
+    leaf type {
+      type string;
+      srl-ext:show-importance "high";
+      description
+        "Fan tray type, as translated from the components EEPROM";
+    }
+    leaf speed {
+      type srl-comm:percentage;
+      description
+        "The current speed of the fan tray";
+    }
+    leaf speed-rpm {
+      if-feature "srl-feat:platform-7250-ixr or srl-feat:platform-7250-ixr-e";
+      type uint16;
+      description
+        "The current RPM of the fan tray";
+    }
+    leaf oper-reason {
+      description
+        "Indicates the reason for the current state of this fan tray";
+      type enumeration {
+        enum fault {
+          description
+            "Hardware fault detected";
+        }
+        enum eeprom-invalid {
+          description
+            "EEPROM of this fan tray is either invalid or corrupt";
+        }
+        enum airflow-mismatch {
+          description
+            "The detected airflow of this fan tray does not match the system-calculated airflow direction
+
+             The logic for determining the system-calculated direction is:
+             - Majority wins between present fan trays
+             - In the case where there are equal F2B or B2F fan-trays, PSUs are used as a tie break (PSUs only are counted in the event a tie breaker is needed)
+             - F2B wins if no tie break can be used";
+        }
+      }
+    }
+  }
+
+  grouping fan-top {
+    description
+      "Grouping for fan module configuration and state";
+    list fan-tray {
+      config false;
+      key "id";
+      description
+        "Top-level container for fan module configuration and state";
+      uses fan-state-top;
+      uses srl-platform:component-common-state-top;
+      uses srl-platform:component-common-eeprom;
+      uses srl-platform:component-locator;
+      uses srl-platform:component-power-state-top {
+        if-feature "srl-feat:chassis";
+      }
+    }
+  }
+
+  augment "/srl-platform:platform" {
+    uses fan-top;
+  }
+}

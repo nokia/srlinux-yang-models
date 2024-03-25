@@ -1,0 +1,162 @@
+module srl_nokia-platform-healthz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-healthz";
+  prefix srl_nokia-platform-healthz;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-platform-control {
+    prefix srl-platform-control;
+  }
+  import srl_nokia-platform-chassis {
+    prefix srl-platform-chassis;
+  }
+  import srl_nokia-platform-fabric {
+    prefix srl-platform-fabric;
+  }
+  import srl_nokia-platform-fan {
+    prefix srl-platform-fan;
+  }
+  import srl_nokia-platform-lc {
+    prefix srl-platform-lc;
+  }
+  import srl_nokia-platform-psu {
+    prefix srl-platform-psu;
+  }
+  import srl_nokia-interfaces {
+    prefix srl-interfaces;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines healthz parameters for platform components.";
+
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping platform-healthz-top {
+    description
+      "Grouping containing health-related parameters";
+    container healthz {
+      config false;
+      description
+        "The health of the component
+
+         The paramaters within this
+         container indicate the status of the component beyond whether
+         it is operationally up or down. When a signal is received
+         that a component is in an unhealthy state the gNOI.Healthz
+         service can be used to retrieve further diagnostic information
+         relating to the component.
+         The contents of this directory relate only to the specific
+         component that it is associated with.";
+      reference
+        "https://github.com/openconfig/gnoi/tree/main/healthz";
+      uses platform-health-state;
+    }
+  }
+
+  grouping platform-health-state {
+    description
+      "Operational state parameters relating to a platform component's
+       health";
+    leaf status {
+      type enumeration {
+        enum unspecified {
+          description
+            "Unspecified status
+
+             The component's health status has not yet been checked
+             by the system.";
+        }
+        enum healthy {
+          description
+            "Healthy status
+
+             The component is in a healthy state, and is operating
+             within the expected parameters.";
+        }
+        enum unhealthy {
+          description
+            "Unhealthy status
+
+             The component is in a unhealthy state, it is not
+             performing the function expected of it.";
+        }
+      }
+      description
+        "Health status
+
+         The status of the component, indicating its current health.";
+    }
+    leaf last-unhealthy {
+      type srl-comm:date-and-time-delta;
+      description
+        "Last unhealthy time
+
+         The time at which the component was last observed to transition from
+         the healthy state to any other state, represented as nanoseconds
+         since the Unix epoch.";
+    }
+    leaf unhealthy-count {
+      type srl-comm:zero-based-counter64;
+      description
+        "Unhealthy count
+
+         The number of times the component has transitioned from the healthy
+         state to any other state.";
+    }
+  }
+
+  augment "/srl-platform:platform/srl-platform-control:control" {
+    if-feature "srl-feat:gnoi-healthz";
+    uses platform-healthz-top;
+  }
+
+  augment "/srl-platform:platform/srl-platform-chassis:chassis" {
+    if-feature "srl-feat:gnoi-healthz";
+    uses platform-healthz-top;
+  }
+
+  augment "/srl-platform:platform/srl-platform-fabric:fabric" {
+    if-feature "srl-feat:gnoi-healthz";
+    uses platform-healthz-top;
+  }
+
+  augment "/srl-platform:platform/srl-platform-fan:fan-tray" {
+    if-feature "srl-feat:gnoi-healthz";
+    uses platform-healthz-top;
+  }
+
+  augment "/srl-platform:platform/srl-platform-lc:linecard" {
+    if-feature "srl-feat:gnoi-healthz";
+    uses platform-healthz-top;
+  }
+
+  augment "/srl-platform:platform/srl-platform-psu:power-supply" {
+    if-feature "srl-feat:gnoi-healthz";
+    uses platform-healthz-top;
+  }
+
+  augment "/srl-interfaces:interface/srl-interfaces:transceiver" {
+    if-feature "srl-feat:gnoi-healthz";
+    uses platform-healthz-top;
+  }
+}

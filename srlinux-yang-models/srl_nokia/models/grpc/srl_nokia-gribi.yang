@@ -1,0 +1,121 @@
+module srl_nokia-gribi {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:gribi";
+  prefix srl-gribi;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the gRIBI service";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping gribi-netinst-protocol {
+    container gribi {
+      presence "Configure the network instance to support gRIBI programming";
+      description
+        "Container for gRIBI configuration and state.";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        description
+          "Administratively enable or disable gRIBI support.
+
+           The enable setting only has an effect when the network-instance type is ip-vrf or default.
+
+           When this is set to disable all IP entries and next-hop-groups associated with the network-instance are deleted from the gRIBI server database and the recovery of this state depends on the gRIBI clients to re-signal all of the deleted entries. While in a disabled state, no entries are accepted for this network-instance. (This is the same behavior when the network-instance does not exist at all.) ";
+        default "enable";
+      }
+      leaf oper-state {
+        config false;
+        type srl-comm:oper-state;
+        description
+          "The operational state of gRIBI with respect to programming of entries in this network network-instance
+
+           By default, even with no configuration, the state is up in all network-instances of type ip-vrf and default";
+      }
+      leaf default-metric {
+        description
+          "Set the route table metric to use for all gRIBI-created IPv4 and IPv6 routes";
+        type uint32;
+        default "1";
+      }
+      leaf default-preference {
+        type uint8 {
+          range "0..255";
+        }
+        default "6";
+        description
+          "Lower values indicate a higher degree of preference when deciding the route to use from different protocols.";
+      }
+      leaf max-ecmp-hash-buckets-per-next-hop-group {
+        type uint16 {
+          range "1..256";
+        }
+        default "256";
+        description
+          "Specifies the maximum number of ECMP hash buckets per next-hop-group.
+
+           An error is returned to any gRIBI client that attempts to program more than this number of next-hops in a single next-hop-group.
+
+           Weighted ECMP weights are normalized based on this number of hash buckets.";
+      }
+      leaf maximum-routes {
+        type uint32;
+        default "0";
+        description
+          "Specifies the maximum number of gRIBI routes (sum of IPv4 and IPv6 entries).
+
+           A value of 0 signifies no limit.";
+      }
+    }
+  }
+
+  grouping gribi-session-info {
+    container gribi {
+      description
+        "Container for gRIBI related session info";
+      leaf persistence-mode {
+        type enumeration {
+          enum preserve {
+            description
+              "Entries populated by the client will be persisted during a client disconnect, or control module switchover";
+          }
+          enum delete {
+            description
+              "Entries populated by the client will be purged on the client disconnecting, or a control module switchover
+
+               If no persistence mode is signaled, the default is to delete entries.";
+          }
+        }
+        srl-ext:show-importance "high";
+        description
+          "The defined persistence mode as signaled by the client";
+      }
+    }
+  }
+
+  augment "/srl-netinst:network-instance/srl-netinst:protocols" {
+    uses gribi-netinst-protocol {
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+    }
+  }
+}

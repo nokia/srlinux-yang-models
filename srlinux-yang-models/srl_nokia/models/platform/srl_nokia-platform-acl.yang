@@ -1,0 +1,280 @@
+module srl_nokia-platform-acl {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-acl";
+  prefix srl_nokia-platform-acl;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-platform-lc {
+    prefix srl_nokia-platform-lc;
+  }
+  import srl_nokia-platform-resource-monitoring {
+    prefix srl_nokia-platform-res-mon;
+  }
+  import srl_nokia-features {
+    prefix srl_feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state related to ACL resources in the system";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  identity acl-resources {
+    description
+      "Base type for ACL resources";
+  }
+
+  identity input-ipv4-filter-instances {
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3 or srl_feat:tomahawk4";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on the forwarding complex. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every subinterface using the IPv4 filter.";
+  }
+
+  identity input-ipv4-qos-multifield-instances {
+    if-feature "srl_feat:ip-qos-multifield and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 multifield classifier policy is applied to ingress traffic on a subinterface.";
+  }
+
+  identity input-ipv4-filter-instances-routed {
+    if-feature "srl_feat:trident3 or srl_feat:ac5x";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on routed subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every routed subinterface using the IPv4 filter.";
+  }
+
+  identity input-ipv4-filter-instances-bridged {
+    if-feature "srl_feat:trident3 or srl_feat:ac5x";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 filter instance is created and applied to ingress traffic on bridged subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every bridged subinterface using the IPv4 filter.";
+  }
+
+  identity input-ipv6-filter-instances {
+    if-feature "srl_feat:jericho2 or srl_feat:jericho2cp or srl_feat:tomahawk3 or srl_feat:tomahawk4";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on the forwarding complex. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every subinterface using the IPv6 filter.";
+  }
+
+  identity input-ipv6-qos-multifield-instances {
+    if-feature "srl_feat:ip-qos-multifield and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv6 multifield classifier policy is applied to ingress traffic on a subinterface.";
+  }
+
+  identity input-ipv6-filter-instances-routed {
+    if-feature "srl_feat:trident3 or srl_feat:ac5x";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on routed subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every routed subinterface using the IPv6 filter.";
+  }
+
+  identity input-ipv6-filter-instances-bridged {
+    if-feature "srl_feat:trident3 or srl_feat:ac5x";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv6 filter instance is created and applied to ingress traffic on bridged subinterfaces. Only one instance is used if the subinterface-specific property of the filter is set to output-only; otherwise one instance is used for every bridged subinterface using the IPv6 filter.";
+  }
+
+  identity if-input-ipv4-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for ingress IPv4 ACLs";
+  }
+
+  identity if-input-ipv6-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for ingress IPv6 ACLs";
+  }
+
+  identity if-output-ipv4-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for egress IPv4 ACLs";
+  }
+
+  identity if-output-ipv6-stats {
+    if-feature "srl_feat:dynamic-tcam and (srl_feat:jericho2 or srl_feat:jericho2cp)";
+    base acl-resources;
+    description
+      "Resource pool of stats entries available for egress IPv6 ACLs";
+  }
+
+  identity if-output-cpm-stats {
+    if-feature "srl_feat:trident3";
+    base acl-resources;
+    description
+      "Resource pool of stats entries shared by egress IPv4/IPv6/MAC TCAM entries, and CPM-filter IPv4/IPv6/MAC TCAM entries
+
+       Egress Ipv4 -> uses single stat counter
+       Egress Ipv6 -> uses single stat counter
+       Egress MAC -> uses single stat counter
+       Cpm Ipv4 -> uses two stat counters
+       Cpm Ipv6 -> uses two stat counters
+       Cpm MAC -> uses two stat counters";
+  }
+
+  identity input-acl-qos-template-policers {
+    if-feature "srl_feat:trident4";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 or IPv6 input subinterface filter entry uses a rate-limit policer, or subinterface policer-template is used.";
+  }
+
+  identity input-qos-template-policers {
+    if-feature "srl_feat:trident3";
+    base acl-resources;
+    description
+      "This resource is used every time a QoS subinterface policer-template is used.";
+  }
+
+  identity input-acl-ipv4-policers {
+    if-feature "srl_feat:trident3";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 input subinterface filter entry uses a rate-limit policer.";
+  }
+
+  identity input-acl-ipv6-policers {
+    if-feature "srl_feat:trident3";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv6 input subinterface filter entry uses a rate-limit policer.";
+  }
+
+  identity output-acl-cpm-filter-policers {
+    if-feature "srl_feat:trident4";
+    base acl-resources;
+    description
+      "This resource is used every time an IPv4 or IPv6 output subinterface filter or CPM filter entry uses a rate-limit policer.";
+  }
+
+  grouping acl-resource-monitoring {
+    container acl {
+      list resource {
+        key "name";
+        leaf name {
+          type identityref {
+            base acl-resources;
+          }
+          description
+            "The name of the ACL resource";
+        }
+        leaf rising-threshold-log {
+          type srl_nokia-comm:percentage;
+          default "90";
+          description
+            "Sets the threshold that triggers the generation of a WARNING log whenever the utilization of the ACL resource in any linecard/complex/core reaches this value in a rising direction";
+        }
+        leaf falling-threshold-log {
+          type srl_nokia-comm:percentage;
+          default "70";
+          description
+            "Sets the threshold that triggers the generation of a NOTICE log whenever the utilization of the ACL resource in any linecard/complex/core falls reaches this value in a falling direction";
+        }
+      }
+    }
+  }
+
+  grouping acl-utilization {
+    container acl {
+      config false;
+      list resource {
+        srl_nokia-ext:delivery-node-override "true";
+        srl_nokia-ext:stream-mode "sample=5";
+        key "name";
+        leaf name {
+          type identityref {
+            base acl-resources;
+          }
+          description
+            "The name of the ACL resource";
+        }
+        leaf used {
+          type uint16;
+          description
+            "The number of resources that are in use";
+        }
+        leaf free {
+          type uint16;
+          description
+            "The number of resources that are unused and available";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-res-mon:resource-monitoring" {
+    if-feature "not srl_feat:platform-vsrl";
+    uses acl-resource-monitoring;
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-lc:linecard/srl_nokia-platform-lc:forwarding-complex" {
+    if-feature "not srl_feat:platform-vsrl";
+    uses acl-utilization;
+  }
+}

@@ -1,0 +1,417 @@
+module srl_nokia-oam-pm-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:oam-pm-types";
+  prefix srl_nokia-oam-pm-types;
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG module contains the management data definitions for the
+     Ethernet CFM Performance Monitoring.";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  typedef delay-direction-type {
+    type enumeration {
+      enum forward {
+        value 1;
+      }
+      enum backward {
+        value 2;
+      }
+      enum round-trip {
+        value 3;
+      }
+    }
+    description
+      "Direction of the delay measurement";
+  }
+
+  typedef bin-metric-type {
+    type enumeration {
+      enum fd {
+        value 1;
+      }
+      enum fdr {
+        value 2;
+      }
+      enum ifdv {
+        value 3;
+      }
+    }
+    description
+      "Delay metric types";
+  }
+
+  typedef loss-metric-type {
+    type enumeration {
+      enum average-flr {
+        value 1;
+      }
+      enum chli {
+        value 2;
+      }
+      enum hli {
+        value 3;
+      }
+      enum unavailability {
+        value 4;
+      }
+      enum undetermined-availability {
+        value 5;
+      }
+      enum undetermined-unavailability {
+        value 6;
+      }
+    }
+    description
+      "loss metric types
+
+       'average-flr'                   - Average Frame Loss Ratio
+       'chli'                          - Consecutive High Loss Interval
+       'hli'                           - High Loss Interval
+       'unavailability'                - State of loss is unavailable
+       'undetermined-availability'     - While in available state unable to explicitly determine loss, timing out packets.
+                                        Maintain current available state, incrementing the available counter, while also
+                                        incrementing the 'undetermined-availability' counter.
+       'undetermined-unavailability'   - While in unavailable state unable to explicitly determine loss, timing out packets.
+                                        Maintain current unavailable state, incrementing the unavailable counter, while also
+                                        incrementing the 'undetermined-unavailability' counter.";
+  }
+
+  typedef loss-direction-type {
+    type enumeration {
+      enum forward {
+        value 1;
+      }
+      enum backward {
+        value 2;
+      }
+    }
+    description
+      "Basic direction of the loss measurement";
+  }
+
+  typedef loss-direction-aggregate-type {
+    type enumeration {
+      enum forward {
+        value 1;
+      }
+      enum backward {
+        value 2;
+      }
+      enum aggregate {
+        value 3;
+      }
+    }
+    description
+      "Extended direction of the loss measurement direction includes 'aggregate', sum of forward and backward";
+  }
+
+  typedef measurement-interval-duration-type {
+    type enumeration {
+      enum 1-minute {
+        value 1;
+      }
+      enum 5-minutes {
+        value 2;
+      }
+      enum 15-minutes {
+        value 3;
+      }
+      enum 1-hour {
+        value 4;
+      }
+      enum 1-day {
+        value 5;
+      }
+    }
+    description
+      "Duration of the measurement interval";
+  }
+
+  typedef measurement-interval-ro-duration-type {
+    type enumeration {
+      enum 1-minute {
+        value 1;
+      }
+      enum 5-minutes {
+        value 2;
+      }
+      enum 15-minutes {
+        value 3;
+      }
+      enum 1-hour {
+        value 4;
+      }
+      enum 1-day {
+        value 5;
+      }
+      enum raw {
+        value 6;
+      }
+    }
+    description
+      "Duration of the measurement interval";
+  }
+
+  typedef mi-oper-state {
+    type enumeration {
+      enum in-progress {
+        value 1;
+      }
+      enum completed {
+        value 2;
+      }
+    }
+    description
+      "Operational state of the specified measurement interval";
+  }
+
+  typedef measurement-interval-clock-offset {
+    type uint32 {
+      range "0..86399";
+    }
+    units "seconds";
+    description
+      "Offset for a clock-aligned measurement interval";
+  }
+
+  typedef measurement-interval-stored {
+    type uint8 {
+      range "1..96";
+    }
+    description
+      "The maximum number of intervals stored for the measurement interval duration";
+  }
+
+  typedef measurement-interval-boundary-type {
+    type enumeration {
+      enum clock-aligned {
+        value 1;
+      }
+      enum test-relative {
+        value 2;
+      }
+    }
+    description
+      "Alignment for the start of the measurement interval";
+  }
+
+  typedef oam-pm-session-type {
+    type enumeration {
+      enum proactive {
+        value 1;
+      }
+      enum on-demand {
+        value 2;
+      }
+    }
+    description
+      "Session scheduling types";
+  }
+
+  typedef oam-pm-interval {
+    type enumeration {
+      enum 50ms {
+        value 1;
+      }
+      enum 100ms {
+        value 2;
+      }
+      enum 200ms {
+        value 3;
+      }
+      enum 300ms {
+        value 4;
+      }
+      enum 400ms {
+        value 5;
+      }
+      enum 500ms {
+        value 6;
+      }
+      enum 600ms {
+        value 7;
+      }
+      enum 700ms {
+        value 9;
+      }
+      enum 800ms {
+        value 0;
+      }
+      enum 900ms {
+        value 10;
+      }
+      enum 1s {
+        value 11;
+      }
+      enum 10s {
+        value 12;
+      }
+    }
+    description
+      "Frequency of oam-pm packets";
+  }
+
+  typedef oam-pm-interval-slm {
+    type enumeration {
+      enum 50ms {
+        value 1;
+      }
+      enum 100ms {
+        value 2;
+      }
+      enum 200ms {
+        value 3;
+      }
+      enum 300ms {
+        value 4;
+      }
+      enum 400ms {
+        value 5;
+      }
+      enum 500ms {
+        value 6;
+      }
+      enum 600ms {
+        value 7;
+      }
+      enum 700ms {
+        value 9;
+      }
+      enum 800ms {
+        value 0;
+      }
+      enum 900ms {
+        value 10;
+      }
+      enum 1s {
+        value 11;
+      }
+    }
+    description
+      "frequency of oam-pm packets for SLM";
+  }
+
+  typedef tca-oper-state {
+    type enumeration {
+      enum pending {
+        value 1;
+      }
+      enum active {
+        value 2;
+      }
+      enum not-active {
+        value 3;
+      }
+    }
+    description
+      "The current operational state of threshold events";
+  }
+
+  typedef oam-pm-session-test-detected-tx-error {
+    type enumeration {
+      enum none {
+        value 1;
+      }
+      enum port-down {
+        value 2;
+      }
+      enum no-tx-port {
+        value 3;
+      }
+      enum eth-parent-admin-down {
+        value 4;
+      }
+      enum eth-no-mep-or-admin-down {
+        value 5;
+      }
+      enum unexpected-error {
+        value 6;
+      }
+      enum no-network-instance {
+        value 7;
+      }
+      enum network-instance-admin-down {
+        value 8;
+      }
+      enum network-instance-oper-down {
+        value 9;
+      }
+      enum no-route {
+        value 10;
+      }
+      enum no-subinterface {
+        value 11;
+      }
+      enum no-direct-subinterface {
+        value 12;
+      }
+      enum source-subinterface-down {
+        value 13;
+      }
+      enum source-ip-not-local {
+        value 14;
+      }
+      enum next-hop-ip-is-local {
+        value 15;
+      }
+      enum dest-mac-resolve-fail {
+        value 16;
+      }
+    }
+    description
+      "Reason for the inability (if any) to launch test frames for the specified test
+
+       none                      (1) - no transmit failure has been detected
+       port-down                 (2) - the transmit port is operationally down
+       no-tx-port                (3) - an egress has not been found
+       eth-parent-admin-down     (4) - the parent of the MEP is administratively down
+       eth-no-mep-or-admin-down  (5) - the test's MEP is not fully configured or the MEP is administratively down
+       unexpected-error          (6) - transmission failed due to unexpected conditions, such as failed memory allocation, traffic congestion, or failure to obtain the necessary resources
+       no-service                (7) - the network-instance associated with this test session was not found
+       service-admin-down        (8) - the network-instance associated with this test session is administratively down
+       service-oper-down         (9) - the network-instance associated with this test session is operationally down
+       no-route                 (10) - there is no IP route to the destination address
+       no-interface             (11) - there is no IP subinterface that matches the configured forwarding subinterface
+       no-direct-interface      (12) - there is no appropriate IP subinterface for bypass-routing to the destination address
+       source-interface-down    (13) - the IP subinterface associated with the source address is down
+       source-ip-not-local      (14) - the source address is not local
+       next-hop-ip-is-local     (15) - the next-hop address is local
+       dest-mac-resolve-fail    (16) - unable to resolve the remote-mepid to a unicast layer2 MAC address";
+  }
+
+  typedef timestamp-format {
+    type enumeration {
+      enum ntp {
+        value 1;
+      }
+      enum ptp {
+        value 2;
+      }
+    }
+    default "ntp";
+    description
+      "Format of the timestamp used in PDU";
+  }
+
+  typedef data-tlv-size {
+    type uint32 {
+      range "0|3..9502";
+    }
+    units "bytes";
+    description
+      "Size of the Data TLV to be added to ETH-CFM frames to increase the size of the PDU";
+  }
+}

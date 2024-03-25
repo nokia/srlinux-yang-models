@@ -1,0 +1,81 @@
+module srl_nokia-tools-grpc {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:tools-grpc";
+  prefix srl_nokia-tools-grpc;
+
+  import srl_nokia-tools-gnoi {
+    prefix srl-tools-gnoi;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands on gRPC server instances";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping grpc-server-top {
+    list grpc-server {
+      description
+        "List of configured gRPC server instances";
+      key "name";
+      leaf name {
+        type srl-comm:name;
+        description
+          "User-provided name of this server instance";
+      }
+      list client {
+        description
+          "List of active gRIBI client sessions";
+        key "id";
+        leaf id {
+          type uint32 {
+            range "0..4294967295";
+          }
+          description
+            "System generated ID for for the client";
+        }
+        leaf disconnect {
+          description
+            "Disconnect this client from the server";
+          type empty;
+        }
+      }
+      container statistics {
+        description
+          "A collection of counters that were collected by the gRPC during
+           the authentication process.";
+        leaf clear {
+          type empty;
+          description
+            "Clear gNMI network instance authentication counters";
+        }
+      }
+      uses srl-tools-gnoi:tools-gnoi-top;
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    srl-ext:first-released "24.3.1";
+    if-feature "srl-feat:grpc-server";
+    uses grpc-server-top;
+  }
+}

@@ -1,0 +1,95 @@
+module srl_nokia-gnsi-certz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:gnsi-certz";
+  prefix srl-gnsi-certz;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-tls {
+    prefix srl-tls;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the Certz service within gNSI.";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+
+  grouping artifact-common {
+    description
+      "Grouping of common information used between artifacts";
+    leaf version {
+      description
+        "The version string as provided by the gNSI client at the time of uploading the certificate or bundle/s
+
+         The maps to the version field within a Entity message in the Certz protobuf.";
+      type string;
+    }
+    leaf created-on {
+      description
+        "The created on timestamp as provided by the gNSI client at the time of uploading the policy
+
+         The maps to the created_on field within a Entity message in the Certz protobuf.";
+      type srl-comm:date-and-time-delta;
+    }
+  }
+
+  grouping certz-top {
+    description
+      "Grouping of Certz state paths";
+    container certz {
+      config false;
+      description
+        "Information relating to the active certificate and bundle/s as provided via Certz
+
+         State is provided by the gNSI Certz service, and can be changed using the gNSI.Certz.Rotate RPC";
+      leaf ssl-profile-id {
+        type string;
+        description
+          "The ID of this gRPC server's SSL profile as used by the gNSI Certz service";
+      }
+      container certificate {
+        description
+          "State relating to the active certificate provided via Certz";
+        uses artifact-common;
+      }
+      container trust-anchor {
+        description
+          "State relating to the active trust anchor provided via Certz
+
+           This is equivalent to the certificate authority bundle, and is the list of certificates used to validate clients in mTLS, and to validate servers in outbound TLS.";
+        uses artifact-common;
+      }
+      container crl {
+        description
+          "State relating to the active certificate revocation list provided via Certz
+
+           The list of certificates provided will not be used to validate mTLS or servers, even if those certificates exist within the trust anchor.";
+        uses artifact-common;
+      }
+    }
+  }
+
+  augment "/srl-system:system/srl-tls:tls/srl-tls:server-profile" {
+    if-feature "srl-feat:gnsi-certz";
+    uses certz-top;
+  }
+}

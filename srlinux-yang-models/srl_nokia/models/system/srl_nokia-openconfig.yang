@@ -1,0 +1,66 @@
+module srl_nokia-openconfig {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:oc-mgmt:openconfig";
+  prefix srl_nokia-openconfig;
+
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data
+     related to the OpenConfig schema";
+
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  grouping openconfig-top {
+    container openconfig {
+      if-feature "srl-feat:openconfig";
+      presence "Start OpenConfig management server";
+      description
+        "Top-level container for options relating to OpenConfig";
+      leaf admin-state {
+        description
+          "Enable or disable the OpenConfig management server
+
+           This will disable OpenConfig throughout the system, and bring any gRPC servers that use it operationally down.";
+        type srl-comm:admin-state;
+        must "(. = 'disable' or ../../../lldp)" {
+          error-message "OpenConfig can only be enabled if the lldp presence container is configured";
+        }
+      }
+      leaf oper-state {
+        config false;
+        description
+          "Indicates the operational state of the OpenConfig management server";
+        type srl-comm:oper-state;
+      }
+    }
+  }
+
+  augment "/srl-system:system/srl-system:management" {
+    srl-ext:first-released "22.6.1";
+    uses openconfig-top;
+  }
+}

@@ -1,0 +1,204 @@
+module srl_nokia-interfaces-nbr-virtual-ip-discovery {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:arp-nd:interfaces-nbr-virtual-ip-discovery";
+  prefix srl_nokia-if-ip-nbr-virtual-ip-discovery;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-interfaces-nbr {
+    prefix srl_nokia-if-ip-nbr;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing virtual ip discovery on IP subinterfaces.";
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping virtual-ip-discovery-global-statistics {
+    container statistics {
+      config false;
+      description
+        "Global statistics for Virtual IP discovery";
+      leaf out-total-probe-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of total probe packets transmitted for Virtual discovery.";
+      }
+    }
+  }
+
+  grouping virtual-ip-discovery-statistics {
+    container statistics {
+      config false;
+      description
+        "Statistics for the Virtual IP address";
+      leaf out-probe-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of probe packets transmitted for the Virtual IP discovery.";
+      }
+    }
+  }
+
+  grouping virtual-ipv4-discovery-top {
+    description
+      "Top-level configuration and state for virtual IPv4 discovery";
+    container virtual-ipv4-discovery {
+      if-feature "srl-feat:virtual-ip-discovery";
+      must "starts-with(../../../../srl_nokia-if:name,'irb')" {
+        error-message "Only supported on IRB subinterfaces";
+      }
+      presence "Enable Virtual IPv4 discovery on the subinterface";
+      description
+        "Enable Virtual IPv4 discovery on the subinterface and configure associated parameters
+
+         When enabled, the system will attempt to discover the configured virtual IPv4
+         addresses on the listed bridged subinterfaces.";
+      list address {
+        max-elements 640;
+        key "ipv4-address";
+        description
+          "The list of virtual IPv4 addresses to be discovered on the subinterface.";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "The virtual IPv4 address.";
+        }
+        leaf-list allowed-macs {
+          max-elements 10;
+          type srl_nokia-comm:unicast-mac-address;
+          description
+            "List of allowed mac addresses for a discovered virtual IP address.";
+        }
+        leaf probe-interval {
+          type uint32 {
+            range "0 | 5..86400";
+          }
+          default "0";
+          units "seconds";
+          description
+            "Configure the ARP probe interval at which the system sends an ARP request for the
+             virtual IPv4 address.
+
+             The default value of zero determines that the system sends an ARP Request for the
+             virtual IPv4 only when the address is configured. The creation of the ARP entry for
+             the virtual IPv4 address will in this case rely on the server sending a Gratuitous ARP
+             for the virtual IPv4 address. When the value is set to a non-zero interval, the system
+             sends a periodic ARP Request at the configured interval and irrespective of the ARP entry
+             being already created.";
+        }
+        leaf-list probe-bridged-subinterfaces {
+          max-elements 10;
+          type srl_nokia-comm:subinterface-all;
+          description
+            "Configure the list of bridged sub-interfaces on the associated MAC-VRF to which the ARP
+             probes are sent.";
+        }
+        uses virtual-ip-discovery-statistics;
+      }
+      uses virtual-ip-discovery-global-statistics;
+    }
+  }
+
+  grouping virtual-ipv6-discovery-top {
+    description
+      "Top-level configuration and state for virtual IPv6 discovery";
+    container virtual-ipv6-discovery {
+      if-feature "srl-feat:virtual-ip-discovery";
+      must "starts-with(../../../../srl_nokia-if:name,'irb')" {
+        error-message "Only supported on IRB subinterfaces";
+      }
+      presence "Enable Virtual IPv6 discovery on the subinterface";
+      description
+        "Enable Virtual IPv6 discovery on the subinterface and configure associated parameters
+
+         When enabled, the system will attempt to discover the configured virtual IPv6
+         addresses on the listed bridged subinterfaces.";
+      list address {
+        max-elements 640;
+        key "ipv6-address";
+        description
+          "The list of virtual IPv6 addresses to be discovered on the subinterface.";
+        leaf ipv6-address {
+          type srl_nokia-comm:ipv6-address;
+          description
+            "The virtual IPv6 address.";
+        }
+        leaf-list allowed-macs {
+          max-elements 10;
+          type srl_nokia-comm:unicast-mac-address;
+          description
+            "List of allowed mac addresses for a discovered virtual IP address.";
+        }
+        leaf probe-interval {
+          type uint32 {
+            range "0 | 5..86400";
+          }
+          default "0";
+          units "seconds";
+          description
+            "Configure the probe interval at which the system sends a Neighbor Solicitation (NS) for
+             the virtual IPv6 address.
+
+             The default value of zero determines that the system sends a NS for the
+             virtual IPv6 only when the address is configured. The creation of the Neighbor entry for
+             the virtual IPv6 address will in this case rely on the server sending an unsolicited
+             Neighbor Advertisement for the virtual IPv6 address. When the value is set to a non-zero interval, the system
+             sends a periodic NS at the configured interval and irrespective of the Neighbor entry
+             being already created.";
+        }
+        leaf-list probe-bridged-subinterfaces {
+          max-elements 10;
+          type srl_nokia-comm:subinterface-all;
+          description
+            "Configure the list of bridged sub-interfaces on the associated MAC-VRF to which the NS
+             probes are sent.";
+        }
+        uses virtual-ip-discovery-statistics;
+      }
+      uses virtual-ip-discovery-global-statistics;
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv4/srl_nokia-if-ip-nbr:arp" {
+    description
+      "Virtual IPv4 discovery configuration for the interface";
+    uses virtual-ipv4-discovery-top;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv6/srl_nokia-if-ip-nbr:neighbor-discovery" {
+    description
+      "Virtual IPv6 discovery configuration for the interface";
+    uses virtual-ipv6-discovery-top;
+  }
+}

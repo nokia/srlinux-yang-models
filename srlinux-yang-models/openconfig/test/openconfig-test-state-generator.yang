@@ -1,0 +1,65 @@
+module openconfig-test-state-generator {
+
+    yang-version "1";
+
+    namespace "urn:openconfig-test/state-generator";
+
+    prefix "openconfig-test-state-generator";
+
+    revision "2021-11-11" {
+        description "Initial revision";
+        reference "TBD";
+    }
+
+    grouping generation-params
+    {
+        leaf num-elements {
+            description "Number of state elements to create";
+            type uint32;
+        }
+        leaf element-data {
+            description "The value of the data field in each state element";
+            type string;
+        }
+        leaf rotate-items {
+            description "When set, this will go through each element and delete and add it back using the given period";
+            type uint32;
+            units "milliseconds";
+        }
+    }
+
+    grouping state-generator-top {
+        description "Top level grouping for state generator app";
+
+        container state-generator {
+            description "Top level enclosing container for state generator app";
+
+            container generation-params {
+                container config {
+                    uses generation-params;
+                }
+                container state {
+                    config false;
+                    uses generation-params;
+                }
+            }
+
+            container state {
+                config false;
+                list data {
+                    key id;
+
+                    leaf id {
+                        type uint32;
+                    }
+
+                    leaf data {
+                        type string;
+                    }
+                }
+            }
+        }
+    }
+
+    uses state-generator-top;
+}

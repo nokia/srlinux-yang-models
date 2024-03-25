@@ -1,0 +1,133 @@
+module srl_nokia-tools-gnoi-healthz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:tools-gnoi-healthz";
+  prefix srl_nokia-tools-gnoi-healthz;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing gNOI Healthz";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping common-tools-clear {
+    description
+      "Grouping for common component commands";
+    leaf clear {
+      description
+        "Clear healthz events for this component";
+      type empty;
+    }
+  }
+
+  grouping tools-gnoi-healthz-top {
+    container healthz {
+      description
+        "gNOI Healthz tools commands";
+      leaf clear {
+        description
+          "Clear all healthz events";
+        type empty;
+      }
+      choice component {
+        case chassis {
+          container chassis {
+            description
+              "Chassis component";
+            uses common-tools-clear;
+          }
+        }
+        case control {
+          container control {
+            description
+              "Control module component";
+            leaf slot {
+              mandatory true;
+              type string {
+                pattern 'A|B';
+              }
+              description
+                "Slot identifier for the control module";
+            }
+            uses common-tools-clear;
+          }
+        }
+        case fabric {
+          container fabric {
+            description
+              "Fabric module component";
+            leaf slot {
+              mandatory true;
+              type uint8;
+              description
+                "Numeric identifier for the fabric module";
+            }
+            uses common-tools-clear;
+          }
+        }
+        case fan-tray {
+          container fan-tray {
+            description
+              "Fan component";
+            leaf id {
+              mandatory true;
+              type uint8;
+              description
+                "Numeric identifier for the fan module";
+            }
+            uses common-tools-clear;
+          }
+        }
+        case linecard {
+          container linecard {
+            description
+              "Line card component";
+            leaf slot {
+              mandatory true;
+              type uint8;
+              description
+                "Numeric identifier for the line card";
+            }
+            uses common-tools-clear;
+          }
+        }
+        case power-supply {
+          container power-supply {
+            description
+              "Power supply component";
+            leaf id {
+              mandatory true;
+              type uint8;
+              description
+                "Numeric identifier for the power supply module";
+            }
+            uses common-tools-clear;
+          }
+        }
+        case transceiver {
+          container transceiver {
+            description
+              "Transceiver component";
+            leaf interface {
+              mandatory true;
+              type srl-comm:name;
+              description
+                "Interface name for the transceiver module";
+            }
+            uses common-tools-clear;
+          }
+        }
+      }
+    }
+  }
+}

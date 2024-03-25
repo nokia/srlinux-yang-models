@@ -1,0 +1,144 @@
+module srl_nokia-tools-igmp-snooping {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:igmp:tools-igmp-snooping";
+  prefix srl_nokia-tools-igmp-snooping;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for IGMP SNOOPING operational commands";
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping igmp-snooping-tools-top {
+    container igmp-snooping {
+      if-feature "srl_nokia-feat:igmp-snooping";
+      presence "Send operational commands to IGMP manager";
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Reset IGMP SNOOPING statistics for all interfaces";
+        }
+      }
+      container membership-groups {
+        leaf clear {
+          type empty;
+          description
+            "Clear all IGMP SNOOPING memberships for all interfaces";
+        }
+        list group {
+          key "group";
+          description
+            "Multicast group membership";
+          leaf group {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Multicast address";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear all IGMP SNOOPING memberships for this group on all interfaces";
+          }
+          list source {
+            key "source";
+            description
+              "Source addresses of multicast";
+            leaf source {
+              type srl_nokia-comm:ipv4-address;
+              description
+                "Source address of multicast";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all IGMP SNOOPING memberships for this source on all interfaces";
+            }
+          }
+        }
+      }
+      container querier {
+        leaf clear {
+          type empty;
+          description
+            "Clear all IGMP SNOOPING querier info on all interfaces";
+        }
+      }
+      list interface {
+        description
+          "List of IGMP SNOOPING interfaces";
+        key "interface-name";
+        leaf interface-name {
+          type srl_nokia-comm:subinterface-all;
+          description
+            "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+        }
+        container statistics {
+          leaf clear {
+            type empty;
+            description
+              "Reset IGMP SNOOPING statistics for this interface";
+          }
+        }
+        container membership-groups {
+          leaf clear {
+            type empty;
+            description
+              "Clear all IGMP SNOOPING memberships for this interface";
+          }
+          list group {
+            key "group";
+            description
+              "Multicast group membership";
+            leaf group {
+              type srl_nokia-comm:ipv4-address;
+              description
+                "Multicast address";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all IGMP SNOOPING memberships for this group on this interface";
+            }
+            list source {
+              key "source";
+              description
+                "Source addresses of multicast";
+              leaf source {
+                type srl_nokia-comm:ipv4-address;
+                description
+                  "Source address of multicast";
+              }
+              leaf clear {
+                type empty;
+                description
+                  "Clear all IGMP SNOOPING memberships for this source on this interface";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {
+    uses igmp-snooping-tools-top;
+  }
+}
