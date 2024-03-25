@@ -4,7 +4,7 @@
 
 ---
 
-Nokia SR Linux makes extensive use of structured data models. Each application, whether provided by Nokia or written by a user against the [NDK](https://learn.srlinux.dev/ndk/intro/), has a YANG model that defines its configuration and state.
+Nokia SR Linux makes extensive use of structured data models. Each application, whether provided by Nokia or written by a user against the [NDK](https://learn.srlinux.dev/ndk), has a YANG model that defines its configuration and state.
 
 With this design, the YANG data model is defined first, then the CLI, APIs, and show output formats are derived from it.
 
@@ -14,13 +14,13 @@ This repository contains only the source YANG files that one can use to build co
 
 ## Repository structure
 
-The main branch of this repository contains only the documentation. To reveal the yang files for a given release, select the tag that matches the SR Linux release version.
+The main branch of this repository contains only the documentation. To see the yang files for a given release, select the tag that matches the SR Linux release version.
 
-For instance, tag `v21.6.2` corresponds to the SR Linux release 21.6.2.
+For instance, the `v21.6.2` tag corresponds to the SR Linux release 21.6.2.
 
 ## Download
 
-There are several ways to download the yang files for a specific SR Linux release. The below examples are provided for `v21.6.2` version.
+There are several ways to download the yang files for a specific SR Linux release. The below examples are provided for the `v21.6.2` version.
 
 ### Clone with git
 
