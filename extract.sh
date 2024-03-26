@@ -33,6 +33,8 @@ checkout_orphan_branch() {
         echo "Branch $branch_name does not exist, creating..."
         git checkout --orphan $branch_name
         git rm -rf .
+        # Restore the LICENSE file
+        git checkout HEAD -- LICENSE
 
         # create a README.md file
         cat > README.md <<'EOF'
