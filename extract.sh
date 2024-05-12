@@ -21,7 +21,9 @@ checkout_orphan_branch() {
     # checkout to the main branch as a starting point
     git checkout main
 
-    local branch_name=v${SRL_VER%%.*}
+    # branch name includes first two parts of the version number
+    # e.g. for SRL_VER=24.3.2 it will be v24.3
+    local branch_name=v${SRL_VER%.*}
 
     # Fetch the latest references from the remote repository
     git fetch
