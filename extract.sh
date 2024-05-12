@@ -34,9 +34,11 @@ checkout_orphan_branch() {
         # If the branch does not exist, create and checkout an orphan branch
         echo "Branch $branch_name does not exist, creating..."
         git checkout --orphan $branch_name
+        # move the license file to the tmp so that we can move it back and not remove
+        mv LICENSE /tmp/LICENSE
         git rm -rf .
         # Restore the LICENSE file
-        git checkout HEAD -- LICENSE
+        mv /tmp/LICENSE LICENSE
 
         # create a README.md file
         cat > README.md <<'EOF'
