@@ -2961,7 +2961,11 @@ module srl_nokia-bgp {
 
   grouping bgp-label-instance {
     container bgp-label {
+      presence "Enable BGP labeled route support";
       if-feature "srl_nokia-feat:bgp-labeled-unicast or srl_nokia-feat:inter-as-nhsrr-ipvpn";
+      must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+        error-message "Labeled BGP configuration is only possible in network-instance of type default";
+      }
       container labeled-unicast {
         if-feature "srl_nokia-feat:label-management and srl_nokia-feat:bgp-labeled-unicast";
         leaf dynamic-label-block {

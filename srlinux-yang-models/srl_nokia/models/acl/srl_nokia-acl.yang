@@ -806,9 +806,6 @@ module srl_nokia-acl {
       description
         "An IPv4 packet matches this condition if its IP protocol type field matches the specified value";
       type srl_nokia-pkt-match-types:ip-protocol-type;
-      must "string(.) != '58' or string(.) = 'icmp6'" {
-        error-message "The protocol must not be icmp6 or 58";
-      }
       must "string(../../../../type) = 'ipv4'" {
         error-message "The acl-filter must be of type ipv4";
       }
@@ -942,9 +939,6 @@ module srl_nokia-acl {
       description
         "An IPv6 packet matches this condition if its first next-header field (in the IPv6 fixed header) contains the specified value";
       type srl_nokia-pkt-match-types:ip-protocol-type;
-      must "string(.) != '1' or string(.) = 'icmp'" {
-        error-message "The next-header must not be icmp or 1";
-      }
       must "string(../../../../type) = 'ipv6'" {
         error-message "The acl-filter must be of type ipv6";
       }
@@ -1370,6 +1364,7 @@ module srl_nokia-acl {
   grouping acl-interfaces-top {
     list interface {
       key "interface-id";
+      max-elements 16383;
       description
         "List of interfaces and subinterfaces referencing ACL filters.";
       leaf interface-id {
