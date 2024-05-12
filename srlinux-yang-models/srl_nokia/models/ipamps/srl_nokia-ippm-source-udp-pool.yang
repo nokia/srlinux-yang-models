@@ -1,0 +1,88 @@
+module srl_nokia-ippm-source-udp-pool {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:twamp:ippm-source-udp-pool";
+  prefix srl_nokia-ippm-source-udp-pool;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module contains configuration and state data for the IP PM reserved source UDP pool.  This pool is available to multiple IP PM
+     features.  The ports must be allocated to a function prior to that port being configurable under a specific function.";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+
+  grouping source-udp-allocation-configuration {
+    list port {
+      key "port-number";
+      description
+        "The UDP port list instance";
+      leaf port-number {
+        type srl_nokia-comm:port-number {
+          range "64374..64383";
+        }
+        description
+          "IPPM source UDP port pools port number";
+      }
+      leaf application-assignment {
+        type enumeration {
+          enum oam-pm-ip {
+            value 1;
+            if-feature "srl_nokia-feat:oam-pm-ip";
+          }
+          enum link-measurement {
+            value 2;
+            if-feature "srl_nokia-feat:link-measurement";
+          }
+          enum unassigned {
+            value 3;
+          }
+        }
+        default "unassigned";
+        description
+          "Optionally assign an available reserved UDP port to a specific IPPM application";
+      }
+      leaf in-use {
+        config false;
+        type boolean;
+        description
+          "Indicates if an application has a configured test that is referencing the UDP port
+
+           Value 'false' means no test or test session is referencing the UDP port. Value 'true' means a test
+           or test session is referencing the UDP.  The application assignment can only be changed when the
+           UDP in-use value is 'false'";
+      }
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    if-feature "srl_nokia-feat:link-measurement or srl_nokia-feat:oam-pm-ip";
+    container ippm {
+      presence "Allocation of the reserved UDP source ports to STAMP applications";
+      container source-udp-port-pools {
+        description
+          "The source-udp-port-pools allocation";
+        uses source-udp-allocation-configuration;
+      }
+    }
+  }
+}

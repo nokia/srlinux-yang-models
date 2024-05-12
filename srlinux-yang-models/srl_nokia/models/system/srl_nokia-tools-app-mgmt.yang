@@ -1,0 +1,107 @@
+module srl_nokia-tools-app-mgmt {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:app:tools-app-mgmt";
+  prefix srl_nokia-tools-app-mgmt;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands for app-management.";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping tools-app-mgmt-stats-top {
+    container statistics {
+      description
+        "Top-level grouping of operational commands related to application statistics";
+      leaf clear {
+        type empty;
+        description
+          "Clear statistics for this application instance";
+      }
+    }
+  }
+
+  grouping tools-app-mgmt-top {
+    container app-management {
+      presence "Configure tools system app-management";
+      description
+        "Operational commands related to app-management";
+      list application {
+        description
+          "List of all applications managed by the application manager";
+        key "name";
+        leaf name {
+          type string;
+          description
+            "Unique name of this application instance";
+        }
+        leaf stop {
+          type empty;
+          description
+            "Terminate the application instance gracefully";
+        }
+        leaf start {
+          type empty;
+          description
+            "Start the application instance";
+        }
+        container restart {
+          presence "Restart the application instance";
+          leaf warm {
+            type empty;
+            description
+              "Perform a warm restart of the application instance";
+          }
+          leaf cold {
+            type empty;
+            description
+              "Perform a cold restart of the application instance";
+          }
+          description
+            "Restart the application instance
+
+             The best restart that is supported by the application is used if neither 'warm' or 'cold' is specified. If 'warm' restart is supported that will be used, or 'cold' if 'warm' is unavailable.
+
+             A 'warm' restart will result in the application leaving its state in IDB during the restart, and recovering it post restart. This restart type results in less disruption to surrounding applications that would depend on the restarting applications state.
+
+             A 'cold' restart will result in a normal stop/start of the application, including the purging of its state in IDB.";
+        }
+        leaf reload {
+          type empty;
+          description
+            "Reload the configuration of the application instance";
+        }
+        leaf quit {
+          type empty;
+          description
+            "Terminate the application instance, requesting it to core dump";
+        }
+        leaf kill {
+          type empty;
+          description
+            "Terminate the application instance ungracefully";
+        }
+        uses tools-app-mgmt-stats-top;
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    uses tools-app-mgmt-top;
+  }
+}

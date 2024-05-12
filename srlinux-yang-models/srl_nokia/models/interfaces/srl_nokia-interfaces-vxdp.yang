@@ -1,0 +1,193 @@
+module srl_nokia-interfaces-vxdp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:interfaces-vxdp";
+  prefix srl-if-vxdp;
+
+  import srl_nokia-interfaces {
+    prefix srl-if;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This model describes configuration and state related to vXDP managed interfaces";
+
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping socket-state {
+    description
+      "State related to sockets";
+    leaf socket-id {
+      config false;
+      description
+        "Socket this interface is physically or logically attached to
+
+         This field is not populated for interfaces that have no socket preference - e.g. veth, tap.";
+      type uint8;
+    }
+    leaf-list socket-cpus {
+      config false;
+      description
+        "List of CPUs present on the socket this interface is attached to";
+      type uint16;
+    }
+  }
+
+  grouping linux-interface-top {
+    description
+      "Configuration and state for Linux interfaces";
+    container linux {
+      description
+        "Top-level container for configuration and state related to Linux interfaces";
+      leaf device-name {
+        description
+          "Slow path device name of this interface in Linux
+
+           This is the interface name that can be used to look at this interface within Linux.
+
+           If not specified it is auto-derived by the system.";
+        type string {
+          length "0..10";
+        }
+      }
+    }
+  }
+
+  grouping pci-device-metadata {
+    description
+      "State related to PCI devices";
+    leaf vendor-name {
+      type string;
+      description
+        "PCI device vendor";
+    }
+    leaf vendor-id {
+      description
+        "PCI device vendor ID
+
+         This field is the two byte vendor ID reported over PCI.";
+      type string;
+    }
+    leaf device-name {
+      type string;
+      description
+        "PCI device name";
+    }
+    leaf device-id {
+      description
+        "PCI device ID
+
+         This field is the two byte device ID reported over PCI.";
+      type string;
+    }
+  }
+
+  grouping pci-interface-top {
+    description
+      "State for PCI interfaces";
+    container pci {
+      config false;
+      description
+        "Top-level container for state related to PCI interfaces";
+      leaf address {
+        description
+          "PCI address of the interface, unpopulated if interface is not present on PCI
+
+           Unpopulated if interface is not available for PCI passthrough. This format follows the extended Domain:Bus:Device.Function (or BDF) notation. In most cases domain will be padded with four 0000's.";
+        type string {
+          pattern '[a-zA-Z0-9]{4}:[a-zA-Z0-9]{2}:[a-zA-Z0-9]{2}\.[a-zA-Z0-9]';
+        }
+      }
+      uses socket-state;
+      uses pci-device-metadata;
+      container subsystem {
+        description
+          "Top-level container for PCI subsystem state";
+        uses pci-device-metadata;
+      }
+    }
+  }
+
+  grouping vhost-interface-top {
+    description
+      "Configuration and state for vhost-user interfaces";
+    container vhost {
+      presence "Configure vhost-user interface parameters";
+      must "starts-with(../srl-if:name,'vhn')" {
+        error-message "Configuration valid only for vhn interfaces";
+      }
+      description
+        "Top-level container for vhost-user interface configuration and state";
+      leaf vhost-socket-path {
+        mandatory true;
+        description
+          "Filesystem path to the vhost-user socket";
+        type srl-comm:local-file;
+      }
+      leaf vhost-socket-mode {
+        description
+          "The vhost-user socket mode
+
+           If set to server, the socket is created by SR Linux, if set to client SR Linux will connect to a pre-existing socket.";
+        type enumeration {
+          enum server;
+          enum client;
+        }
+        default "client";
+      }
+      leaf vhost-socket-queues {
+        description
+          "The number of vhost-user queues
+
+           The number of queues are retrieved from the vhost-user socket if not configured. This should be set equivalent to the number of vCPUs allocated to the other end of the vhost-user interface. This value must not exceed the count of vCPUs provided as the vXDP cpu-set.";
+        type uint16 {
+          range "1..1024";
+        }
+      }
+      uses socket-state;
+    }
+  }
+
+  augment "/srl-if:interface" {
+    if-feature "srl-feat:platform-vsrl";
+    leaf uuid {
+      type srl-comm:uuid;
+      description
+        "The system-generated or user-configured UUID for the interface";
+    }
+    uses vhost-interface-top {
+      if-feature "srl-feat:disabled";
+    }
+    uses pci-interface-top;
+    uses linux-interface-top;
+  }
+
+  augment "/srl-if:interface/srl-if:subinterface" {
+    if-feature "srl-feat:platform-vsrl";
+    leaf uuid {
+      type srl-comm:uuid;
+      description
+        "The system-generated or user-configured UUID for the sub interface";
+    }
+  }
+}

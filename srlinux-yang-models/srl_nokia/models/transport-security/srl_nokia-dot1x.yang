@@ -1,0 +1,392 @@
+module srl_nokia-dot1x {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:dot1x:dot1x";
+  prefix srl_nokia-dot1x;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module models dot1x configuration under a interface or a sub-interface";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  typedef port-access-entity-port-control {
+    description
+      "Specifies if the port is forced authorized or it is authorized via IEEE802.1x procedures";
+    type enumeration {
+      enum force-unauthorized {
+        description
+          "Force the port into unauthorized state so no host can be allowed";
+      }
+      enum auto {
+        description
+          "The port is authorized via IEEE802.1x procedures
+
+           Auto means the port is unauthorized until it get authenticated via Radius server.";
+      }
+      enum force-authorized {
+        description
+          "Force to port into authorized state so it will allow all hosts";
+      }
+    }
+  }
+
+  grouping dot1x-port-config {
+    description
+      "IEEE802.1x port based configuration";
+    leaf authenticate-port {
+      type boolean;
+      default "true";
+      description
+        "Enable IEEE802.1X port control on an interface";
+    }
+    leaf port-control {
+      description
+        "IEEE802.1x authentication mode";
+      type port-access-entity-port-control;
+      default "force-authorized";
+    }
+    leaf authenticator-initiated {
+      description
+        "When true the authenticator sends an EAP-Request/EAP-Identity to the Supplicant";
+      type boolean;
+      default "true";
+    }
+    leaf host-mode {
+      description
+        "Allow for single or multiple hosts to communicate through an IEEE802.1X controlled port";
+      type enumeration {
+        enum single-host {
+          description
+            "Only single supplicant can communicate through the port
+
+             If the supplicant logs off or the port state is changed,
+             the port becomes unauthenticated.";
+        }
+        enum multi-host {
+          if-feature "srl_nokia-feat:dot1x-authenticator-mode-multi-host";
+          description
+            "Multiple hosts can communicate over a single port
+
+             Only the first supplicant is authenticated while
+             subsequent hosts have network access without having to
+             authenticate.";
+        }
+        enum multi-domain {
+          if-feature "srl_nokia-feat:dot1x-authenticator-mode-multi-domain";
+          description
+            "Allows for authentication of multiple clients individually on one authenticator port
+
+             By default all source MAC addresses are disallowed on the port.
+             When a host is authenticated the host's source mac address is allowed on the port.";
+        }
+      }
+    }
+    leaf reauthenticate-interval {
+      type uint16;
+      units "seconds";
+      description
+        "Enable periodic re-authentication of the device connected to this port
+
+         Send out a identity request once every unit seconds.
+         Setting a value of 0 disables re-authentication on this port.";
+    }
+    leaf retransmit-interval {
+      type uint16;
+      units "seconds";
+      description
+        "How long the interface waits for a response before restarting authentication
+
+         How long the interface waits for a response from an EAPoL Start before restarting 802.1X authentication on the port.";
+    }
+    leaf quiet-period {
+      type uint16 {
+        range "1..3600";
+      }
+      units "seconds";
+      default "60";
+      description
+        "Time to wait after a failed session when no EAPoL frames are processed";
+    }
+    leaf supplicant-timeout {
+      type uint16 {
+        range "1..300";
+      }
+      units "seconds";
+      default "30";
+      description
+        "Time to wait for a response from the supplicant before restarting the authentication process";
+    }
+    leaf max-requests {
+      type uint16 {
+        range "1..10";
+      }
+      default "2";
+      description
+        "Maximum number of times an EAPoL request packet is retransmitted to the supplicant before the authentication session fails";
+    }
+    leaf max-authentication-requests {
+      type uint16 {
+        range "1..10";
+      }
+      default "2";
+      description
+        "Maximum number of RADIUS retries before the authentication fails
+
+         In the case of challenge response, if the supplicant does not respond
+         the authenticator will retransmit the challenge without going to the radius server.
+         This parameter will be used toward supplicant as well when the challenge respond is
+         dropped.";
+    }
+    container multi-domain-allowed-source-macs {
+      description
+        "Enter the allowed-source-macs context for per-host multi-domain mode
+
+         This command is only relevant only to per-host mode of multi-domain mode.
+         The source mac under this list will be allowed in any port state,
+         even if the port is forced unauthorized or port is set to auto
+         and the host with this source mac address is not authorized.";
+      list mac-address {
+        key "mac";
+        description
+          "Add a list entry for source mac-address";
+        leaf mac {
+          type srl_nokia-comm:mac-address;
+          description
+            "Source MAC address of a host that is authorized to use this interface";
+        }
+      }
+    }
+  }
+
+  grouping radius-config {
+    leaf radius-policy {
+      type string;
+      description
+        "RADIUS policy used for 802.1x authentication";
+    }
+  }
+
+  grouping dot1x-statistics {
+    description
+      "Container for dot1x protocol statistics";
+    leaf total-in-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "System or interface level total incoming dot1x frames
+
+         Cumulative of all Ethernet interfaces or specific interface including the tunneled, discarded and copy-to-cpu dot1x frames.";
+    }
+    leaf total-in-discarded-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "System or interface level incoming do1x discarded frames
+
+         Cumulative of all Ethernet interfaces or specific interface including all the discarded dot1x frames.";
+    }
+    leaf in-tunneled-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "System or interface level incoming 802.1x tunneled frames
+
+         Cumulative of all Ethernet interfaces including all the tunneled 802.1x frames.
+         802.1x frames are identified by a destination MAC value of 01:80:c2:00:00:03 and EtherType value of 0x888e.";
+    }
+    leaf in-trap-to-cpu-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "System or interface level incoming 802.1x frames copied to CPU
+
+         Cumulative of all Ethernet interfaces including all the copy-to-cpu 802.1x frames.
+         802.1x frames are identified by a destination MAC value of 01:80:c2:00:00:03 and EtherType value of 0x888e.";
+    }
+    leaf last-clear {
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Timestamp of the last time the 802.1x counters were cleared";
+    }
+  }
+
+  grouping dot1x-interface-statistics {
+    description
+      "Grouping containing statistics for dot1x protocols per interface";
+    container statistics {
+      if-feature "srl_nokia-feat:dot1x-interface-stats";
+      config false;
+      uses dot1x-statistics;
+    }
+  }
+
+  grouping dot1x-system-statistics {
+    description
+      "Grouping containing statistics for dot1x protocols per system";
+    container statistics {
+      config false;
+      uses dot1x-statistics;
+    }
+  }
+
+  grouping dot1x-tunneling {
+    description
+      "Tunneling of dot1x on this interface
+
+       By default all dot1x packets on this interface is extracted to CPM.
+       Note this configuration can be overwritten by l2cp-transparency.
+       If l2cp-transparency tunnel-all-l2cp is enabled setting the dot1x-tunneling to false will be overwritten.";
+    container tunnel {
+      leaf tunnel-all {
+        if-feature "srl_nokia-feat:dot1x-tunnel-all";
+        description
+          "tunnel all dot1x PDUs through the interface
+
+           tunnel untagged and tagged dot1x PDUs.";
+        type boolean;
+        default "false";
+      }
+      leaf untagged {
+        if-feature "srl_nokia-feat:dot1x-tunnel-not-all";
+        description
+          "tunnel untagged dot1x PDUs through the interface";
+        type boolean;
+        default "false";
+      }
+      leaf single-tagged {
+        if-feature "srl_nokia-feat:dot1x-tunnel-not-all";
+        description
+          "tunnel single tagged dot1x PDUs through the interface";
+        type boolean;
+        default "true";
+      }
+      leaf double-tagged {
+        if-feature "srl_nokia-feat:dot1x-tunnel-not-all";
+        description
+          "tunnel double tagged dot1x PDUs through the interface";
+        type boolean;
+        default "true";
+      }
+      uses dot1x-interface-statistics;
+    }
+  }
+
+  grouping dot1x-sessions-state {
+    description
+      "Grouping for IEEE802.1X sessions State data";
+    leaf status {
+      description
+        "The status of the 802.1X session for a device";
+      type enumeration {
+        enum AUTHENTICATED {
+          description
+            "The session has succesfully completed one of the authentication methods allowed on the port";
+        }
+        enum AUTHENTICATING {
+          description
+            "The session is in the process of authenticating";
+        }
+        enum FAILED_AUTHENTICATION {
+          description
+            "An authentication has been attempted for this session, and has failed";
+        }
+        enum SUPPLICANT_TIMEOUT {
+          description
+            "An authentication has been attempted for this session with out a supplicant response";
+        }
+      }
+    }
+  }
+
+  grouping dot1x-sessions-top {
+    description
+      "Top-level grouping for 802.1X sessions.";
+    container authenticated-sessions {
+      presence "dot1x authenticated sessions";
+      description
+        "Top level container for authenticated sessions state data";
+      list authenticated-session {
+        key "mac";
+        config false;
+        description
+          "The list of authenticated sessions on this device";
+        leaf mac {
+          type leafref {
+            path "../hosts/mac";
+          }
+          description
+            "Authenticated device source MAC address";
+        }
+        container hosts {
+          config false;
+          description
+            "Top level state container for 802.1X";
+          leaf mac {
+            type srl_nokia-comm:mac-address;
+            description
+              "Host MAC address";
+          }
+          uses dot1x-sessions-state;
+        }
+      }
+    }
+  }
+
+  grouping dot1x-authenticator {
+    container authenticator {
+      description
+        "configure dot1x for an authenticator";
+      if-feature "srl_nokia-feat:dot1x-authenticator";
+      uses dot1x-port-config;
+      uses radius-config;
+      uses dot1x-sessions-top;
+    }
+  }
+
+  grouping dot1x-top {
+    container dot1x {
+      presence "Configures the dot1x parameters";
+      description
+        "dot1x configuration";
+      uses dot1x-tunneling;
+      uses dot1x-authenticator;
+    }
+  }
+
+  grouping system-dot1x-top {
+    description
+      "Top level grouping for system dot1x";
+    container dot1x {
+      config false;
+      description
+        "Enclosing container for system level dot1x";
+      uses dot1x-system-statistics;
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:ethernet" {
+    if-feature "srl_nokia-feat:dot1x";
+    uses dot1x-top;
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl_nokia-feat:dot1x-system";
+    uses system-dot1x-top;
+  }
+}
