@@ -265,7 +265,7 @@ module srl_nokia-interfaces {
 
          The 7220 D3 supports 4x10 and 4x25 breakout on ports 3-33.
          The 7220 D3L supports 4x10 and 4x25 breakout on ports 1-31.
-         The 7220 H3 supports 2x100/4x100 breakout on ports 3-34.
+         The 7220 H3 supports 4x10, and 2x100/4x100 breakout on ports 3-34.
          The 7220 H4 supports 4x100 breakout on ports 1-64.
          The 7220 D4 supports 4x100 breakout on ports 30-36.
          The 7220 D4 supports 4x25 breakout on ports 9, 15, 16 and 30-36.
@@ -303,7 +303,7 @@ module srl_nokia-interfaces {
           "The speed of each breakout port";
         type enumeration {
           enum 10G {
-            if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-fx2-zq or srl_nokia-feat:platform-fx1-sdd";
+            if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-7220-h3 or srl_nokia-feat:platform-fx2-zq or srl_nokia-feat:platform-fx1-sdd";
           }
           enum 25G {
             if-feature "srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:platform-fx2-zq or srl_nokia-feat:platform-fx1-sdd or ((srl_nokia-feat:platform-7220-h3) and srl_nokia-feat:future-0-0)";
@@ -804,7 +804,7 @@ module srl_nokia-interfaces {
            lif-<lif_name>
            enp<bus>s<dev>f<fn>, bus=0..255, dev=0..31, fn=0..7
            vhn-<vhn_name>
-           lag<N>, N=1..128 [note1]
+           lag<N>, N=1..1000 [note1]
            lo<N>, N=0..255
            mgmt0
            mgmt0-standby
@@ -818,7 +818,14 @@ module srl_nokia-interfaces {
            <mda>=mda id {a,b,c,d}
            <port>=port id {1,2,3,..}
 
-           [note1] N=1..32 for 7220-D1. N=1..64 for 7220-D2, 7220-D3, 7220-D5. N=1..127 for 7220-H2, 7220-H3.";
+           [note1] The maximum number of LAGs per platform is as follows:
+            D1: 32
+            D2-D3: 128
+            D4-D5: 64
+            H2-H3: 127
+            H4: 255
+            IXR: 128
+            vSRL: 8";
       }
       uses interface-phys-config;
       leaf ifindex {

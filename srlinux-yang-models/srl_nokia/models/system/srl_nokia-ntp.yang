@@ -15,6 +15,9 @@ module srl_nokia-ntp {
   import srl_nokia-timezone {
     prefix srl-tz;
   }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
 
   organization
     "Nokia";
@@ -45,9 +48,20 @@ module srl_nokia-ntp {
       "SRLinux 19.11.1";
   }
 
+  typedef ntp-host
+  {
+    type union {
+      type srl-comm:ipv4;
+      type srl-comm:ipv6;
+      type srl-comm:domain-name;
+    }
+    description
+      "The ntp-host type represents either an IP address or a DNS domain name.";
+  }
+
   grouping server-entry {
     leaf address {
-      type srl-comm:host;
+      type ntp-host;
       description
         "Domain or IP address of the NTP server
 
@@ -116,9 +130,7 @@ module srl_nokia-ntp {
         "Dispersion (epsilon) represents the maximum error inherent in the measurement";
     }
     leaf poll-interval {
-      type uint16 {
-        range "16..3600";
-      }
+      type uint32;
       units "seconds";
       config false;
       description

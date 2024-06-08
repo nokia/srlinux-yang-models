@@ -279,6 +279,12 @@ module srl_nokia-aaa {
         description
           "System generated session ID";
       }
+      leaf spiffe-id {
+        if-feature "srl-feat:aaa-spiffe-id";
+        type string;
+        description
+          "SPIFFE ID linked to the session";
+      }
       leaf service-name {
         type string;
         description
@@ -481,9 +487,7 @@ module srl_nokia-aaa {
     description
       "Configuration data for local roles";
     leaf rolename {
-      type srl-comm:name {
-        length "1..32";
-      }
+      type srl-comm:name;
       description
         "Assigned rolename for this role";
     }
@@ -808,6 +812,34 @@ module srl_nokia-aaa {
         "Set the idle timeout of all CLI sessions
 
          After the timeout is reached, the session is disconnected from the system.";
+    }
+    container dynamic-spiffe {
+      if-feature "srl-feat:aaa-spiffe-id";
+      description
+        "Dynamic SPIFFE settings";
+      leaf allow {
+        type boolean;
+        default "false";
+        description
+          "Accept clients with SPIFFE ID values that are not configured under any local user
+
+           With this behaviour enabled, when a client using a client certificate containing SPIFFE ID connects the system
+           will accept the client. Otherwise the SPIFFE ID must be configured under some local user. Even if enabled, any
+           client using local user's configured SPIFFE ID will use that user's identity in all operations";
+      }
+      leaf-list role {
+        max-elements 32;
+        type leafref {
+          path "../../../authorization/role/rolename";
+        }
+        ordered-by user;
+        description
+          "List of roles to assign to all dynamic SPIFFE clients
+
+           Dynamic SPIFFE clients are clients authenticated using a client certificate containing SPIFFE ID value that
+           is not configured under any local user. The most specific rule for a particular role takes precedence. Rules
+           from all user roles are evaluated together, most permissive privilege taking precedence.";
+      }
     }
   }
 
