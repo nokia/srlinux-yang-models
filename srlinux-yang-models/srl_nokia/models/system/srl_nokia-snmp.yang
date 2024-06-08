@@ -1,0 +1,390 @@
+module srl_nokia-snmp {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/snmp";
+  prefix srl_nokia-snmp;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines SNMP configuration and state";
+
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  typedef engine-id {
+    type srl-comm:hex-string {
+      pattern '([0-9a-fA-F]){2}(:([0-9a-fA-F]){2}){4,31}';
+    }
+    description
+      "The engine ID specified as a list of colon-specified
+       hexadecimal octets, e.g., '80:00:02:b8:04:61:62:63'.";
+    reference
+      "RFC 3411: An Architecture for Describing Simple Network
+         Management Protocol (SNMP) Management Frameworks";
+  }
+
+  typedef auth-protocol {
+    type enumeration {
+      enum hmac-md5-96 {
+        description
+          "MD5";
+        reference
+          "RFC3414";
+      }
+      enum hmac-sha1-96 {
+        description
+          "SHA";
+        reference
+          "RFC3414";
+      }
+      enum hmac-sha2-224 {
+        description
+          "SHA-224";
+        reference
+          "RFC7630";
+      }
+      enum hmac-sha2-256 {
+        description
+          "SHA-256";
+        reference
+          "RFC7630";
+      }
+      enum hmac-sha2-384 {
+        description
+          "SHA-384";
+        reference
+          "RFC7630";
+      }
+      enum hmac-sha2-512 {
+        description
+          "SHA-512";
+        reference
+          "RFC7630";
+      }
+    }
+    description
+      "Authentication protocol used for authenticated SNMPv3 messages";
+  }
+
+  typedef priv-protocol {
+    type enumeration {
+      enum cbc-des {
+        description
+          "DES";
+        reference
+          "RFC3414";
+      }
+      enum cfb128-aes-128 {
+        description
+          "AES";
+        reference
+          "RFC3826";
+      }
+      enum cfb128-aes-192 {
+        description
+          "AES-192";
+        reference
+          "draft-blumenthal-aes-usm-04";
+      }
+      enum cfb128-aes-256 {
+        description
+          "AES-256";
+        reference
+          "draft-blumenthal-aes-usm-04";
+      }
+    }
+    description
+      "Privacy protocol used for encrypted SNMPv3 messages";
+  }
+
+  typedef security-level {
+    type enumeration {
+      enum no-auth-no-priv;
+      enum auth-no-priv;
+      enum auth-priv;
+    }
+    description
+      "Security level used for SNMPv3 messages";
+  }
+
+  grouping community-entry {
+    leaf name {
+      type srl-comm:name-without-space;
+      description
+        "Unique name for the SNMP community.";
+    }
+    leaf description {
+      type srl-comm:description;
+      description
+        "Description for the SNMP community";
+    }
+    leaf community {
+      description
+        "SNMPv1 and SNMPv2c community";
+      type srl-comm:name-without-space {
+        srl-ext:generated-class-name "SecretKey";
+      }
+      mandatory true;
+    }
+    leaf-list prefix-list {
+      description
+        "Prefixes where this community can be used, both IPv4 and IPv6 addresses.
+
+         A /32 or /128 mask can be used to limit it to a single ip-address";
+      type srl-comm:ip-prefix;
+      ordered-by system;
+      max-elements 16;
+    }
+  }
+
+  grouping community-interface {
+    list community-entry {
+      key "name";
+      description
+        "List of configured SNMPv1 and v2 communities";
+      uses community-entry;
+      must "../security-level = 'no-auth-no-priv'" {
+        error-message "SNMP communities can only be used in an access-group when security-level is set to 'no-auth-no-priv'";
+      }
+    }
+  }
+
+  grouping community-interface-nolist {
+    leaf community {
+      type srl-comm:name {
+        srl-ext:generated-class-name "SecretKey";
+      }
+    }
+  }
+
+  grouping user-entry {
+    leaf name {
+      description
+        "Name of the SNMPv3 user";
+      type srl-comm:name-without-space;
+    }
+    leaf description {
+      type srl-comm:description;
+      description
+        "Description for this user";
+    }
+    container authentication {
+      description
+        "Authentication parameters for this user.";
+      leaf protocol {
+        type auth-protocol;
+        default "hmac-md5-96";
+        description
+          "Authentication protocol used by this user.";
+      }
+      leaf password {
+        type string {
+          srl-ext:generated-class-name "SecretKey";
+          length "8..255";
+        }
+        mandatory true;
+        description
+          "The user authentication password, supplied either as cleartext or as a hashed value.
+
+           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+           If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+      }
+    }
+    container privacy {
+      description
+        "Privacy parameters for this user.";
+      leaf protocol {
+        type priv-protocol;
+        default "cbc-des";
+        description
+          "Privacy protocol used by this user.";
+        must "not((../../authentication/protocol = 'hmac-md5-96') and (../../privacy/protocol = 'cfb128-aes-192'))" {
+          error-message "Combination of hmac-md5-96 and cfb128-aes-192 isn't valid : authentication hash hasn't enough bytes (16) to be used as encryption key (24)";
+        }
+        must "not((../../authentication/protocol = 'hmac-md5-96') and (../../privacy/protocol = 'cfb128-aes-256'))" {
+          error-message "Combination of hmac-md5-96 and cfb128-aes-256 isn't valid : authentication hash hasn't enough bytes (16) to be used as encryption key (32)";
+        }
+        must "not((../../authentication/protocol = 'hmac-sha1-96') and (../../privacy/protocol = 'cfb128-aes-192'))" {
+          error-message "Combination of hmac-sha1-96 and cfb128-aes-192 isn't valid : authentication hash hasn't enough bytes (20) to be used as encryption key (24)";
+        }
+        must "not((../../authentication/protocol = 'hmac-sha1-96') and (../../privacy/protocol = 'cfb128-aes-256'))" {
+          error-message "Combination of hmac-sha1-96 and cfb128-aes-256 isn't valid : authentication hash hasn't enough bytes (20) to be used as encryption key (32)";
+        }
+        must "not((../../authentication/protocol = 'hmac-sha2-224') and (../../privacy/protocol = 'cfb128-aes-256'))" {
+          error-message "Combination of hmac-sha2-224 and cfb128-aes-256 isn't valid : authentication hash hasn't enough bytes (28) to be used as encryption key (32)";
+        }
+      }
+      leaf password {
+        type string {
+          srl-ext:generated-class-name "SecretKey";
+          length "8..255";
+        }
+        description
+          "The user privacy password, supplied either as cleartext or as a hashed value. If not provided, authentication/password will be used.
+
+            If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+            If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+      }
+    }
+  }
+
+  grouping user-interface {
+    list security-entry {
+      key "name";
+      description
+        "List of configured SNMPv3 users";
+      uses user-entry;
+    }
+  }
+
+  grouping access-group-entry {
+    leaf name {
+      type srl-comm:name-without-space;
+      description
+        "Name of the SNMP access-group";
+    }
+    leaf description {
+      type srl-comm:description;
+      description
+        "Description for this access-group";
+    }
+    leaf admin-state {
+      type srl-comm:admin-state;
+      default "enable";
+      description
+        "Enables the SNMP access-group";
+    }
+    uses community-interface;
+    uses user-interface;
+    leaf security-level {
+      type security-level;
+      mandatory true;
+      description
+        "Minimum security level required for this access-group.";
+    }
+  }
+
+  grouping access-group-interface {
+    list access-group {
+      if-feature "srl_nokia-feat:snmp-v3";
+      description
+        "List of configured SNMP access-groups";
+      key "name";
+      uses access-group-entry;
+    }
+  }
+
+  grouping network-instance-entry-config {
+    leaf admin-state {
+      type srl-comm:admin-state;
+      description
+        "Enables the SNMP server in this network-instance";
+    }
+    leaf-list source-address {
+      type srl-comm:ip-address;
+      default "::";
+      description
+        "List of IP addresses for the SNMP server to listen on within the network-instance";
+      max-elements 16;
+    }
+    leaf engine-id {
+      if-feature "srl_nokia-feat:snmp-v3";
+      type engine-id;
+      description
+        "The local SNMP engine's administratively assigned unique identifier.
+
+         If this leaf is not set, the device automatically calculates an engine ID,
+         as described in RFC 3411.";
+    }
+  }
+
+  grouping network-instance-entry-state {
+    leaf oper-state {
+      type srl-comm:oper-state;
+      config false;
+      description
+        "Details the operational state of the SNMP server";
+    }
+  }
+
+  grouping network-instance-entry {
+    leaf name {
+      type leafref {
+        path "/srl-netinst:network-instance/srl-netinst:name";
+      }
+      must 'not(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:mac-vrf")' {
+        error-message "SNMP server cannot be started in a network-instance of type 'mac-vrf'";
+      }
+      description
+        "Reference to a configured network-instance";
+    }
+    uses network-instance-entry-config;
+    uses network-instance-entry-state;
+  }
+
+  grouping network-instance-interface {
+    list network-instance {
+      description
+        "List of network-instances to run an SNMP server in";
+      key "name";
+      max-elements 5;
+      uses network-instance-entry;
+    }
+  }
+
+  grouping snmp-top {
+    container snmp {
+      description
+        "Top-level container for SNMP configuration and state";
+      presence "Configure SNMP";
+      uses community-interface-nolist;
+      uses access-group-interface;
+      uses network-instance-interface;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses snmp-top;
+  }
+}

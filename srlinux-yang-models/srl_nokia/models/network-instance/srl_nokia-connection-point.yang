@@ -1,0 +1,42 @@
+module srl_nokia-connection-point {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/network-instance/connection-point";
+  prefix srl_nokia-connection-point;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of connection-point that can be configured under a  network-instance.";
+
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping connection-point-top {
+    list connection-point {
+      if-feature "srl-feat:connection-point";
+      must "(../type = 'srl_nokia-netinst:mac-vrf' or ../type = 'srl_nokia-netinst:vpws')" {
+        error-message "Connection-point configuration is only possible on network-instance of type mac-vrf or vpws";
+      }
+      description
+        "Connection-point information.";
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "A unique name identifying the connection-point";
+      }
+    }
+  }
+}

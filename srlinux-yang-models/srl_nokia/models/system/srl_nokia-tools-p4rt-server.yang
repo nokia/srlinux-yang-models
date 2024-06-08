@@ -1,0 +1,63 @@
+module srl_nokia-tools-p4rt-server {
+  yang-version 1.1;
+  namespace "urn:srl_nokia/tools-p4rt-server";
+  prefix srl-tools-p4rt-server;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines tools related to the P4Runtime server";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping p4rt-tools-common {
+    leaf disconnect {
+      description
+        "Disconnect this client from the server";
+      type empty;
+    }
+  }
+
+  grouping p4rt-server-top {
+    container p4rt-server {
+      presence "Configure tools p4rt-server";
+      if-feature "srl-feat:p4rt";
+      description
+        "Tools relating to the P4Runtime service";
+      list client {
+        description
+          "List of active P4Runtime client sessions";
+        key "id";
+        leaf id {
+          type uint32 {
+            range "0..4294967295";
+          }
+          description
+            "System generated ID for for the client";
+        }
+        uses p4rt-tools-common;
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    srl-ext:first-released "22.3.1";
+    uses p4rt-server-top;
+  }
+}
