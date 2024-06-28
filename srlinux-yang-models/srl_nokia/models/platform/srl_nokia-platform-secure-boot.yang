@@ -154,16 +154,16 @@ module srl_nokia-platform-secure-boot {
     leaf modification-dataset-db-conflict {
       type boolean;
       description
-        "The authorized databse (db) conflict status between the modification dataset and the current running image
-         true = conflict
-         false = no conflict";
+        "The authorized database (db) conflict status between the modification dataset and the current running image
+        true = conflict
+        false = no conflict";
     }
     leaf modification-dataset-dbx-conflict {
       type boolean;
       description
-        "The forbidden databse (dbx) conflict status between the modification dataset and the current running image
-         true = conflict
-         false = no conflict";
+        "The forbidden database (dbx) conflict status between the modification dataset and the current running image
+        true = conflict
+        false = no conflict";      
     }
     leaf modification-dataset-digest {
       type binary;
@@ -178,6 +178,8 @@ module srl_nokia-platform-secure-boot {
       description
         "State information related to Secure Boot";
       list control {
+        description
+          "Secure Boot states related to control modules";
         key "slot";
         leaf slot {
           type string {
@@ -227,6 +229,7 @@ module srl_nokia-platform-secure-boot {
   }
 
   augment "/srl-platform:platform/srl-platform:trust" {
+    if-feature "srl-feat:secure-boot";
     uses secure-boot-state-top;
   }
 }

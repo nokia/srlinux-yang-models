@@ -107,6 +107,22 @@ module srl_nokia-bgp {
       "Integer indicating a percentage value";
   }
 
+  typedef cluster-id-type {
+    type union {
+      type uint32 {
+        range "1..max" {
+          error-message "cluster-id cannot be 0";
+        }
+      }
+      type srl_nokia-comm:dotted-quad {
+        pattern '^[0.]+$' {
+          modifier invert-match;
+          error-message "cluster-id must be IPv4 address different than 0.0.0.0";
+        }
+      }
+    }
+  }
+
   grouping bgp-policy {
     leaf export-policy {
       description
@@ -933,10 +949,7 @@ module srl_nokia-bgp {
         leaf cluster-id {
           description
             "The cluster-id to insert into the CLUSTER_LIST attribute when reflecting routes received by or sent to each client in the peer-group. The default is inherited from instance level configuration.";
-          type union {
-            type uint32;
-            type srl_nokia-comm:dotted-quad;
-          }
+          type cluster-id-type;
         }
       }
       container send-community {
@@ -2394,10 +2407,7 @@ module srl_nokia-bgp {
         leaf cluster-id {
           description
             "The cluster-id to insert into the CLUSTER_LIST attribute when reflecting routes received by or sent to this client. The default is inherited from group or instance level configuration.";
-          type union {
-            type uint32;
-            type srl_nokia-comm:dotted-quad;
-          }
+          type cluster-id-type;
         }
       }
       container send-community {
@@ -2773,9 +2783,6 @@ module srl_nokia-bgp {
             type identityref {
               base srl_nokia-comm:bgp-next-hop-resolution-tunnel-type;
             }
-            must "not(. = 'vxlan' or . = 'ip-in-ip')" {
-              error-message "unsupported resolving tunnel";
-            }
           }
           uses color-aware-next-hop-resolution {
             if-feature "srl_nokia-feat:bgp-next-hop-resolution-tag or srl_nokia-feat:segment-routing-colored-te-policies";
@@ -2804,9 +2811,6 @@ module srl_nokia-bgp {
               "List of allowed tunnel types";
             type identityref {
               base srl_nokia-comm:bgp-next-hop-resolution-tunnel-type;
-            }
-            must "not(. = 'vxlan' or . = 'ip-in-ip')" {
-              error-message "unsupported resolving tunnel";
             }
           }
           uses color-aware-next-hop-resolution {
@@ -2849,7 +2853,7 @@ module srl_nokia-bgp {
             type identityref {
               base srl_nokia-comm:bgp-next-hop-resolution-tunnel-type;
             }
-            must "not(. = 'vxlan' or . = 'ip-in-ip' or . = 'bgp')" {
+            must "not(. = 'bgp')" {
               error-message "unsupported resolving tunnel";
             }
           }
@@ -2886,7 +2890,7 @@ module srl_nokia-bgp {
             type identityref {
               base srl_nokia-comm:bgp-next-hop-resolution-tunnel-type;
             }
-            must "not(. = 'vxlan' or . = 'ip-in-ip' or . = 'bgp')" {
+            must "not(. = 'bgp')" {
               error-message "unsupported resolving tunnel";
             }
           }
@@ -3407,7 +3411,7 @@ module srl_nokia-bgp {
            Weighted ECMP weights are normalized based on this number of hash buckets.";
         must '. <= 64' {
           error-message "Valid range for max-ecmp-hash-buckets-per-next-hop-group:[1..64] ";
-          srl_nokia-ext:if-feature "srl_nokia-feat:future-0-0";
+          srl_nokia-ext:if-feature "srl_nokia-feat:fpcx";
         }
         must '. <= 128' {
           error-message "Valid range for max-ecmp-hash-buckets-per-next-hop-group:[1..128] ";
@@ -3831,10 +3835,7 @@ module srl_nokia-bgp {
         leaf cluster-id {
           description
             "The cluster-id to insert into the CLUSTER_LIST attribute when reflecting routes received by or sent to clients in this scope of this container. The default is the router-id.";
-          type union {
-            type uint32;
-            type srl_nokia-comm:dotted-quad;
-          }
+          type cluster-id-type;
         }
       }
       uses segment-routing;
