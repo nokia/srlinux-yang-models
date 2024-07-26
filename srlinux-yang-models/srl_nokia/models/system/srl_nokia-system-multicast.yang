@@ -1,0 +1,108 @@
+module srl_nokia-system-multicast {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:system-multicast";
+  prefix srl_nokia-system-multicast;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines system multicast and operational state data.";
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  typedef multicast-id-user-type {
+    type enumeration {
+      enum mac-vrf {
+        value 1;
+      }
+      enum vxlan-interface {
+        value 2;
+      }
+      enum l2-proxy-arp-nd {
+        value 3;
+      }
+      enum mfib {
+        value 4;
+      }
+      enum mac-vrf-bgp-evpn {
+        value 5;
+      }
+    }
+    description
+      "type of multicast ids users in the system";
+  }
+
+  grouping multicast-id-usage-common {
+    leaf current-usage {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The total number of multicast ids that are in use on the system.";
+      srl_nokia-ext:show-importance "high";
+    }
+    leaf total-pending {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The total number of multicast ids pending allocation on the system.";
+      srl_nokia-ext:show-importance "high";
+    }
+  }
+
+  grouping multicast-id-usage-top {
+    container statistics {
+      config false;
+      leaf maximum-ids {
+        config false;
+        type int32;
+        description
+          "Maximum number of multicast ids available in the system.";
+      }
+      uses multicast-id-usage-common;
+      list multicast-id-user-type {
+        key "user";
+        description
+          "the type of the user of multicast id in the system.";
+        leaf user {
+          type multicast-id-user-type;
+          srl_nokia-ext:show-importance "high";
+        }
+        uses multicast-id-usage-common;
+      }
+    }
+  }
+
+  grouping multicast-id-top {
+    container multicast-ids {
+      description
+        "system multicast id information";
+      uses multicast-id-usage-top;
+    }
+  }
+
+  grouping multicast-top {
+    container multicast {
+      description
+        "system multicast information";
+      uses multicast-id-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses multicast-top;
+  }
+}

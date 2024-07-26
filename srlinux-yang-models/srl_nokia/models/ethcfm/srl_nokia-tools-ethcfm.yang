@@ -1,0 +1,299 @@
+module srl_nokia-tools-ethcfm {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:ethcfm:tools-ethcfm";
+  prefix srl_nokia-tools-ethcfm;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-ethcfm-types {
+    prefix srl_nokia-ethcfm-types;
+  }
+  import srl_nokia-tools-oam {
+    prefix srl_nokia-tools-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines the tools commands to start Ethernet CFM on-demand tests and clear operational state.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping eth-cfm-test-target {
+    leaf target {
+      description
+        "Target MAC address or MEP ID or multicast keyword for the test
+
+         The multicast enumeration will be replaced with a Class 1 MAC address in the form 01:80:c2:00:00:3x.
+         Where x = the domain level.";
+      type union {
+        type srl_nokia-comm:unicast-mac-address;
+        type srl_nokia-ethcfm-types:mep-id-type;
+        type enumeration {
+          enum multicast;
+        }
+      }
+      mandatory true;
+    }
+  }
+
+  grouping eth-cfm-test-target-unicast {
+    leaf target {
+      description
+        "Target MAC address or MEP ID for the test.";
+      type union {
+        type srl_nokia-comm:unicast-mac-address;
+        type srl_nokia-ethcfm-types:mep-id-type;
+      }
+      mandatory true;
+    }
+  }
+
+  grouping eth-cfm-loopback {
+    leaf data-tlv-size {
+      description
+        "The Data TLV byte count for a LBM test";
+      type uint32 {
+        range "0|3..9502";
+      }
+      default "0";
+      units "bytes";
+    }
+    leaf priority {
+      description
+        "The dot1p priority to be used in the transmitted LBM test packet";
+      type srl_nokia-ethcfm-types:priority-type;
+      default "7";
+    }
+    leaf transmit-count {
+      if-feature "srl_nokia-feat:future-0-0";
+      description
+        "The number of packets to send for a LBM test";
+      type uint32 {
+        range "1..1024";
+      }
+      default "10";
+    }
+    leaf interval {
+      if-feature "srl_nokia-feat:future-0-0";
+      description
+        "The packet frequency for a LBM test
+
+         The value '0s' will transmit packets at the fastest back-to-back rate for the platform.";
+      type srl_nokia-ethcfm-types:eth-lbm-interval;
+      default "0s";
+    }
+  }
+
+  grouping eth-cfm-linktrace {
+    leaf ttl {
+      description
+        "Time to live value encoded into the CFM PDU";
+      type uint32 {
+        range "0..255";
+      }
+      default "64";
+    }
+  }
+
+  grouping eth-cfm-single-ended-dmm-test {
+    leaf data-tlv-size {
+      description
+        "The Data TLV byte count for a DMM test";
+      type uint32 {
+        range "0| 3..9502";
+      }
+      default "0";
+      units "bytes";
+    }
+    leaf priority {
+      description
+        "The dot1p priority to be used in the transmitted DMM test packet";
+      type srl_nokia-ethcfm-types:priority-type;
+      default "7";
+    }
+    leaf transmit-count {
+      description
+        "The number of packets to send for a DMM test";
+      type uint32 {
+        range "1..100";
+      }
+      default "1";
+    }
+    leaf interval {
+      description
+        "The packet frequency for a DMM test.";
+      type srl_nokia-ethcfm-types:dmm-interval;
+      default "1s";
+    }
+  }
+
+  grouping eth-cfm-single-ended-slm-test {
+    leaf data-tlv-size {
+      description
+        "The Data TLV byte count for a SLM test.";
+      type uint32 {
+        range "0|3..9502";
+      }
+      default "0";
+      units "bytes";
+    }
+    leaf priority {
+      description
+        "The dot1p priority to be used in the transmitted DSLM test packet";
+      type srl_nokia-ethcfm-types:priority-type;
+      default "7";
+    }
+    leaf transmit-count {
+      description
+        "The number of packets to send for a SLM test";
+      type uint32 {
+        range "1..100";
+      }
+      default "1";
+    }
+    leaf interval {
+      description
+        "The packet frequency for a SLM test.";
+      type srl_nokia-ethcfm-types:slm-interval;
+      default "1s";
+    }
+  }
+
+  grouping auto-discovered-mep-table-removal {
+    leaf delete-auto-discovered-meps {
+      description
+        "Delete discovered meps from the remote mep database
+
+         This deletes the entries at the relative hierarchy to the command instance.  For example, if the
+         command is issued directly under ethcfm all entries are deleted.  If the command is issued at the
+         ethcfm domain association local-mep remote-mep that specific entry will be deleted.";
+      type empty;
+    }
+  }
+
+  grouping learned-remote-mac-table-removal {
+    leaf delete-learned-remote-macs {
+      description
+        "Delete learned remote macs from the mep mac table
+
+         This deletes the entries at the relative hierarchy to the command instance.  For example, if the
+         command is issued directly under ethcfm all entries are deleted.  If the command is issued at the
+         ethcfm domain association local-mep remote-mep that specific entry will be delete.";
+      type empty;
+    }
+  }
+
+  grouping cfm-statistics-clear {
+    leaf clear-cfm-statistics {
+      description
+        "Clears ETH-CFM statistics
+
+         This clears the statistics at the relative hierarchy to the command instance.  For example, if the
+         command is issued directly under ethcfm all ETH-CFM system statistics are cleared.  If the command
+         is issued at the ethcfm domain association local-mep those individual mep OpCode statistics will be cleared.";
+      type empty;
+    }
+  }
+
+  augment "/srl_nokia-tools-oam:oam" {
+    if-feature "srl_nokia-feat:ethcfm";
+    container ethcfm {
+      presence "ETH-CFM tools commands";
+      description
+        "Enter ETH-CFM on-demand tools";
+      uses cfm-statistics-clear;
+      uses auto-discovered-mep-table-removal;
+      uses learned-remote-mac-table-removal;
+      list domain {
+        key "domain-id";
+        leaf domain-id {
+          type string;
+        }
+        uses auto-discovered-mep-table-removal;
+        uses learned-remote-mac-table-removal;
+        list association {
+          key "association-id";
+          leaf association-id {
+            type string;
+          }
+          uses auto-discovered-mep-table-removal;
+          uses learned-remote-mac-table-removal;
+          list mep {
+            key "mep-id";
+            leaf mep-id {
+              type uint16;
+            }
+            uses cfm-statistics-clear;
+            uses learned-remote-mac-table-removal;
+            list remote-mep {
+              description
+                "Remote MEP ID from the remote MEP database";
+              key "remote-mep-id";
+              leaf remote-mep-id {
+                type uint16;
+              }
+              uses auto-discovered-mep-table-removal;
+              uses learned-remote-mac-table-removal;
+            }
+            leaf terminate-active-test {
+              type srl_nokia-ethcfm-types:terminate-on-demand;
+            }
+            container on-demand {
+              description
+                "Enter Eth-CFM tests context";
+              choice type {
+                container loopback {
+                  description
+                    "Perform an Eth-CFM loopback test";
+                  uses eth-cfm-test-target;
+                  uses eth-cfm-loopback;
+                }
+                container linktrace {
+                  description
+                    "Perform an Eth-CFM linktrace test";
+                  uses eth-cfm-test-target-unicast;
+                  uses eth-cfm-linktrace;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

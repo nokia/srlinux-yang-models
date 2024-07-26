@@ -1,0 +1,120 @@
+module srl_nokia-system-datapath {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:datapath";
+  prefix srl_nokia-sys-datapath;
+
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to system wide forwarding options.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping icmp-global {
+    container icmp {
+      if-feature "srl_nokia-feat:icmp-rate-control";
+      description
+        "Context for system-wide control of ICMP message generation";
+      container rate-limit-per-host {
+        description
+          "Context for controller rate limiting behavior per host";
+        leaf peak-rate {
+          description
+            "The peak rate for generated ICMP messages sent towards each host
+
+             A token bucket is maintained for each of the last 1000 IPv4 senders that generated traffic requiring ICMP messages to be sent back to them. Each token bucket has a maximum depth, counted in terms of ICMP messages, controlled by the max-burst parameter and a fill/drain rate controlled by this peak-rate parameter";
+          type uint8 {
+            range "1..20";
+          }
+          default "10";
+          units "packets-per-second";
+        }
+        leaf max-burst {
+          description
+            "The maximum burst size for generated ICMP messages sent towards each host
+
+             A token bucket is maintained for each of the last 1000 IPv4 senders that generated traffic requiring ICMP messages to be sent back to them. Each token bucket has a maximum depth, counted in terms of ICMP messages, controlled by this max-burst parameter and a fill/drain rate controlled by the peak-rate parameter";
+          type uint8 {
+            range "1..50";
+          }
+          default "10";
+          units "packets";
+        }
+      }
+    }
+    container icmp6 {
+      if-feature "srl_nokia-feat:icmp-rate-control";
+      description
+        "Context for system-wide control of ICMPv6 message generation";
+      container rate-limit-per-host {
+        description
+          "Context for controller rate limiting behavior per host";
+        leaf peak-rate {
+          description
+            "The peak rate for generated ICMP messages sent towards each host
+
+             A token bucket is maintained for each of the last 1000 IPv6 senders that generated traffic requiring ICMPv6 messages to be sent back to them. Each token bucket has a maximum depth, counted in terms of ICMP messages, controlled by the max-burst parameter and a fill/drain rate controlled by this peak-rate parameter";
+          type uint8 {
+            range "1..20";
+          }
+          default "10";
+          units "packets-per-second";
+        }
+        leaf max-burst {
+          description
+            "The maximum burst size for generated ICMP messages sent towards each host
+
+             A token bucket is maintained for each of the last 1000 IPv6 senders that generated traffic requiring ICMPv6 messages to be sent back to them. Each token bucket has a maximum depth, counted in terms of ICMP messages, controlled by this max-burst parameter and a fill/drain rate controlled by the peak-rate parameter";
+          type uint8 {
+            range "1..50";
+          }
+          default "10";
+          units "packets";
+        }
+      }
+    }
+  }
+
+  grouping datapath-top {
+    container datapath {
+      if-feature "srl_nokia-feat:system-forwarding-mode or srl_nokia-feat:icmp-rate-control";
+      description
+        "Context for system wide forwarding options";
+      leaf forwarding-mode {
+        if-feature "srl_nokia-feat:system-forwarding-mode";
+        type enumeration {
+          enum store-and-forward;
+          enum cut-through;
+        }
+        default "store-and-forward";
+        description
+          "The forwarding mode for Ethernet frames received on all eligible ports of the system
+
+           In store-and-forward mode, the forwarding of an Ethernet frame received on a particular port must wait until the entire Ethernet frame has been received, including the trailing 4-byte CRC; if the CRC is valid the packet is forwarded to the egress port based on the L2/L3 lookup result but if the CRC is invalid the frame is discarded and the in-error-packets counter is incremented.
+
+           In cut-through mode, the forwarding ASIC does the L2/L3 forwarding lookup as soon as it has read the necessary packet headers. If the target egress queue of the egress port is not congested the bytes of the received frame are transmitted across the switch fabric as they are received. The fully intact frame is transmitted from the egress port as soon as all the bytes have been received.";
+      }
+      uses icmp-global;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses datapath-top;
+  }
+}

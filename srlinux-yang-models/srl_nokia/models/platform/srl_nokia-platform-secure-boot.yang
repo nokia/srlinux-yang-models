@@ -1,0 +1,255 @@
+module srl_nokia-platform-secure-boot {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-secure-boot";
+  prefix srl_nokia-platform-secure-boot;
+
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational states for Platform Trust: Secure Boot";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping secure-boot-database-variable {
+    list certificate {
+      key "index";
+      config false;
+      description
+        "List of X.509 certificates";
+      leaf index {
+        type uint32;
+        description
+          "The index of the certificate";
+      }
+      leaf data {
+        type binary;
+        description
+          "DER encoded X.509 certificate";
+      }
+    }
+    list sha1-hash {
+      key "index";
+      config false;
+      description
+        "List of SHA-1 hash digests";
+      leaf index {
+        type uint32;
+        description
+          "The index of the hash";
+      }
+      leaf digest-value {
+        type binary;
+        description
+          "SHA-1 digest";
+      }
+    }
+    list sha256-hash {
+      key "index";
+      config false;
+      description
+        "List of SHA-256 hash digests";
+      leaf index {
+        type uint32;
+        description
+          "The index of the hash";
+      }
+      leaf digest-value {
+        type binary;
+        description
+          "SHA-256 digest";
+      }
+    }
+    list sha256-hash-cert {
+      key "index";
+      config false;
+      description
+        "List of SHA-256 hash digests of X.509 certificates";
+      leaf index {
+        type uint32;
+        description
+          "The index of the hash";
+      }
+      leaf digest-value {
+        type binary;
+        description
+          "SHA-256 digest of an X.509 certificate";
+      }
+      leaf revocation-time {
+        type string;
+        description
+          "Certificate revocation start time";
+      }
+    }
+  }
+
+  grouping secure-boot-variables-status {
+    leaf modification-dataset-present {
+      type boolean;
+      description
+        "The modification dataset is present";
+    }
+    leaf modification-dataset-valid {
+      type boolean;
+      description
+        "The status of the modification dataset
+         true = the modification dataset is valid
+         false = the modification dataset is invalid";
+    }
+    leaf up-to-date {
+      type boolean;
+      description
+        "Status of the Secure Boot variables programmed in the control module compared to the current modification dataset
+         true = UEFI variables are up to date
+         false = UEFI variable update required";
+    }
+    leaf dbx-update-required {
+      type boolean;
+      description
+        "The forbidden database (dbx) update status compared to the modification dataset
+         true = the forbidden database (dbx) is not up to date, update required
+         false = the forbidden database (dbx) is up to date";
+    }
+    leaf db-update-required {
+      type boolean;
+      description
+        "The authorized database (db) update status compared to the modification dataset
+         true = the authorized database (db) is not up to date, update required
+         false = the authorized database (db) is up to date";
+    }
+    leaf pk-update-required {
+      type boolean;
+      description
+        "The Platform Key (PK) update status compared to the modification dataset
+         true = the Platform Key is not up to date, update required
+         false = the Platform Key is up to date";
+    }
+    leaf kek-update-required {
+      type boolean;
+      description
+        "The Key Exchange Key database (KEK) update status compared to the modification dataset
+         true = the Key Exchange Key database (KEK) is not up to date, update required
+         false = the Key Exchange Key database (KEK) is up to date";
+    }
+    leaf modification-dataset-db-conflict {
+      type boolean;
+      description
+        "The authorized database (db) conflict status between the modification dataset and the current running image
+         true = conflict
+         false = no conflict";
+    }
+    leaf modification-dataset-dbx-conflict {
+      type boolean;
+      description
+        "The forbidden database (dbx) conflict status between the modification dataset and the current running image
+         true = conflict
+         false = no conflict";
+    }
+    leaf modification-dataset-digest {
+      type binary;
+      description
+        "The SHA256 digest of the modification dataset file";
+    }
+  }
+
+  grouping secure-boot-state-top {
+    container secure-boot {
+      config false;
+      description
+        "State information related to Secure Boot";
+      list control {
+        description
+          "Secure Boot states related to control modules";
+        key "slot";
+        leaf slot {
+          type string {
+            pattern 'A|B';
+          }
+          description
+            "Slot identifier for the control module";
+        }
+        leaf oper-state {
+          type enumeration {
+            enum up {
+              value 1;
+              description
+                "Secure Boot is enabled";
+            }
+            enum down {
+              value 2;
+              description
+                "Secure Boot is disabled";
+            }
+          }
+          description
+            "Secure Boot operational state";
+        }
+        leaf root-of-trust {
+          type enumeration {
+            enum firmware {
+              value 1;
+              description
+                "Firmware Root of Trust";
+            }
+            enum hardware {
+              value 2;
+              description
+                "Hardware Root of Trust";
+            }
+          }
+          description
+            "Root of Trust for Secure Boot execution";
+        }
+        container uefi-variables-update {
+          uses secure-boot-variables-status;
+          description
+            "Update status of the UEFI Secure Boot variables PK, KEK, DB and DBx programmed in the control module compared to the UEFI variables update in the modification dataset";
+        }
+        list uefi-variables {
+          description
+            "Content of the UEFI Secure Boot variables programmed in the control module";
+          key "variable";
+          leaf variable {
+            type string;
+            description
+              "UEFI Secure Boot database variable name";
+          }
+          container contents {
+            uses secure-boot-database-variable;
+            description
+              "Content Secure Boot database variable";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-platform:platform/srl-platform:trust" {
+    if-feature "srl-feat:secure-boot";
+    uses secure-boot-state-top;
+  }
+}

@@ -1,0 +1,1339 @@
+module srl_nokia-ethcfm {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:ethcfm:ethcfm";
+  prefix srl_nokia-ethcfm;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-ethcfm-types {
+    prefix srl_nokia-ethcfm-types;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module contains configuration and state data definitions for the
+     management of Ethernet Operations, Administration and
+     Maintenance for Connectivity Fault Management.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping opcode-statistics {
+    description
+      "State for per ETH-CFM OpCode statistics";
+    list opcode {
+      if-feature "srl_nokia-feat:ethcfm-opcode-stats";
+      config false;
+      key "opcode-name";
+      description
+        "Enter the CFM OpCode list instance";
+      leaf opcode-name {
+        type srl_nokia-ethcfm-types:statistics-opcode-name;
+        description
+          "The name that defines which CFM OpCode for the statistics";
+      }
+      leaf transmitted {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of PDUs transmitted with the specified OpCode";
+      }
+      leaf received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of PDUs received with the specified OpCode";
+      }
+    }
+  }
+
+  grouping cfm-stack-table-common {
+    description
+      "State relationships among MEPs configured on a particular interface/subinterface";
+    reference
+      "[IEEE 802.1Q] 12.14.2";
+    leaf level {
+      type srl_nokia-ethcfm-types:md-level-type;
+      description
+        "The maintenance domain level";
+    }
+    leaf direction {
+      type srl_nokia-ethcfm-types:mep-direction-type;
+      description
+        "The direction the MEP faces
+
+         If 'down' the MEP sends CFM PDUs away from the MAC Relay Entity. If 'up' the MEP
+         sends CFM PDUs towards the MAC Relay Entity.";
+    }
+    leaf domain-id {
+      type srl_nokia-ethcfm-types:admin-name;
+      description
+        "A uniquely assigned administrative name used to identify a maintenance domain";
+    }
+    leaf association-id {
+      type srl_nokia-ethcfm-types:admin-name;
+      description
+        "A uniquely assigned administrative name used to identify a maintenance association";
+    }
+    leaf mep-id {
+      type srl_nokia-ethcfm-types:mep-id-type;
+      description
+        "A uniquely assigned MEP identifier with a given maintenance association";
+    }
+    leaf mac-address {
+      type srl_nokia-comm:mac-address;
+      description
+        "MAC address of the Management Point";
+    }
+    leaf-list defects {
+      type srl_nokia-ethcfm-types:mep-stack-table-defect-type;
+      description
+        "Current received defects for the local MEP";
+    }
+  }
+
+  grouping sender-id-tlv-group {
+    description
+      "Data definitions associated with the Sender ID TLV";
+    reference
+      "[IEEE 802.1Q] 21.5.3";
+    leaf chassis-id-subtype {
+      type union {
+        type uint8 {
+          range "8..255";
+        }
+        type srl_nokia-ethcfm-types:chassis-id-type;
+      }
+      description
+        "Data definitions associated with the Sender ID TLV";
+    }
+    leaf chassis-id {
+      type union {
+        type srl_nokia-comm:mac-address;
+        type string;
+        type binary {
+          srl_nokia-ext:output-flavor "hex-with-colons";
+        }
+      }
+      description
+        "The value relating to the chassis-id-subtype in string of MAC address format";
+    }
+    leaf management-address-domain {
+      type string;
+      description
+        "Identifies the type and format of the related management-address leaf";
+    }
+    leaf management-address {
+      type string;
+      description
+        "The address that can be used to access and manage the remote system";
+    }
+  }
+
+  grouping remote-mep-database {
+    list remote-mep {
+      config false;
+      description
+        "The list of remote MEPs in the MEP CCM database";
+      key "remote-mep-id";
+      leaf remote-mep-id {
+        type srl_nokia-ethcfm-types:mep-id-type;
+        description
+          "The MEP ID of a remote MEP";
+      }
+      leaf mac-address {
+        type srl_nokia-comm:mac-address;
+        description
+          "The MAC address of the remote MEP.";
+      }
+      leaf auto-discovered {
+        type boolean;
+        description
+          "Indicates if the remote MEP has be auto-discovered 'true' indicates the remote MEP has been auto-discovered
+
+           Display the method by which the remote MEP has been added to the remote-mep database.  When 'false' the
+           remote MEP has been added by manual configuration.  When 'true' the remote-mep has been added using the
+           auto discovery method.";
+      }
+      leaf receiving-ccm {
+        type boolean;
+        description
+          "Indicates whether CCM messages are being received";
+      }
+      leaf remote-mep-state {
+        type srl_nokia-ethcfm-types:remote-mep-state-type;
+        description
+          "An enumerated value indicating the operational state of the Remote MEP state machine";
+      }
+      leaf remote-mep-failed-ok-time {
+        type srl_nokia-comm:timeticks64;
+        description
+          "The time at which the Remote  MEP state machine last entered either the RMEP_FAILED or RMEP_OK state
+
+           This type is based on the timeticks type defined in RFC 6991, but with 64-bit width.  It represents the time,
+           modulo 2^64, in hundredths of a second between two epochs.";
+      }
+      leaf remote-defect-indicator {
+        type boolean;
+        description
+          "An indication of the state of the RDI bit in the last received CCM, 'true' for RDI set
+
+           The CCM message contains a flag to indicate if a MEP has detected a defect condition.  When the RDI bit
+           is set to 1 in the PDU that means the MEP is experiencing a defect condition and is including this in the
+           transmitted CCM packets.  When no defects are detected the RDI bit is set to 0 in the packet.";
+      }
+      leaf port-status-tlv {
+        type srl_nokia-ethcfm-types:port-status-type;
+        description
+          "The enumerated value from the Port Status TLV from the last CCM received from the remote MEP";
+      }
+      leaf interface-status-tlv {
+        type srl_nokia-ethcfm-types:interface-status-type;
+        description
+          "The enumerated value from the Interface Status TLV from the last CCM received from the remote MEP";
+      }
+      uses sender-id-tlv-group;
+    }
+  }
+
+  grouping cfm-on-demand-test-status {
+    description
+      "On-demand test status information";
+    leaf test-status {
+      type srl_nokia-ethcfm-types:cfm-on-demand-test-status;
+      description
+        "The status of the last test that was executed
+
+         A value of 'completed' means the test has run and ended without intervention, to completion.
+         A value of 'terminated-incomplete' indicates the test started but conditions existed that caused
+         if to terminate before the natural completion.  A value 'in-progress' means the test is currently executing.
+         A value of 'failed-to-start' meant a requirement to start the test was not met and the test had failed to start.
+         When this value is set the statistics from a prior latest-run are deleted.";
+    }
+    leaf start-time {
+      type srl_nokia-comm:date-and-time;
+      description
+        "UTC date and time when the test started";
+    }
+    leaf end-time {
+      type srl_nokia-comm:date-and-time;
+      description
+        "UTC date and time when a test ended";
+    }
+  }
+
+  grouping cfm-on-demand-destination {
+    description
+      "Augments to support the on-demand destination and priority";
+    leaf remote-mep-id {
+      type srl_nokia-ethcfm-types:mep-id-type;
+      description
+        "Indicates the remote mepid when remote-mep-id was the target and not a MAC address";
+    }
+    leaf destination-mac-address {
+      type srl_nokia-comm:unicast-mac-address;
+      description
+        "Indicates the destination MAC address used for the last test
+
+         When the destination is a remote-mepid the MAC address will be the resolved MAC address for the remote mepid";
+    }
+    leaf priority {
+      type srl_nokia-ethcfm-types:priority-type;
+      default "7";
+      description
+        "The dot1p priority to be used in the transmitted test packet";
+    }
+  }
+
+  grouping linktrace-statistics {
+    container linktrace {
+      config false;
+      description
+        "Data definitions related to a linktrace test result";
+      reference
+        "[IEEE802.1Q] 20.3 [ITU-T Y.1731] 7.3";
+      leaf status {
+        type srl_nokia-ethcfm-types:protocol-status-type;
+        description
+          "If an active linktrace test is executing from this MEP
+
+           Only a single Linktrace test can be active on a MEP at one time.  When the status is 'active'
+           the MEP has a linktrace session open.  Another linktrace test form this MEP is not allowed.
+           When the status is 'inactive' the MEP does not currently have a linktrace session open.";
+      }
+      leaf next-transaction-number {
+        type uint32;
+        description
+          "Next sequence number to be sent in a linktrace message";
+      }
+      leaf unexpected-ltr-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The total number of LTR messages received no corresponding outstanding LTM request";
+      }
+      container latest-run {
+        description
+          "Enter the latest-run context";
+        uses cfm-on-demand-test-status;
+        uses cfm-on-demand-destination;
+        leaf transaction-id {
+          type uint32;
+          description
+            "The sequence number included in the LTM packet";
+        }
+        leaf ttl {
+          type uint8;
+          default "64";
+          description
+            "An initial value for the LTM time to live field";
+        }
+        leaf transmit-ltm-flags {
+          type bits {
+            bit use-fdb-only;
+          }
+          description
+            "The Flags field for LTMs transmitted by the MEP
+
+             'use-fdb-only' indicates only the network instance mac-table (or forwarding database)
+             is to be used to forward the LTM to the next hop.";
+        }
+        list reply {
+          key "reply-order";
+          max-elements 32;
+          description
+            "The list of LTRs associated with a specific Linktrace transaction";
+          leaf reply-order {
+            type uint32;
+            description
+              "An index to distinguish among multiple LTRs with the same LTR transaction-id field value
+
+               The reply-order are assigned sequentially from 1, in the order that the Linktrace Initiator
+               received the LTR";
+          }
+          leaf reply-ttl {
+            type uint32;
+            description
+              "The integer Reply TTL field value returned in the LTR";
+          }
+          leaf forwarded {
+            type boolean;
+            description
+              "A Boolean value stating whether an LTM was forwarded by the responding MP";
+          }
+          leaf terminal-mep {
+            type boolean;
+            description
+              "The terminal MEP flag field was set in the LTR indicating the LTM reached a MEP boundary for the MA";
+          }
+          container last-egress-identifier {
+            description
+              "TLV included with in the LTM used to identify the instantiating or relaying management point";
+            leaf integer {
+              description
+                "An octet string the first two bytes of the egress-identifier";
+              type uint16;
+            }
+            leaf mac-address {
+              description
+                "The last six bytes of the egress identifier, the MAC address";
+              type srl_nokia-comm:mac-address;
+            }
+          }
+          container next-egress-identifier {
+            description
+              "TLV included with in the LTM used to identify the instantiating or relaying management point";
+            leaf integer {
+              description
+                "An octet string the first two bytes of the egress-identifier";
+              type uint16;
+            }
+            leaf mac-address {
+              description
+                "The last six bytes of the egress identifier, the MAC address";
+              type srl_nokia-comm:mac-address;
+            }
+          }
+          leaf ltr-relay {
+            type srl_nokia-ethcfm-types:relay-action;
+            description
+              "An enumerated value indicating the value returned in the Relay Action field";
+          }
+          uses sender-id-tlv-group;
+          leaf ingress-action {
+            type srl_nokia-ethcfm-types:reply-action;
+            description
+              "An enumerated value indicating the value returned in the Ingress Action field
+
+               This leaf is not present if no value is returned in the LTR.";
+          }
+          leaf ingress-mac {
+            type srl_nokia-comm:mac-address;
+            description
+              "The MAC address returned in the Ingress MAC Address field
+
+               This leaf is not present if no value is returned in the LTR.";
+          }
+          container ingress-port-id {
+            leaf port-id-subtype {
+              type srl_nokia-ethcfm-types:port-id-type;
+              description
+                "The Ingress Port ID field and the corresponding port ID value
+
+                 This leaf is not present if no value is returned in the LTR.";
+            }
+            leaf value {
+              type union {
+                type srl_nokia-comm:mac-address;
+                type string;
+                type binary {
+                  srl_nokia-ext:output-flavor "hex-with-colons";
+                }
+              }
+              description
+                "The value of the port id subtype";
+            }
+          }
+          leaf egress-action {
+            type srl_nokia-ethcfm-types:reply-action;
+            description
+              "An enumerated value indicating the value returned n the Egress Action field
+
+               This leaf is not present if no value is returned in the LTR.";
+          }
+          leaf egress-mac {
+            type srl_nokia-comm:mac-address;
+            description
+              "The MAC address returned in the Egress MAC Address field
+
+               This leaf is not present if no value is returned in the LTR.";
+          }
+          container egress-port-id {
+            leaf port-id-subtype {
+              type srl_nokia-ethcfm-types:port-id-type;
+              description
+                "The Egress Port ID field and the corresponding port ID value
+
+                 This leaf is not present if no value is returned in the LTR.";
+            }
+            leaf value {
+              type union {
+                type srl_nokia-comm:mac-address;
+                type string;
+                type binary {
+                  srl_nokia-ext:output-flavor "hex-with-colons";
+                }
+              }
+              description
+                "The value of the port id subtype";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping loopback-statistics {
+    description
+      "Enter loopback informational statistics";
+    reference
+      "[IEEE 802.1Q] 20.2 & [ITU-T Y.1731] 7.2";
+    container loopback {
+      config false;
+      leaf status {
+        type srl_nokia-ethcfm-types:protocol-status-type;
+        description
+          "If an active loopback test is executing from this MEP
+
+           Only a single loopback test can be active on a MEP at one time.  When the status is 'active'
+           the MEP has a loopback session open.  Another loopback test form this MEP is not allowed.
+           When the status is 'inactive' the MEP does not currently have a loopback session open.";
+      }
+      leaf next-sequence-number {
+        type uint32;
+        description
+          "Next sequence number to be sent in a linktrace message";
+      }
+      container unicast-latest-run {
+        description
+          "Enter the unicast-latest-run context";
+        uses cfm-on-demand-test-status;
+        uses cfm-on-demand-destination;
+        leaf data-length {
+          description
+            "An arbitrary amount of data included in the data tlv, if the data tlv is selected to be sent";
+          type uint32 {
+            range "64..9612";
+          }
+        }
+        leaf interval {
+          type srl_nokia-ethcfm-types:eth-lbm-interval;
+          default "1s";
+          description
+            "The frequency of the LBM packets";
+        }
+        leaf sequence-number {
+          type uint32;
+          description
+            "The initial LBM sequence number used in the first LBM packet";
+        }
+        container statistics {
+          description
+            "Enter the statistics context";
+          leaf sent-packets {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Indicates the number of packets sent during the last test";
+          }
+          leaf received-in-order {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Total number of valid, in-order Loopback Replies received";
+          }
+          leaf received-out-of-order {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The total number of valid, out-of-order Loopback Replies received";
+          }
+          leaf received-bad-msdu {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The total number of LBRs received whose mac_service_data_unit did not match that of the corresponding LBM, excluding OpCode";
+          }
+          leaf packet-loss {
+            type decimal64 {
+              range "0.00..100.00";
+              fraction-digits 2;
+            }
+            units "percent";
+            description
+              "Percentage of packet loss during testing";
+          }
+        }
+      }
+      container multicast-latest-run {
+        description
+          "Enter the multicast-latest-run context";
+        uses cfm-on-demand-test-status;
+        leaf priority {
+          type srl_nokia-ethcfm-types:priority-type;
+          description
+            "The priority parameter to be used in the transmitted LBMs";
+        }
+        leaf data-length {
+          description
+            "An arbitrary amount of data included in the data tlv, if the data tlv is selected to be sent";
+          type uint32 {
+            range "64..9612";
+          }
+        }
+        leaf interval {
+          type srl_nokia-ethcfm-types:eth-lbm-interval;
+          default "1s";
+          description
+            "The frequency of the LBM packets";
+        }
+        container statistics {
+          description
+            "Enter the statistics context";
+          leaf transmitted-packets {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Indicates the number of packets sent during the last multicast loopback test";
+          }
+          leaf received-packets {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Total number of valid multicast Loopback Replies received";
+          }
+        }
+        list remote-mep-mac {
+          key "remote-mac-address";
+          description
+            "Enter the remote-mep-mac list instance";
+          leaf remote-mac-address {
+            type srl_nokia-comm:mac-address;
+            description
+              "Specifies the MAC address of the remote MEP responding to the multicast loopback message";
+          }
+          list sequence-number {
+            key "sequence-number received-index";
+            description
+              "Enter the sequence-number list instance";
+            leaf sequence-number {
+              type uint32;
+              description
+                "Specifies the sequence number contained within the reply message";
+            }
+            leaf received-index {
+              type uint32;
+              description
+                "Indicates the order in which the reply was received for the corresponding remote MAC address
+
+                 This is a locally assigned index that can be used to detect out of order responses.";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping squelching {
+    container eth-cfm {
+      if-feature "srl_nokia-feat:ethcfm-subinterface";
+      description
+        "Configuration of ETH-CFM functions independent of Maintenance Domain context
+
+         This is an ETH-CFM function that is configured directly under the subinterface";
+      container ingress-squelching {
+        if-feature "srl_nokia-feat:ethcfm-ingress-squelching";
+        description
+          "Ingress ETH-CFM functions independent of Maintenance Domain context";
+        leaf squelch-levels {
+          type srl_nokia-ethcfm-types:md-levels-ordered-type;
+          description
+            "Contiguous ETH-CFM Maintenance Domain levels silently discarded at ingress, matching subinterface and level
+
+             ETH-CFM packets ingressing a subinterface that match the definition of the subinterface and have an ETH-CFM level
+             that is part of the squelching configuration will be silently discarded without processing. The lookup is an exact
+             match of the subinterface followed immediately by the ETH-CFM etype 0x8902 and a level equal to any configured squelch
+             values.  The lookup for the ETH-CFM level cannot exceed a total of two VLAN tags.  Ingress squelching will occur
+             prior to any ingress ETH-CFM MP processing.  For example, if a down MEP exists on the subinterface with a level
+             covered by the configured squelch levels the packet will be dropped before the packet it reaches the down MEP.";
+          must "../../../srl_nokia-if:type='bridged'" {
+            error-message "Squelching is only supported on subinterface type bridged";
+          }
+        }
+        container statistics {
+          config false;
+          leaf discarded-packets {
+            type srl_nokia-comm:zero-based-counter64;
+            description
+              "The count of ETH-CFM packets discarded on the subinterface because of ingress squelching";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    if-feature "srl_nokia-feat:ethcfm";
+    container ethcfm {
+      presence "Configure Ethernet CFM";
+      description
+        "OAM configuration and operational data for the management of Ethernet (ETH-CFM)";
+      container sender-id {
+        if-feature "srl_nokia-feat:ethcfm-sender-id-tx";
+        description
+          "Enter the sender-id context";
+        leaf chassis-type {
+          type srl_nokia-ethcfm-types:chassis-id-subtype;
+          description
+            "Selection of chassis-component type to be included in CFM PDUs";
+          must "(. != 'local' or ../chassis-local-name)" {
+            error-message "A chassis-local-name must be configured when the chassis-type ='local'";
+          }
+          default "system";
+        }
+        leaf chassis-local-name {
+          description
+            "Local name used for sender-id TLV chassis-component when chassis-type is 'local'
+
+             This configuration is mandatory when ../chassis-type value is 'local'  This configuration
+             is optional when the ../chassis-type value is not 'local'.  In the latter case
+             the chassis-local-name is not used in the sender-id TLV";
+          type string {
+            length "1..45";
+          }
+        }
+      }
+      list domain {
+        description
+          "Maintenance Domain list
+
+           The Maintenance Domain includes all the configuration elements to define the individual
+           domain behavior and scope of the CFM boundary.  These are common elements that will be
+           part of the related Maintenance Associations configured within the domain.";
+        key "domain-id";
+        max-elements 4000;
+        leaf domain-id {
+          type srl_nokia-ethcfm-types:admin-name;
+          description
+            "Unique Maintenance Domain identifier";
+        }
+        leaf domain-format {
+          type srl_nokia-ethcfm-types:domain-format-type;
+          description
+            "Format of the md-name";
+          mandatory true;
+          must "not(. = 'dns-like') or ../md-name/dns" {
+            error-message "md-name 'dns' must be configured";
+          }
+          must "not(. = 'mac-address') or (../md-name/mac and ../md-name/two-octet-int >=0)" {
+            error-message "md-name 'mac' and 'two-octet-int' must be configured";
+          }
+          must "not(. = 'string') or ../md-name/name" {
+            error-message "md-name 'name' must be configured";
+          }
+        }
+        container md-name {
+          description
+            "Context for domain name";
+          choice md-name {
+            case dns-like {
+              leaf dns {
+                type string {
+                  length "1..43";
+                }
+                must "../../domain-format = 'dns-like'" {
+                  error-message "md-name 'dns' requires domain-format type 'dns-like'";
+                }
+                description
+                  "DNS format sting required when using domain-format 'dns-like'";
+              }
+            }
+            case mac-address {
+              leaf mac {
+                type string {
+                  pattern '[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}';
+                }
+                must "../../domain-format = 'mac-address'" {
+                  error-message "md-name 'mac' requires domain-format type 'mac-address'";
+                }
+                description
+                  "MAC address string required when using domain-format 'mac-address'";
+              }
+              leaf two-octet-int {
+                type uint16;
+                must "../../domain-format = 'mac-address'" {
+                  error-message "md-name 'two-octet-int' requires domain-format type 'mac-address'";
+                }
+                description
+                  "Two bytes value required when using domain-format 'mac-address'";
+              }
+            }
+            case string {
+              leaf name {
+                type string {
+                  length "1..43";
+                }
+                must "../../domain-format = 'string'" {
+                  error-message "md-name 'name' requires domain-format type 'string'";
+                }
+                description
+                  "Name string required when using domain-format 'string'";
+              }
+            }
+          }
+        }
+        leaf level {
+          type srl_nokia-ethcfm-types:md-level-type;
+          default "0";
+          description
+            "Integer identifying the Maintenance Domain Level
+
+             Higher numbers correspond Maintenance Domains with the greatest
+             physical reach. Lower numbers correspond to  Maintenance
+             Domains with more limited physical reach.  CFM packets with higher
+             levels will flow transparently across domains of lower level values.";
+        }
+        list association {
+          description
+            "Maintenance Association list";
+          key "association-id";
+          max-elements 4000;
+          leaf association-id {
+            type srl_nokia-ethcfm-types:admin-name;
+            description
+              "Unique Maintenance Association identifier";
+          }
+          leaf association-format {
+            type srl_nokia-ethcfm-types:association-format-type;
+            description
+              "Format of the ma-name";
+            mandatory true;
+          }
+          container ma-name {
+            description
+              "Context for association name";
+            choice ma-name {
+              mandatory true;
+              case icc-based {
+                leaf icc-value {
+                  type string {
+                    length "8..13";
+                  }
+                  must "../../association-format = 'icc-based'" {
+                    error-message "ma-name 'icc-value' requires association-format type 'icc-based'";
+                  }
+                  description
+                    "ITU Carrier Code (ICC) string required when using association-format icc-based";
+                }
+              }
+              case integer {
+                leaf number {
+                  type uint16;
+                  must "../../association-format = 'integer'" {
+                    error-message "ma-name 'number' requires association-format type 'integer'";
+                  }
+                  description
+                    "Integer value required when using association-format integer";
+                }
+              }
+              case string {
+                leaf name {
+                  type string {
+                    length "1..45";
+                  }
+                  must "../../association-format = 'string'" {
+                    error-message "ma-name 'name' requires association-format type 'string'";
+                  }
+                  description
+                    "Name string required when using association-format string";
+                }
+              }
+              case vlan-id {
+                leaf vid {
+                  type uint16 {
+                    range "0..4094";
+                  }
+                  must "../../association-format = 'vlan-id'" {
+                    error-message "ma-name 'vid' requires association-format type 'vlan-id'";
+                  }
+                  description
+                    "VLAN ID number required when using association-format vlan-id";
+                }
+              }
+              case vpn-id {
+                leaf id {
+                  type string {
+                    length "3..15";
+                    pattern '[0-9a-fA-F]{6}(:[0-9a-fA-F]{8})';
+                  }
+                  must "../../association-format = 'vpn-id'" {
+                    error-message "ma-name 'id' requires association-format type 'vpn-id'";
+                  }
+                  description
+                    "VPN ID required when using association-format vpn-id
+
+                     When the VPN OUI is less than 6 hex characters the configured value will be prepended with the appropriate
+                     number of zeros.  When the VPN INDEX is less than 8 hex characters the configured value will be prepended
+                     with the appropriate number of zeros.";
+                }
+              }
+            }
+          }
+          leaf sender-id-permission-type {
+            if-feature "srl_nokia-feat:ethcfm-sender-id-tx";
+            type srl_nokia-ethcfm-types:id-permission-type;
+            default "none";
+            description
+              "Whether to include the Sender ID TLV with configured type
+
+               Sender ID TLV will be sent when the id-permission is set to a value other
+               than 'none'.   When transmitting the Sender ID TLV the information carried
+               in the TLV will match the configured value.  When id-permission is set to
+               'chassis' the chassis information (chassis-component or local) will be
+               based on the /ethcfm/sender-id/chassis-type configuration.";
+          }
+          container network-instance {
+            leaf name {
+              type leafref {
+                path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+              }
+              description
+                "The network instance to which the information in this maintenance-association applies";
+            }
+          }
+          leaf ccm-interval {
+            type srl_nokia-ethcfm-types:ccm-interval-type;
+            default "1s";
+            description
+              "The interval between CCM transmissions to be used by all MEPs in Maintenance Association";
+          }
+          container ccm-hold-time {
+            description
+              "Enter the ccm-hold-time context";
+            leaf delay-timeout {
+              must ". = 0 or ../../ccm-interval = '10ms' or ../../ccm-interval = '100ms'" {
+                error-message "ccm-hold-time delay-timeout requires ccm-interval less than one second.";
+              }
+              type uint32 {
+                range "0..1000";
+              }
+              units "centiseconds";
+              default "0";
+              description
+                "Additional time before a MEP declares a fault for peer CCM timeout conditions
+
+                 Each unit (centisecond) is the equivalent to 10ms, or one hundredth of a second
+                 in additional time added before the recognition of a peer time-out.  This is applicable to
+                 MEPs with a CCM-interval 100ms and below.  A value 0 means there is no additive delay";
+            }
+          }
+          container remote-mep-auto-discovery {
+            description
+              "This set of data definitions describes the auto discovery behavior for remote MEPs";
+            leaf admin-state {
+              type srl_nokia-comm:admin-state;
+              default "disable";
+              description
+                "Enable the ability to auto-discover remote MEPs within the Maintenance Association
+
+                 When the admins-state is 'enable' unknown remote MEP peers which have the
+                 same Maintenance Association information will be automatically added to the
+                 remote-mep database and these unknown peer MEPS will not raise the defect error-ccm.
+                 When the admin-state is 'disable' unknown remote MEP peers will not automatically be
+                 added to the remote-mep database.  Unknown MEPs will cause the defect error-ccm
+                 to be raised.
+
+                 If the admin-state value is changed from 'enable' to 'disable' all previously learned MEPs
+                 for the Maintenance Association  will be removed from the remote-mep database and auto-discovery
+                 will be disabled.";
+            }
+            leaf aging-timer {
+              type union {
+                type uint32 {
+                  range "1..86400";
+                }
+                type enumeration {
+                  enum none {
+                    value 1;
+                  }
+                }
+              }
+              units "seconds";
+              default "none";
+              description
+                "Optional time in seconds the peer MEP remains in the remote-mep database after defect remote-ccm
+
+                 Peer MEPs added to the remote-mep database do not age out unless the optional aging-timer is
+                 configured.  The aging-timer value is the additional time the remote peer MEP remains in the
+                 database since the recognition of the defect remote-ccm (peer timeout where no packets
+                 have arrived from the peer in 3.5 times the ccm-interval).  A value of 'none' disables aging.";
+            }
+          }
+          list association-meps {
+            key "mep-id";
+            leaf mep-id {
+              type srl_nokia-ethcfm-types:mep-id-type;
+              description
+                "A list of the MEP IDs expected for the MA
+
+                 This is a configured list of MEPs added to the MA.";
+            }
+          }
+          list association-auto-discovered-meps {
+            config false;
+            key "mep-id";
+            leaf mep-id {
+              type srl_nokia-ethcfm-types:mep-id-type;
+              description
+                "A list of the MEP IDs added to the MA by auto discovery
+
+                 An auto-discovered remote MEP ID can be added to the association-mep list though configuration.
+                 Once added to the association-mep list it is removed from the auto-discovered MEP list.";
+            }
+          }
+          list mep {
+            description
+              "The list of Maintenance association End Points in a specific Maintance Association";
+            key "mep-id";
+            leaf mep-id {
+              type leafref {
+                path "../../association-meps/mep-id";
+              }
+              description
+                "The integer that uniquely identified the MEP in the Mainatenance Association";
+            }
+            container interface-ref {
+              leaf interface {
+                mandatory true;
+                type leafref {
+                  path "/srl_nokia-if:interface/srl_nokia-if:name";
+                }
+                description
+                  "Reference to a base interface, for example a port";
+                must "starts-with(.,'eth')" {
+                  error-message "ETH-CFM is supported for Ethernet interfaces only";
+                }
+                must 'not(/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:breakout-mode)' {
+                  error-message "Breakout interfaces are not supported";
+                }
+                must "../../direction = 'down' or ../subinterface >=0" {
+                  error-message "Type interface MEP direction must be 'down'";
+                }
+                must '../../../../level = 0 or ../../../../level = 1 or ../subinterface >=0' {
+                  error-message "Type interface MEP level must be 0 or 1";
+                }
+                must 'not(../../../network-instance/name) or ../subinterface >=0' {
+                  error-message "The interface MEP cannot specify a network instance";
+                }
+              }
+              leaf subinterface {
+                type leafref {
+                  path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+                }
+                description
+                  "Reference to a subinterface
+
+                   This requires the base interface to be specified using the interface leaf in this container.";
+                must "(/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()]/srl_nokia-if:type ='bridged')" {
+                  error-message "Platform requires subinterface type bridged";
+                }
+              }
+            }
+            leaf admin-state {
+              type srl_nokia-comm:admin-state;
+              default "disable";
+              description
+                "The administrative state of the MEP";
+            }
+            leaf direction {
+              type srl_nokia-ethcfm-types:mep-direction-type;
+              mandatory true;
+              description
+                "A value indicating the direction which the MEP faces on the interface/subinterface
+
+                 For all but MAC-VRF subinterfaces, the direction of the MEP must be 'down'.  The MAC-VRF is a
+                 bridging entity and therefore supports the direction 'up'.  The other entities are not bridging
+                 and therefore cannot support the direction 'up'.";
+            }
+            leaf mac-address {
+              if-feature "srl_nokia-feat:ethcfm-mp-mac-address";
+              type srl_nokia-comm:unicast-mac-address;
+              description
+                "The optional unicast MAC address configuration for the MEP
+
+                 By default, the unicast MAC will be assigned based on the interface on which the MEP is configured.  Any
+                 bridge that has UP MEPs on different subinterfaces that share the same interface (port) must have unique MAC.
+                 Design guidelines suggest that when multiple subinterfaces share a common interface (port) only one of the
+                 subinterfaces should be configured with an UP MEP.  When UP MEPs on different subinterfaces share a common
+                 interface (port), and they use the default MAC address assignment based on the interface, a bridging service
+                 will experience MAC moves when CFM packets are sent from those MEPs.";
+            }
+            leaf ccm-ltm-priority {
+              type srl_nokia-ethcfm-types:priority-type;
+              default "7";
+              description
+                "The dot1p priority for CCMs and LTMs transmitted by the MEP";
+            }
+            container continuity-check {
+              description
+                "This set of data definitions describes the handling of Ethernet Continuity Check (ETH-CCM)";
+              leaf ccm-transmit {
+                type srl_nokia-comm:admin-state;
+                default "disable";
+                description
+                  "An indicator of whether the MEP is configured to transmit CCM packets
+
+                   This only controls the MEPs ability to transmit CCM packets.  A MEP has no administrative configuration to
+                   stop the processing of received CCM packets.  The receive state machine for CCM will execute and packet
+                   processing will occur regardless of the ccm-transmit admin-state.";
+              }
+              leaf lowest-fault-priority-defect {
+                type srl_nokia-ethcfm-types:lowest-alarm-priority-type;
+                default "mac-remote-error-xcon";
+                description
+                  "The lowest priority defect that will generate a Fault Alarm
+
+                   When the lowest fault priority defect is reached or exceeded, a fault alarm will be generated.  This also drives
+                   the ../ccm-local-fault-action for down MEPs.  When the lowest priority fault priority defect is reached the
+                   ../ccm-local-fault with a value 'permit' will operationally affect the interface or subinterface on which it is attached.";
+              }
+              container ccm-local-fault {
+                description
+                  "Enter the ccm local fault action context";
+                leaf action {
+                  type srl_nokia-ethcfm-types:action-type;
+                  must "../../../direction != 'up' or . = 'deny'" {
+                    error-message "ccm-local-fault is only supported on down MEPs";
+                  }
+                  must "not(../../../interface-ref/subinterface) or . = 'deny'" {
+                    error-message "ccm-local-fault is only supported on Ethernet interfaces";
+                  }
+                  default "deny";
+                  description
+                    "Provides the ability to operationally affect the attachment where the down MEP is configured
+
+                     A down MEP that experiences a defect condition matching the lowest-fault-priority defect can affect the
+                     operational state of the interface/subinterface the down MEP is configured on when the ccm-local-fault value is
+                     'permit'.  When the ccm-local-fault value is 'deny' there is no operational impact on the interface/subinterface.
+                     This leaf is only supported on down MEPs.";
+                }
+              }
+              leaf highest-priority-defect-found {
+                type srl_nokia-ethcfm-types:highest-priority-defect-type;
+                config false;
+                description
+                  "Value indicating the highest-priority defect present since the MEP FNG state machine was in RESET
+
+                   Multiple defect conditions may be present on a local MEP at any given time.  This leaf records the highest
+                   priority defect since the MEP Fault Notification Generator (FNG) State Machine was last in the FNG_RESET
+                   state.  This will be cleared when the when no defect flags are present.";
+              }
+              leaf-list active-defects {
+                description
+                  "A list of all active CCM defect conditions in priority order from lowest to highest";
+                config false;
+                type srl_nokia-ethcfm-types:mep-defect-flags;
+              }
+              leaf last-error-ccm {
+                type binary {
+                  length "1..1024";
+                  srl_nokia-ext:output-flavor "hex";
+                }
+                config false;
+                description
+                  "Up to 1024 bytes printed from of last-received CCM that triggered an invalid-ccm fault
+
+                   The last-error-ccm will be cleared when the condition is no longer present.";
+              }
+              leaf last-cross-connect-ccm {
+                type binary {
+                  length "1..1024";
+                  srl_nokia-ext:output-flavor "hex";
+                }
+                config false;
+                description
+                  "Up to 1024 bytes of last-received CCM that triggered a cross-connect-ccm fault
+
+                   The last-cross-connect-ccm will be cleared when the condition is no longer present.";
+              }
+              leaf ccm-sequence-error-count {
+                type srl_nokia-comm:zero-based-counter64;
+                config false;
+                mandatory true;
+                description
+                  "The total number of out-of-sequence CCMs received from all remote MEPs";
+              }
+              leaf sent-interface-status {
+                type srl_nokia-ethcfm-types:interface-status-type;
+                config false;
+                description
+                  "Latest interface-status TLV value sent to the peer in the CCM packet
+
+                   Indicates the interface status TLV information included in the most
+                   recent Connectivity Check Message (CCM) transmission from the local MEP.
+                   If the local MEP CCM transmissions are not enabled, or if no interface
+                   status TLV was included in the most recent transmission, then
+                   ccm-tx-if-status will return a value of is-no-interface-status-tlv (0).";
+              }
+              leaf sent-port-status {
+                type srl_nokia-ethcfm-types:port-status-type;
+                config false;
+                description
+                  "Latest port-status TLV value sent to the peer in the CCM packet
+
+                   Indicates the port status TLV information included in the most recent
+                   Connectivity Check Message (CCM) transmission from the local MEP.
+                   If the local MEP CCM transmissions are not enabled, or if no port
+                   status TLV was included in the most recent transmission, then
+                   ccm-tx-port-status will return a value of ps-no-port-state-tlv (0).";
+              }
+              leaf sent-remote-defect-indicator {
+                type boolean;
+                config false;
+                description
+                  "Latest remote defect indicator (rdi) value sent to the peer in the CCM packet
+
+                   Indicates if the Remote Defect Indication (RDI) bit was set to on
+                   in the most recent Connectivity Check Message (CCM) transmission from the
+                   local MEP.
+
+                   If the local MEP CCM transmissions are not enabled, or if the RDI bit
+                   was not set in the most recent transmission, then ccm-tx-rdi will return
+                   a value of 'false (2)'.";
+              }
+            }
+            uses remote-mep-database;
+            uses loopback-statistics;
+            uses linktrace-statistics;
+            uses opcode-statistics;
+          }
+        }
+      }
+      container statistics {
+        config false;
+        description
+          "Enter the ETH-CFM system level statistics context";
+        leaf receive-count {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Indicates the number of ETH-CFM packets received on the node";
+        }
+        leaf transmit-count {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Indicates the number of ETH-CFM  packets transmitted from the node";
+        }
+        leaf receive-congestion-drops {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Indicates the number of dropped ETH-CFM packets on the node in the receive direction
+
+             A packet  drop can be caused be resource contention.";
+        }
+        leaf transmit-congestion-drops {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Indicates the number of dropped ETH-CFM packets on the node in the transmit direction
+
+             A packet  drop can be caused be resource contention.";
+        }
+        leaf error-discards {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Indicates the number of discarded ETH-CFM packets received on the node
+
+             A packet may be discarded for several reasons including, but not limited to, malformed PDU,
+             invalid TLVs, MEP admin down, etc.";
+        }
+        uses opcode-statistics;
+      }
+      container cfm-stack-table {
+        config false;
+        description
+          "The cfm-stack-table provides an overview of CFM MEP state in a single view";
+        container interface {
+          description
+            "Enter the interface context";
+          list interface {
+            key "interface level direction";
+            description
+              "List of interfaces that have CFM configured and the association CFM operational state";
+            leaf interface {
+              type srl_nokia-comm:interface-all;
+              description
+                "Interface name";
+            }
+            uses cfm-stack-table-common;
+          }
+        }
+        container subinterface {
+          description
+            "Enter the subinterface context";
+          list subinterface {
+            key "subinterface primary-vlan level direction";
+            description
+              "List of subinterfaces that have CFM configured and the association CFM operational state";
+            leaf subinterface {
+              type srl_nokia-comm:subinterface-all;
+              description
+                "Subinterface name";
+            }
+            leaf primary-vlan {
+              type srl_nokia-ethcfm-types:vlan-id-or-none;
+              description
+                "Primary VLAN or 'none'";
+            }
+            uses cfm-stack-table-common;
+            leaf subinterface-type {
+              type string;
+              description
+                "The type of subinterface bridged or routed
+
+                 This is the value of srl_nokia-interfaces interface/subinterface/type ";
+            }
+          }
+        }
+      }
+      list learned-remote-mac {
+        key "domain-id association-id local-mep-id remote-mep-id";
+        config false;
+        description
+          "Enter the learned-remote-mac list instance";
+        leaf domain-id {
+          type srl_nokia-ethcfm-types:admin-name;
+          description
+            "A unique administratively assigned name used to identify a domain";
+        }
+        leaf association-id {
+          type srl_nokia-ethcfm-types:admin-name;
+          description
+            "A unique administratively assigned name used to identify an association";
+        }
+        leaf local-mep-id {
+          type srl_nokia-ethcfm-types:mep-id-type;
+          description
+            "Specifies a local MEP identifier unique over a given maintenance association";
+        }
+        leaf remote-mep-id {
+          type srl_nokia-ethcfm-types:mep-id-type;
+          description
+            "Specifies a remote MEP identifier unique over a given maintenance association";
+        }
+        leaf remote-mac-address {
+          type srl_nokia-comm:mac-address;
+          description
+            "The the source MAC address used by the remote MEP in the most recently received CCM PDU";
+        }
+        leaf stale-flag {
+          type boolean;
+          description
+            "Indicates if the learned MAC entry for this remote MEP matches the entry found in the list on the local MEP
+
+             The value 'false' indicates that the MAC address matches the entry
+             found in both the lists for the same local and remote MEP values and
+             therefore is not considered stale.
+
+             The value 'true' indicates either the entries do not match, or there
+             is no equivalent entry for the remote MEP in the list on the local
+             MEP, so the learned remote MAC address in this table is considered stale.";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface" {
+    if-feature "srl_nokia-feat:ethcfm-subinterface";
+    uses squelching;
+  }
+}

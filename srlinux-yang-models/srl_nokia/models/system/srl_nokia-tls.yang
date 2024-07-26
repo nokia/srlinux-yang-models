@@ -1,0 +1,370 @@
+module srl_nokia-tls {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:tls";
+  prefix srl_nokia-tls;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines TLS configuration";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  identity cipher-type {
+    description
+      "Base identity for cipher types";
+  }
+
+  identity ecdhe-rsa-aes256-gcm-sha384 {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-aes256-gcm-sha384 {
+    base cipher-type;
+  }
+
+  identity ecdhe-rsa-aes256-sha384 {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-aes256-sha384 {
+    base cipher-type;
+  }
+
+  identity ecdhe-rsa-aes256-sha {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-aes256-sha {
+    base cipher-type;
+  }
+
+  identity dhe-dss-aes256-gcm-sha384 {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-aes256-gcm-sha384 {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-aes256-sha256 {
+    base cipher-type;
+  }
+
+  identity dhe-dss-aes256-sha256 {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-aes256-sha {
+    base cipher-type;
+  }
+
+  identity dhe-dss-aes256-sha {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-camellia256-sha {
+    base cipher-type;
+  }
+
+  identity dhe-dss-camellia256-sha {
+    base cipher-type;
+  }
+
+  identity aes256-gcm-sha384 {
+    base cipher-type;
+  }
+
+  identity aes256-sha256 {
+    base cipher-type;
+  }
+
+  identity aes256-sha {
+    base cipher-type;
+  }
+
+  identity camellia256-sha {
+    base cipher-type;
+  }
+
+  identity psk-aes256-cbc-sha {
+    base cipher-type;
+  }
+
+  identity ecdhe-rsa-aes128-gcm-sha256 {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-aes128-gcm-sha256 {
+    base cipher-type;
+  }
+
+  identity ecdhe-rsa-aes128-sha256 {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-aes128-sha256 {
+    base cipher-type;
+  }
+
+  identity ecdhe-rsa-aes128-sha {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-aes128-sha {
+    base cipher-type;
+  }
+
+  identity dhe-dss-aes128-gcm-sha256 {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-aes128-gcm-sha256 {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-aes128-sha256 {
+    base cipher-type;
+  }
+
+  identity dhe-dss-aes128-sha256 {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-aes128-sha {
+    base cipher-type;
+  }
+
+  identity dhe-dss-aes128-sha {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-seed-sha {
+    base cipher-type;
+  }
+
+  identity dhe-dss-seed-sha {
+    base cipher-type;
+  }
+
+  identity dhe-rsa-camellia128-sha {
+    base cipher-type;
+  }
+
+  identity dhe-dss-camellia128-sha {
+    base cipher-type;
+  }
+
+  identity aes128-gcm-sha256 {
+    base cipher-type;
+  }
+
+  identity aes128-sha256 {
+    base cipher-type;
+  }
+
+  identity aes128-sha {
+    base cipher-type;
+  }
+
+  identity seed-sha {
+    base cipher-type;
+  }
+
+  identity camellia128-sha {
+    base cipher-type;
+  }
+
+  identity psk-aes128-cbc-sha {
+    base cipher-type;
+  }
+
+  identity ecdhe-rsa-des-cbc3-sha {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-des-cbc3-sha {
+    base cipher-type;
+  }
+
+  identity edh-rsa-des-cbc3-sha {
+    base cipher-type;
+  }
+
+  identity edh-dss-des-cbc3-sha {
+    base cipher-type;
+  }
+
+  identity des-cbc3-sha {
+    base cipher-type;
+  }
+
+  identity idea-cbc-sha {
+    base cipher-type;
+  }
+
+  identity psk-3des-ede-cbc-sha {
+    base cipher-type;
+  }
+
+  identity ecdhe-rsa-rc4-sha {
+    base cipher-type;
+  }
+
+  identity ecdhe-ecdsa-rc4-sha {
+    base cipher-type;
+  }
+
+  identity rc4-sha {
+    base cipher-type;
+  }
+
+  identity psk-rc4-sha {
+    base cipher-type;
+  }
+
+  grouping server-profile-interface {
+    list server-profile {
+      description
+        "List of configured TLS server profiles";
+      key "name";
+      leaf name {
+        srl-ext:show-importance "high";
+        type srl-comm:name {
+          length "1..247";
+        }
+        description
+          "Name of the TLS server-profile";
+      }
+      leaf key {
+        srl-ext:show-importance "low";
+        type string {
+          srl-ext:generated-class-name "SecretKey";
+        }
+        description
+          "Base64 encoded key to use with the server certificate
+
+           This includes the '-----BEGIN PRIVATE KEY-----', and '-----END PRIVATE KEY-----' header and footer
+           The value is hashed, and only the hashed value is kept";
+      }
+      leaf certificate {
+        srl-ext:show-importance "low";
+        type string;
+        description
+          "Base64 encoded certificate to use with the private key
+
+           This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+      }
+      leaf use-tpm-devid {
+        if-feature "srl_nokia-feat:tpm-idevid";
+        type enumeration {
+          enum idevid {
+            value 1;
+            description
+              "The TPM iDevID key and certificate is used";
+          }
+          enum oidevid {
+            if-feature "srl_nokia-feat:tpm-oidevid";
+            value 2;
+            description
+              "The TPM iDevID key and oIDevID certificate is used";
+          }
+        }
+        must 'not (../key or ../certificate)' {
+          error-message "The server profile can only be configured with idevid or oidevid if the local key and certificate are not configured";
+        }
+        description
+          "Defines if the server profile key and certificate uses the TPM idevid or oidevid";
+      }
+      leaf authenticate-client {
+        default "false";
+        srl-ext:show-importance "high";
+        type boolean;
+        description
+          "Defines if the server should authenticate the identity of connecting clients using the trust anchor";
+      }
+      leaf trust-anchor {
+        type string;
+        srl-ext:show-importance "low";
+        description
+          "Base64 encoded certificate to use as a trust anchor
+
+           This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+      }
+      leaf certificate-revocation-list {
+        type string;
+        srl-ext:show-importance "low";
+        description
+          "Base64 encoded certificate revocation list
+
+           This includes the '-----BEGIN X509 CRL' and '-----END X509 CRL' header and footer";
+      }
+      leaf-list cipher-list {
+        ordered-by user;
+        srl-ext:show-importance "low";
+        type identityref {
+          base cipher-type;
+        }
+        default "ecdhe-ecdsa-aes256-gcm-sha384";
+        default "ecdhe-ecdsa-aes128-gcm-sha256";
+        default "ecdhe-rsa-aes256-gcm-sha384";
+        default "ecdhe-rsa-aes128-gcm-sha256";
+        description
+          "List of ciphers to use when negotiating TLS 1.2 with clients
+
+           TLS 1.3 cipher suites are always enabled:
+               tls_aes_256_gcm_sha384, tls_aes_128_gcm_sha256, tls_chacha20_poly1305_sha256";
+      }
+      leaf dynamic {
+        config false;
+        srl-ext:show-importance "high";
+        type boolean;
+        description
+          "Defines if the profile was dynamically created by service (for example gNSI Authz/Certz)";
+      }
+    }
+  }
+
+  grouping tls-top {
+    container tls {
+      description
+        "Top-level container for TLS configuration and state";
+      uses server-profile-interface;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses tls-top;
+  }
+}

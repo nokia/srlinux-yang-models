@@ -1,0 +1,162 @@
+module srl_nokia-tools-platform-attestation {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:tools-platform-attestation";
+  prefix srl_nokia-tools-platform-attestation;
+
+  import srl_nokia-tools-platform {
+    prefix srl-tools-platform;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands for platform Trust TPM Attestation related functions";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  identity attested_event_log_type {
+    description
+      "Base identity allowing categorization of the reasons why an attested measurement has been taken on an Attester";
+  }
+
+  identity ima {
+    base attested_event_log_type;
+    description
+      "An event type recorded in IMA";
+  }
+
+  identity bios {
+    base attested_event_log_type;
+    description
+      "An event type associated with BIOS/UEFI";
+  }
+
+  grouping pcr-quote {
+    container pcr-quote {
+      description
+        "Tools commands input parameter to retrieve TPM PCR Quote
+         This container includes every information element defined in the reference challenge-response interaction model for remote attestation. Corresponding values are based on TPM 2.0 structure definitions";
+      leaf nonce {
+        type binary;
+        description
+          "A random number intended to guarantee freshness and for use as part of a replay-detection mechanism
+           Note that a nonce sent into a TPM will typically be 160 or 256 binary digits long (20 or 32 bytes)
+           If fewer binary digits are sent, this nonce object will be padded with leading zeros within Quotes returned from the TPM.
+           Additionally if more bytes are sent, the nonce will be trimmed to the most significant binary digits";
+      }
+      leaf pcr-selection {
+        type string;
+        description
+          "A tpm2-tools compliant pcr selection string";
+        reference
+          "https://github.com/tpm2-software/tpm2-tools/blob/master/man/common/pcr.md";
+      }
+    }
+  }
+
+  grouping pcr-read {
+    container pcr-read {
+      if-feature "srl-feat:future-0-0";
+      description
+        "Tools commands input parameter to retrieve TPM PCR values
+         Without pcr-selection, the command outputs all PCRs and their hash banks.";
+      leaf pcr-selection {
+        type string;
+        description
+          "A tpm2-tools compliant pcr selection string";
+        reference
+          "https://github.com/tpm2-software/tpm2-tools/blob/master/man/common/pcr.md";
+      }
+    }
+  }
+
+  grouping log-retrieval-options {
+    leaf summary {
+      type empty;
+      description
+        "retrieve a summary of the log";
+    }
+    container display {
+      leaf from {
+        type uint32;
+        description
+          "1-based log display starting index.";
+        default "1";
+      }
+      leaf to {
+        type uint32;
+        description
+          "1-based log display terminal index. 0 indicates use maximum index in log.";
+        default "0";
+      }
+      leaf pcr {
+        type int32;
+        description
+          "limit display to entries associated with a specific PCR. A value of -1 shows all PCRs";
+        default "-1";
+      }
+    }
+  }
+
+  grouping log-retrieval {
+    container log-retrieval {
+      if-feature "srl-feat:measured-boot";
+      description
+        "Tools commands to retrieve BIOS and IMA Log";
+      container bios {
+        description
+          "TCG BIOS log retrieval commands";
+        presence "Retrieve TCG BIOS log";
+        uses log-retrieval-options;
+      }
+      container ima {
+        description
+          "IMA log retrieval commands";
+        presence "Retrieve IMA log";
+        uses log-retrieval-options;
+      }
+    }
+  }
+
+  augment "/srl-tools-platform:platform/srl-tools-platform:trust" {
+    container attestation {
+      if-feature "srl-feat:measured-boot";
+      description
+        "Tools commands input parameter for attestation to retrieve TCG BIOS Logs, IMA Logs";
+      list control {
+        description
+          "Operational commands related to log retrieval for control modules";
+        key "slot";
+        leaf slot {
+          type string;
+          description
+            "Slot identifier for the control module";
+        }
+        uses log-retrieval;
+        uses pcr-quote;
+        uses pcr-read;
+      }
+    }
+  }
+}

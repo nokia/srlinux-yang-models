@@ -1,0 +1,626 @@
+module srl_nokia-qos-policers {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:qos:qos-policers";
+  prefix srl_nokia-qos-policers;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+
+  typedef violate-action {
+    description
+      "Defines different actions when packet violate policer parameters";
+    type enumeration {
+      enum drop {
+        value 1;
+        description
+          "The violating packet will be dropped";
+      }
+      enum mark-exceed {
+        value 2;
+        description
+          "The violating packet will be marked as exceed";
+      }
+    }
+  }
+
+  typedef policer-algorithm-type {
+    description
+      "Defines the choice between different policer-algorithms";
+    type enumeration {
+      enum trtcm1 {
+        value 1;
+        description
+          "This enumeration refers to Two-rate Three-color marker as defined by RFC 2698";
+      }
+      enum trtcm2 {
+        value 2;
+        description
+          "This enumeration refers to Two-rate Three-color marker as defined by RFC 4115";
+      }
+    }
+  }
+
+  grouping policer-policies-top {
+    container policer-policies {
+      if-feature "srl-feat:qos-policer-policies";
+      description
+        "Policer-policies for subinterface level traffic metering";
+      container threshold-separation-policies {
+        description
+          "This container lists pre-defined threshold-separation-policies";
+        config false;
+        list threshold-separation-policy {
+          description
+            "Lists configuration of pre-defined threshold-separation policy";
+          key "name";
+          leaf name {
+            description
+              "System wide pre-defined threshold-separation-policy name";
+            type srl_nokia-comm:name;
+          }
+          list input-profile {
+            description
+              "Profile of the packet";
+            key "input-profile";
+            leaf input-profile {
+              type srl_nokia-comm:classify-profile;
+              description
+                "The profile the input packet was classified to, based on applicable classification criteria";
+            }
+            leaf threshold-factor {
+              type decimal64 {
+                fraction-digits 2;
+                range "0..2";
+              }
+              description
+                "Threshold-factor for the policer bucket indicating fraction of mbs";
+            }
+          }
+        }
+      }
+      list parent-policer-threshold-policy {
+        description
+          "List of policies defining parent-policer-thresholds and related parameters";
+        key "name";
+        max-elements 16;
+        leaf name {
+          description
+            "The name assigned to the parent-policer-threshold-policy";
+          type srl_nokia-comm:name;
+          must ". != 'default'" {
+            error-message "name 'default' is reserved";
+          }
+        }
+        leaf threshold-separation {
+          description
+            "Defines the threshold-separation for parent-policer";
+          type uint32 {
+            range "3000..65536";
+          }
+          units "bytes";
+          default "18000";
+        }
+      }
+      list policer-policy {
+        description
+          "List of policer policies";
+        key "name";
+        max-elements 64;
+        leaf name {
+          description
+            "The name assigned to the policer policy";
+          type srl_nokia-comm:name;
+          must ". != 'default'" {
+            error-message "name 'default' is reserved";
+          }
+        }
+        list policer {
+          description
+            "The list of policer belonging to the policer-policy";
+          key "policer-id";
+          max-elements 32;
+          leaf policer-id {
+            type uint8 {
+              range "0..31";
+            }
+            description
+              "A number to identify given policer within policer-policy";
+          }
+          leaf algorithm-type {
+            type policer-algorithm-type;
+            default "trtcm2";
+            description
+              "Defines the algorithm-type used for the given policer";
+          }
+          container adaptation-rules {
+            description
+              "Container defining adaptation rules for individual policer parameters";
+            leaf peak-rate {
+              description
+                "Adaptation rule for peak-rate-kbps parameter";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
+            leaf committed-rate {
+              description
+                "Adaptation rule for committed-rate-kbps parameter";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
+            leaf excess-rate {
+              description
+                "Adaptation rule for excess-rate-kbs parameter";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
+            leaf maximum-burst-size {
+              description
+                "Adaptation rule for maximum-burst-size parameter";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
+            leaf committed-burst-size {
+              description
+                "Adaptation rule for committed-burst-size parameter";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
+            leaf excess-burst-size {
+              description
+                "Adaptation rule for excess-burst-size parameter";
+              type srl_nokia-comm:adaptation-rule;
+              default "closest";
+            }
+          }
+          container pir-threshold-separation {
+            description
+              "Container defining selection of one from pre-defined policer-threshold-separation policies";
+            leaf inplus-separated {
+              description
+                "Selecting a separate pir-bucket threshold for in-plus profile";
+              type boolean;
+              default "false";
+            }
+          }
+          container packet-length-adjustment {
+            description
+              "The definition on how packet-length should be adjusted for the policer-algorithm calculation";
+            choice add-or-subtract {
+              case add {
+                leaf add {
+                  description
+                    "Number of bytes to be added to the packet-length for the policer-algorithm calculation";
+                  type uint32 {
+                    range "0..32";
+                  }
+                  units "bytes";
+                }
+              }
+              case subtract {
+                leaf subtract {
+                  description
+                    "Number of bytes to be subtracted from the packet-length for the policer-algorithm calculation";
+                  type uint32 {
+                    range "0..64";
+                  }
+                  units "bytes";
+                }
+              }
+            }
+          }
+          leaf peak-rate-kbps {
+            type uint32 {
+              range "64..800000000";
+            }
+            units "kbps";
+            default "64";
+            description
+              "The peak information rate (PIR) of the policer, defined in kilobits (1024 bits) per second.
+
+               This parameter is ignored if 'algorithm-type' is set to 'trtcm2'";
+          }
+          leaf committed-rate-kbps {
+            type uint32 {
+              range "0|64..800000000";
+            }
+            units "kbps";
+            default "64";
+            description
+              "The committed information rate (CIR) of the policer, defined in kilobits (1024 bits) per second";
+            must "current() != 0 or ../algorithm-type != 'trtcm2'" {
+              error-message "cannot be 0 when algorithm-type is trtcm2";
+            }
+          }
+          leaf excess-rate-kbps {
+            type uint32 {
+              range "64..800000000";
+            }
+            units "kbps";
+            default "64";
+            description
+              "The excess information rate (EIR) of the policer, defined in kilobits (1024 bits) per second.
+
+               This parameter is ignored if 'algorithm-type' is set to 'trtcm1'";
+          }
+          leaf maximum-burst-size {
+            type uint32 {
+              range "64..253952";
+            }
+            units "bytes";
+            default "40000";
+            description
+              "Maximum PIR bucket depth in bytes.
+
+               This parameter is ignored if 'algorithm-type' is set to 'trtcm2'";
+          }
+          leaf committed-burst-size {
+            type uint32 {
+              range "64..190941";
+            }
+            units "bytes";
+            default "40000";
+            description
+              "Maximum CIR bucket depth in bytes";
+          }
+          leaf excess-burst-size {
+            type uint32 {
+              range "64..253952";
+            }
+            units "bytes";
+            default "40000";
+            description
+              "Maximum EIR bucket depth in bytes.
+
+               This parameter is ignored if 'algorithm-type' is set to 'trtcm1'";
+          }
+          leaf violate-action {
+            description
+              "Defines action when policer will evaluate the packet as violating";
+            type violate-action;
+            default "drop";
+          }
+          leaf statistics-mode {
+            description
+              "Defines the number and type of the counters collected for the policer. The modes are mutually exclusive";
+            type enumeration {
+              enum extended {
+                description
+                  "This statistics-mode counts forwarded packets/octets on per profile basis. The discards are counted as an aggregate";
+              }
+            }
+            default "extended";
+          }
+        }
+        container parent-policer {
+          description
+            "Container with options to define aggeregate parent-policer parameters";
+          leaf parent-policer-threshold-policy {
+            description
+              "Assigns parent-policer-threshold-policy to the parent-policer";
+            type leafref {
+              path "../../../parent-policer-threshold-policy/name";
+            }
+          }
+          container rate {
+            description
+              "Container with options defining parent-policer rate";
+            leaf peak-rate-kbps {
+              type uint32 {
+                range "64..800000000";
+              }
+              units "kbps";
+              description
+                "Defines peak-rate of the parent-policer";
+            }
+            leaf adaptation-rule {
+              type srl_nokia-comm:adaptation-rule;
+              description
+                "Defines adaptation-rule for peak-rate of the parent-policer";
+            }
+            leaf burst-allowance {
+              description
+                "Defines burst-allowance for the parent-policer";
+              type uint32 {
+                range "0..16383936";
+              }
+              units "bytes";
+              default "40000";
+            }
+          }
+          container inputs {
+            description
+              "Container defining input policers to parent-policer";
+            list policer {
+              key "policer-id";
+              max-elements 32;
+              leaf policer-id {
+                description
+                  "Input policer-id";
+                type leafref {
+                  path "../../../../policer/policer-id";
+                }
+              }
+              leaf priority-level {
+                description
+                  "Priority level of the input policer. Priority-level 0 corresponds to the lowest priority";
+                type uint8 {
+                  range "0..5";
+                }
+                default "0";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping policer-counters {
+    leaf last-clear {
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Timestamp of the last time the statistics associated with this policer were cleared";
+    }
+    leaf accepted-packets {
+      if-feature "srl-feat:future-0-0";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were accepted by the policer, counting all input profiles.
+
+         Not available in extended statistics-mode";
+    }
+    leaf accepted-octets {
+      if-feature "srl-feat:future-0-0";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were accepted by the policer, counting all input profiles.
+
+         Not available in extended statistics-mode";
+    }
+    leaf accepted-inplus-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were considered as Green by the policer and their input profile was 'inplus'.
+
+         Not available in minimal statistics-mode";
+    }
+    leaf accepted-inplus-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were considered as Green by the policer and their input profile was 'inplus'.
+
+         Not available in minimal statistics-mode";
+    }
+    leaf accepted-in-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were considered as Green by the policer and their input profile was 'in'.
+
+         Not available in minimal statistics-mode";
+    }
+    leaf accepted-in-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were considered as Green by the policer and their input profile was 'in'.
+
+         Not available in minimal statistics-mode";
+    }
+    leaf accepted-out-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were considered Yellow having input profile 'inplus' or 'in', and packets that were considered Green and Yellow having input profile 'out'.
+
+         Not available in minimal statistics-mode";
+    }
+    leaf accepted-out-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were considered Yellow having input profile 'inplus' or 'in', and packets that were considered Green and Yellow having input profile 'out'.
+
+         Not available in minimal statistics-mode";
+    }
+    leaf exceed-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets that were accepted having input profile 'exceed'.
+
+         Available in boths statistics-modes";
+    }
+    leaf exceed-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of octets in packets that were accepted having input profile 'exceed'.
+
+         Available in both statistics-modes";
+    }
+  }
+
+  grouping policer-instance-state {
+    list forwarding-class {
+      config false;
+      key "name";
+      leaf name {
+        type leafref {
+          path "/qos/forwarding-classes/forwarding-class/name";
+        }
+        description
+          "The forwarding class";
+      }
+      leaf-list forwarding-type {
+        description
+          "The list of forwarding types, belonging to this forwarding-class, to match to the policer";
+        type srl_nokia-comm:forwarding-type;
+      }
+    }
+    leaf eir-policer-threshold-separation-policy {
+      config false;
+      type string;
+      description
+        "The name of eir-policer-threshold-separation policy assigned to the policer";
+    }
+    leaf pir-policer-threshold-separation-policy {
+      config false;
+      type string;
+      description
+        "The name of pir-policer-threshold-separation policy assigned to the policer";
+    }
+    leaf cir-policer-threshold-separation-policy {
+      config false;
+      type string;
+      description
+        "The name of cir-policer-threshold-separation policy assigned to the policer";
+    }
+    list operational-separation-thresholds {
+      key "input-profile";
+      leaf input-profile {
+        type srl_nokia-comm:classify-profile;
+        description
+          "The profile the input packet was classified to, based on applicable classification criteria";
+      }
+      leaf eir-operational-separation-threshold {
+        type uint32;
+        description
+          "The operational-threshold level for the policer eir bucket";
+      }
+      leaf pir-operational-separation-threshold {
+        type uint32;
+        description
+          "The operational-threshold level for the policer pir bucket";
+      }
+      leaf cir-operational-separation-threshold {
+        type uint32;
+        description
+          "The operational-threshold level for the policer cir bucket";
+      }
+    }
+    leaf peak-rate-kbps {
+      config false;
+      type uint32;
+      units "kbps";
+      description
+        "The actual/operational peak information rate (PIR) of the policer as it is programmed into hardware";
+    }
+    leaf excess-rate-kbps {
+      config false;
+      type uint32;
+      units "kbps";
+      description
+        "The actual/operational excess information rate (EIR) of the policer as it is programmed into hardware";
+    }
+    leaf committed-rate-kbps {
+      config false;
+      type uint32;
+      units "kbps";
+      description
+        "The actual/operational committed information rate (CIR) of the policer as it is programmed into hardware";
+    }
+    leaf maximum-burst-size {
+      config false;
+      type uint32;
+      units "bytes";
+      description
+        "The actual/operational maximum PIR bucket depth in bytes as it is programmed into hardware";
+    }
+    leaf committed-burst-size {
+      config false;
+      type uint32;
+      units "bytes";
+      description
+        "The actual/operational maximum CIR bucket depth in bytes as it is programmed into hardware";
+    }
+    leaf excess-burst-size {
+      config false;
+      type uint32;
+      units "bytes";
+      description
+        "The actual/operational maximum EIR bucket depth in bytes as it is programmed into hardware";
+    }
+    container policer-statistics {
+      config false;
+      description
+        "The statistics per subinterface policers";
+      container aggregate-statistics {
+        srl_nokia-ext:delivery-node-override "true";
+        description
+          "The aggregate statistics per subinterface policers";
+        uses policer-counters;
+      }
+      container per-lag-member-statistics {
+        description
+          "The subinterface policer stats per member-fp";
+        list linecard {
+          description
+            "Line-card within the system";
+          key "slot";
+          leaf slot {
+            type uint8 {
+              range "1..8";
+            }
+            description
+              "Numeric identifier for the linecard";
+          }
+          list forwarding-complex {
+            description
+              "Forwarding complex on the card";
+            key "name";
+            leaf name {
+              description
+                "Forwarding-complex name";
+              type enumeration {
+                enum 0;
+                enum 1;
+              }
+            }
+            uses policer-counters;
+          }
+        }
+      }
+    }
+  }
+}

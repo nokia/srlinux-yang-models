@@ -1,0 +1,157 @@
+module srl_nokia-tools-ldp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:ldp:tools-ldp";
+  prefix srl_nokia-tools-ldp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for LDP operational commands";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
+
+  grouping ldp-tools-top {
+    container ldp {
+      if-feature "srl_nokia-feat:ldp";
+      presence "Configure the LDP protocol";
+      description
+        "Operational tools commands for LDP.";
+      container discovery {
+        container interfaces {
+          list interface {
+            key "name";
+            leaf name {
+              type srl_nokia-comm:subinterface-eth-lag;
+              description
+                "Reference type to a specific subinterface of the form <interface-name>.<subinterface-index>";
+            }
+            container ipv4 {
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Resets all the LDP instance state counters to zero";
+                }
+              }
+            }
+            container ipv6 {
+              if-feature "srl_nokia-feat:ldp-ipv6";
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Resets all the LDP instance state counters to zero";
+                }
+              }
+            }
+          }
+        }
+        container targeted {
+          if-feature "srl_nokia-feat:ldp-targeted";
+          container ipv4 {
+            list target {
+              key "remote-address";
+              leaf remote-address {
+                type srl_nokia-comm:ipv4-address;
+                description
+                  "Reference to neighbor address of the targeted LDP adjacency.";
+              }
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Resets all the LDP target counters to zero";
+                }
+              }
+            }
+          }
+          container ipv6 {
+            if-feature "srl_nokia-feat:ldp-ipv6";
+            list target {
+              key "remote-address";
+              leaf remote-address {
+                type srl_nokia-comm:ipv6-address;
+                description
+                  "Reference to neighbor address of the targeted LDP adjacency.";
+              }
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Resets all the LDP target counters to zero";
+                }
+              }
+            }
+          }
+        }
+      }
+      container peers {
+        list peer {
+          key "lsr-id label-space-id";
+          description
+            "List of peers.";
+          leaf lsr-id {
+            type srl_nokia-comm:ip-address;
+            description
+              "The LSR ID of the peer, to identify the globally unique LSR. This leaf is used together with the leaf 'label-space-id' to form the LDP ID.";
+          }
+          leaf label-space-id {
+            type uint16;
+            description
+              "The Label Space ID of the peer, to identify a specific label space within the LSR. This is the last two octets of the LDP ID. This leaf is used together with the leaf 'lsr-id' to form the LDP ID.";
+          }
+          leaf reset {
+            type empty;
+            description
+              "Reset the LDP session by closing the TCP connection and establishing a new one.";
+          }
+          container statistics {
+            leaf clear {
+              type empty;
+              description
+                "Resets all the LDP instance state counters to zero";
+            }
+          }
+        }
+      }
+      container reset-overload {
+        presence "Reset the overload state of LDP";
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Resets all the LDP instance state counters to zero";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {
+    uses ldp-tools-top;
+  }
+}

@@ -1,0 +1,1414 @@
+module srl_nokia-pcep {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:pcc:pcep";
+  prefix srl_nokia-pcep;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-traffic-engineering {
+    prefix srl_nokia-te;
+  }
+  import srl_nokia-tls {
+    prefix srl-tls;
+  }
+  import srl_nokia-keychains {
+    prefix srl_nokia-keychains;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Configuration and state related to the use and propagation of Path Computation Element(PCC) information.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  typedef pcep-capabilities {
+    description
+      "The value specifies the capabilities supported by PCEP";
+    type enumeration {
+      enum stateful-delegate {
+        value 0;
+      }
+      enum stateful-pce {
+        value 1;
+      }
+      enum stateful-optimize {
+        value 2;
+      }
+      enum segment-routing-path {
+        value 3;
+      }
+      enum rsvp-path {
+        value 4;
+      }
+      enum optical-gmpls {
+        value 5;
+      }
+      enum pce-initiated-lsp {
+        value 6;
+      }
+      enum stateless {
+        value 7;
+      }
+      enum p2mp {
+        value 8;
+      }
+      enum p2mp-delegate {
+        value 9;
+      }
+      enum p2mp-initiate {
+        value 10;
+      }
+      enum association {
+        value 11;
+      }
+      enum multipath {
+        value 12;
+      }
+    }
+  }
+
+  typedef pcep-lsp-type {
+    description
+      "The type of LSP connection";
+    type enumeration {
+      enum rsvp-p2p {
+        description
+          "Resource Reservation Protocol-Traffic Engineering (RSVP-TE) Point to Point";
+        value 1;
+      }
+      enum rsvp-p2mp {
+        description
+          "RSVP-TE Point to Multipoint";
+        value 2;
+      }
+      enum segment-routing {
+        description
+          "Segment Routing";
+        value 3;
+      }
+      enum pce-initiated-segment-routing {
+        description
+          "Segment Routing";
+        value 4;
+      }
+    }
+  }
+
+  typedef metric-value {
+    description
+      "The value specifies the METRIC object used in PCReq message ";
+    type enumeration {
+      enum igp-metric {
+        value 0;
+      }
+      enum te-metric {
+        value 1;
+      }
+      enum hop-count {
+        value 2;
+      }
+    }
+  }
+
+  typedef pcep-sync-state {
+    description
+      "Indicates the synchronization state of this peer.";
+    type enumeration {
+      enum not-initialized {
+        description
+          "Indicates the State Synchronization has not yet started or not initialized due to no connection with the peer.";
+        value 0;
+      }
+      enum in-progress {
+        description
+          "Indicates the State Synchronization is in progress";
+        value 1;
+      }
+      enum done {
+        description
+          "Indicates the State Synchronozation has been completed";
+        value 2;
+      }
+    }
+  }
+
+  typedef pce-id {
+    description
+      "The value specifies a unique PCE-specific identifier.";
+    type uint32 {
+      range "1..4294967295";
+    }
+  }
+
+  grouping pcep-pcc-and-pce-state {
+    leaf-list capabilities {
+      config false;
+      description
+        "The list of capabilities supported by this PCEP";
+      type pcep-capabilities;
+      max-elements 8;
+    }
+    leaf oper-state {
+      config false;
+      description
+        "Indicates the operational status of this PCEP";
+      type enumeration {
+        enum up {
+          description
+            "The PCEP entity is active";
+          value 1;
+        }
+        enum down {
+          description
+            "The PCEP entity is inactive";
+          value 2;
+        }
+        enum going-up {
+          description
+            "The PCEP entity is activating";
+          value 3;
+        }
+        enum going-down {
+          description
+            "The PCEP entity is deactivating";
+          value 4;
+        }
+        enum failed {
+          description
+            "The PCEP entity has failed and will recover when possible";
+          value 5;
+        }
+        enum failed-permanently {
+          description
+            "The PCEP entity has failed and will not recover without operator intervention";
+          value 6;
+        }
+      }
+    }
+    leaf open-wait-timer {
+      config false;
+      description
+        "The time that the PCEP entity will wait to receive an Open message from a peer after the TCP connection has come up
+
+         If no Open message is received within this time, then PCEP terminates the TCP connection.";
+      type uint32 {
+        range "1..65535";
+      }
+      units "seconds";
+    }
+    leaf keep-wait-timer {
+      config false;
+      description
+        "The time that the PCEP entity will wait to receive a Keepalive or PCErr message from a peer during session initialization after receiving an Open message
+
+         If no Keepalive or PCErr message is received within this time, then PCEP terminates the TCP connection.";
+      type uint32 {
+        range "1..65535";
+      }
+      units "seconds";
+    }
+    leaf sync-timer {
+      config false;
+      description
+        "The value is used in the case of a synchronized path computation request using the SVEC object.";
+      type uint32 {
+        range "1..65535";
+      }
+      units "seconds";
+    }
+    leaf request-timer {
+      config false;
+      description
+        "The maximum time that the PCEP entity will wait for a response to a PCReq message.";
+      type uint32 {
+        range "1..65535";
+      }
+      units "seconds";
+    }
+    leaf connect-timer {
+      config false;
+      description
+        "The time that the PCEP entity will wait to establish a TCP connection with a peer
+
+         If a TCP connection is not established within this time, then PCEP aborts the session setup attempt.";
+      type uint32 {
+        range "1..65535";
+      }
+      units "seconds";
+    }
+    leaf allow-negotiation {
+      config false;
+      description
+        "Indicates whether the PCEP entity will permit negotiation of session parameters.";
+      type boolean;
+    }
+    leaf max-sessions {
+      config false;
+      description
+        "The maximum number of sessions involving this PCEP entity that can exist at any time.";
+      type uint32;
+    }
+    leaf max-unknown-requests {
+      config false;
+      description
+        "The maximum number of unrecognized requests and replies that any session on this PCEP entity is willing to accept per minute before terminating the session.";
+      type uint32;
+    }
+  }
+
+  grouping pcep-pcc-and-pce-peer-state {
+    leaf speaker-id {
+      config false;
+      description
+        "A unique speaker identifier for the peer that does change during lifetime of the speaker";
+      type srl_nokia-comm:name;
+    }
+    leaf-list capabilities {
+      config false;
+      description
+        "The capabilities supported by this peer";
+      type pcep-capabilities;
+      max-elements 8;
+    }
+    leaf sync-state {
+      config false;
+      description
+        "The synchronization state of this peer.";
+      type pcep-sync-state;
+    }
+    leaf session-established-time {
+      config false;
+      description
+        "Indicates when the session with this peer entered into the established state";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf oper-keepalive {
+      config false;
+      description
+        "The operational value of keepalive interval in use by this entity's peer
+
+         This is the maximum time between two consecutive messages sent to a peer";
+      type uint32;
+      units "seconds";
+    }
+    leaf oper-dead-timer {
+      config false;
+      description
+        "The operational value of dead timer interval in use by this peer
+
+         This is the time after which a peer should declare a session down if it is does not receive any PCEP messages";
+      type uint32;
+      units "seconds";
+    }
+    leaf oper-local-address {
+      config false;
+      description
+        "The value indicates the internet address being used by this PCEP Peer.";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+  }
+
+  grouping pcep-pcc-lsp-update-key {
+    leaf pce-id {
+      description
+        "The unique identifier for PCE";
+      type pce-id;
+    }
+  }
+
+  grouping pcep-pcc-lsp-update-path-key {
+    leaf path-type {
+      config false;
+      description
+        "LSP paths types";
+      type enumeration {
+        enum current {
+          description
+            "Current path";
+          value 0;
+        }
+        enum in-progress {
+          description
+            "A path under process";
+          value 1;
+        }
+        enum pending {
+          description
+            "Pending path which is yet to be processed";
+          value 2;
+        }
+      }
+    }
+  }
+
+  grouping pcep-pcc-lsp-path-route-object-key {
+    leaf route-object-index {
+      description
+        "The unique identifier for RRO/ERO entries";
+      type uint32;
+    }
+  }
+
+  grouping pcep-pcc-lsp-assoc-info-key {
+    leaf association-index {
+      description
+        "The unique identifier for association entries";
+      type uint32;
+    }
+  }
+
+  grouping pcep-pcc-lsp-path-route-object-state {
+    leaf sid-label {
+      config false;
+      description
+        "Unique Segment Identifier label value";
+      type srl_nokia-comm:mpls-label-non-reserved;
+    }
+    leaf sid-type {
+      config false;
+      description
+        "Refers to strict or loose hop";
+      type enumeration {
+        enum strict {
+          value 1;
+        }
+        enum loose {
+          value 2;
+        }
+      }
+    }
+    leaf prefix {
+      config false;
+      description
+        "IP address for a given segment in ERO or RRO";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf router-id {
+      config false;
+      description
+        "Router-id for a given unnumbered segment in ERO or RRO";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf as-number {
+      config false;
+      description
+        "AS-Number for a given segment in ERO or RRO";
+      type uint32;
+    }
+    leaf local-interface-name {
+      config false;
+      description
+        "Local interface name for a given unnumbered/link-local segment in ERO or RRO";
+      type srl_nokia-comm:subinterface-all;
+    }
+    leaf local-interface-id {
+      config false;
+      description
+        "Local interface-id for a given unnumbered/link-local segment in ERO or RRO";
+      type uint32;
+    }
+    leaf remote-interface-id {
+      config false;
+      description
+        "Remote interface-id for a given unnumbered/link-local segment in ERO or RRO";
+      type uint32;
+    }
+    leaf local-prefix {
+      config false;
+      description
+        "Local IP address for a given segment in ERO or RRO";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf remote-prefix {
+      config false;
+      description
+        "Remote IP address for a given segment in ERO or RRO";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+  }
+
+  grouping pcep-pcc-lsp-update-state {
+    leaf lsp-id {
+      config false;
+      description
+        "The unique identifier for the LSP";
+      type uint32;
+    }
+    leaf lsp-type {
+      config false;
+      description
+        "The type of LSP";
+      type pcep-lsp-type;
+    }
+    leaf tunnel-id {
+      config false;
+      description
+        "The unique tunnel identifier that remains constant over the life time of a tunnel";
+      type uint32 {
+        range "1..65535";
+      }
+    }
+    leaf extended-tunnel-id {
+      config false;
+      description
+        "The extended tunnel identifier";
+      type srl_nokia-comm:ip-address-unicast;
+    }
+    leaf name {
+      config false;
+      description
+        "The LSP path name that is unique in the PCC and remains constant throughout a path's life time";
+      type srl_nokia-comm:name;
+    }
+    leaf source-address {
+      config false;
+      description
+        "The sender address of the LSP";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf destination-address {
+      config false;
+      description
+        "The destination address of the LSP";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf delegated {
+      config false;
+      description
+        "Indicates whether the PCC is delegating the LSP to the PCE";
+      type boolean;
+    }
+    leaf delegated-peer-address {
+      config false;
+      description
+        "The peer address to which the PCC has delegated the LSP";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf oper-state {
+      config false;
+      description
+        "The operational status of the LSP";
+      type enumeration {
+        enum down {
+          description
+            "LSP is not active";
+          value 0;
+        }
+        enum up {
+          description
+            "LSP has been signaled";
+          value 1;
+        }
+        enum active {
+          description
+            "LSP is up and carrying traffic";
+          value 2;
+        }
+        enum going-down {
+          description
+            "LSP is being torn down, resources are being released";
+          value 3;
+        }
+        enum going-up {
+          description
+            "LSP is being signaled";
+          value 4;
+        }
+      }
+    }
+    leaf state {
+      config false;
+      description
+        "The state of the LSP";
+      type enumeration {
+        enum not-applicable {
+          value 0;
+        }
+        enum mbb-in-progress {
+          description
+            "MBB procedure is in progress";
+          value 1;
+        }
+        enum mbb-fail {
+          description
+            "MBB procedure failed";
+          value 2;
+        }
+        enum mbb-success {
+          description
+            "MBB procedure succeeded";
+          value 3;
+        }
+        enum update-delegation {
+          description
+            "Delegation update is being processed";
+          value 4;
+        }
+        enum lsp-down {
+          description
+            "LSP down update is being processed";
+          value 5;
+        }
+      }
+    }
+    list path-detail {
+      config false;
+      description
+        "Path details.";
+      key "path-type";
+      uses pcep-pcc-lsp-update-path-key;
+      uses lsp-path-detail-state;
+      list explicit-route-objects {
+        config false;
+        description
+          "Path EROs details.";
+        key "route-object-index";
+        uses pcep-pcc-lsp-path-route-object-key;
+        uses pcep-pcc-lsp-path-route-object-state;
+      }
+      list record-route-objects {
+        config false;
+        description
+          "Path RROs details.";
+        key "route-object-index";
+        uses pcep-pcc-lsp-path-route-object-key;
+        uses pcep-pcc-lsp-path-route-object-state;
+      }
+    }
+    list association-detail {
+      config false;
+      description
+        "List of pce-associations attached to LSP path";
+      key "association-index";
+      uses pcep-pcc-lsp-assoc-info-key;
+      uses pcep-pcc-assoc-detail;
+      leaf association-type {
+        config false;
+        description
+          "Associations types";
+        type enumeration {
+          enum diversity {
+            description
+              "Diversity association";
+            value 2;
+          }
+          enum policy {
+            description
+              "Policy association";
+            value 3;
+          }
+        }
+      }
+    }
+  }
+
+  grouping pcep-pcc-path-request-key {
+    leaf request-id {
+      description
+        "The unique path computation request identifier represented in PCReq message";
+      type uint32 {
+        range "1..max";
+      }
+    }
+  }
+
+  grouping pcep-pcc-path-request-state {
+    leaf lsp-type {
+      config false;
+      description
+        "The type of LSP";
+      type pcep-lsp-type;
+    }
+    leaf tunnel-id {
+      config false;
+      description
+        "The unique tunnel identifier that remains constant  over the life time of a tunnel.";
+      type uint32;
+    }
+    leaf lsp-id {
+      config false;
+      description
+        "The unique identifier for the LSP";
+      type uint32;
+    }
+    leaf extended-tunnel-id {
+      config false;
+      description
+        "The extended tunnel identifier";
+      type srl_nokia-comm:ip-address-unicast;
+    }
+    leaf lsp-name {
+      config false;
+      description
+        "The LSP path name that is unique in the PCC and remains constant throughout a path's life time.";
+      type srl_nokia-comm:name;
+    }
+    leaf source-address {
+      config false;
+      description
+        "The source address of the path for which path computation is requested
+
+         It is the END-POINTS object used in PCReq message.";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf destination-address {
+      config false;
+      description
+        "The destination address of the path for which the path computation is requested
+
+         It is the END-POINTS object used in PCReq message.";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf message-state {
+      config false;
+      description
+        "The state of the PCReq message";
+      type enumeration {
+        enum unknown {
+          description
+            "The state of PCReq message is unknown";
+          value 0;
+        }
+        enum request-parameter {
+          description
+            "Request Parameter (RP) object is included in the PCReq message";
+          value 1;
+        }
+        enum sent-for-compute {
+          description
+            "PCReq message has been sent for path computation";
+          value 2;
+        }
+        enum error-received {
+          description
+            "Path Computation Error (PCErr) message is received by the PCC";
+          value 3;
+        }
+        enum notify-received {
+          description
+            "Path Computation Notification (PCNtf) message is received by the PCC";
+          value 4;
+        }
+        enum cancel {
+          description
+            "PCReq message has been cancelled";
+          value 5;
+        }
+        enum compute-received {
+          description
+            "Path computation is received by the PCC";
+          value 6;
+        }
+      }
+    }
+    leaf sync-vector-id {
+      config false;
+      description
+        "The Synchronization Vector (svec) identifier for Synchronized Dependent Path Computations";
+      type srl_nokia-comm:counter64;
+    }
+    leaf-list metric-bound {
+      config false;
+      description
+        "Indicates  whether the metric-value specifies a bound (a maximum)for the path metric that must not be exceeded for the PCC to consider the computed path as acceptable
+
+         It is the METRIC object used in PCReq message.";
+      type metric-value;
+      max-elements 3;
+    }
+    leaf-list metric-compute {
+      config false;
+      description
+        "Indicates whether PCE must provide the computed path metric value in Path Computation Response (PCRep) message for the corresponding metric
+
+         It is the METRIC object used in PCReq message.";
+      type metric-value;
+      max-elements 3;
+    }
+    leaf local-protection-desired {
+      config false;
+      description
+        "Indicates whether local protection is desired or not
+
+         It is the LSPA (LSP Attribute) object used in PCReq message. When the value of this object is set to 'true', it indicates that the computed path must include links protected with Fast Reroute as defined in the maximum number of hops to be transversed that must not be exceeded to consider computed path as acceptable.";
+      type boolean;
+    }
+    leaf msg-priority {
+      config false;
+      description
+        "The priority of the PCReq message
+
+         It is RP object used in PCReq message.";
+      type uint32;
+    }
+    leaf reoptimization {
+      config false;
+      description
+        "Indicates whether the PCReq message relates to the reoptimization of an existing TE LSP
+
+         It is the RP object used in PCReq message.";
+      type boolean;
+    }
+    leaf loose-path-acceptable {
+      config false;
+      description
+        "Indicates whether a loose path is acceptable (true) or not (false)
+
+         It is the RP object used in PCReq message.
+
+         When the value of this object is set to 'true', it indicates that a loose path is acceptable. When the value of this object is set to 'false', it indicates that a path exclusively made of strict hops is required.";
+      type boolean;
+    }
+    leaf bidirectional {
+      config false;
+      description
+        "Indicates whether the PCReq message relates to a bi-directional TE LSP that has the same traffic engineering requirements in each direction
+
+         It is the RP object used in PCReq message. TE requirements include fate sharing, protection and restoration, LSRs, TE links, and resource requirements (e.g., latency and jitter) ";
+      type boolean;
+    }
+    leaf max-lsr-labels {
+      config false;
+      description
+        "The maximum segment routing label stack size for this LSP.";
+      type uint32 {
+        range "1..10";
+      }
+    }
+    leaf-list profiles {
+      config false;
+      description
+        "List of path profile identifiers";
+      type uint32;
+      max-elements 5;
+      ordered-by user;
+    }
+    leaf-list extended-profiles {
+      config false;
+      description
+        "List of extended identifiers associated with the path profile identifier.";
+      type uint32;
+      max-elements 5;
+      ordered-by user;
+    }
+    uses lsp-path-common-state;
+  }
+
+  grouping lsp-path-detail-state {
+    leaf srp-id {
+      config false;
+      description
+        "Stateful PCE Request Parameters(SRP) identifier for update sent by PCE";
+      type uint32;
+    }
+    leaf error {
+      config false;
+      description
+        "The reason for LSP update failure";
+      type enumeration {
+        enum not-applicable {
+          description
+            "Not Applicable";
+          value 0;
+        }
+        enum unknown-reason {
+          description
+            "Unknown reason";
+          value 1;
+        }
+        enum limit-reached-for-pce-lsps {
+          description
+            "Limit reached for PCE-controlled LSPs";
+          value 2;
+        }
+        enum too-many-pending-lsp-updates {
+          description
+            "Too many pending LSP update requests";
+          value 3;
+        }
+        enum unacceptable-parameters {
+          description
+            "Unacceptable parameters";
+          value 4;
+        }
+        enum internal-error {
+          description
+            "Internal error";
+          value 5;
+        }
+        enum lsp-admin-down {
+          description
+            "LSP administratively brought down";
+          value 6;
+        }
+        enum lsp-preempted {
+          description
+            "LSP preempted";
+          value 7;
+        }
+        enum rsvp-signaling-error {
+          description
+            "RSVP signaling error";
+          value 8;
+        }
+      }
+    }
+    uses lsp-path-common-state;
+  }
+
+  grouping lsp-path-common-state {
+    leaf igp-metric {
+      config false;
+      description
+        "The Interior Gateway Protocol (IGP) metric that must be optimized by the path computation algorithm for providing the cost of computed path
+
+         It is the METRIC object used in PCReq message.";
+      type uint32;
+    }
+    leaf te-metric {
+      config false;
+      description
+        "The Traffic Engineering (TE) metric that must be optimized by the path computation algorithm for providing the cost of computed path
+
+         It is the METRIC object used in PCReq messages.";
+      type uint32;
+    }
+    leaf hop-count {
+      config false;
+      description
+        "The number of hops that are traversed via the TE tunnel
+
+         It is the METRIC object in PCReq message.";
+      type uint32;
+    }
+    leaf setup-priority {
+      config false;
+      description
+        "The priority of the TE LSP with respect to holding resources
+
+         The value of 0 represents highest priority. The holding priority indicates whether this session can be in PCReq message.";
+      type uint32 {
+        range "0..7";
+      }
+    }
+    leaf holding-priority {
+      config false;
+      description
+        "The priority of the TE LSP with respect to holding resources
+
+         The value of 0 represents highest priority.The holding priority indicates whether this session can be preempted by another session. It is the LSPA object used in PCReq message.";
+      type uint32 {
+        range "0..7";
+      }
+    }
+    leaf exclude-any {
+      config false;
+      description
+        "Set of attribute filters associated with a tunnel, any of which renders a link unacceptable
+
+         It is the LSPA object used in PCReq message.";
+      type uint32;
+    }
+    leaf include-any {
+      config false;
+      description
+        "Set of attribute filters associated with a tunne,  any of which renders a link acceptable
+
+         It is the LSPA object used in PCReq message.";
+      type uint32;
+    }
+    leaf include-all {
+      config false;
+      description
+        "Set of attribute filters associated with a tunnel, all of which much be present for a link to be acceptable
+
+         It is the LSPA object used in PCReq message.";
+      type uint32;
+    }
+    leaf lsp-bandwidth {
+      config false;
+      description
+        "The bandwidth that is being requested by the LSP.";
+      type uint32;
+      units "Mbps";
+    }
+  }
+
+  grouping pcep-pcc-and-pce-peer-statistics-state {
+    leaf num-pcrpt-sent {
+      config false;
+      description
+        "The number of PCRpt messages sent to this peer.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcrpt-rcvd {
+      config false;
+      description
+        "The number of PCRpt messages received from this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcupd-sent {
+      config false;
+      description
+        "The number of PCUpd messages sent to this peer.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcupd-rcvd {
+      config false;
+      description
+        "The number of PCUpd messages received from this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-rpt-sent {
+      config false;
+      description
+        "The number of report messages sent to this peer
+
+         This might be greater than num-pcrpt-sent because multiple requests can be batched into a single PCRpt messages.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-rpt-rcvd {
+      config false;
+      description
+        "The number of report messages received from this peer
+
+         This might be greater than num-pcrpt-rcvd because multiple requests can be batched into a single PCRpt message.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcreq-sent {
+      config false;
+      description
+        "The number of PCReq messages sent to this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcreq-rcvd {
+      config false;
+      description
+        "The number of PCReq messages received from this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcrep-sent {
+      config false;
+      description
+        "The number of PCRep messages sent to this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcrep-rcvd {
+      config false;
+      description
+        "The number of PCRep messages received from this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcerr-sent {
+      config false;
+      description
+        "The number of PCErr messages sent to this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcerr-rcvd {
+      config false;
+      description
+        "The number of PCErr messages received from this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcntf-sent {
+      config false;
+      description
+        "The number of PCNtf messages sent to this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcntf-rcvd {
+      config false;
+      description
+        "The number of PCNtf messages received from this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-keepalive-sent {
+      config false;
+      description
+        "The number of Keepalive messages sent to this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-keepalive-rcvd {
+      config false;
+      description
+        "The number of Keepalive messages received from this peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-req-rcvd {
+      config false;
+      description
+        "The number of requests received from this peer
+
+         A request corresponds 1:1 with an RP object in a PCReq message";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-session-setup-ok {
+      config false;
+      description
+        "The number of PCEP sessions successfully established with the peer, including any current session
+
+         This counter is incremented each time a session with this peer is successfully established";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-session-setup-fail {
+      config false;
+      description
+        "The number of PCEP sessions with the peer that have been attempted but failed before being fully established
+
+         This counter is incremented each time a session retry to this peer fails";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcinit-sent {
+      config false;
+      description
+        "The number of PC initiated messages sent to this peer.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-pcinit-rcvd {
+      config false;
+      description
+        "The number of PC initiated messages received from this peer.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf num-req-sent {
+      config false;
+      description
+        "The number of requests sent to this peer
+
+         A request corresponds 1:1 with an RP object in a PCReq message";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping pcep-pcc-state {
+    uses pcep-pcc-and-pce-state;
+    list lsp-update {
+      config false;
+      description
+        "List of Labeled Switch Path (LSP) update information sent by a PCE to a PCC to update attributes of a LSP";
+      key "pce-id";
+      uses pcep-pcc-lsp-update-key;
+      uses pcep-pcc-lsp-update-state;
+    }
+    list path-request {
+      config false;
+      description
+        "List of Path Computation Request (PCReq) messages sent by the PCC to request a path computation.";
+      key "request-id";
+      uses pcep-pcc-path-request-key;
+      uses pcep-pcc-path-request-state;
+    }
+  }
+
+  grouping pcep-pce-peer-state {
+    uses pcep-pcc-and-pce-peer-state;
+    leaf oper-state {
+      type srl_nokia-comm:oper-state;
+      config false;
+      description
+        "Details the operational state of the Pcep Pcc Peer";
+    }
+    leaf is-overloaded {
+      config false;
+      description
+        "The value indicates whether this peer is overloaded with the processing of existing requests and is unable to handle
+         new requests leading to unacceptable response times";
+      type boolean;
+    }
+    container statistics {
+      config false;
+      description
+        "Holds statistics of messages send to peer";
+      uses pcep-pcc-and-pce-peer-statistics-state;
+    }
+  }
+
+  grouping pcep-pcc-and-pce-peer-key {
+    leaf ip-address {
+      description
+        "The address of the PCE peer";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+  }
+
+  grouping pcep-pcc-assoc-key {
+    leaf association-name {
+      description
+        "Association name";
+      type srl_nokia-comm:name {
+        length "1..32";
+      }
+    }
+  }
+
+  grouping pcep-pcc-pce-common {
+    leaf admin-state {
+      description
+        "Administrative state";
+      type srl_nokia-comm:admin-state;
+      default "disable";
+    }
+    leaf keepalive {
+      description
+        "Configure keepalive";
+      type uint32 {
+        range "1..255";
+      }
+      units "seconds";
+      default "30";
+    }
+    leaf unknown-message-rate {
+      description
+        "Configure unknown message rate";
+      type uint32 {
+        range "1..255";
+      }
+      default "10";
+    }
+  }
+
+  grouping pcep-pcc-config {
+    uses pcep-pcc-pce-common;
+    leaf report-path-constraints {
+      description
+        "Specify whether to enable/disable path constraints in PCC report";
+      type boolean;
+      default "true";
+    }
+    leaf dead-timer {
+      description
+        "Configure dead timer";
+      type uint32 {
+        range "1..255";
+      }
+      units "seconds";
+      default "120";
+      must '(. >= ../keepalive)' {
+        error-message "Dead-timer cannot be less than keepalive";
+      }
+    }
+    leaf redelegation-timer {
+      description
+        "Configure redelegation-timer";
+      type uint32 {
+        range "1..3600";
+      }
+      units "seconds";
+      default "90";
+    }
+    container state-timer {
+      description
+        "Holds state timer information";
+      leaf timer {
+        description
+          "Configure state-timer";
+        type uint32 {
+          range "1..3600";
+        }
+        units "seconds";
+        default "180";
+        must '(. > ../../redelegation-timer)';
+      }
+      leaf timer-action {
+        description
+          "State timer action remove/none";
+        type enumeration {
+          enum none {
+            value 0;
+          }
+          enum remove {
+            value 1;
+          }
+        }
+        default "remove";
+      }
+    }
+    container pce-associations {
+      if-feature "srl-feat:pcep-pcc-pce-association";
+      description
+        "Configure associations to be used with PCE";
+      list diversity {
+        description
+          "List of diversity association parameters";
+        key "association-name";
+        uses pcep-pcc-assoc-key;
+        uses pcep-pcc-assoc-detail;
+      }
+      list policy {
+        description
+          "List of policies for PCC";
+        key "association-name";
+        uses pcep-pcc-assoc-key;
+        uses pcep-pcc-assoc-common;
+      }
+    }
+  }
+
+  grouping pcep-pcc-peer-config {
+    leaf admin-state {
+      description
+        "Administrative state of PCC peer";
+      type srl_nokia-comm:admin-state;
+      default "disable";
+    }
+    leaf local-address {
+      description
+        "Configure local IP to be used for PCE peering";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+    leaf preference {
+      description
+        "The preference value of this peer
+
+         If a higher preference PCE is unavailable or not connected, the PCE with the next preference is used. ";
+      type uint32 {
+        range "0..100";
+      }
+      default "0";
+    }
+    leaf network-instance {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+      }
+      must 'not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+        error-message "PCE cannot be in a network-instance of type 'mac-vrf'";
+      }
+      must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\" or
+                                (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type != \"srl_nokia-netinst:default\"
+                                    and current() = \"mgmt\"))" {
+        error-message "PCE cannot be in a network-instance other than 'default' or 'mgmt'";
+      }
+      description
+        "Reference to a configured network-instance used for reachability to PCE
+         This network-instance must already exist in the system.";
+    }
+  }
+
+  grouping pcep-pcc-assoc-detail {
+    uses pcep-pcc-assoc-common;
+    leaf disjointness-reference {
+      description
+        "Refers to shortest path or not";
+      type boolean;
+      default "false";
+    }
+    leaf disjointness-type {
+      description
+        "Refers to strict or loose path";
+      type enumeration {
+        enum strict {
+          value 1;
+        }
+        enum loose {
+          value 2;
+        }
+      }
+      default "loose";
+    }
+    leaf diversity-type {
+      description
+        "Refers to the choice of path node / link / srlg-node / srlg-link";
+      type enumeration {
+        enum none {
+          value 0;
+        }
+        enum link {
+          value 1;
+        }
+        enum node {
+          value 2;
+        }
+        enum srlg-link {
+          value 3;
+        }
+        enum srlg-node {
+          value 4;
+        }
+      }
+      default "none";
+    }
+  }
+
+  grouping pcep-pcc-assoc-common {
+    leaf association-id {
+      description
+        "Association-id for the associaiton group";
+      type uint32 {
+        range "0..65535";
+      }
+      default "0";
+    }
+    leaf association-source {
+      description
+        "Associaiton Source for the association";
+      type srl_nokia-comm:ip-address-unicast-without-local;
+    }
+  }
+
+  grouping pcep-pcc-top {
+    container pcc {
+      description
+        "Configure Path Computation Client (PCC) parameters";
+      uses pcep-pcc-config;
+      uses pcep-pcc-state;
+      list peer {
+        description
+          "Configure peer parameters for PCC";
+        max-elements 2;
+        key "ip-address";
+        uses pcep-pcc-and-pce-peer-key;
+        uses pcep-pcc-peer-config;
+        uses pcep-pce-peer-state;
+      }
+    }
+  }
+
+  grouping pcep-top {
+    description
+      "Top-level PCEP configuration and operational state";
+    container pcep {
+      if-feature "srl-feat:pcep-pcc";
+      presence "Configure PCEP";
+      description
+        "Top-level configuration and operational state for Path Computation Element Protocol (PCEP)";
+      must "current()/../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+        error-message "PCEP configuration only supported with network instance type default";
+      }
+      uses pcep-pcc-top;
+    }
+  }
+
+    augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses pcep-top;
+  }
+}

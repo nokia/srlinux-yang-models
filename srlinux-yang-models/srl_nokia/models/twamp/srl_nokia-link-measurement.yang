@@ -1,0 +1,889 @@
+module srl_nokia-link-measurement {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:twamp:link-measurement";
+  prefix srl_nokia-link-measurement;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-ippm-source-udp-pool {
+    prefix srl_nokia-source-udp;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module contains configuration and state data definitions for the dynamic link measurement
+     template and the subinterface configuration and state";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping link-measurement-template-configuration {
+    list measurement-template {
+      key "template-name";
+      max-elements 255;
+      description
+        "List of measurement templates";
+      leaf template-name {
+        type srl_nokia-comm:name;
+        description
+          "Measurement template name
+
+           Modificaiton to bin-group attributes will cause associated tests to be terminated and restarted.";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Administrative state of the measurement template.";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Text description for the measurement template";
+      }
+      leaf unidirectional-measurement {
+        type enumeration {
+          enum derived {
+            value 1;
+            description
+              "Computes forward unidirectional measurement using round-trip divide by 2";
+          }
+          enum actual {
+            value 2;
+            description
+              "Computes forward unidirectional measurements using (T2-T1)";
+          }
+        }
+        default "derived";
+        description
+          "Method used to compute the forward unidirectional delay value";
+      }
+      leaf delay {
+        type enumeration {
+          enum minimum {
+            value 1;
+          }
+          enum maximum {
+            value 2;
+          }
+          enum average {
+            value 3;
+          }
+        }
+        default "minimum";
+        description
+          "Delay measurement type of interest";
+      }
+      leaf interval {
+        type uint32 {
+          range "1..10";
+        }
+        units "seconds";
+        default "1";
+        description
+          "Interval between test packet transmissions";
+      }
+      leaf last-reported-dynamic-delay-hold {
+        type uint32 {
+          range "0..86400";
+        }
+        units "seconds";
+        default "86400";
+        description
+          "Wait time to flush the last reported delay after operational change
+
+           This command configures the timer that specifies the wait time before the last reported
+           delay measurement is flushed after a link measurement test enters the operationally
+           down state.
+
+           When 0 the last reported delay is flushed immediately without delay.";
+      }
+      leaf reporting {
+        type boolean;
+        default "true";
+        description
+          "Report value reaching the threshold
+
+           When true threshold events are reported to the routing engine.  When false threshold events are not reported
+           to the routing engine";
+      }
+      container aggregate-sample-window {
+        description
+          "Context for aggregate sample window
+
+           The aggregate sample window is a collection of sample windows.  It executes threshold comparisons
+           based on the results in each sample window.";
+        leaf multiplier {
+          type uint32 {
+            range "1..12";
+          }
+          default "12";
+          description
+            "Number of sample windows comprising the aggregate sample window";
+        }
+        leaf window-integrity {
+          type uint32 {
+            range "1..100";
+          }
+          units "percent";
+          description
+            "Required sample count to consider window integral
+
+             When not configured, results are compared to the configured thresholds regardless of sample count.";
+        }
+        container threshold {
+          description
+            "Context for threshold configuration";
+          leaf relative {
+            type uint32 {
+              range "1..100";
+            }
+            units "percent";
+            description
+              "Percentage of change compared to previously reported result";
+          }
+          leaf absolute {
+            type uint32 {
+              range "1..100000";
+            }
+            units "microseconds";
+            description
+              "Absolute change compared to previously reported result";
+          }
+        }
+      }
+      container sample-window {
+        description
+          "Context for sample window
+
+           The  sample window is a collection of individual test packet results.  It executes threshold comparisons
+           using the results in the sample window.";
+        leaf multiplier {
+          type uint32 {
+            range "1..900";
+          }
+          default "10";
+          description
+            "Defines the length of the measurement window, multiplier times interval";
+        }
+        leaf window-integrity {
+          type uint32 {
+            range "1..100";
+          }
+          units "percent";
+          description
+            "Required sample count to consider window integral
+
+             When not configured, results are compared to the configured thresholds regardless of sample count.";
+        }
+        container threshold {
+          description
+            "Context for threshold configuration";
+          leaf relative {
+            type uint32 {
+              range "1..500";
+            }
+            units "percent";
+            description
+              "Percentage of change compared to previously reported result";
+          }
+          leaf absolute {
+            type uint32 {
+              range "1..100000";
+            }
+            units "microseconds";
+            description
+              "Absolute change compared to previously reported result";
+          }
+        }
+      }
+      container stamp {
+        description
+          "Context for STAMP options used by the measurement template";
+        leaf destination-udp-port {
+          type srl_nokia-comm:port-number {
+            range "1..65535";
+          }
+          default "862";
+          description
+            "Destination UDP port";
+        }
+        leaf source-udp-port {
+          type srl_nokia-comm:port-number {
+            range "0 | 64374..64383";
+          }
+          default "0";
+          must "(. = 0) or /srl_nokia-oam:oam/srl_nokia-source-udp:ippm/srl_nokia-source-udp:source-udp-port-pools/srl_nokia-source-udp:port[srl_nokia-source-udp:port-number = current ()]/srl_nokia-source-udp:application-assignment = 'link-measurement'" {
+            error-message "The source UDP port must be assigned to the link-measurement application and the UDP port application-assignment cannot be modified if it is configured for link-measurement session";
+          }
+          description
+            "Automatically allocate or statically configure the source UDP port
+
+             When 0 source UDP Port will automatically select an available source UDP port from the dynamic range.  Configuring a specific value requires
+             the UDP port to be assigned to the link-measurement application /oam ippm source-udp-port-pools port application-assignment.";
+        }
+        leaf pad-tlv-size {
+          type uint32 {
+            range "4..9714";
+          }
+          units "bytes";
+          description
+            "Increase the STAMP PDU by including the PAD TLV";
+        }
+        container return-path {
+          description
+            "Context for the STAMP return-path control";
+          choice tlv {
+            case link {
+              leaf link {
+                type boolean;
+                default "false";
+                description
+                  "Include the Return Path sub-TLV specifying link";
+              }
+            }
+          }
+        }
+        leaf dscp {
+          type srl_nokia-comm:dscp;
+          default "CS6";
+          description
+            "DSCP value";
+        }
+        leaf forwarding-class {
+          if-feature "srl_nokia-feat:qos";
+          type leafref {
+            path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+          }
+          description
+            "Forwarding class for packet treatment in the local node";
+        }
+        leaf profile {
+          if-feature "srl_nokia-feat:qos";
+          type srl_nokia-comm:rewrite-profile;
+          default "in";
+          description
+            "QoS profile for packet treatment in the local node";
+        }
+        leaf ttl {
+          type uint32 {
+            range "1..255";
+          }
+          default "1";
+          description
+            "Time to live";
+        }
+        container ipv6-destination-discovery {
+          description
+            "Context for IPv6 destination discovery
+
+             Ping well-known multicast address ff02::2 (all routers) to solicit response from the peer.  Use the
+             source address in the response as the destination address in the STAMP test packets.";
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            default "disable";
+            description
+              "Administrative state of IPv6 destination discovery";
+          }
+          leaf discovery-timer {
+            type uint32 {
+              range "1..1800";
+            }
+            units "seconds";
+            default "60";
+            description
+              "Maximum time to remain in the discovery phase
+
+               The discovery phase will end when the IPv6 peer is discovered or this timer expires.";
+          }
+          leaf discovery-interval {
+            type uint32 {
+              range "1..10";
+            }
+            units "seconds";
+            default "10";
+            description
+              "Transmission frequency while in discovery phase";
+          }
+          leaf update-interval {
+            type uint32 {
+              range "0..3600";
+            }
+            units "seconds";
+            default "600";
+            description
+              "Transmission frequency to maintain the peer address after discovery phase completes
+
+               When 0 no maintenance of the peer address once the discovery phase ends.";
+          }
+        }
+      }
+    }
+  }
+
+  grouping interface-configuration {
+    container dynamic-measurement {
+      presence "Enable dynamic measurements for an IP interface";
+      description
+        "Context for Dynamic Measurement of IP interface";
+      leaf link-measurement-template {
+        type leafref {
+          path "/srl_nokia-oam:oam/srl_nokia-link-measurement:link-measurement/srl_nokia-link-measurement:measurement-template/srl_nokia-link-measurement:template-name";
+        }
+        description
+          "The link measurement template assigned to the subinterface";
+        mandatory true;
+      }
+      container stamp {
+        description
+          "Context for STAMP IP protocol configuration";
+        container ipv4 {
+          description
+            "Context for ipv4 address configuration";
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            must "not(. = 'enable' and ../../ipv6/admin-state = 'enable')" {
+              error-message "IPv4 STAMP link measurement testing cannot be enabled when IPv6 STAMP link measurement testing is enabled";
+            }
+            default "disable";
+            description
+              "Administrative state of STAMP IPv4 packets";
+          }
+          leaf destination-ip {
+            type srl_nokia-comm:ipv4-address-excluding-all-zero;
+            description
+              "Unicast IPv4 destination address
+
+               When not specified and the primary local IP address has a prefix length of 30 or 31 the destination
+               address will be the compliment.  Otherwise, must be specified.";
+          }
+          leaf source-ip {
+            type srl_nokia-comm:ipv4-address-excluding-all-zero;
+            description
+              "Unicast IPv4 source address
+
+               When not specified the primary local interface address will be used.";
+          }
+        }
+        container ipv6 {
+          description
+            "Context for ipv6 address";
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            default "disable";
+            must "not(. = 'enable' and ../../ipv4/admin-state = 'enable')" {
+              error-message "IPv6 STAMP link measurement testing cannot be enabled when IPv4 STAMP link measurement testing is enabled";
+            }
+            description
+              "Administrative state of STAMP IPv6 packets";
+          }
+          leaf destination-ip {
+            type srl_nokia-comm:ipv6-address-excluding-all-zero;
+            description
+              "Global unicast or link-local unicast IPv6 destination address
+
+               When not specified the IPv6 destination discovery is an option for the measurement template.";
+          }
+          leaf source-ip {
+            type srl_nokia-comm:ipv6-address-excluding-all-zero;
+            description
+              "Global unicast or link-local unicast IPv6 source address
+
+               When not specified the link-local interface address will be used.";
+          }
+        }
+      }
+    }
+  }
+
+  grouping reported-delay-value {
+    leaf last-reported-dynamic-delay {
+      config false;
+      type union {
+        type int32 {
+          range "0..2147483647";
+        }
+        type enumeration {
+          enum none {
+            value -1;
+            description
+              "No value has been reported";
+          }
+        }
+      }
+      units "microseconds";
+      description
+        "Last delay measurement reported";
+    }
+  }
+
+  grouping link-measurement-interface {
+    description
+      "Routed subinterface in the network-instance with type default";
+    list interface {
+      key "name";
+      description
+        "List of interface names";
+      leaf name {
+        type srl_nokia-netinst:network-instance-subintf-name;
+        description
+          "The interface name
+
+           This can be configured in one of two forms.  Fully qualified reference to an interface subinterface,
+           example ethernet-1/1.1, or symbolic alias, example interface-1.  When the fully qualified name is
+           specified the 'interface-ref' should not be configured.  When the symbolic alias is specified the
+           'interface-ref' must be configured.";
+        must '(. or ../interface-ref/interface)' {
+          error-message "Interface name must be configured";
+        }
+      }
+      container interface-ref {
+        if-feature "srl_nokia-feat:interface-references";
+        description
+          "Reference to a subinterface
+
+           If interface-ref is configured the ../interface/name will be considered as an alias regardless of its form.";
+        leaf interface {
+          type leafref {
+            path "/srl_nokia-if:interface/srl_nokia-if:name";
+          }
+          description
+            "Reference to a base interface";
+          must "starts-with(.,'eth') or starts-with(.,'lag')" {
+            error-message "Link measurement is supported only on Ethernet and Lag interfaces";
+          }
+          must 'not(/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:breakout-mode)' {
+            error-message "Breakout interfaces are not supported";
+          }
+          must '../subinterface >= 0' {
+            error-message "subinterface must be configured when interface is set";
+          }
+        }
+        leaf subinterface {
+          type leafref {
+            path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+          }
+          description
+            "Reference to a subinterface
+
+             This requires the base interface to be specified using the interface leaf in this container.";
+          must '../interface' {
+            error-message "interface must be configured when subinterface is set";
+          }
+        }
+      }
+      uses interface-configuration;
+      uses link-measurement-interface-state;
+    }
+  }
+
+  grouping link-measurement-interface-state {
+    leaf oper-state {
+      config false;
+      type srl_nokia-comm:oper-state;
+      description
+        "Operational state of link measurement on this interface";
+    }
+    leaf-list operational-failure {
+      config false;
+      type enumeration {
+        enum no-protocol {
+          value 1;
+        }
+        enum template-admin-down {
+          value 2;
+        }
+        enum udp-port-unavailable {
+          value 3;
+        }
+        enum internal-error {
+          value 4;
+        }
+        enum subinterface-not-found-in-network-instance {
+          value 5;
+        }
+        enum network-instance-type-not-supported {
+          value 6;
+        }
+        enum subinterface-type-not-supported {
+          value 7;
+        }
+        enum no-template {
+          value 8;
+        }
+      }
+      description
+        "Reason(s) why this interface's link measurement is operationally disabled";
+    }
+    leaf detectable-transmit-error {
+      config false;
+      type enumeration {
+        enum none {
+          value 1;
+        }
+        enum subinterface-down {
+          value 2;
+        }
+        enum unexpected-error {
+          value 3;
+        }
+        enum no-route {
+          value 4;
+        }
+        enum source-ip-not-local {
+          value 5;
+        }
+        enum invalid-dest-ip {
+          value 6;
+        }
+        enum subinterface-type-not-supported {
+          value 7;
+        }
+        enum same-source-ip-destination-ip {
+          value 8;
+        }
+      }
+      description
+        "Detectable error interrupting Link Measurement tests
+
+         Packet transmission is prevented for the following detectable transmit errors; subinterface-down,
+         invalid-dest-ip, invalid-subinterface-type, same-source-ip-destination-ip.";
+    }
+    leaf operational-source-address {
+      config false;
+      type srl_nokia-comm:ip-address;
+      description
+        "Source IP address used by STAMP test packets";
+    }
+    leaf source-ip-auto-assigned {
+      config false;
+      type boolean;
+      description
+        "Source IP address auto assigned";
+    }
+    leaf operational-destination-address {
+      config false;
+      type srl_nokia-comm:ip-address;
+      description
+        "Destination IP address used by STAMP test packets";
+    }
+    leaf destination-ip-auto-assigned {
+      config false;
+      type boolean;
+      description
+        "Destination IP address auto assigned";
+    }
+    leaf in-use-source-udp-port {
+      config false;
+      type uint32;
+      description
+        "Source UDP port in use";
+    }
+    leaf in-use-destination-udp-port {
+      config false;
+      type uint32;
+      description
+        "Destination UDP port in use";
+    }
+    leaf stamp-session-sender-id {
+      config false;
+      type uint32;
+      description
+        "Automatically generated Session Sender ID (SSID) assigned to the session";
+    }
+    leaf reporting {
+      config false;
+      type boolean;
+      description
+        "IP interface reporting to the routing engine";
+    }
+    uses reported-delay-value;
+    leaf report-timestamp {
+      config false;
+      type srl_nokia-comm:date-and-time;
+      description
+        "Time a threshold event was last reported to the routing engine
+
+         When ./last-reported-dynamic-delay > 0, report-timestamp holds the time at which
+         ./last-reported-dynamic-delay was reported to the routing engine.
+
+         When ./last-reported-dynamic-delay = 0, report-timestamp holds the time at which
+         ./last-reported-dynamic-delay was 'cleared' (because aging timer expired).
+
+         When ./last-reported-dynamic-delay = 'none', report-timestamp holds '1970-Jan-01 00:00:00.0'
+         UTC as a placeholder representing a delay has not yet been reported to the routing
+         engine.";
+    }
+    leaf report-triggered-by {
+      config false;
+      type enumeration {
+        enum none {
+          value 1;
+        }
+        enum sample-threshold-absolute {
+          value 2;
+        }
+        enum sample-threshold-relative {
+          value 3;
+        }
+        enum aggregate-threshold-absolute {
+          value 4;
+        }
+        enum aggregate-threshold-relative {
+          value 5;
+        }
+        enum expired {
+          value 6;
+        }
+        enum reporting-disabled {
+          value 7;
+        }
+      }
+      description
+        "Triggering event for the report";
+    }
+    leaf aggregate-newest-index {
+      config false;
+      type srl_nokia-comm:counter32;
+      description
+        "Index of the newest aggregate sample window for this subinterface";
+    }
+    leaf sample-newest-index {
+      config false;
+      type srl_nokia-comm:counter32;
+      description
+        "Index of the newest sample window for this subinterface";
+    }
+    container statistics {
+      config false;
+      description
+        "Aggregate sample window information and sample window statistics";
+      container aggregate-sample-window {
+        description
+          "Context for aggregate sample window statistics
+
+           Rolling buffer maintains the last 20 results.";
+        list index {
+          key "index";
+          description
+            "The index list instance";
+          leaf index {
+            type srl_nokia-comm:counter32;
+            description
+              "Index used to differentiate aggregate sample windows on the same subinterface";
+          }
+          leaf end-timestamp-utc {
+            type srl_nokia-comm:date-and-time;
+            description
+              "Time (UTC) at which this aggregate sample window closed";
+          }
+          leaf window-state {
+            type enumeration {
+              enum completed {
+                value 1;
+                description
+                  "Window ran to completion";
+              }
+              enum in-progress {
+                value 2;
+                description
+                  "Window currently active";
+              }
+              enum sw-reported {
+                value 3;
+                description
+                  "Sample window threshold triggered report, aggregated sample window restarted";
+              }
+              enum asw-reported {
+                value 4;
+                description
+                  "Aggregate sample window threshold triggered report";
+              }
+              enum terminated {
+                value 5;
+                description
+                  "Window terminated prior to completion";
+              }
+            }
+          }
+          leaf sample-window-count {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Number of sample windows completed meeting integrity requirement";
+          }
+          leaf minimum {
+            type uint32;
+            units "microseconds";
+            description
+              "Minimum delay measurement reported to the aggregate sample window";
+          }
+          leaf maximum {
+            type uint32;
+            units "microseconds";
+            description
+              "Maximum delay measurement reported to the aggregate sample window";
+          }
+          leaf average {
+            type uint32;
+            units "microseconds";
+            description
+              "Average delay measurement reported to the aggregate sample window";
+          }
+          leaf result {
+            type uint32;
+            units "microseconds";
+            description
+              "Delay being evaluated for reporting";
+          }
+          leaf integrity {
+            type boolean;
+            description
+              "Percentage of results meets integrity criteria";
+          }
+        }
+      }
+      container sample-window {
+        description
+          "Context for sample window statistics
+
+           Rolling buffer maintains the last 50 results.";
+        list index {
+          key "index";
+          description
+            "Index list instance";
+          leaf index {
+            type srl_nokia-comm:counter32;
+            description
+              "Index used to differentiate sample windows on the same subinterface";
+          }
+          leaf end-timestamp-utc {
+            type srl_nokia-comm:date-and-time;
+            description
+              "Time (UTC) at which this sample window closed";
+          }
+          leaf window-state {
+            type enumeration {
+              enum completed {
+                value 1;
+                description
+                  "Window ran to completion";
+              }
+              enum in-progress {
+                value 2;
+                description
+                  "Window currently active";
+              }
+              enum sw-reported {
+                value 3;
+                description
+                  "Sample window threshold triggered report, aggregated sample window restarted";
+              }
+              enum terminated {
+                value 4;
+                description
+                  "Window terminated prior to completion";
+              }
+            }
+          }
+          leaf transmitted-packets {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Number of STAMP packets transmitted to the session-reflector";
+          }
+          leaf received-packets {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Number of STAMP packets received from the session-reflector";
+          }
+          leaf minimum {
+            type uint32;
+            units "microseconds";
+            description
+              "Minimum delay computed";
+          }
+          leaf maximum {
+            type uint32;
+            units "microseconds";
+            description
+              "Maximum delay computed";
+          }
+          leaf average {
+            type uint32;
+            units "microseconds";
+            description
+              "Average delay computed";
+          }
+          leaf result {
+            type uint32;
+            units "microseconds";
+            description
+              "Delay evaluated for reporting";
+          }
+          leaf integrity {
+            type boolean;
+            description
+              "Percentage of results meets integrity criteria";
+          }
+          leaf error-count {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Number of erroneous delay measurements that occurred in this sample window";
+          }
+          leaf stamp-unrecognized-flag-count {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Number of packets in this sample window with the U (Unrecognized) bit set";
+          }
+          leaf stamp-malformed-flag-count {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Count of packets in this sample window with the M (Malformed) bit set";
+          }
+          leaf zero-or-negative-delay-count {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Count of packets that have a zero or negative computed delay during this sample window";
+          }
+          leaf duplicate-packet-count {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "Count of duplicate packets that have arrived during this sample window";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    if-feature "srl_nokia-feat:link-measurement";
+    container link-measurement {
+      presence "Enable Link Measurement context";
+      description
+        "Context for Link Measurement";
+      uses link-measurement-template-configuration;
+      uses link-measurement-interface;
+    }
+  }
+}

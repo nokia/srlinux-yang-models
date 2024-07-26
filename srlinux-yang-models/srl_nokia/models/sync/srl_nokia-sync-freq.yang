@@ -1,0 +1,364 @@
+module srl_nokia-sync-freq {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:time:sync-freq";
+  prefix srl_nokia-sync-freq;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-sync-types {
+    prefix srl_nokia-sync-types;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping freq-references-top {
+    description
+      "Top-level container for attributes relating to frequency synchronization";
+    list instance {
+      key "instance-number";
+      description
+        "List of line references configured for frequency";
+      leaf instance-number {
+        type uint8 {
+          range "1..5";
+        }
+        description
+          "The instance number of the each line reference";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        must "(((../source/interface) or (../source/ptp) or (../source/sync0) or (../source/gnss)) or (. = 'disable'))" {
+          error-message "Admin state enabled only allowed if frequency source is specified";
+        }
+        description
+          "Configure the administrative state of this frequency reference instance";
+      }
+      leaf oper-state {
+        type srl_nokia-comm:oper-state;
+        config false;
+        description
+          "Indicates the operational state of this line reference";
+      }
+      container source {
+        description
+          "Source for this input frequency reference
+
+           This shall be either a leafref to an interface or an application.  The leafref must point to an existing physical ethernet interface.";
+        choice interface-or-other {
+          mandatory true;
+          case interface {
+            leaf interface {
+              type leafref {
+                path "/srl_nokia-if:interface/srl_nokia-if:name";
+              }
+              must "starts-with(.,'eth')" {
+                error-message "Ethernet interfaces only";
+              }
+              must 'not (/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:breakout-mode)' {
+                error-message "Interfaces with breakout-mode configured are not supported";
+              }
+              must '(not (../ptp)) and (not (../sync0)) and (not (../gnss))' {
+                error-message "Must delete other source before configuring interface";
+              }
+            }
+          }
+          case ptp {
+            container ptp {
+              if-feature "srl_nokia-feat:sync-ptp-freq";
+              presence "specifies PTP as source";
+              must '(not (../interface)) and (not (../sync0)) and (not (../gnss))' {
+                error-message "Must delete other source before configuring ptp";
+              }
+              must "(../../../../ptp/ptp-profile = 'itug8275dot2')" {
+                error-message "ptp reference only allowed when PTP profile is G.8275.2";
+              }
+            }
+          }
+          case sync0 {
+            container sync0 {
+              if-feature "srl_nokia-feat:sync-ptp-sync-port-support";
+              presence "specifies sync0 port as source";
+              must '(not (../interface)) and (not (../ptp)) and (not (../gnss))' {
+                error-message "Must delete other source before configuring sync0";
+              }
+            }
+          }
+          case gnss {
+            container gnss {
+              if-feature "srl_nokia-feat:sync-gnss";
+              presence "specifies gnss as source";
+              must '(not (../interface)) and (not (../ptp)) and (not (../sync0))' {
+                error-message "Must delete other source before configuring gnss";
+              }
+            }
+          }
+        }
+      }
+      leaf priority {
+        type uint8 {
+          range "1..5";
+        }
+        default "3";
+        description
+          "Sets the priority of this line timing reference for the system timing selection process
+           1 = highest priority
+           5 = lowest priority
+           Duplicate numbers are not allowed";
+      }
+      leaf ql-override {
+        type srl_nokia-sync-types:settable-ql-values;
+        default "unused";
+        description
+          "Override the incoming QL/SSM value for this line reference
+           Quality level override of a timing reference
+           Options are unused, prs, stu, st2, tnc, st3e, st3, prc, ssua, ssub, sec, eec1, eec2";
+      }
+      leaf ql-value {
+        type srl_nokia-sync-types:possible-ql-values;
+        config false;
+        description
+          "The incoming QL/SSM value from this line reference";
+      }
+      leaf reference-status {
+        type enumeration {
+          enum qualified {
+            value 1;
+            description
+              "Reference is in normal qualified state";
+          }
+          enum not-qualified {
+            value 2;
+            description
+              "Reference is in not-qualified state";
+          }
+        }
+        config false;
+        description
+          "The current status this line reference";
+      }
+      leaf not-qualified-reason {
+        type enumeration {
+          enum not-applicable {
+            value 1;
+            description
+              "Reason is not applicable";
+          }
+          enum los {
+            value 2;
+            description
+              "Reference is not-qualified because of Loss of Signal (LOS)";
+          }
+          enum ssm-quality {
+            value 3;
+            description
+              "Reference is not-qualified because of received SSM/QL level";
+          }
+          enum out-of-range {
+            value 4;
+            description
+              "Reference is not-qualified because the reference is out of range in frequency";
+          }
+          enum wtr {
+            value 5;
+            description
+              "Reference is not-qualified because the wait-to-restore timer has not expired";
+          }
+          enum admin-disabled {
+            value 6;
+            description
+              "Reference is not-qualified because the reference has not been admin enabled";
+          }
+        }
+        config false;
+        description
+          "If the reference is not qualified, this identifies the reason";
+      }
+    }
+  }
+
+  grouping freq-clock-top {
+    description
+      "This struct containing all attributes for frequency clock";
+    leaf ql-input-threshold {
+      type srl_nokia-sync-types:settable-ql-values;
+      default "unused";
+      description
+        "This command configures the minimum acceptable QL value
+         Frequency references with lower QL will not be considered for selection
+         by the system timing module.
+         Options: unused, prs, stu, st2, tnc, st3e, st3, prc, ssua, ssub, sec, eec1, eec2";
+    }
+    leaf network-type {
+      type enumeration {
+        enum sdh {
+          value 0;
+          description
+            "sdh specifies the values corresponding to G.781 Option 1 compliant networks";
+        }
+        enum sonet {
+          value 1;
+          description
+            "sonet specifies the values corresponding to G.781 Option 2 compliant networks";
+        }
+      }
+      default "sonet";
+      description
+        "Configures SyncE for SSM code-type as SONET or SDH mode
+         sdh specifies the values corresponding to ITU-T G.781 Option 1 compliant networks.
+         sonet specifies the values corresponding to ITU-T G.781 Option 2 compliant networks.";
+    }
+    leaf ql-selection {
+      type boolean;
+      default "false";
+      description
+        "Configures if frequency reference selection takes the QL (Quality Level) into account
+         When enabled, the selection of system timing reference and BITS output timing reference
+         takes into account quality level. Quality level is conveyed via the SSM or forced using
+         the ql-override command..";
+    }
+    leaf wait-to-restore {
+      type int8 {
+        range "0..12";
+      }
+      default "5";
+      units "minutes";
+      description
+        "This command configures the time for the Wait to Restore timer
+         A previously failed input reference must be valid for the time specified before it is
+         used for the clock input reference.";
+    }
+    leaf revert {
+      type boolean;
+      default "false";
+      description
+        "This command configures if the frequency clock is in revertive mode
+         In revertive mode, when a failed reference becomes operational, the system will
+         automatically switch to the recovered reference if it is of higher priority and/or QL.
+         When the mode is non-revertive, a failed clock source is not automatically selected.";
+    }
+    leaf active-reference {
+      type enumeration {
+        enum 1 {
+          value 1;
+        }
+        enum 2 {
+          value 2;
+        }
+        enum 3 {
+          value 3;
+        }
+        enum 4 {
+          value 4;
+        }
+        enum 5 {
+          value 5;
+        }
+        enum internal {
+          value -1;
+        }
+      }
+      config false;
+      description
+        "Indicates the current selected reference
+
+         This will be an instance-number; or internal for the case of holdover or freerun.";
+    }
+    leaf freq-offset {
+      type decimal64 {
+        fraction-digits 3;
+      }
+      units "parts-per-billion";
+      config false;
+      description
+        "The frequency offset between the central frequency clock and the selected reference in ppb";
+    }
+    leaf freq-clock-state {
+      type enumeration {
+        enum not-present {
+          value 1;
+          description
+            "Frequency clock is locked to a line timing reference signal";
+        }
+        enum master-free-run {
+          value 2;
+          description
+            "Frequency clock is master free run mode";
+        }
+        enum master-holdover {
+          value 3;
+          description
+            "Frequency clock is master holdover mode";
+        }
+        enum master-locked {
+          value 4;
+          description
+            "Frequency clock is master locked mode";
+        }
+        enum slave {
+          value 5;
+          description
+            "Frequency clock is slave mode";
+        }
+        enum acquiring {
+          value 6;
+          description
+            "Frequency clock is acquiring mode";
+        }
+      }
+      config false;
+      description
+        "Shows the frequency clock mode state";
+    }
+    leaf system-ql-value {
+      type srl_nokia-sync-types:possible-ql-values;
+      config false;
+      description
+        "System QL value based on the reference selected";
+    }
+  }
+}

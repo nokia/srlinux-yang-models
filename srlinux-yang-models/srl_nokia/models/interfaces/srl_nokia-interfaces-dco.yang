@@ -1,0 +1,1309 @@
+module srl_nokia-interfaces-dco {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:interfaces-dco";
+  prefix srl_nokia-if-dco;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for digital coherent optics aspects of an interface";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  typedef coherent-operational-mode {
+    type enumeration {
+      enum 21 {
+        description
+          "4x100GAUI-2, 400G, 16QAM, CFEC, 59.84 Gbd, OIF-ZR";
+      }
+      enum 22 {
+        description
+          "4x100GAUI-2, 400G, 16QAM, OFEC, 60.14 Gbd, Open-ZR+";
+      }
+      enum 25 {
+        description
+          "4x100GAUI-2, 400G, 16QAM, OFEC, 60.14 Gbd, Open-ZR+, Enh Const";
+      }
+      enum 33 {
+        description
+          "3x100GAUI-2, 300G, 8QAM, OFEC, 60.14 Gbd, Open-ZR+";
+      }
+      enum 37 {
+        description
+          "3x100GAUI-2, 300G, 8QAM, OFEC, 60.14 Gbd, Open-ZR+, Enh Const";
+      }
+      enum 43 {
+        description
+          "2x100GAUI-2, 200G, QPSK, OFEC, 60.14 Gbd, Open-ZR+";
+      }
+      enum 51 {
+        description
+          "2xCAUI4, 200G, QPSK, OFEC, 60.14 Gbd, Open-ZR+";
+      }
+      enum 61 {
+        description
+          "1xCAUI4, 100G, QPSK, OFEC, 30.07 Gbd, Open-ZR+";
+      }
+      enum 65 {
+        description
+          "1x100GAUI-2, 100G, QPSK, OFEC, 30.07 Gbd, Open-ZR+";
+      }
+      enum 69 {
+        description
+          "1x100GAUI-2, 100G, DQPSK, SCFEC, 27.95 Gbd, Clause 154";
+      }
+      enum 81 {
+        description
+          "1x400GAUI-8, 400G, 16QAM, OFEC, 60.14 Gbd, Open-ZR+, Enh Const";
+      }
+      enum 82 {
+        description
+          "1x400GAUI-8, 400G, 16QAM, OFEC, 60.14 Gbd, Open-ZR+, (Small PMD)";
+      }
+      enum 83 {
+        description
+          "1x400GAUI-8, 400G, 16QAM, CFEC, 59.84 Gbd, OIF-ZR";
+      }
+      enum 85 {
+        description
+          "1x400GAUI-8, 400G, 16QAM, OFEC, 60.14 Gbd, Open-ZR+";
+      }
+      enum 88 {
+        description
+          "1x400GAUI-8, 400G, 16QAM, CFEC, 60.14 Gbd, OIF-ZR, Unamp";
+      }
+      enum 169 {
+        description
+          "1xCAUI4, 100G, DQPSK, SCFEC, 27.95 Gbd, OTU4";
+      }
+    }
+    description
+      "Permitted operational-modes for a coherent port";
+  }
+
+  typedef coherent-optical-alarm {
+    type enumeration {
+      enum module-fault {
+        value 1;
+      }
+      enum module-alarm {
+        value 2;
+      }
+      enum media-receive-alarm {
+        value 3;
+      }
+      enum media-transmit-alarm {
+        value 4;
+      }
+      enum host-transmit-alarm {
+        value 5;
+      }
+    }
+    description
+      "Specifies the type of coherent optical alarms currently active on the port";
+  }
+
+  typedef coherent-optical-defect-point {
+    type enumeration {
+      enum over-temp {
+        value 1;
+        description
+          "Module over safe operating temperature";
+      }
+      enum hw-post {
+        value 2;
+        description
+          "Hardware fault detected during power-on self-test";
+      }
+      enum pld-flash-init {
+        value 3;
+        description
+          "PLD, CPLD, or FPGA initialization fault
+
+           Programmable Logic Device, Complex Programmable Logic Device, or
+           Field Programmable Gate Array initialization fault.";
+      }
+      enum power-supply {
+        value 4;
+        description
+          "Power supply is out of range";
+      }
+      enum check-sum {
+        value 5;
+        description
+          "CFP (C Form factor Pluggable) table checksum fault";
+      }
+      enum ref-clock-in {
+        value 6;
+        description
+          "Loss of reference clock";
+      }
+      enum tx-jit-pll-lol {
+        value 7;
+        description
+          "TX jitter PLL (Phase-Locked Loop) loss of lock";
+      }
+      enum tx-cmu-lol {
+        value 8;
+        description
+          "TX CMU (Clock Multiplier Unit) loss of lock";
+      }
+      enum tx-loss-func {
+        value 9;
+        description
+          "TX loss of signal functionality";
+      }
+      enum host-tx-lol {
+        value 10;
+        description
+          "TX IC (Integrated Circuit) lock indicator";
+      }
+      enum net-rx-lol {
+        value 11;
+        description
+          "RX IC lock indicator";
+      }
+      enum host-tx-skew-high {
+        value 12;
+        description
+          "Host lane skew out of alignment";
+      }
+      enum net-tx-tec {
+        value 13;
+        description
+          "Lane TX thermo-electric cooler fault";
+      }
+      enum net-tx-wave-unlk {
+        value 14;
+        description
+          "Lane wavelength unlocked";
+      }
+      enum net-tx-losf {
+        value 15;
+        description
+          "Lane TX loss of signal functionality";
+      }
+      enum net-rx-los {
+        value 16;
+        description
+          "Lane RX loss of signal";
+      }
+      enum net-rx-fifo-err {
+        value 17;
+        description
+          "Lane RX FIFO error";
+      }
+      enum net-rx-tec {
+        value 18;
+        description
+          "Lane RX thermo-electric cooler fault";
+      }
+      enum net-tx-out-of-align {
+        value 19;
+        description
+          "Out of alignment";
+      }
+      enum net-tx-cmu-lock {
+        value 20;
+        description
+          "CMU lock fault";
+      }
+      enum net-tx-ref-clk {
+        value 21;
+        description
+          "Reference clock fault";
+      }
+      enum net-rx-modem-sync-det {
+        value 22;
+        description
+          "Modem sync detect fault";
+      }
+      enum net-rx-modem-lock {
+        value 23;
+        description
+          "Modem lock fault";
+      }
+      enum host-tx-lane-fifo-err {
+        value 24;
+        description
+          "Lane TX FIFO error";
+      }
+      enum host-tx-deskew {
+        value 25;
+        description
+          "Deskew lock fault";
+      }
+      enum host-rx-corr {
+        value 26;
+        description
+          "Host Rx FEC corrected bits detected";
+      }
+      enum host-rx-uncorr {
+        value 27;
+        description
+          "Host Rx FEC uncorrectable error detected";
+      }
+      enum comm-fail {
+        value 28;
+        description
+          "Communication failure";
+      }
+    }
+    description
+      "Specifies the type of coherent optical defects currently active on the port";
+  }
+
+  typedef los-reaction {
+    type enumeration {
+      enum none {
+        value 0;
+        description
+          "Specifies that the port not be taken down on crossing the optical LOS threshold";
+      }
+      enum squelch {
+        value 1;
+        description
+          "Specifies that the port be taken down on crossing the optical LOS threshold";
+      }
+    }
+    description
+      "Specifies the type of action that is taken in the event of a Loss Of Signal (LOS)";
+  }
+
+  typedef optical-dispersion-control-mode {
+    type enumeration {
+      enum automatic {
+        value 0;
+        description
+          "Automatic option for dispersion control.
+
+           The software control loop automatically determines the dispersion using a FEC feedback algorithm to find the best operational dispersion compensation point";
+      }
+      enum manual {
+        value 1;
+        description
+          "Manual option for dispersion control.
+
+           The software control loop is disabled and the user manually configures the dispersion compensation";
+      }
+    }
+    description
+      "Specifies the operational control mode of the dispersion compensation module";
+  }
+
+  typedef optical-dwdm-frequency {
+    type uint32 {
+      range "191100000..196150000";
+    }
+    units "megahertz";
+    description
+      "Specifies the frequency of a tuneable DWDM optical interface
+
+       Note that tunable DWDM optical interfaces operate at specific frequencies on grids. Traditionally, these have used the 100 GHz or 50 GHz grid but newer interfaces can support other grids such as 75 GHz, 33 GHz, 25 GHz, 12.5 GHz, 6.25 GHz and 3.125 GHz.  In addition, some interfaces allow for fine tuning of the frequency to values off grid.";
+  }
+
+  grouping transceiver-optical-channel-top {
+    leaf-list supported-operational-mode {
+      config false;
+      type coherent-operational-mode;
+      description
+        "Operational modes supported by the installed transceiver
+
+         Lists the operational-modes supported by the installed transceiver.  If no transceiver is installed, nothing is reported.";
+    }
+  }
+
+  grouping optical-channel-top {
+    list optical-channel {
+      must '(../srl_nokia-if:functional-type = "digital-coherent-optics")' {
+        error-message "optical channel information is only valid for digital coherent optics";
+      }
+      description
+        "List of optical channels supported by the transceiver associated with this port.";
+      key "index";
+      leaf index {
+        type uint8 {
+          range "1";
+        }
+        description
+          "Index of the optical channel";
+      }
+      leaf frequency {
+        type optical-dwdm-frequency;
+        description
+          "Center frequency for tunable DWDM optical interface";
+        mandatory true;
+      }
+      leaf operational-mode {
+        type coherent-operational-mode;
+        must "(not((. = '21') or (. = '22') or (. = '25'))) or ((../../../srl_nokia-if:breakout-mode/srl_nokia-if:num-breakout-ports = '4') and (../../../srl_nokia-if:breakout-mode/srl_nokia-if:breakout-port-speed = '100G'))" {
+          error-message "num-breakout-ports must be 4 and breakout-port-speed must be 100G for operational-modes 21, 22, 25";
+        }
+        must "(not((. = '33') or (. = '37'))) or ((../../../srl_nokia-if:breakout-mode/srl_nokia-if:num-breakout-ports = '3') and (../../../srl_nokia-if:breakout-mode/srl_nokia-if:breakout-port-speed = '100G'))" {
+          error-message "num-breakout-ports must be 3 and breakout-port-speed must be 100G for operational-modes 33, 37";
+        }
+        must "(not(. = '43')) or ((../../../srl_nokia-if:breakout-mode/srl_nokia-if:num-breakout-ports = '2') and (../../../srl_nokia-if:breakout-mode/srl_nokia-if:breakout-port-speed = '100G') and (../../../srl_nokia-if:num-physical-channels = 4))" {
+          error-message "num-breakout-ports must be 2 and breakout-port-speed must be 100G and num-physical-channels must be 4 for operational-modes 43";
+        }
+        must "(not(. = '51')) or ((../../../srl_nokia-if:breakout-mode/srl_nokia-if:num-breakout-ports = '2') and (../../../srl_nokia-if:breakout-mode/srl_nokia-if:breakout-port-speed = '100G') and ((../../../srl_nokia-if:num-physical-channels = 8) or (not(../../../srl_nokia-if:num-physical-channels))))" {
+          error-message "num-breakout-ports must be 2 and breakout-port-speed must be 100G and num-physical-channels must be 8 for operational-modes 51";
+        }
+        must "(not(. = '61')) or ((../../../srl_nokia-if:breakout-mode/srl_nokia-if:num-breakout-ports = '1') and (../../../srl_nokia-if:breakout-mode/srl_nokia-if:breakout-port-speed = '100G') and ((../../../srl_nokia-if:num-physical-channels = 4) or (not(../../../srl_nokia-if:num-physical-channels))))" {
+          error-message "num-breakout-ports must be 1 and breakout-port-speed must be 100G and num-physical-channels must be 4 for operational-modes 61";
+        }
+        must "(not(. = '65')) or ((../../../srl_nokia-if:breakout-mode/srl_nokia-if:num-breakout-ports = '1') and (../../../srl_nokia-if:breakout-mode/srl_nokia-if:breakout-port-speed = '100G') and (../../../srl_nokia-if:num-physical-channels = 2))" {
+          error-message "num-breakout-ports must be 1 and breakout-port-speed must be 100G and num-physical-channels must be 2 for operational-modes 65";
+        }
+        must "(not((. = '81') or (. = '82') or (. = '83') or (. = '85') or (. = '88'))) or ((../../../srl_nokia-if:ethernet/srl_nokia-if:port-speed = '400G') or not(../../../srl_nokia-if:ethernet/srl_nokia-if:port-speed))" {
+          error-message "port-speed must be unset or 400G for operational-modes 81, 82, 83, 85, 88";
+        }
+        must "(not((. = '81') or (. = '82') or (. = '83') or (. = '85') or (. = '88'))) or (not(../../../srl_nokia-if:breakout-mode))" {
+          error-message "breakout-mode must be unset for operational-modes 81, 82, 83, 85, 88";
+        }
+        description
+          "Operational mode for the transceiver
+
+            This is a numeric value the defines a set of operating characteristics such as modulation, bit-rate, max power range, fec, etc.
+            Refer to Nokia documentation for details by transceiver part number.";
+        mandatory true;
+      }
+      leaf tx-filter-enable {
+        if-feature "srl_nokia-feat:disabled";
+        type boolean;
+        default "false";
+        description
+          "Controls transmit filtering";
+      }
+      container chromatic-dispersion-range {
+        if-feature "srl_nokia-feat:disabled";
+        leaf minimum {
+          type int64 {
+            range "-100000..0";
+          }
+          units "picoseconds per nanometer";
+          must '(../maximum and (. < ../maximum))' {
+            error-message "Both a minimum and maximum must be specified and minimum must be less than maximum";
+          }
+          description
+            "Chromatic dispersion sweep range minimum
+
+             This has different defaults based on the setting of the operational-mode.  This value is usually a large negative number";
+        }
+        leaf maximum {
+          type int64 {
+            range "-100000..100000";
+          }
+          units "picoseconds per nanometer";
+          must '(../minimum and (. > ../minimum))' {
+            error-message "Both a minimum and maximum must be specified and minimum must be less than maximum";
+          }
+          description
+            "Chromatic dispersion sweep range maximum
+
+             This has different defaults based on the setting of the operational-mode.";
+        }
+      }
+      leaf target-power {
+        type decimal64 {
+          range "-20..3";
+          fraction-digits 2;
+        }
+        units "decibel-milliwatts";
+        default "1";
+        description
+          "Average output power target for the port";
+      }
+      leaf laser-tunability {
+        config false;
+        type enumeration {
+          enum unequipped {
+            value 0;
+            description
+              "The optical interface is not equipped with a laser.";
+          }
+          enum not-tunable {
+            value 1;
+            description
+              "The optical interface is not tunable.";
+          }
+          enum fully-tunable {
+            value 2;
+            description
+              "The optical interface is tunable on the 100GHz and 50 GHz grids.";
+          }
+          enum tunable-100g {
+            value 3;
+            description
+              "The optical interface is tunable on the 100GHz grid.";
+          }
+          enum flex-tunable {
+            value 4;
+            description
+              "The optical interface is FlexGrid tunable.";
+          }
+        }
+        description
+          "Tunability of the optical interface.
+
+           Value 'unequipped' indicates the optical interface is not equipped with a laser.";
+      }
+      leaf oper-frequency {
+        config false;
+        type optical-dwdm-frequency;
+        description
+          "The operating frequency of the optical-channel.";
+      }
+      leaf minimum-frequency {
+        config false;
+        type optical-dwdm-frequency;
+        description
+          "The minimum frequency supported by the equipped optical module.";
+      }
+      leaf maximum-frequency {
+        config false;
+        type optical-dwdm-frequency;
+        description
+          "The maximum frequency supported by the equipped optical module.";
+      }
+      leaf-list supported-grids {
+        config false;
+        type enumeration {
+          enum grid-100-ghz {
+            value 0;
+          }
+          enum grid-75-ghz {
+            value 1;
+          }
+          enum grid-50-ghz {
+            value 2;
+          }
+          enum grid-33-ghz {
+            value 3;
+          }
+          enum grid-25-ghz {
+            value 4;
+          }
+          enum grid-12500-mhz {
+            value 5;
+          }
+          enum grid-6250-mhz {
+            value 6;
+          }
+          enum grid-3125-mhz {
+            value 7;
+          }
+        }
+        description
+          "Indicates the frequency grids supported by the equipped tunable optical port.";
+      }
+      container fine-tuning {
+        config false;
+        description
+          "State related to fine-tuning";
+        leaf range {
+          type uint32;
+          units "megahertz";
+          description
+            "The positive or negative offset that can be applied when using frequency fine tuning
+
+             The offset is from a frequency of one of the grids supported by the equipped optical module.";
+        }
+        leaf resolution {
+          type uint32;
+          units "megahertz";
+          description
+            "The resolution that can be used for frequency fine tuning.";
+        }
+      }
+      leaf dispersion {
+        if-feature "srl_nokia-feat:disabled";
+        type int32 {
+          range "-50000..50000";
+        }
+        units "picoseconds per nanometer";
+        description
+          "Residual chromatic dispersion compensation";
+      }
+      leaf dispersion-control-mode {
+        if-feature "srl_nokia-feat:disabled";
+        type optical-dispersion-control-mode;
+        default "automatic";
+        description
+          "Mode used to compensate for chromatic dispersion";
+      }
+      leaf rx-los-reaction {
+        type los-reaction;
+        default "squelch";
+        description
+          "Reaction to an RX LOS";
+      }
+      leaf rx-los-thresh {
+        type decimal64 {
+          range "-30..-13";
+          fraction-digits 2;
+        }
+        units "decibel-milliwatts";
+        default "-23";
+        description
+          "Average input power LOS threshold";
+      }
+      leaf module-state {
+        if-feature "srl_nokia-feat:disabled";
+        config false;
+        type enumeration {
+          enum reset {
+            value 0;
+            description
+              "MDIO is held in a high impedance state and all module circuits are in low-power.";
+          }
+          enum init {
+            value 1;
+            description
+              "MDIO remains in high impedance and the module registers are initialized.";
+          }
+          enum low-power {
+            value 2;
+            description
+              "All high-power consuming circuits are in their low-power condition";
+          }
+          enum high-power-up {
+            value 3;
+            description
+              "Module powers up all the circuitry and completes all required initialization";
+          }
+          enum high-power-down {
+            value 4;
+            description
+              "Module powers down circuitry that can be switched to a low-power state";
+          }
+          enum tx-off {
+            value 5;
+            description
+              "Transmitter is turned off; all other parts remain high powered and functional";
+          }
+          enum tx-turn-off {
+            value 6;
+            description
+              "Module turns off the network transmitter";
+          }
+          enum tx-turn-on {
+            value 7;
+            description
+              "Module enables the transmitter";
+          }
+          enum ready {
+            value 8;
+            description
+              "Module is in a steady-state, ready for passing data";
+          }
+          enum fault {
+            value 9;
+            description
+              "Module fault detected and the module is put into its low-power mode";
+          }
+        }
+        description
+          "Indicates the state of the coherent optical module.";
+      }
+      leaf-list module-tx-turn-up-states {
+        if-feature "srl_nokia-feat:disabled";
+        config false;
+        type enumeration {
+          enum init {
+            value 0;
+            description
+              "Entry state; config of transmit path is performed";
+          }
+          enum laser-turn-up {
+            value 1;
+            description
+              "Started tuning of tx laser and locking devices on tx path";
+          }
+          enum laser-ready-off {
+            value 2;
+            description
+              "Laser is ready for operation but light emission suppressed";
+          }
+          enum laser-ready {
+            value 3;
+            description
+              "Laser has been brought up to full power and frequency lock";
+          }
+          enum modulator-converge {
+            value 4;
+            description
+              "Tx modulator driver enabled; waiting convergence of auto bias control loop";
+          }
+          enum output-power-adjust {
+            value 5;
+            description
+              "Sets and controls the transmitted output power using a VOA";
+          }
+        }
+        description
+          "Indicates the completed transmitted turn-up states of the coherent optical module";
+      }
+      leaf-list module-rx-turn-up-states {
+        if-feature "srl_nokia-feat:disabled";
+        config false;
+        type enumeration {
+          enum init {
+            value 0;
+            description
+              "Entry state; config of receive path is performed.";
+          }
+          enum laser-ready {
+            value 1;
+            description
+              "Receive local oscillator laser is tuned";
+          }
+          enum wait-for-input {
+            value 2;
+            description
+              "Rx input tap is monitored for power that exceeds the LOS threshold";
+          }
+          enum adc-signal {
+            value 3;
+            description
+              "Rx input power above threshold; in ADC signal state
+
+               In Analog-to-Digital Converter (ADC) signal state the modules calibrates the optical ADCs";
+          }
+          enum optical-lock {
+            value 4;
+            description
+              "This state (and state demod-lock) reflects DSP operations by the demodulator";
+          }
+          enum demod-lock {
+            value 5;
+            description
+              "RX path turn-up is achieved";
+          }
+        }
+        description
+          "Indicates the completed received turn-up states of the coherent optical module";
+      }
+      leaf rx-electrical-snr-x-polarization {
+        config false;
+        type decimal64 {
+          fraction-digits 1;
+        }
+        units "decibels";
+        description
+          "Indicates the network received electrical SNR (Signal-to-Noise Ratio) of X polarization.";
+      }
+      leaf rx-electrical-snr-y-polarization {
+        config false;
+        type decimal64 {
+          fraction-digits 1;
+        }
+        units "decibels";
+        description
+          "Indicates the network received electrical SNR (Signal-to-Noise Ratio) of Y polarization.";
+      }
+      leaf rx-quality-margin {
+        if-feature "srl_nokia-feat:disabled";
+        config false;
+        type decimal64 {
+          fraction-digits 1;
+        }
+        units "decibels";
+        description
+          "Indicates the received quality margin.";
+      }
+      leaf rx-optical-snr-x-polarization {
+        config false;
+        type decimal64 {
+          fraction-digits 1;
+        }
+        units "decibels";
+        description
+          "Indicates the network received estimated optical SNR (Signal-to-Noise Ratio) of X polarization.";
+      }
+      leaf rx-optical-snr-y-polarization {
+        config false;
+        type decimal64 {
+          fraction-digits 1;
+        }
+        units "decibels";
+        description
+          "Indicates the network received estimated optical SNR (Signal-to-Noise Ratio) of Y polarization.";
+      }
+      leaf-list current-alarms {
+        if-feature "srl_nokia-feat:disabled";
+        config false;
+        type coherent-optical-alarm;
+        description
+          "Indicates the coherent optical alarms currently active on the port.";
+      }
+      leaf-list defect-points {
+        if-feature "srl_nokia-feat:disabled";
+        config false;
+        type coherent-optical-defect-point;
+        description
+          "Indicates the coherent optical defect points currently active on the port.";
+      }
+      container sweep {
+        if-feature "srl_nokia-feat:disabled";
+        description
+          "Enter the sweep context";
+        leaf start {
+          type int32 {
+            range "-50000..50000";
+          }
+          units "picoseconds per nanometer";
+          default "-25500";
+          description
+            "Lower bound of the dispersion compensation range";
+        }
+        leaf end {
+          type int32 {
+            range "-50000..50000";
+          }
+          units "picoseconds per nanometer";
+          default "2000";
+          description
+            "Upper bound of the dispersion compensation range";
+        }
+      }
+      container statistics {
+        config false;
+        description
+          "Enter the statistics context";
+        leaf elapsed-seconds {
+          if-feature "srl_nokia-feat:disabled";
+          type srl_nokia-comm:counter32;
+          units "seconds";
+          description
+            "Elapsed seconds from start of coherent optical stats collection.
+
+             Value is reset after the last port statistics cleared";
+        }
+        container received {
+          description
+            "Enter the received context";
+          container bit-error-rate {
+            description
+              "Enter the bit-error-rate context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 18;
+              }
+              description
+                "Current BER received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 18;
+              }
+              description
+                "Average BER received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 18;
+              }
+              description
+                "Minimum BER received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 18;
+              }
+              description
+                "Maximum BER received on the optical channel";
+            }
+          }
+          container electrical-signal-to-noise-ratio {
+            description
+              "Enter the electrical-signal-to-noise-ratio context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Current SNR received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Average SNR received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Minimum SNR received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Maximum SNR received on the optical channel";
+            }
+          }
+          container optical-signal-to-noise-ratio {
+            description
+              "Enter the optical-signal-to-noise-ratio context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Current SNR received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Average SNR received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Minimum SNR received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Maximum SNR received on the optical channel";
+            }
+          }
+          container chromatic-dispersion {
+            description
+              "Enter the chromatic-dispersion context";
+            leaf current {
+              type int32;
+              units "picoseconds per nanometer";
+              description
+                "Current chromatic dispersion received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type int32;
+              units "picoseconds per nanometer";
+              description
+                "Average chromatic dispersion received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type int32;
+              units "picoseconds per nanometer";
+              description
+                "Minimum chromatic dispersion received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type int32;
+              units "picoseconds per nanometer";
+              description
+                "Maximum chromatic dispersion received on the optical channel";
+            }
+          }
+          container differential-group-delay {
+            description
+              "Enter the differential-group-delay context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "picoseconds";
+              description
+                "Current differential group delay received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "picoseconds";
+              description
+                "Average differential group delay received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "picoseconds";
+              description
+                "Minimum differential group delay received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "picoseconds";
+              description
+                "Maximum differential group delay received on the optical channel";
+            }
+          }
+          container frequency-offset {
+            description
+              "Enter the frequency-offset context";
+            leaf current {
+              type int32;
+              units "megahertz";
+              description
+                "Current frequency offset received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type int32;
+              units "megahertz";
+              description
+                "Average frequency offset received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type int32;
+              units "megahertz";
+              description
+                "Minimum frequency offset received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type int32;
+              units "megahertz";
+              description
+                "Maximum frequency offset received on the optical channel";
+            }
+          }
+          container quality {
+            if-feature "srl_nokia-feat:disabled";
+            description
+              "Enter the quality context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Current quality received on the optical channel";
+            }
+            leaf average {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Average quality received on the optical channel";
+            }
+            leaf minimum {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Minimum quality received on the optical channel";
+            }
+            leaf maximum {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Maximum quality received on the optical channel";
+            }
+          }
+          container power {
+            description
+              "Enter the power context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Current power received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Average power received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Minimum power received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Maximum power received on the optical channel";
+            }
+          }
+          container total-power {
+            description
+              "Enter the total-power context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Indicates the current total power received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Indicates the average total power received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Indicates the minimum total power received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Indicates the maximum total power received on the optical channel";
+            }
+          }
+          container polarization-dependent-loss {
+            description
+              "Enter the polarization-dependent-loss context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Indicates the current Polarization Dependent Loss received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Indicates the average Polarization Dependent Loss received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Indicates the minimum Polarization Dependent Loss received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "decibels";
+              description
+                "Indicates the maximum Polarization Dependent Loss received on the optical channel";
+            }
+          }
+          container state-of-polarization-rate-of-change {
+            description
+              "Enter the state-of-polarization-rate-of-change context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "kiloradians per second";
+              description
+                "Indicates the current SOP-ROC received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "kiloradians per second";
+              description
+                "Indicates the average SOP-ROC received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "kiloradians per second";
+              description
+                "Indicates the minimum SOP-ROC received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 1;
+              }
+              units "kiloradians per second";
+              description
+                "Indicates the maximum SOP-ROC received on the optical channel";
+            }
+          }
+          container media-frame-error-count {
+            description
+              "Enter the media-frame-error-count context";
+            leaf current {
+              type srl_nokia-comm:gauge64;
+              description
+                "Indicates the current Media Frame Rate Error Count received on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type srl_nokia-comm:gauge64;
+              description
+                "Indicates the average Media Frame Rate Error Count received on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type srl_nokia-comm:gauge64;
+              description
+                "Indicates the minimum Media Frame Rate Error Count received on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type srl_nokia-comm:gauge64;
+              description
+                "Indicates the maximum Media Frame Rate Error Count received on the optical channel";
+            }
+          }
+        }
+        container transmitted {
+          description
+            "Enter the transmitted context";
+          container power {
+            description
+              "Enter the power context";
+            leaf current {
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Current power transmitted on the optical channel";
+            }
+            leaf average {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Average power transmitted on the optical channel";
+            }
+            leaf minimum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Minimum power transmitted on the optical channel";
+            }
+            leaf maximum {
+              if-feature "srl_nokia-feat:disabled";
+              type decimal64 {
+                fraction-digits 2;
+              }
+              units "decibel-milliwatts";
+              description
+                "Maximum power transmitted on the optical channel";
+            }
+          }
+        }
+      }
+      container transmit-power {
+        config false;
+        description
+          "Enter the transmit-power context";
+        leaf minimum {
+          type decimal64 {
+            fraction-digits 2;
+          }
+          units "decibel-milliwatts";
+          description
+            "Minimum configurable transmit power for the equipped optical module";
+        }
+        leaf maximum {
+          type decimal64 {
+            fraction-digits 2;
+          }
+          units "decibel-milliwatts";
+          description
+            "Maximum configurable transmit power for the equipped optical module";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:transceiver" {
+    if-feature "srl_nokia-feat:digital-coherent-optics";
+    uses optical-channel-top;
+    uses transceiver-optical-channel-top;
+  }
+}

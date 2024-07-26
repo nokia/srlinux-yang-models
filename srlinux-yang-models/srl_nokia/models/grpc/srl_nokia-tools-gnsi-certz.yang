@@ -1,0 +1,102 @@
+module srl_nokia-tools-gnsi-certz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:tools-gnsi-certz";
+  prefix srl-tools-gnsi-certz;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-tools-tls {
+    prefix srl-tools-tls;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational commands related to Certz.";
+
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+
+  grouping certz-top {
+    container certz {
+      description
+        "Information relating to the active certificates and bundles as provided via Certz
+
+         State is provided by the gNSI Certz service, and can be changed using the gNSI.Certz.Rotate RPC";
+      container rotate {
+        presence "Perform a rotation of a certificate, trust anchor, or certificate revocation list";
+        description
+          "Perform a rotation of a certificate, trust anchor, or certificate revocation list within Certz SSL profile.";
+        leaf created-on {
+          type uint64;
+          units "seconds";
+          description
+            "Sets the created on value for the new policy
+
+             Value is the number of seconds since the epoch. For reference the current time from the epoch in most Linux distributions can be retrieved via 'date +%s'. You can also select a specific date via 'date -d \"2023-03-31\" +%s'.
+
+             If no value is provided the systems current date and time is used.";
+        }
+        leaf version {
+          type string;
+          description
+            "A version string to store with the policy
+
+             No constraints are applied other than the value must be a string.
+
+             If no value is provided no default is used.";
+        }
+        leaf key {
+          type string {
+            srl-ext:generated-class-name "SecretKey";
+          }
+          description
+            "Base64 encoded key to use with the server certificate
+
+             This includes the '-----BEGIN PRIVATE KEY-----', and '-----END PRIVATE KEY-----' header and footer
+
+             The value is hashed, and only the hashed value is kept";
+        }
+        leaf certificate {
+          type string;
+          description
+            "Base64 encoded certificate to use with the provided or existing private key
+
+             This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+        }
+        leaf trust-anchor {
+          type string;
+          description
+            "Base64 encoded certificate chain to use as a trust anchor";
+        }
+        leaf crl {
+          type string;
+          description
+            "Base64 encoded bundle of certificates to add to the certificate revocation list";
+        }
+      }
+      leaf remove {
+        type empty;
+        description
+          "Remove Certz SSL profile from the system.";
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system/srl-tools-tls:tls/srl-tools-tls:server-profile" {
+    if-feature "srl-feat:gnsi-certz";
+    uses certz-top;
+  }
+}

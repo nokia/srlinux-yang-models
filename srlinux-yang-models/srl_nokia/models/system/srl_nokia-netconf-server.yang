@@ -1,0 +1,575 @@
+module srl_nokia-netconf-server {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:netconf:netconf-server";
+  prefix srl-netconf-server;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-ssh {
+    prefix srl-ssh;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Configuration, operational state and statistics data related to the NETCONF server";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping netconf-transport-selection {
+    choice transport {
+      case ssh {
+        leaf ssh-server {
+          description
+            "The SSH server instance to bind the NETCONF server to";
+          type leafref {
+            path "/srl-system:system/srl-ssh:ssh-server/srl-ssh:name";
+          }
+        }
+      }
+      case tls {
+        if-feature "srl-feat:future-0-0";
+      }
+      case unix-socket {
+        if-feature "srl-feat:future-0-0";
+        container unix-socket {
+          description
+            "Create a new unix socket and bind the NETCONF service to it";
+          leaf socket-path {
+            srl-ext:show-importance "high";
+            config false;
+            type string;
+            description
+              "Path to the unix socket used by NETCONF";
+          }
+        }
+      }
+    }
+  }
+
+  grouping netconf-trace-options {
+    typedef netconf-trace-direction {
+      type enumeration {
+        enum both {
+          description
+            "Trace input and output messages";
+        }
+        enum input {
+          description
+            "Trace input messages";
+        }
+        enum output {
+          description
+            "Trace output messages";
+        }
+      }
+    }
+
+    typedef netconf-trace-option-rpcs {
+      type enumeration {
+        enum action {
+          description
+            "Trace <action> RPC messages";
+        }
+        enum cancel-commit {
+          description
+            "Trace <cancel-commit> RPC messages";
+        }
+        enum close-session {
+          description
+            "Trace <close-session> RPC messages";
+        }
+        enum commit {
+          description
+            "Trace <commit> RPC messages";
+        }
+        enum copy-config {
+          description
+            "Trace <copy-config> RPC messages";
+        }
+        enum delete-config {
+          description
+            "Trace <delete-config> RPC messages";
+        }
+        enum discard-changes {
+          description
+            "Trace <discard-changes> RPC messages";
+        }
+        enum edit-config {
+          description
+            "Trace <edit-config> RPC messages";
+        }
+        enum edit-data {
+          description
+            "Trace <edit-data> RPC messages";
+        }
+        enum get-config {
+          description
+            "Trace <get-config> RPC messages";
+        }
+        enum get-data {
+          description
+            "Trace <get-data> RPC messages";
+        }
+        enum get-schema {
+          description
+            "Trace <get-schema> RPC messages";
+        }
+        enum get {
+          description
+            "Trace <get> RPC messages";
+        }
+        enum hello {
+          description
+            "Trace <hello> messages";
+        }
+        enum kill-session {
+          description
+            "Trace <kill-session> RPC messages";
+        }
+        enum lock {
+          description
+            "Trace <lock> RPC messages";
+        }
+        enum unknown {
+          description
+            "Trace messages that are unknown to the server";
+        }
+        enum unlock {
+          description
+            "Trace <unlock> RPC messages";
+        }
+        enum validate {
+          description
+            "Trace <validate> RPC messages";
+        }
+      }
+    }
+
+    container trace-options {
+      description
+        "Debug trace-options for NETCONF";
+      leaf direction {
+        description
+          "Direction to trace messages";
+        type netconf-trace-direction;
+        default "both";
+      }
+      leaf-list rpc {
+        description
+          "RPC messages to trace";
+        type netconf-trace-option-rpcs;
+      }
+    }
+  }
+
+  grouping netconf-global-statistics {
+    leaf active-sessions {
+      type uint8 {
+        range "1..64";
+      }
+      description
+        "Active NETCONF sessions
+
+         The total number of active NETCONF sessions.  A session is defined as an individual client connection
+         over which a NETCONF session has been started by providing bi-directional <hello> messages";
+    }
+    leaf total-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF total requests
+
+         Total number of NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-responses {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF total responses
+
+         Total number of NETCONF responses that have been generated and sent by the NETCONF server";
+    }
+    leaf total-error-responses {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF error responses
+
+         Total number of NETCONF error responses that have been generated and sent by the NETCONF server";
+    }
+    leaf total-close-session-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <close-session> requests
+
+         Total number of <close-session> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-in-bad-hellos {
+      type srl-comm:zero-based-counter32;
+      description
+        "Inbound bad NETCONF hello messages
+
+         Total number of bad NETCONF hello messages that have been received by the NETCONF server";
+    }
+    leaf total-dropped-sessions {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF dropped sessions
+
+         Total number of dropped NETCONF sessions";
+    }
+    leaf total-get-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get> requests
+
+         Total number of <get> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-get-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get-config> requests
+
+         Total number of <get-config> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-get-data-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get-data> requests
+
+         Total number of <get-data> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-get-schema-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get-schema> requests
+
+         Total number of <get-schema> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-edit-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <edit-config> requests
+
+         Total number of <edit-config> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-failed-edit-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "Failed NETCONF <edit-config> requests
+
+         Total number of <edit-config> NETCONF requests that have failed because of locks taken by other NETCONF sessions";
+    }
+    leaf total-edit-data-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <edit-data> requests
+
+         Total number of <edit-data> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-failed-edit-data-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "Failed NETCONF <edit-data> requests
+
+         Total number of <edit-data> NETCONF requests that have failed because of locks taken by other NETCONF sessions";
+    }
+    leaf total-kill-session-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <kill-session> requests
+
+         Total number of <kill-session> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-copy-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <copy-config> requests
+
+         Total number of copy-config NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-delete-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <delete-config> requests
+
+         Total number of <delete-config> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-validate-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <validate> requests
+
+         Total number of <validate> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-lock-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <lock> requests
+
+         Total number of <lock> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-failed-lock-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "Failed NETCONF <lock> requests
+
+         Total number of <lock> NETCONF requests that have failed because of locks taken by other NETCONF sessions";
+    }
+    leaf total-unlock-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <unlock> requests
+
+         Total number of <unlock> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-commit-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <commit> requests
+
+         Total number of commit NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-discard-changes-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <discard-changes> requests
+
+         Total number of <discard-changes> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf total-action-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <action> requests
+
+         Total number of <action> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+  }
+
+  grouping netconf-per-session-statistics {
+    leaf in-bad-hellos {
+      type srl-comm:zero-based-counter32;
+      description
+        "Inbound bad NETCONF hello messages
+
+         Number of bad NETCONF hello messages that have been received by the NETCONF server";
+    }
+    leaf get-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get> requests
+
+         Number of <get> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf get-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get-config> requests
+
+         Number of <get-config> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf get-data-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get-data> requests
+
+         Number of <get-data> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf get-schema-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <get-schema> requests
+
+         Number of <get-schema> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf edit-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <edit-config> requests
+
+         Number of <edit-config> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf failed-edit-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "Failed NETCONF <edit-config> requests
+
+         Number of <edit-config> NETCONF requests that have failed because of locks taken by other NETCONF sessions";
+    }
+    leaf edit-data-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <edit-data> requests
+
+         Number of <edit-data> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf failed-edit-data-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "Failed NETCONF <edit-data> requests
+
+         Number of <edit-data> NETCONF requests that have failed because of locks taken by other NETCONF sessions";
+    }
+    leaf kill-session-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <kill-session> requests
+
+         Number of <kill-session> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf copy-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <copy-config> requests
+
+         Number of copy-config NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf delete-config-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <delete-config> requests
+
+         Number of <delete-config> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf validate-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <validate> requests
+
+         Number of <validate> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf lock-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <lock> requests
+
+         Number of <lock> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf failed-lock-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "Failed NETCONF <lock> requests
+
+         Number of <lock> NETCONF requests that have failed because of locks taken by other NETCONF sessions";
+    }
+    leaf unlock-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <unlock> requests
+
+         Number of <unlock> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf commit-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <commit> requests
+
+         Number of commit NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf discard-changes-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <discard-changes> requests
+
+         Number of <discard-changes> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+    leaf action-requests {
+      type srl-comm:zero-based-counter32;
+      description
+        "NETCONF <action> requests
+
+         Number of <action> NETCONF requests that have been accepted and processed by the NETCONF server";
+    }
+  }
+
+  grouping netconf-server-top {
+    list netconf-server {
+      description
+        "Configures the NETCONF server instance";
+      key "name";
+      leaf name {
+        type srl-comm:restricted-name;
+        description
+          "NETCONF service instance name";
+      }
+      leaf admin-state {
+        type srl-comm:admin-state;
+        srl-ext:show-importance "high";
+        default "disable";
+        description
+          "Administratively enable or disable the NETCONF server instance";
+      }
+      leaf oper-state {
+        config false;
+        type srl-comm:oper-state;
+        srl-ext:show-importance "high";
+        description
+          "Details if the NETCONF server instance is operationally available";
+      }
+      leaf last-oper-change {
+        type srl-comm:date-and-time-delta;
+        description
+          "NETCONF last operational state change
+
+            Time of last change of operational state of NETCONF server instance";
+        config false;
+      }
+      uses netconf-trace-options;
+      uses netconf-transport-selection;
+      leaf session-limit {
+        type uint8 {
+          range "1..64";
+        }
+        srl-ext:show-importance "low";
+        default "64";
+        description
+          "Set a limit on the number of simultaneous active NETCONF sessions
+
+            A session is defined as an individual client connection over which a NETCONF session has been started
+            by providing bi-directional <hello> messages";
+      }
+      container statistics {
+        config false;
+        uses netconf-global-statistics;
+        list session {
+          key "session-id";
+          leaf session-id {
+            type uint32 {
+              range "1..max";
+            }
+          }
+          leaf process-id {
+            type uint32;
+            description
+              "The process ID of the NETCONF session";
+          }
+          uses netconf-per-session-statistics;
+        }
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl-feat:netconf";
+    srl-ext:first-released "24.7.1";
+    uses netconf-server-top;
+  }
+}

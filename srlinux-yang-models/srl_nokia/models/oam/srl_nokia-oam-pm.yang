@@ -1,0 +1,992 @@
+module srl_nokia-oam-pm {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:oam-pm";
+  prefix srl_nokia-oam-pm;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-oam-pm-types {
+    prefix srl_nokia-pm-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG module contains the common OAM Performance Monitoring architectural
+     components that will be used by the technology specific modules.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping session {
+    description
+      "Common OAM-PM session information";
+    leaf session-name {
+      type string {
+        length "1..32";
+      }
+      description
+        "The name of the OAM-PM session";
+    }
+    leaf description {
+      type srl_nokia-comm:description;
+      description
+        "A description of the OAM-PM session";
+    }
+    leaf session-type {
+      type srl_nokia-pm-types:oam-pm-session-type;
+      default "proactive";
+      description
+        "Session scheduling type for the test sessions configured under this OAM-PM session
+
+         A value 'proactive' means the protocol specific test session will be always on when admin-state is 'enable'.
+         A value 'on-demand' requires the tools start command to be issued for test session with admin-state 'enable'";
+    }
+  }
+
+  grouping measurement-interval {
+    description
+      "Common measurement interval configuration";
+    list measurement-interval {
+      max-elements 5;
+      key "mi-duration";
+      description
+        "The list of measurement intervals associated with the OAM-PM session";
+      leaf mi-duration {
+        type srl_nokia-pm-types:measurement-interval-duration-type;
+        description
+          "Configure the measurement interval duration
+
+           The measurement interval duration defines the length of the sample window over which the
+           statistics are collected, computed, and stored.  The system automatically instantiates a 'raw'
+           measurement interval for each defined test session.  The 'raw' measurement interval is unbounded
+           and continually accumulates measurements while the test session admin-state has value 'enable'.
+           The 'raw' measurement interval can have result cleared to flush restart the accumulation of statistics.";
+      }
+      leaf boundary-type {
+        type srl_nokia-pm-types:measurement-interval-boundary-type;
+        default "clock-aligned";
+        description
+          "Aligning the start of the measurement interval
+
+           A value 'clock-aligned' aligns the start and end of the sample window with the time-of-day clock.
+           A value 'test-aligned' aligns the sample window with the start of the test session.";
+      }
+      leaf clock-offset {
+        type srl_nokia-pm-types:measurement-interval-clock-offset;
+        default "0";
+        units "seconds";
+        must "../boundary-type = 'clock-aligned' or . = 0" {
+          error-message "the clock-offset is only supported for boundary-type clock-aligned";
+        }
+        must "(../mi-duration  = '1-minute' and . < 60) or
+              (../mi-duration  = '5-minutes' and . < 300) or
+              (../mi-duration  = '15-minutes' and . < 900) or
+              (../mi-duration  = '1-hour' and . < 3600) or
+              (../mi-duration  = '1-day' and . < 86400)" {
+          error-message "The clock-offset must be less than the length of the measurement interval duration";
+        }
+        description
+          "Aligning the measurement interval using an offset for the start, considering the boundary-type
+
+           The clock-offset must be '0' when the boundary-type value is not 'clock-aligned'.  When the boundary-type
+           is 'clock-aligned' the value of the clock-offset must be less than the duration of the measurement-interval";
+      }
+      leaf intervals-stored {
+        type srl_nokia-pm-types:measurement-interval-stored;
+        must "(../mi-duration  = '1-minute' and . < 97) or
+              (../mi-duration  = '5-minutes' and . < 97) or
+              (../mi-duration  = '15-minutes' and . < 97) or
+              (../mi-duration  = '1-hour' and . < 25) or
+              (../mi-duration  = '1-day' and . < 2)" {
+          error-message "The current intervals stored value exceed the maximum value for the ../mi-duration";
+        }
+        description
+          "The number of completed measurement intervals stored in volatile memory before overwriting oldest
+
+           The more intervals stored the more memory will be consumed. The values vary per measurement interval duration.
+
+           1-minute    default 32  maximum 96
+           5-minutes   default 32  maximum 96
+           15-minutes  default 32  maximum 96
+           1-hour      default 24  maximum 24
+           1-day       default  1  maximum  1
+
+           The total of 1-minute, plus 5-minutes, plus 15-minutes cannot exceed 96.  That is a shared pool between those measurement intervals.";
+      }
+      container threshold-alerts {
+        description
+          "Enabling configured events for the measurement interval";
+        leaf loss-event {
+          type srl_nokia-comm:admin-state;
+          description
+            "Enable the loss events associated with the loss test session for this measurement interval";
+        }
+        leaf delay-event {
+          type srl_nokia-comm:admin-state;
+          description
+            "Enable the delay events associated with the bin group assigned to this test session for this measurement interval";
+        }
+      }
+    }
+  }
+
+  grouping test-session {
+    leaf test-id {
+      type union {
+        type uint32 {
+          range "0..2147483647";
+        }
+        type enumeration {
+          enum auto {
+            value 1;
+          }
+        }
+      }
+      default "auto";
+      description
+        "Test ID of the test session
+
+         Test IDs are protocol specific.  The same value may be re-used for different protocols but not
+         for the same protocol.  When the value 'auto' is configured the test-id is dynamically
+         assigned from the upper 32-bit range, [2147483648..4294967296]";
+    }
+    leaf test-id-in-use {
+      config false;
+      type uint32;
+      description
+        "Test ID allocated to the test session";
+    }
+    leaf test-duration {
+      type uint32 {
+        range "1..86400";
+      }
+      units "seconds";
+      must "../../session-type = 'on-demand'" {
+        error-message "This leaf is only supported for session-type on-demand";
+      }
+      description
+        "Duration of an OAM-PM session with a session-type on-demand
+
+         When this leaf is not specified the on-demand test will execute until manually stopped.";
+    }
+  }
+
+  grouping bin-group {
+    description
+      "Bin group configuration parameters ";
+    list bin-group {
+      key "bin-group-name";
+      description
+        "Enter the bin-group list instance";
+      leaf bin-group-name {
+        type srl_nokia-comm:name;
+        description
+          "The name of the bin group
+
+           Each performance monitoring session requires a bin-group references.  The bin-group includes information on how the delay information is binned
+           and any threshold or exclusion functions.  Each performance monitoring session references the bin-group 'default'.  The 'default' bin-group is
+           created by the system.  Its purpose is to reduce the configuration when the binning of information is not a key requirement for the performance
+           monitoring session.  It contains basic values.  The bin-type parameters cannot be modified. The following bin-type and lower-bound values are
+           assigned to the bin-group 'default'.  These values are microseconds.
+
+           bin-type fd
+              bin 0 { lower-bound 0 }
+              bin 1 { lower-bound 5000 }
+              bin 2 { lower-bound 10000 }
+           bin-type fdr
+              bin 0 { lower-bound 0 }
+              bin 1 { lower-bound 5000 }
+           bin-type ifdv
+              bin 0 { lower-bound 0 }
+              bin 1 { lower-bound 5000 }
+
+           The bin-group 'default' can be entered in the configuration.  It must include the admin-state 'enable'.  If entered in the configuration it cannot
+           be deleted if any performance monitoring session is referencing it.   The information for the bin-group 'default' is available in state.";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Administrative state of the bin group";
+        must "not(../bin-group-name = 'default') or (. = 'enable')" {
+          error-message "The bin-group 'default' requires admin-state 'enable'";
+        }
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "A description of the bin group";
+      }
+      leaf reference-count {
+        config false;
+        type uint32;
+        description
+          "The number of OAM-PM test sessions referencing the bin-group";
+      }
+      list bin-type {
+        key "bin-metric";
+        leaf bin-metric {
+          type srl_nokia-pm-types:bin-metric-type;
+          description
+            "Enter the bin-type list instance";
+          must "not(../../bin-group-name = 'default')" {
+            error-message "The bin-group 'default' bin-type attributes cannot be modified";
+          }
+        }
+        list bin {
+          key "bin-number";
+          description
+            "Enter the bin number list instance";
+          leaf bin-number {
+            type uint8 {
+              range "0..9";
+            }
+            description
+              "The number of the bin
+
+               The bin values must be contiguous.  Space cannot be left between numerical values.  If no lower-bound is configured for
+               a bin the default lower-bound will be 1000 microseconds multiplied by the bin number.  If this value conflicts with a lower
+               bin number lower-bound value the configuration of an appropriate lower-bound number for the bin must be configured in
+               the same transaction as the addition of the bin to the bin-group. ";
+          }
+          leaf lower-bound {
+            type uint32 {
+              range "0|1..4294967295";
+            }
+            units "microseconds";
+            must '((../bin-number != 0 and . != 0) or (../bin-number = 0 and . = 0))' {
+              error-message "Bin 0 must have a lower-bound '0' and Bins 1 through 9 must not have a lower-bound of '0'";
+            }
+            description
+              "Lower bound for the bin
+
+               The lower-bound value between two adjacent bins represents the range of results that will be mapped to the
+               bin.  The lower-bound value for the bin represents the smallest value in the range.  The lower-bound value
+               of the adjacent higher bin represents the smallest value in its range.
+
+               Bin 0 must have a lower-bound value of '0'.  Bin numbers must not have conflicting lower-bound values.
+               Higher bin numbers must not have lower-bound values less than any lower bin number.";
+          }
+        }
+        list delay-event {
+          key "direction";
+          description
+            "Enter the delay-event list instance";
+          leaf direction {
+            type srl_nokia-pm-types:delay-direction-type;
+            description
+              "The direction of the measurement of interest
+
+               A value 'forward' is the measurement from source to reflector.
+               A value 'backward' is the measurement from reflector to source.
+               A value 'round-trip' is the measurement of the complete path using four timestamps.";
+          }
+          leaf lowest-bin {
+            type uint32 {
+              range "0..9";
+            }
+            mandatory true;
+            description
+              "The lowest bin number to include when comparing counts to thresholds
+
+               The number of results in this bin and all higher bins are compared to the configured thresholds.  If the configured bin number
+               does not exist then no threshold will be trigger.";
+          }
+          leaf raise-threshold {
+            type uint32 {
+              range "1..864000";
+            }
+            mandatory true;
+            description
+              "Raise threshold count for excessive delay
+
+               A threshold crossing alarm is raised when the raise-threshold value is reached.  The raise threshold
+               is compared to the number of results the ../lowest-bin and all higher, excluding any results that would be
+               excluded by the ../exclude-lowest-bin.";
+          }
+          leaf clear-threshold {
+            type uint32 {
+              range "0..863999";
+            }
+            must '. < ../raise-threshold' {
+              error-message "The clear-threshold value must be lower than the raise-threshold value.";
+            }
+            description
+              "The not be exceeded value used to clear a previously triggered threshold crossing alarm
+
+               Two type of threshold crossing alarms; Stateless and Stateful.  When the clear-threshold is not specified the type = stateless.
+               Stateless alarms are not maintained across measurement interval boundaries.  Each measurement interval is self-contained.
+               When a clear-threshold is configured the type = stateful.  Stateful alarms are maintained across measurement interval
+               boundaries and cleared when a subsequent measurement interval completes and meets the clear threshold criteria.
+
+               A value '0' means a subsequent measurement interval must have no results in the bins counted against the threshold. ";
+          }
+          leaf exclude-lowest-bin {
+            type uint32 {
+              range "1..9";
+            }
+            must '. > ../lowest-bin' {
+              error-message "The threshold excluded bins be higher than the lowest bin for the delay event.";
+            }
+            description
+              "Lowest bin excluded from the threshold crossing alarm count
+
+               This bin must be higher than the ../lowest-bin, which is used to specify which bins to consider for threshold crossing alarms.
+               If the configured bin number does not exist then this leaf have no effect.";
+          }
+        }
+        list exclude-from-avg {
+          key "direction";
+          description
+            "Enter the exclude-from-avg list instance used to exclude specified bins from their values being included in the average";
+          leaf direction {
+            type srl_nokia-pm-types:delay-direction-type;
+            description
+              "The direction of the measurement
+
+               A value 'forward' is the measurement from source to reflector.
+               A value 'backward' is the measurement from reflector to source.
+               A value 'round-trip' is the measurement of the complete path using four timestamps.";
+          }
+          leaf bins {
+            type string {
+              length "1..39";
+              pattern '(all|(([0-9]|([0-9]-[0-9]))(,([0-9]|([0-9]-[0-9])))*))';
+            }
+            mandatory true;
+            description
+              "Bin numbers excluded from the average calculation
+
+               Results mapped to these bins do not impact the delay metric average values.";
+          }
+        }
+      }
+    }
+  }
+
+  grouping bin-group-state {
+    leaf bin-group-binning {
+      config false;
+      type enumeration {
+        enum active {
+          value 1;
+        }
+        enum inactive {
+          value 2;
+        }
+      }
+      description
+        "The current binning of delay metric values
+
+         A value 'active' means the bin-group being referenced by the test session has an admin-state 'enable'.
+         A value 'inactive' means the bin-group being referenced by the test session has an admin-state 'disable'.
+         When the value is 'inactive' test packets are being transmitted but there is no bin-group to bin the result
+         and the delay results are discarded.";
+    }
+  }
+
+  grouping operational-states-errors {
+    leaf oper-state {
+      config false;
+      type srl_nokia-comm:oper-state;
+    }
+    leaf detected-tx-error {
+      config false;
+      type srl_nokia-pm-types:oam-pm-session-test-detected-tx-error;
+      description
+        "Reason for the specified test session's current inability (if any) to launch request frames
+
+         For example, 'eth-parent-admin-down(4)' could be returned for a test if the MEP to be tested
+         is associated with a subinterface which is administratively down.
+
+         Not all request frame transmit failures are detected by this mechanism.  It is possible that
+         the value 'none' will be returned when the test is unable to transmit frames during undetectable
+         transmission errors.";
+    }
+  }
+
+  grouping measurement-interval-index-tracking {
+    leaf newest-index {
+      config false;
+      type uint32;
+      description
+        "The number of the newest measurement interval index for the specified session and test type";
+    }
+  }
+
+  grouping delay-events-state {
+    list delay-events {
+      config false;
+      key "bin-metric direction";
+      description
+        "A list of delay events for the measurement interval";
+      leaf bin-metric {
+        type srl_nokia-pm-types:bin-metric-type;
+        description
+          "Delay metric";
+      }
+      leaf direction {
+        type srl_nokia-pm-types:delay-direction-type;
+        description
+          "The direction of the measurement
+
+                      A value 'forward' is the measurement from source to reflector.
+                      A value 'backward' is the measurement from reflector to source.
+                      A value 'round-trip' is the measurement of the complete path using four timestamps.";
+      }
+      leaf last-tca-time {
+        type srl_nokia-comm:date-and-time;
+        description
+          "UTC date and time at the start of the measurement interval which generated most recent raise or clear";
+      }
+      leaf oper-state {
+        type srl_nokia-pm-types:tca-oper-state;
+        description
+          "Operational state of the Threshold Crossing Alerts (TCAs)
+
+           The conditions are evaluated in the order shown.
+
+           The value 'pending' is returned if the threshold configuration for the specified indices
+           changed during the current measurement interval.  The threshold configuration is evaluated
+           in the next full measurement interval after the new configuration.
+
+           The value 'active' is returned if the specified indices have a no clear threshold configured (stateless),
+           and the current measurement interval has generated a Raise TCA.  The value is also returned if the
+           specified indices have a clear threshold configured (stateful), and the most recent TCA generated
+           was a Raise.
+
+           The value 'not-active' is returned for all other conditions (e.g., thresholding is not configured for
+           the specified indices).";
+      }
+    }
+  }
+
+  grouping mi-common-state {
+    leaf oper-state {
+      type srl_nokia-pm-types:mi-oper-state;
+      description
+        "Operational state of the specified measurement interval";
+    }
+    leaf suspect-status {
+      type boolean;
+      description
+        "Whether the Measurement Interval has been marked as suspect
+
+                  The object is to be set to 'false' at the start of a measurement interval. It is set to 'true' when
+              there is a discontinuity in the performance measurements during the Measurement Interval.  This flag is used
+              to warn operators if the result count in the measurement interval is suboptimal for considering the results
+              valid.  Results are still collected, computed, and stored regardless of this flag.  This is meant as a
+              post processing notification to an external system.
+
+              \t\tConditions for a discontinuity include, but are not limited to the following:
+
+              1 - The local time-of-day clock is adjusted by at least 10 seconds
+                      2 - The test is halted before the current Measurement Interval is completed
+                      3 - A local test failure, or reconfiguration that disrupts testing";
+    }
+    leaf start-time {
+      type srl_nokia-comm:date-and-time;
+      description
+        "The time that the current measurement interval started";
+    }
+    leaf elapsed-time {
+      type srl_nokia-comm:zero-based-counter64;
+      units "seconds";
+      description
+        "Time elapsed since data collection started for the specified measurement interval";
+    }
+  }
+
+  grouping mi-delay-statistics {
+    leaf frames-transmitted {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of test frames sent for the specified measurement interval";
+    }
+    leaf frames-received {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of test frames received for the specified measurement interval";
+    }
+    list bin-type {
+      key "bin-metric";
+      leaf bin-metric {
+        type srl_nokia-pm-types:bin-metric-type;
+        description
+          "The identifier of a bin type within a bin group";
+      }
+      container forward {
+        leaf minimum {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Minimum delay metric in the forward direction, from source to reflector
+
+                  This is for the specific direction, test session, interval duration,
+                  interval number, and bin type.";
+        }
+        leaf maximum {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Maximum delay metric in the forward direction, from source to reflector
+
+                        This is for the specific direction, test session, interval duration,
+                        interval number, and bin type.";
+        }
+        leaf average {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Average delay metric in the forward direction, from source to reflector
+
+                        This is for the specific direction, test session, interval duration,
+                        interval number, and bin type.";
+        }
+      }
+      container backward {
+        leaf minimum {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Minimum delay metric in the backward direction, from reflector to source
+
+                  This is for the specific direction, test session, interval duration,
+                  interval number, and bin type.";
+        }
+        leaf maximum {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Maximum delay metric in the backward direction, from reflector to source
+
+                  This is for the specific direction, test session, interval duration,
+                  interval number, and bin type.";
+        }
+        leaf average {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Average delay metric in the backward direction, from reflector to source
+
+                  This is for the specific direction, test session, interval duration,
+                  interval number, and bin type.";
+        }
+      }
+      container round-trip {
+        leaf minimum {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Minimum delay metric round trip, source computed based on four timestamps
+
+                  This is for the specific direction, test session, interval duration,
+                  interval number, and bin type.";
+        }
+        leaf maximum {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Maximum delay metric round trip, source computed based on four timestamps
+
+                  This is for the specific direction, test session, interval duration,
+                  interval number, and bin type.";
+        }
+        leaf average {
+          type srl_nokia-comm:gauge32;
+          units "microseconds";
+          description
+            "Average delay metric round trip, source computed based on four timestamps
+
+                  This is for the specific direction, test session, interval duration,
+                  interval number, and bin type.";
+        }
+      }
+      list bin {
+        key "bin-number";
+        leaf bin-number {
+          type uint8 {
+            range "0..9";
+          }
+          description
+            "The number of the bin";
+        }
+        leaf forward-measurements {
+          type srl_nokia-comm:zero-based-counter32;
+          description
+            "Number of forward direction delay metric results within the bins range";
+        }
+        leaf backward-measurements {
+          type srl_nokia-comm:zero-based-counter32;
+          description
+            "Number of backward direction delay metric results within the bins range";
+        }
+        leaf round-trip-measurements {
+          type srl_nokia-comm:zero-based-counter32;
+          description
+            "Number of round trip direction delay metric results within the bins range";
+        }
+      }
+    }
+  }
+
+  grouping mi-general-loss-statistics {
+    leaf frames-transmitted {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of test session frames transmitted for the specified direction and measurement interval";
+    }
+    leaf frames-received {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of test session frames received for the specified direction and measurement interval";
+    }
+  }
+
+  grouping mi-directional-loss-statistics {
+    leaf available {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of availability indicators evaluated as Available for the specified direction and measurement interval";
+    }
+    leaf unavailable {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of availability indicators evaluated as Unavailable for the specified direction and measurement interval";
+    }
+    leaf undetermined-available {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of availability indicators evaluated as Available for the specified direction and measurement interval, based on extrapolation
+
+         Undetermined counters are incremented when there is no explicit understanding why a response packet was not received.
+         This will occur during a complete failure where no responses are received on the source and the source must time out
+         those missing responses.  This counter will increment when the availability window has been reached plus an additional
+         five second timeout.  Previous state must be maintained but the appropriate undetermined counter will increment by
+         the equal value.  This value should be used to adjust the availability counter if the reason was packet loss and not
+         an administrative function that caused the condition.";
+    }
+    leaf undetermined-unavailable {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of availability indicators evaluated as Unavailable for the specified direction and measurement interval, based on extrapolation
+
+         Undetermined counters are incremented when there is no explicit understanding why a response packet was not received.
+         This will occur during a complete failure where no responses are received on the source and the source must time out
+         those missing responses.  This counter will increment when the availability window has been reached plus an additional
+         five second timeout.  Previous state must be maintained but the appropriate undetermined counter will increment by
+         the equal value.  This value should not be used to adjust the unavailability counter if the reason was packet loss
+         and not an administrative function that caused the condition.";
+    }
+    leaf high-loss-intervals {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of High Loss Intervals (HLIs) for the specified direction and measurement interval";
+    }
+    leaf consecutive-high-loss-intervals {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Number of Consecutive High Loss Intervals (CHLIs) for the specified direction and measurement interval";
+    }
+    leaf minimum-frame-loss-ratio {
+      type srl_nokia-comm:gauge32;
+      units "millipercent";
+      description
+        "Minimum Frame Loss Ratio (FLR) for the specified direction and measurement interval";
+    }
+    leaf maximum-frame-loss-ratio {
+      type srl_nokia-comm:gauge32;
+      units "millipercent";
+      description
+        "Maximum Frame Loss Ratio (FLR) for the specified direction and measurement interval";
+    }
+    leaf average-frame-loss-ratio {
+      type srl_nokia-comm:gauge32;
+      units "millipercent";
+      description
+        "Average Frame Loss Ratio (FLR) for the specified direction and measurement interval";
+    }
+  }
+
+  grouping frame-loss-configuration {
+    leaf flr-threshold {
+      type srl_nokia-comm:percentage;
+      default "50";
+      description
+        "Frame Loss Ratio (FLR) is a percentage applied to the frame loss within a delta-t
+
+         If the FLR is not reached the delta-t is not considered a High Loss Interval.  If the FLR is reach
+         the delta-t is considered a High Loss Interval.";
+    }
+    leaf hli-force-count {
+      type boolean;
+      default "false";
+      description
+        "Increment High Loss Interval and Consecutive High Loss Interval counters regardless of unavailability
+
+         A value 'false' will not increment the HLI/CHLI counters during times of unavailability.  A value 'true'
+         will increment the HLI/CHLI counters during times of unavailability.";
+    }
+    container timing {
+      description
+        "Enter the timing context used to configure availability options";
+      leaf frames-per-delta-t {
+        type uint32 {
+          range "1..50";
+        }
+        default "1";
+        description
+          "Number of frames that comprise one delta-t used for comparison to FLR configuration
+
+           The lenght of the delta-t window is frames-per-delta-t *  the probe interval.";
+      }
+      leaf consecutive-delta-t {
+        type uint8 {
+          range "2..10";
+        }
+        default "10";
+        description
+          "Number of consecutive delta-t that comprise the availability/unavailability sliding window, must not exceed 100 seconds
+
+           Availability and unavailability state changes will occur when the sliding window is completely comprised of a different
+           state values than the current state";
+      }
+      leaf chli-threshold {
+        type uint8 {
+          range "1..9";
+        }
+        default "5";
+        must '. < ../consecutive-delta-t' {
+          error-message "The CHLI threshold must be smaller than consecutive-delta-t value";
+        }
+        description
+          "Consecutive High Loss Interval (CHLI) threshold
+
+           The threshold of consecutive delta-ts within a sliding availability window that will cause this counter to increment.
+           The CHLI counter will increment a maximum of one time for any given availability window.  The values provide information
+           on the number of consecutive HLIs that occurred in an availability window without meeting the unavailability criteria.";
+      }
+    }
+  }
+
+  grouping loss-counter-thresholds {
+    leaf direction {
+      type srl_nokia-pm-types:loss-direction-aggregate-type;
+      description
+        "The direction of the measurement of interest
+
+         A value 'forward' is the measurement from source to reflector.
+         A value 'backward' is the measurement from reflector to source.
+         A value 'aggregate' sums the forward and backward counts into an aggregate.";
+    }
+    leaf raise-threshold {
+      type uint32 {
+        range "1..864000";
+      }
+      mandatory true;
+      description
+        "Raise threshold for the metric of interest
+
+         This event is computed and considered during the measurement interval.";
+    }
+    leaf clear-threshold {
+      type uint32 {
+        range "0..863999";
+      }
+      must '. < ../raise-threshold' {
+        error-message "The clear threshold value must be lower than the raise-threshold value.";
+      }
+      description
+        "The value used to clear a previously triggered alarm for the metric of interest
+
+         Two type of threshold crossing alarms; Stateless and Stateful.  When the clear-threshold is not specified the type = stateless.
+         Stateless alarms are not maintained across measurement interval boundaries.  Each measurement interval is self-contained.
+         When a clear-threshold is configured the type = stateful.  Stateful alarms are maintained across measurement interval
+         boundaries and cleared when a subsequent measurement interval completes and meets the clear threshold criteria.";
+    }
+  }
+
+  grouping loss-events {
+    description
+      "Enter the loss-events context";
+    list loss-events-template {
+      max-elements 255;
+      key "loss-events-template-name";
+      description
+        "The delay-template list instance";
+      leaf loss-events-template-name {
+        type srl_nokia-comm:name;
+        description
+          "A description of the template";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "A description of the loss template";
+      }
+      leaf reference-count {
+        config false;
+        type uint32;
+        description
+          "The number of OAM-PM test sessions referencing the loss template";
+      }
+      list avg-flr-event {
+        key "direction";
+        description
+          "Enter the avg-flr-event list instance";
+        leaf direction {
+          type srl_nokia-pm-types:loss-direction-type;
+          description
+            "The direction of the measurement of interest
+
+             A value 'forward' is the measurement from source to reflector.
+             A value 'backward' is the measurement from reflector to source.";
+        }
+        leaf raise-threshold {
+          type decimal64 {
+            range "0.001..100.000";
+            fraction-digits 3;
+          }
+          units "percent";
+          mandatory true;
+          description
+            "Raise threshold for the average Frame Loss Ratio
+
+             This event is computed and considered at the completion of the measurement interval.";
+        }
+        leaf clear-threshold {
+          type decimal64 {
+            range "0.000..99.999";
+            fraction-digits 3;
+          }
+          units "percent";
+          must '. < ../raise-threshold' {
+            error-message "The clear threshold value must be lower than the raise-threshold value.";
+          }
+          description
+            "The value used to clear a previously triggered Frame Loss Ratio alarm
+
+             Two type of threshold crossing alarms; Stateless and Stateful.  When the clear-threshold is not specified the type = stateless.
+             Stateless alarms are not maintained across measurement interval boundaries.  Each measurement interval is self-contained.
+             When a clear-threshold is configured the type = stateful.  Stateful alarms are maintained across measurement interval
+             boundaries and cleared when a subsequent measurement interval completes and meets the clear threshold criteria.";
+        }
+      }
+      list chli-event {
+        key "direction";
+        description
+          "Enter the Consecutive High Loss Interval list instance";
+        uses loss-counter-thresholds;
+      }
+      list hli-event {
+        key "direction";
+        description
+          "Enter the High Loss Interval list instance";
+        uses loss-counter-thresholds;
+      }
+      list unavailability-event {
+        key "direction";
+        description
+          "Enter the unavailability-event list instance";
+        uses loss-counter-thresholds;
+      }
+      list undetermined-availability-event {
+        key "direction";
+        description
+          "Enter the undetermined availability event list instance";
+        uses loss-counter-thresholds;
+      }
+      list undetermined-unavailability-event {
+        key "direction";
+        description
+          "Enter the undetermined unavailability event list instance";
+        uses loss-counter-thresholds;
+      }
+    }
+  }
+
+  grouping mi-forward-loss {
+    leaf out-loss {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Loss in the forward direction
+
+         The difference between the received packets on the session-reflector and the packets sent from the session-sender.";
+    }
+  }
+
+  grouping mi-backward-loss {
+    leaf in-loss {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Loss in the backward direction
+
+         The difference between the received packets on the session-sender and the packets sent from the session-reflector.";
+    }
+  }
+
+  grouping loss-events-state {
+    list loss-events {
+      config false;
+      key "loss-metric direction";
+      description
+        "Enter the loss events list instance";
+      leaf loss-metric {
+        type srl_nokia-pm-types:loss-metric-type;
+        description
+          "Loss metric";
+      }
+      leaf direction {
+        type srl_nokia-pm-types:loss-direction-aggregate-type;
+        description
+          "The direction of the measurement of interest
+
+              A value 'forward' is the measurement from source to reflector.
+              A value 'backward' is the measurement from reflector to source.
+              A value 'aggregate' sums the forward and backward counts into an aggregate.";
+      }
+      leaf last-tca-time {
+        type srl_nokia-comm:date-and-time;
+        description
+          "UTC date and time at the start of the measurement interval which generated most recent raise or clear";
+      }
+      leaf oper-state {
+        type srl_nokia-pm-types:tca-oper-state;
+        description
+          "Operational state of the Threshold Crossing Alerts (TCAs) for the specified session
+
+           The conditions are evaluated in the order shown.
+
+           The value 'pending' is returned if the threshold configuration for the specified indices
+           changed during the current measurement interval.
+
+           The value 'active' is returned if the specified indices have a default clear threshold configured,
+           and the current measurement interval has generated a Raise TCA.  The value is also returned if the
+           specified indices have a non-default clear threshold configured, and the most recent TCA generated
+           was a Raise.
+
+           The value 'not-active' is returned for all other conditions (e.g. thresholding is not configured for
+           the specified indices).";
+      }
+    }
+  }
+}

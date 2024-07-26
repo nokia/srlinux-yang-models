@@ -1,0 +1,105 @@
+module srl_nokia-ni-gre {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:net-inst:ni-gre";
+  prefix srl_nokia-gre;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-policy-forwarding {
+    prefix srl_nokia-pf;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of IP tunnel decapsulation groups";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  typedef payload-type {
+    type enumeration {
+      enum mpls {
+        description
+          "Support and forward MPLS encapsulated packets as the payload";
+        value 1;
+      }
+      enum ipv4 {
+        description
+          "Support and forward IPv4 packets as the payload";
+        value 2;
+      }
+      enum ipv6 {
+        description
+          "Support and forward IPv6 packets as the payload";
+        value 3;
+      }
+    }
+    description
+      "Type describing types of payload packets supported by the associated GRE decapsulation group
+
+       MPLS: Payload can be MPLS encapsulated packet
+       ipv4: Payload can be IPv4 encapsulated packet
+       ipv6: Payload can be IPv6 encapsulated packet";
+  }
+
+  grouping ni-decap-gre {
+    container ip-tunnel-decapsulation {
+      description
+        "Container for the IP tunnel decapsulation group function";
+      list group {
+        key "name";
+        must "../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+          error-message "IP tunnel decapsulation group can only be configured on network-instance of type default";
+        }
+        description
+          "Name of the GRE decapsulation group
+
+           Each decapsulation group can be used to terminate GRE encapsulated packets, which are then forwarded based on the headers of the underlying payload frame type.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "A unique identifier for the decapsulation group";
+        }
+        leaf-list allowed-payloads {
+          type payload-type;
+          description
+            "Specifies the type of payload packet accepted and forwarded by the associated decapsulation group";
+          default "mpls";
+          must ". = 'mpls'" {
+            error-message "only mpls is supported";
+          }
+        }
+        list termination-subnet {
+          max-elements 1;
+          description
+            "List of decapsulation subnets for the associated decapsulation group";
+          key "ip-prefix";
+          leaf ip-prefix {
+            type srl_nokia-comm:ip-prefix;
+            description
+              "IP prefix to match for decapsulation";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses ni-decap-gre {
+      if-feature "srl_nokia-feat:ip-tunnel-decap-groups";
+    }
+  }
+}

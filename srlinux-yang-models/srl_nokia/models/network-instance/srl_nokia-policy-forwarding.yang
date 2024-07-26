@@ -1,0 +1,377 @@
+module srl_nokia-policy-forwarding {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:acl:policy-forwarding";
+  prefix srl_nokia-pol-fwd;
+
+  import srl_nokia-packet-match-types {
+    prefix srl_nokia-pkt-match-types;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data for policy-forwarding related objects.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping pf-encap-gre-config {
+    container encapsulate-gre {
+      if-feature "srl-feat:policy-based-forwarding-encapsulate-gre";
+      description
+        "Container for the GRE encapsulation actions to be applied to packets matching the policy forwarding rule.";
+      list target {
+        key "id";
+        max-elements 4;
+        description
+          "Identifier for the GRE target group.
+           Each target specified within this list should be treated as a
+           endpoint to which packets should be GRE encapsulated. Where the
+           set of destinations described within a single entry expands to
+           more than one destination IP address, packets should be load
+           shared across the destination using the local system's ECMP hashing
+           mechanisms.";
+        leaf id {
+          type string;
+          description
+            "A unique identifier for the target.";
+        }
+        leaf source {
+          type srl_nokia-comm:ip-address;
+          description
+            "The source IP address that should be used when encapsulating
+             packets from the local system.";
+        }
+        leaf destination {
+          type srl_nokia-comm:ip-prefix;
+          description
+            "The set of destination addresses that should be encapsulated towards.
+             Where a subnet is specified, each address within the subnet should be
+             treated as an independent destination for encapsulated traffic. Packets
+             should be distributed with ECMP across the set of tunnel destination
+             addresses.";
+        }
+        leaf ip-ttl {
+          type uint8;
+          description
+            "The TTL that should be specified in the IP header of the GRE packet
+             encapsulating the packet matching the rule.";
+        }
+        must "../../../../type = 'pbr-policy'" {
+          error-message "encapsulate-gre is only supported when type is pbr-policy";
+        }
+      }
+    }
+  }
+
+  grouping pf-action-config {
+    container action {
+      description
+        "Container for the actions to be applied to packets matching the policy forwarding rule.";
+      leaf network-instance {
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+        }
+        must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:ip-vrf")' {
+          error-message "PBF is not supported into a network-instance type other than 'ip-vrf'";
+        }
+        description
+          "When this leaf is set, packets matching the match criteria for the forwarding rule should be looked up in the network-instance that is referenced rather than the network-instance with which the interface is associated.";
+      }
+      uses pf-encap-gre-config;
+      leaf next-hop {
+        if-feature "srl-feat:policy-based-forwarding-nh-transport";
+        type srl_nokia-comm:ip-address;
+        description
+          "When this leaf is set, packets matching the match criteria for the forwarding rule will be routed as if their destination address had been the specified next-hop.";
+      }
+    }
+  }
+
+  grouping pf-match-config {
+    container match {
+      description
+        "Container for the conditions that determine whether a packet matches this entry";
+      container ipv4 {
+        description
+          "Container for match conditions associated with IPv4 header fields
+
+           If no match conditions are provided then no IPv4 packets are matched.";
+        leaf protocol {
+          description
+            "An IPv4 packet matches this condition if its IP protocol type field matches the specified value";
+          type srl_nokia-pkt-match-types:ip-protocol-type;
+        }
+        leaf-list dscp-set {
+          type srl_nokia-comm:dscp;
+          description
+            "A list of DSCP values to be matched for incoming packets. An OR match should be performed, such that a packet must match one of the values defined in this list. If the field is left empty then any DSCP value matches.";
+        }
+        container source-ip {
+          description
+            "Packet matching criteria based on source IPv4 address";
+          leaf prefix {
+            description
+              "Match a packet if its source IP address is within the specified IPv4 prefix.";
+            type srl_nokia-comm:ipv4-prefix;
+          }
+        }
+        container destination-ip {
+          description
+            "Packet matching criteria based on destination IPv4 address";
+          leaf prefix {
+            description
+              "Match a packet if its destination IP address is within the specified IPv4 prefix.";
+            type srl_nokia-comm:ipv4-prefix;
+          }
+        }
+      }
+      container transport {
+        if-feature "srl-feat:policy-based-forwarding-nh-transport";
+        description
+          "Container for match conditions associated with transport-layer packet fields";
+        leaf source-port {
+          type srl_nokia-pkt-match-types:port-range;
+          description
+            "Source port or range";
+        }
+        leaf destination-port {
+          type srl_nokia-pkt-match-types:port-range;
+          description
+            "Destination port or range";
+        }
+      }
+      container ipv6 {
+        if-feature "srl-feat:policy-based-forwarding-match-ipv6-conditions";
+        description
+          "Container for match conditions associated with IPv6 header fields
+
+           If no match conditions are provided then no IPv6 packets are matched.";
+        leaf next-header {
+          description
+            "An IPv6 packet matches this condition if its Next-Header type field matches the specified value";
+          type srl_nokia-pkt-match-types:ip-protocol-type;
+          must "../../../../type = 'pbr-policy'" {
+            error-message "ipv6 is only supported when type is pbr-policy";
+          }
+        }
+        leaf-list dscp-set {
+          type srl_nokia-comm:dscp;
+          description
+            "A list of DSCP values to be matched for incoming packets. An OR match should be performed, such that a packet must match one of the values defined in this list. If the field is left empty then any DSCP value matches.";
+          must "../../../../type = 'pbr-policy'" {
+            error-message "ipv6 is only supported when type is pbr-policy";
+          }
+        }
+        container source-ip {
+          description
+            "Packet matching criteria based on source IPv6 address";
+          leaf prefix {
+            description
+              "Match a packet if its source IP address is within the specified IPv6 prefix.";
+            type srl_nokia-comm:ipv6-prefix;
+            must "../../../../../type = 'pbr-policy'" {
+              error-message "ipv6 is only supported when type is pbr-policy";
+            }
+          }
+        }
+        container destination-ip {
+          if-feature "srl-feat:policy-based-forwarding-nh-transport";
+          description
+            "Packet matching criteria based on destination IPv6 address";
+          leaf prefix {
+            description
+              "Match a packet if its destination IP address is within the specified IPv6 prefix.";
+            type srl_nokia-comm:ipv6-prefix;
+            must "../../../../../type = 'pbr-policy'" {
+              error-message "ipv6 is only supported when type is pbr-policy";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping pf-policies {
+    list policy {
+      max-elements 4;
+      key "policy-id";
+      description
+        "A forwarding policy is defined to have a set of match criteria, allowing particular fields of a packet's header to be matched, and a set of forwarding actions which determines how the local system should forward the packet.";
+      leaf policy-id {
+        type srl_nokia-comm:name;
+        description
+          "A unique name identifying the forwarding policy. This name is used when applying the policy to a particular interface.";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the policy";
+      }
+      leaf type {
+        type enumeration {
+          enum pbr-policy {
+            value 1;
+            description
+              "The policy reflects a policy-based routing policy that supports generic PBR actions.";
+          }
+          enum vrf-selection-policy {
+            value 2;
+            description
+              "The policy is used only to classify incoming packets into corresponding network instances.";
+          }
+        }
+        default "vrf-selection-policy";
+        description
+          "The type of the policy";
+      }
+      list rule {
+        description
+          "List of policy forwarding rules.";
+        key "sequence-id";
+        leaf sequence-id {
+          type srl_nokia-comm:rule-sequence-id;
+          description
+            "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+        }
+        leaf description {
+          type srl_nokia-comm:description;
+          description
+            "Description string for the rule";
+        }
+        container tcam-entries {
+          description
+            "Information about the TCAM entries used to implement the policy forwarding rule";
+          config false;
+          list forwarding-complex {
+            description
+              "List of forwarding complexes in the system";
+            key "complex-identifier";
+            leaf complex-identifier {
+              description
+                "A forwarding complex in the format (slot-number,complex-number).";
+              type string;
+            }
+            leaf tcam-entries {
+              config false;
+              type uint16;
+              description
+                "The number of TCAM entries required to implement this rule.";
+            }
+          }
+        }
+        uses pf-action-config;
+        uses pf-match-config;
+        must "(../type = 'vrf-selection-policy' and string(./action/network-instance) != '') or (../type != 'vrf-selection-policy' and string(./action/network-instance) = '')" {
+          error-message "network-instance must be set when type is vrf-selection-policy and must not be set when type is pbr-policy";
+        }
+      }
+    }
+  }
+
+  grouping pf-interfaces {
+    list interface {
+      key "subinterface";
+      description
+        "List of subinterfaces that use the policy forwarding policy.";
+      leaf subinterface {
+        type srl_nokia-netinst:network-instance-subintf-name;
+        description
+          "Name of the subinterface.";
+      }
+      container interface-ref {
+        if-feature "srl-feat:interface-references";
+        description
+          "Reference to a subinterface";
+        leaf interface {
+          type leafref {
+            path "/srl_nokia-if:interface/srl_nokia-if:name";
+          }
+          description
+            "Reference to a base interface, for example a port or LAG";
+          must '../subinterface >= 0' {
+            error-message "subinterface must be configured when interface is set";
+          }
+        }
+        leaf subinterface {
+          type leafref {
+            path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+          }
+          description
+            "Reference to a subinterface
+             This requires the base interface to be specified using the interface leaf in this container.";
+          must '../interface' {
+            error-message "interface must be configured when subinterface is set";
+          }
+        }
+      }
+      leaf apply-forwarding-policy {
+        type leafref {
+          path "../../policy/policy-id";
+        }
+        description
+          "The policy to be applied on the interface. Packets ingress on the referenced interface should be compared to the match criteria within the specified policy, and in the case that these criteria are met, the forwarding actions specified applied.";
+      }
+    }
+  }
+
+  grouping policy-forwarding-top {
+    container policy-forwarding {
+      if-feature "srl-feat:policy-based-forwarding-dscp-ip-protocol or srl-feat:policy-based-forwarding-nh-transport";
+      presence "Enable support for policy-based forwarding in the network instance.";
+      description
+        "Configuration and operational state relating to policy-forwarding within a network instance.";
+      uses pf-policies;
+      uses pf-interfaces;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses policy-forwarding-top;
+  }
+}

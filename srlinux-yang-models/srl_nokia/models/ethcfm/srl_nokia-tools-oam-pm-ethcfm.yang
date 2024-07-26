@@ -1,0 +1,68 @@
+module srl_nokia-tools-oam-pm-ethcfm {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:ethcfm:tools-oam-pm-ethcfm";
+  prefix srl_nokia-tools-oam-pm-ethcfm;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-tools-oam {
+    prefix srl_nokia-tools-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines the tools commands available for OAM-PM ETHCFM sessions";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping on-demand-action {
+    leaf on-demand-action {
+      type enumeration {
+        enum start {
+          value 1;
+        }
+        enum stop {
+          value 2;
+        }
+      }
+      description
+        "Action required to start and stop an OAM-PM on-demand session";
+    }
+  }
+
+  grouping raw-bin {
+    leaf clear {
+      type empty;
+    }
+    description
+      "Clear all raw bin statistics";
+  }
+
+  augment "/srl_nokia-tools-oam:oam/srl_nokia-tools-oam:performance-monitoring" {
+    if-feature "srl_nokia-feat:oam-pm-ethcfm";
+    container ethcfm {
+      description
+        "OAM-PM ETH-CFM on-demand tools";
+      list session {
+        key "session-name";
+        leaf session-name {
+          type string;
+        }
+        uses on-demand-action;
+        uses raw-bin;
+      }
+    }
+  }
+}

@@ -1,0 +1,182 @@
+module srl_nokia-boot {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:boot";
+  prefix srl-boot;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-interfaces {
+    prefix srl-if;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the booting the system.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  typedef client-id {
+    type enumeration {
+      enum serial {
+        description
+          "Use the chassis serial number as the client ID";
+      }
+    }
+  }
+
+  grouping boot-images-top {
+    leaf-list image {
+      type srl-comm:local-file-no-path;
+      config false;
+      max-elements 3;
+      ordered-by user;
+      description
+        "Ordered list of local images used to boot the system
+
+               This directly translates into boot configuration in grub, where the images are tried in the order specified by the user. Images are sourced via the internal SD card, and the value passed is the folder that contains the initramfs, kernel, and squashfs image. The search path for these directories is /mnt/nokiaos/<folder>";
+    }
+    leaf golden-image {
+      if-feature "srl_nokia-feat:factory-reset";
+      type srl-comm:local-file-no-path;
+      config false;
+      description
+        "The local image the system reverts to when a factory reset operation is requested
+
+         The value is the folder that contains the initramfs, kernel, and squashfs image.
+         The search path for these directories is /mnt/nokiaos/<folder>";
+    }
+  }
+
+  grouping boot-autoboot-top {
+    container autoboot {
+      description
+        "Top-level container for configuration and state data related to autobooting the system";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        description
+          "Administratively enable or disable autoboot functionality";
+      }
+      leaf oper-state {
+        type string;
+        config false;
+        description
+          "The current operational status of the autoboot process";
+      }
+      leaf timeout {
+        type uint32 {
+          range "200 .. 3600";
+        }
+        units "seconds";
+        description
+          "Sets the timeout for each attempt to autoboot";
+      }
+      leaf attempts {
+        type uint8 {
+          range "1 .. 10";
+        }
+        description
+          "Sets the amount of executions to try autoboot, before rebooting the system";
+      }
+      leaf interface {
+        type leafref {
+          path "/srl-if:interface/srl-if:name";
+        }
+        default "mgmt0";
+        description
+          "Sets the interface to use for autoboot functionality";
+      }
+      leaf client-id {
+        type client-id;
+        description
+          "The client ID to use on outgoing DHCP requests";
+      }
+      leaf-list mode {
+        type string;
+        description
+          "Ztp operation modes. One or more modes can passed";
+      }
+    }
+  }
+
+  grouping boot-fips-top {
+    container fips-140 {
+      description
+        "Boot up the router in fips-provider mode
+
+         In fips-provider mode only fips approved algorithms are allowed.
+         In addition for fip-provider mode to take effect a reboot is of the router is needed.";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        default "disable";
+        description
+          "This leaf contains the configured, desired state of the fips-provider.";
+      }
+      leaf oper-state {
+        config false;
+        type srl-comm:oper-state;
+        description
+          "This leaf contains the operational state of fips-provider.";
+      }
+      leaf oper-down-reason {
+        config false;
+        type enumeration {
+          enum unknown;
+        }
+        description
+          "The reason for not enabling fips operational down";
+      }
+    }
+  }
+
+  grouping boot-top {
+    container boot {
+      description
+        "Top-level container for configuration and state data related to booting the system";
+      uses boot-images-top;
+      uses boot-fips-top;
+      uses boot-autoboot-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses boot-top;
+  }
+}

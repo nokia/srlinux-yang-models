@@ -1,0 +1,968 @@
+module srl_nokia-aaa {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:aaa:aaa";
+  prefix srl-aaa;
+
+  import srl_nokia-aaa-types {
+    prefix srl-aaa-types;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-aaa-tacacs {
+    prefix srl-aaa-tacacs;
+  }
+  import srl_nokia-aaa-password {
+    prefix srl-aaa-password;
+  }
+  import srl_nokia-aaa-radius {
+    prefix srl-aaa-radius;
+  }
+  import srl_nokia-gnsi-credentialz {
+    prefix srl-gnsi-credentialz;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to authorization, authentication, and accounting (AAA) management.
+
+     Portions of this model reuse data definitions or structure from RFC 7317 - A YANG Data Model for System Management";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping aaa-servergroup-common-config {
+    description
+      "Configuration data for AAA server groups";
+    leaf name {
+      type srl-comm:name;
+      description
+        "User defined name for the server group";
+      must '(. = "local") = (../type = "srl-aaa-types:local")' {
+        error-message "Server group name must be 'local' if and only if local server type is 'local'";
+      }
+    }
+    leaf type {
+      type identityref {
+        base srl-aaa-types:aaa_server_type;
+      }
+      mandatory true;
+      description
+        "AAA server type -- all servers in the group must be of this type";
+    }
+    leaf timeout {
+      type uint16 {
+        range "1..3600";
+      }
+      default "10";
+      units "seconds";
+      description
+        "Set the timeout in seconds on responses from servers in this group";
+    }
+    leaf priv-lvl-authorization {
+      srl-ext:first-released "21.11.1";
+      type boolean;
+      default "false";
+      must '. = false() or ../type = "srl-aaa-types:tacacs"' {
+        error-message "TACACS+ priv-lvl authorization is supported for 'tacacs' server type only";
+      }
+      description
+        "Use TACACS+ priv-lvl based authorization
+
+         If false, then authorization is skipped for TACACS+ users granting full admin access for those users.";
+    }
+  }
+
+  grouping aaa-server-top {
+    description
+      "Top level grouping for AAA servers";
+    list server {
+      key "address";
+      max-elements 5;
+      must '../type = "srl-aaa-types:tacacs" or ../type = "srl-aaa-types:radius"' {
+        error-message "Server configuration is allowed only for 'tacacs' and 'radius' server type";
+      }
+      description
+        "List of AAA servers to use within this server-group
+
+         Servers are tried in a round-robin fashion, with the first server always being tried if it is operationally available";
+      uses aaa-server-config;
+      uses srl-aaa-tacacs:aaa-tacacs-server-top;
+      uses srl-aaa-radius:aaa-radius-server-top;
+      uses aaa-server-state;
+    }
+  }
+
+  grouping aaa-servergroup-common-top {
+    description
+      "Top-level grouping for AAA server groups";
+    list server-group {
+      key "name";
+      max-elements 3;
+      description
+        "List of AAA server-groups in the system
+
+         Each server group specifies a type, of which all servers must use. If using the 'local' type, then no servers may be specified.";
+      uses aaa-servergroup-common-config;
+      uses aaa-server-top;
+    }
+  }
+
+  grouping aaa-server-state {
+    description
+      "Common operational data for AAA servers";
+    leaf oper-state {
+      type srl-comm:oper-state;
+      config false;
+      description
+        "Details the operational state of the server
+
+         A server is defined as being down if it fails to respond before the timeout period, or if a path towards the server is not available.";
+    }
+    container statistics {
+      srl-ext:delivery-node-override "true";
+      srl-ext:stream-mode "sample=5";
+      description
+        "Enclosing container for server statistics";
+      config false;
+      leaf login-success {
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of login successes";
+      }
+      leaf login-connection-failures {
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of login connection failures";
+      }
+      leaf login-rejects {
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of login rejections";
+      }
+      leaf accounting-success {
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of accounting successes";
+      }
+      leaf accounting-rejects {
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of accounting rejections";
+      }
+      leaf accounting-connection-failures {
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of accounting connection failures";
+      }
+      leaf authorization-success {
+        srl-ext:first-released "21.11.1";
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of authorization successes";
+      }
+      leaf authorization-rejects {
+        srl-ext:first-released "21.11.1";
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of authorization rejections";
+      }
+      leaf authorization-connection-failures {
+        srl-ext:first-released "21.11.1";
+        type srl-comm:zero-based-counter32;
+        description
+          "Number of authorization connection failures";
+      }
+    }
+  }
+
+  grouping aaa-server-config {
+    description
+      "Common configuration data for AAA servers";
+    leaf name {
+      type srl-comm:name;
+      description
+        "User defined name assigned to the server";
+    }
+    leaf address {
+      type srl-comm:ip-address;
+      must '/srl-system:system/srl-aaa:aaa/srl-aaa:server-group[name = current()/../../name]/srl-aaa:type != "srl-aaa-types:local"' {
+        error-message "Local type does not accept server addresses";
+      }
+      description
+        "Address used to reach the server";
+    }
+    leaf network-instance {
+      type leafref {
+        path "/srl-netinst:network-instance/srl-netinst:name";
+      }
+      must 'not(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:mac-vrf")' {
+        error-message "AAA server cannot be in a network-instance of type 'mac-vrf'";
+      }
+      description
+        "Reference to a configured network-instance used for reachability to the server
+
+         This network-instance must already exist in the system, and different servers within the same server-group may use difference network-instances for connectivity.";
+    }
+  }
+
+  grouping aaa-state-sessions-top {
+    description
+      "Top-level session state from AAA";
+    list session {
+      key "id";
+      config false;
+      description
+        "List of active sessions in the system";
+      leaf username {
+        type string;
+        description
+          "Username linked to the session";
+      }
+      leaf id {
+        type uint32;
+        description
+          "System generated session ID";
+      }
+      leaf spiffe-id {
+        if-feature "srl-feat:aaa-spiffe-id";
+        type string;
+        description
+          "SPIFFE ID linked to the session";
+      }
+      leaf service-name {
+        type string;
+        description
+          "Service name that called login for the session";
+      }
+      leaf authentication-method {
+        type string;
+        description
+          "Authentication method that authorized the user (the server-group name or local)";
+      }
+      leaf priv-lvl {
+        srl-ext:first-released "21.11.1";
+        type uint8;
+        description
+          "TACACS+ authorization priv-lvl (if TACACS+ authorization is enabled)";
+      }
+      leaf tty-name {
+        type string;
+        description
+          "Terminal type";
+      }
+      leaf network-instance {
+        type string;
+        description
+          "Network instance";
+      }
+      leaf remote-host {
+        type string;
+        description
+          "Remote host of the session";
+      }
+      leaf login-time {
+        type srl-comm:date-and-time-delta;
+        description
+          "Time the user logged in";
+      }
+      leaf-list role {
+        type string;
+        description
+          "List of roles assigned to this user";
+      }
+    }
+  }
+
+  grouping aaa-authentication-user-ssh {
+    description
+      "SSH-related configuration data for users";
+    leaf-list ssh-principals {
+      srl-ext:no-globbing;
+      max-elements 32;
+      type string;
+      ordered-by user;
+      description
+        "List of principals to associate with this user
+
+         If any of the principals in the list are matched in a SSH client's certificate, and that clients username matches this user, and the certificate is verified, the client will authenticate.";
+    }
+    leaf-list ssh-key {
+      srl-ext:no-globbing;
+      max-elements 32;
+      type string;
+      ordered-by user;
+      description
+        "SSH public key(s) for the user
+
+         If defined, the user may login to the system over SSH with this key. This should use the SSH public authorized key format.";
+    }
+  }
+
+  grouping aaa-authentication-user-lockout {
+    description
+      "Grouping of state information relating to user lockouts";
+    container lockout {
+      config false;
+      description
+        "Information relating to the lockout state of this user";
+      leaf active {
+        type boolean;
+        description
+          "Indicates if a lockout is active for the user
+
+           Lockouts can occur after successive failed logins, and can be cleared by 'tools system aaa authentication user <username> unlock'";
+      }
+      leaf start {
+        type srl-comm:date-and-time-delta;
+        description
+          "Indicates the time at which the most recent lockout for this user started";
+      }
+      leaf end {
+        type srl-comm:date-and-time-delta;
+        description
+          "Indicates the time at which the most recent lockout for this user ended or will end";
+      }
+    }
+  }
+
+  grouping aaa-authentication-user-state {
+    description
+      "Grouping of state information relating to users";
+    leaf failed-login-attempts {
+      config false;
+      type srl-comm:zero-based-counter64;
+      description
+        "Number of failed login attempts from the user";
+    }
+    leaf last-failed-login {
+      config false;
+      type srl-comm:date-and-time-delta;
+      description
+        "The date and time of the last login failure from this user";
+    }
+    leaf last-successful-login {
+      config false;
+      type srl-comm:date-and-time-delta;
+      description
+        "The date and time of the last successful login from this user";
+    }
+    leaf password-change-required {
+      config false;
+      type boolean;
+      description
+        "Indicates if the user must change their password on next login";
+    }
+  }
+
+  grouping aaa-authentication-spiffe {
+    description
+      "SPIFFE ID configuration";
+    leaf-list spiffe-ids {
+      if-feature "srl-feat:aaa-spiffe-id";
+      type string {
+        pattern '^spiffe://.*';
+      }
+      description
+        "The SPIFFE ID list for the user, including the spiffe:// URI
+
+         This list of IDs is evaluated by TLS-consuming servers (e.g. gNMI, JSON-RPC) that use a TLS server-profile with authenticate-client set to true.
+
+         If a match is found in any incoming offered client certificates, the provider of the certificate is associated with this local user, and given resulting permissions.";
+    }
+  }
+
+  grouping aaa-authentication-user-config {
+    description
+      "Configuration data for local users";
+    leaf username {
+      type srl-comm:name {
+        length "1..32";
+      }
+      must "not(. = 'root' or . = 'admin' or . = 'linuxadmin' or . = 'srlinux')" {
+        error-message "Reserved system usernames cannot be used for configured local users";
+      }
+      description
+        "Assigned username for this user";
+    }
+    leaf password {
+      type srl-comm:user-password;
+      description
+        "The user password, supplied either as cleartext or as a hashed value
+
+         If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+         If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+    }
+    leaf-list role {
+      max-elements 32;
+      type leafref {
+        path "../../../authorization/role/rolename";
+      }
+      ordered-by user;
+      description
+        "List of roles to assign to this user
+
+         The most specific rule for a particular role takes precedence.
+         Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
+    }
+    leaf superuser {
+      if-feature "srl-feat:aaa-superuser";
+      type boolean;
+      default "false";
+      description
+        "Indicates that this user is a superuser
+
+         A superuser is granted implicit authorization to all YANG paths, has the ability to execute all CLI plugins, and by default is permitted to access the device through any interface.
+
+         Additionally, users with the superuser attribute are able to execute 'sudo' in bash. A user may also be assigned a role or list of roles, but these are only evaluated for service authorization.";
+    }
+    uses aaa-authentication-spiffe;
+    uses aaa-authentication-user-ssh;
+    uses aaa-authentication-user-state;
+    uses aaa-authentication-user-lockout;
+    uses srl-gnsi-credentialz:credentialz-aaa-top {
+      if-feature "srl-feat:gnsi-credentialz";
+    }
+  }
+
+  grouping aaa-authentication-user-top {
+    description
+      "Top-level grouping for local users";
+    list user {
+      srl-ext:first-released "21.3.1";
+      max-elements 128;
+      key "username";
+      description
+        "List of local users configured on the system";
+      uses aaa-authentication-user-config;
+    }
+  }
+
+  grouping aaa-authorization-role-config {
+    description
+      "Configuration data for local roles";
+    leaf rolename {
+      type srl-comm:name;
+      description
+        "Assigned rolename for this role";
+    }
+    leaf-list services {
+      srl-ext:first-released "21.6.1";
+      type enumeration {
+        enum cli;
+        enum gnmi;
+        enum gnoi;
+        enum gnsi;
+        enum gribi;
+        enum netconf {
+          if-feature "srl-feat:netconf";
+        }
+        enum p4rt {
+          if-feature "srl-feat:p4rt";
+        }
+        enum json-rpc;
+        enum ftp;
+        enum grpc-reflection;
+      }
+      description
+        "Services that members of this role are authorized for
+
+         Services are additive, if a user is a member of multiple roles, the available services are merged.";
+    }
+    leaf superuser {
+      if-feature "srl-feat:aaa-superuser";
+      type boolean;
+      default "false";
+      description
+        "Indicates if users with this role are given superuser
+
+         A superuser is granted implicit authorization to all YANG paths, has the ability to execute all CLI plugins, and by default is permitted to access the device through any interface.
+
+         Additionally, users with the superuser attribute are able to execute 'sudo' in bash. A user may also be assigned a role or list of roles, but these are only evaluated for service authorization.";
+    }
+    container tacacs {
+      srl-ext:first-released "21.11.1";
+      description
+        "Top-level container for configuration relating to TACACS+ interworking with roles";
+      leaf priv-lvl {
+        description
+          "The TACACS+ priv-lvl to map to this role
+
+           All roles matching each specific priv-lvl, and their lessers are merged together to create the final ruleset applied to the user.";
+        type uint8 {
+          range "0..15";
+        }
+      }
+    }
+    container cli {
+      if-feature "srl-feat:cli-plugin-authorization";
+      srl-ext:first-released "23.3.1";
+      description
+        "Top-level container for cli plugin configuration";
+      leaf load-global-plugins {
+        type boolean;
+        default "true";
+        description
+          "Specifies whether cli should load plugins from global plugin directory (from /etc/opt/srlinux/cli/plugins/).";
+      }
+      leaf load-user-plugins {
+        type boolean;
+        default "true";
+        description
+          "Specifies whether cli should load plugins from user home directory (from ~/cli/plugins/).";
+      }
+      leaf-list deny-command-list {
+        srl-ext:no-globbing;
+        type string;
+        max-elements 100;
+        description
+          "List of cli commands that are denied for this role
+
+           Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
+           of line). Empty deny-command-list means anything that is not in allow-command-list is denied. If both lists
+           are empty then everything is allowed.";
+      }
+      leaf-list allow-command-list {
+        srl-ext:no-globbing;
+        type string;
+        max-elements 100;
+        description
+          "List of cli commands that are allowed for this role
+
+           Python style regular expressions are supported. Every item is left anchored (it matches from the beginning
+           of line). Empty allow-command-list means anything that is not in deny-command-list is allowed. If both
+           lists are empty then everything is allowed.";
+      }
+    }
+    container netconf {
+      if-feature "srl-feat:netconf";
+      description
+        "Top-level container for netconf plugin configuration";
+      leaf-list allowed-operations {
+        type enumeration {
+          enum action;
+          enum cancel-commit;
+          enum close-session;
+          enum commit;
+          enum copy-config;
+          enum delete-config;
+          enum discard-changes;
+          enum edit-config;
+          enum edit-data;
+          enum get;
+          enum get-config;
+          enum get-data;
+          enum get-schema;
+          enum kill-session;
+          enum lock;
+          enum unlock;
+          enum validate;
+        }
+        description
+          "List of netconf operation, that are allowed for this role. Rest of the operations are denied.";
+      }
+    }
+  }
+
+  grouping aaa-authorization-role-top {
+    description
+      "Top-level grouping for local roles";
+    list role {
+      srl-ext:first-released "21.3.1";
+      key "rolename";
+      description
+        "List of local roles configured on the system";
+      uses aaa-authorization-role-config;
+    }
+  }
+
+  grouping aaa-authentication-admin-users {
+    description
+      "Top-level grouping for admin users";
+    container admin-user {
+      description
+        "Enclosing container for admin user";
+      leaf username {
+        type string;
+        default "admin";
+        description
+          "Assigned username for admin user";
+        config false;
+      }
+      leaf password {
+        type srl-comm:user-password;
+        default "$y$j9T$pNVjOgcNNGIWjBcdDfK/7.$Ir4uYxszxtqzVj5AGiZvdWJGs.bpLWBJvHON3YgqnC2";
+        description
+          "The admin password, supplied either as cleartext or as a hashed value
+
+           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+           If provided as a hashed value, the value should include any '$' characters, for example '$ar2$aOvsuj0ALlU=$r750fMa3ZEA/Di8dIfU2fQ=='.";
+      }
+      leaf-list role {
+        if-feature "srl-feat:admin-user-roles";
+        max-elements 32;
+        type leafref {
+          path "../../../authorization/role/rolename";
+        }
+        description
+          "List of roles to assign to this user
+
+           The most specific rule for a particular role takes precedence.
+           Rules from all user roles are evaluated together, most permissive privilege taking precedence.";
+      }
+      leaf superuser {
+        if-feature "srl-feat:aaa-superuser";
+        type boolean;
+        default "true";
+        description
+          "Indicates if the admin user is a superuser
+
+           A superuser is granted implicit authorization to all YANG paths, has the ability to execute all CLI plugins, and by default is permitted to access the device through any interface.
+
+           Additionally, users with the superuser attribute are able to execute 'sudo' in bash. A user may also be assigned a role or list of roles, but these are only evaluated for service authorization.";
+      }
+      uses aaa-authentication-spiffe;
+      uses aaa-authentication-user-ssh;
+      uses aaa-authentication-user-state;
+      uses aaa-authentication-user-lockout;
+      uses srl-gnsi-credentialz:credentialz-aaa-top {
+        if-feature "srl-feat:gnsi-credentialz";
+      }
+    }
+  }
+
+  grouping aaa-authentication-linuxadmin-users {
+    description
+      "Top-level grouping for linuxadmin users";
+    container linuxadmin-user {
+      description
+        "Enclosing container for linuxadmin user";
+      leaf username {
+        type string;
+        default "linuxadmin";
+        description
+          "Assigned username for linuxadmin user";
+        config false;
+      }
+      leaf password {
+        type string {
+          srl-ext:generated-class-name "PasswordHash";
+        }
+        default "$y$j9T$l/vKPXdvWQKKPH8qPzbLs0$Hz98mmTg.j87QMZlTqY2ieGWa3Ed7kzHkp5z6kROEy4";
+        description
+          "The linuxadmin password, supplied either as cleartext or as a hashed value
+
+           If provided as cleartext, the system will hash the value on input, storing only the hashed value.
+           If provided as a hashed value, the value should include any '$' characters, for example '$6$c66a15569d3f5952$kA2WPt9iqR5uMbaCUBNxsjKyXROQFdJtV1HX0CFY9wk7F326/yB3h.dERX9cH7YpeJ1N872hjzTb2tlaZFwwg0'.";
+      }
+      uses aaa-authentication-user-ssh;
+      uses srl-gnsi-credentialz:credentialz-aaa-top {
+        if-feature "srl-feat:gnsi-credentialz";
+      }
+    }
+  }
+
+  grouping aaa-accounting-methods-common {
+    description
+      "Common definitions for accounting methods";
+    leaf-list accounting-method {
+      type leafref {
+        path "/srl-system:system/srl-aaa:aaa/srl-aaa:server-group/srl-aaa:name";
+      }
+      ordered-by user;
+      description
+        "Ordered list of server-groups to use for accounting in the system
+
+         If accounting fails with one method, the next defined method is tried -- failure of all methods results in the accounting request failing.";
+    }
+  }
+
+  grouping aaa-accounting-events-config {
+    description
+      "Configuration data for accounting events";
+    leaf event-type {
+      type identityref {
+        base srl-aaa-types:aaa_accounting_event_type;
+      }
+      description
+        "The type of activity to record at the accounting server";
+    }
+    leaf record {
+      type identityref {
+        base srl-aaa-types:aaa_accounting_record_type;
+      }
+      description
+        "Type of record to send to the accounting server for this activity type";
+    }
+  }
+
+  grouping aaa-accounting-events-top {
+    description
+      "Top-level grouping for accounting events";
+    list event {
+      key "event-type";
+      description
+        "List of events subject to accounting";
+      uses aaa-accounting-events-config;
+    }
+  }
+
+  grouping aaa-acctz-top {
+    description
+      "Top-level grouping for acctz accounting";
+    container acctz {
+      if-feature "srl-feat:gnsi-accounting";
+      description
+        "Top-level container for acctz accounting";
+      leaf history-size {
+        description
+          "Size of the kept accounting events history";
+        type uint32 {
+          range "1..100000";
+        }
+        default "1000";
+      }
+    }
+  }
+
+  grouping aaa-accounting-top {
+    description
+      "Top-level grouping for user activity accounting";
+    container accounting {
+      description
+        "Top-level container for accounting";
+      uses aaa-accounting-methods-common;
+      uses aaa-accounting-events-top;
+      uses aaa-acctz-top;
+    }
+  }
+
+  grouping aaa-authorization-methods-config {
+    description
+      "Common definitions for authorization methods for global and per-event type";
+    leaf-list authorization-method {
+      type leafref {
+        path "/srl-system:system/srl-aaa:aaa/srl-aaa:server-group/srl-aaa:name";
+      }
+      ordered-by user;
+      description
+        "Ordered list of server-groups used to authorize commands
+
+         If authorization fails with one method, the next defined method is tried -- failure of all methods results in the user being denied access.";
+    }
+  }
+
+  grouping aaa-authorization-events-config {
+    description
+      "Configuration data for authorization events";
+    leaf event-type {
+      type identityref {
+        base srl-aaa-types:aaa_authorization_event_type;
+      }
+      description
+        "The type of event to record at the authorization server";
+    }
+  }
+
+  grouping aaa-authorization-events-top {
+    description
+      "Top-level grouping for authorization events";
+    container events {
+      description
+        "Enclosing container for the set of events subject to authorization";
+      list event {
+        key "event-type";
+        description
+          "List of events subject to authorization";
+        uses aaa-authorization-events-config;
+      }
+    }
+  }
+
+  grouping aaa-authorization-top {
+    description
+      "Top-level grouping for global authorization data";
+    container authorization {
+      description
+        "Top-level container for authorization configuration and operational state data";
+      uses aaa-authorization-role-top;
+    }
+  }
+
+  grouping aaa-authentication-config {
+    description
+      "Configuration data for authentication";
+    leaf-list authentication-method {
+      type leafref {
+        path "/srl-system:system/srl-aaa:aaa/srl-aaa:server-group/srl-aaa:name";
+      }
+      ordered-by user;
+      description
+        "Ordered list of server-groups to be used during user authentication
+
+         If authentication fails with one method, the next defined method is tried -- failure of all methods results in the user being denied access.";
+    }
+    leaf exit-on-reject {
+      type boolean;
+      default "false";
+      description
+        "Enable/disable exit-on-reject behaviour for authentication attempts
+
+         With this behaviour enabled, when a reject is received from any server the system will not try further methods, and will reject the user authentication attempt. Default behaviour is to continue trying methods until one accepts the user, or the system runs out of methods to try.";
+    }
+    leaf idle-timeout {
+      srl-ext:first-released "20.6.1";
+      type uint32;
+      default "600";
+      units "seconds";
+      description
+        "Set the idle timeout of all CLI sessions
+
+         After the timeout is reached, the session is disconnected from the system.";
+    }
+    container dynamic-spiffe {
+      if-feature "srl-feat:aaa-spiffe-id";
+      description
+        "Dynamic SPIFFE settings";
+      leaf allow {
+        type boolean;
+        default "false";
+        description
+          "Accept clients with SPIFFE ID values that are not configured under any local user
+
+           With this behaviour enabled, when a client using a client certificate containing SPIFFE ID connects the system
+           will accept the client. Otherwise the SPIFFE ID must be configured under some local user. Even if enabled, any
+           client using local user's configured SPIFFE ID will use that user's identity in all operations";
+      }
+      leaf-list role {
+        max-elements 32;
+        type leafref {
+          path "../../../authorization/role/rolename";
+        }
+        ordered-by user;
+        description
+          "List of roles to assign to all dynamic SPIFFE clients
+
+           Dynamic SPIFFE clients are clients authenticated using a client certificate containing SPIFFE ID value that
+           is not configured under any local user. The most specific rule for a particular role takes precedence. Rules
+           from all user roles are evaluated together, most permissive privilege taking precedence.";
+      }
+    }
+  }
+
+  grouping aaa-authentication-top {
+    description
+      "Top-level grouping for global authentication data";
+    container authentication {
+      description
+        "Top-level container for global authentication data";
+      uses aaa-authentication-config;
+      uses aaa-authentication-admin-users;
+      uses aaa-authentication-linuxadmin-users;
+      uses aaa-authentication-user-top;
+      uses aaa-state-sessions-top;
+      uses srl-aaa-password:aaa-password-top;
+    }
+  }
+
+  grouping aaa-traceoptions {
+    description
+      "Top-level grouping for AAA trace options";
+    leaf-list trace-options {
+      description
+        "AAA trace options";
+      type enumeration {
+        enum request;
+        enum response;
+        enum accounting;
+        enum authentication;
+        enum common;
+        enum pam;
+      }
+    }
+  }
+
+  grouping aaa-top {
+    description
+      "Top-level grouping for AAA services";
+    container aaa {
+      srl-ext:first-released "19.11.1";
+      description
+        "Top-level container for AAA services";
+      uses aaa-authentication-top;
+      uses aaa-authorization-top;
+      uses aaa-accounting-top;
+      uses aaa-servergroup-common-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses aaa-top;
+  }
+}

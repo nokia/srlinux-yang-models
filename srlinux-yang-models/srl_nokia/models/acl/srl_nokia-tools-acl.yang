@@ -1,0 +1,245 @@
+module srl_nokia-tools-acl {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:acl:tools-acl";
+  prefix srl_nokia-tools-acl;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-tools-interfaces {
+    prefix srl_nokia-tools-if;
+  }
+  import srl_nokia-tools-qos {
+    prefix srl_nokia-tools-qos;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands on network interfaces and subinterfaces.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping acl-filter-common-clear-group {
+    container statistics {
+      leaf clear {
+        type empty;
+        description
+          "Reset all statistics of all entries of the filter to zero";
+      }
+    }
+    list entry {
+      description
+        "List of filter rules.";
+      key "sequence-id";
+      leaf sequence-id {
+        type uint32;
+        description
+          "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Reset all aggregate and per-interface statistics associated with this particular entry to zero";
+        }
+      }
+    }
+  }
+
+  grouping acl-filter-clear-group {
+    list acl-filter {
+      key "name type";
+      description
+        "List MAC, IPv4, IPv6 ACL filter policies";
+      leaf name {
+        type string;
+        description
+          "Referencence to the ACL filter policy name";
+      }
+      leaf type {
+        description
+          "Defines the type of ACL filter:
+           ipv4: IPv4 ACL filter
+           ipv6: IPv6 ACL filter
+           mac: MAC ACL filter";
+        type enumeration {
+          enum ipv4 {
+            value 1;
+          }
+          enum ipv6 {
+            value 2;
+          }
+          enum mac {
+            if-feature "not srl_nokia-feat:fpcx";
+            value 3;
+          }
+        }
+      }
+      uses acl-filter-common-clear-group;
+    }
+  }
+
+  grouping acl-interface-clear-group {
+    list interface {
+      if-feature "not srl_nokia-feat:fpcx";
+      key "interface-id";
+      description
+        "List of interfaces and subinterfaces referencing ACL filters";
+      leaf interface-id {
+        type string;
+        description
+          "Identifier for the interface or subinterface";
+      }
+      container input {
+        container statistics {
+          leaf clear {
+            type empty;
+          }
+        }
+        uses acl-filter-clear-group;
+      }
+      container output {
+        container statistics {
+          leaf clear {
+            type empty;
+          }
+        }
+        uses acl-filter-clear-group;
+      }
+    }
+  }
+
+  grouping policer-common-clear-group {
+    container statistics {
+      leaf clear {
+        type empty;
+        description
+          "Reset all statistics associated with this particular policer to zero";
+      }
+    }
+  }
+
+  container acl {
+    description
+      "Top level enclosing container for ACL operational tools";
+    uses acl-filter-clear-group;
+    uses acl-interface-clear-group;
+    container policers {
+      description
+        "List of policers used by ACL entries";
+      list system-cpu-policer {
+        description
+          "List of system CPU policers";
+        key "name";
+        leaf name {
+          description
+            "Name of the system cpu policer";
+          type srl_nokia-comm:name;
+        }
+        uses policer-common-clear-group;
+      }
+      list policer {
+        description
+          "List of hardware policers";
+        key "name";
+        leaf name {
+          description
+            "Name of the hardware policer";
+          type srl_nokia-comm:name;
+        }
+        uses policer-common-clear-group;
+      }
+    }
+  }
+
+  grouping tools-qos-classifiers-top {
+    container classifiers {
+      description
+        "Top level enclosing container for qos classifiers operational tools";
+      list multifield-classifier {
+        description
+          "List of multifield-classifier QoS policies";
+        key "name";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "The name of multifield-classifier QoS policy";
+        }
+      }
+    }
+  }
+
+  grouping tools-qos-policer-templates-top {
+    container policer-templates {
+      leaf clear {
+        type empty;
+      }
+      list policer {
+        description
+          "The list of policer instances belonging to the template definition";
+        key "index";
+        leaf index {
+          description
+            "The policer index";
+          type uint8 {
+            range "1..32";
+          }
+        }
+        leaf clear {
+          type empty;
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-qos:qos" {
+    uses tools-qos-classifiers-top;
+  }
+
+  augment "/srl_nokia-tools-qos:qos/srl_nokia-tools-qos:interfaces/srl_nokia-tools-qos:interface/srl_nokia-tools-qos:input" {
+    if-feature "srl_nokia-feat:ingress-subif-policing and srl_nokia-feat:subif-policer";
+    uses tools-qos-policer-templates-top;
+  }
+}

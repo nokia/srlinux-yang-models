@@ -1,0 +1,206 @@
+module srl_nokia-gnsi-pathz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:aaa:gnsi-pathz";
+  prefix srl-gnsi-pathz;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-grpc {
+    prefix srl-grpc;
+  }
+  import srl_nokia-aaa {
+    prefix srl-aaa;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the Pathz service within gNSI.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  typedef version {
+    type string;
+    description
+      "The version ID of the schema-path-based Pathz authorization policy
+       as provided by the OpenConfig-path-based Authorization Policy
+       Manager when the policy was pushed. This leaf persists through a reboot.";
+  }
+
+  typedef created-on {
+    type srl-comm:date-and-time-delta;
+    description
+      "The created on timestamp as provided by the gNSI client at the time of uploading the policy
+
+       The creation time of the schema-path-based Pathz authorization policy
+       as reported by the schema-path-based authorization policy
+       manager when the policy was pushed to the device. This value is
+       reported as nanoseconds since epoch (January 1st, 1970 00:00:00 GMT).
+       This leaf persists through a reboot.";
+  }
+
+  grouping counters {
+    description
+      "A collection of counters that were collected by the gNSI.pathz
+       module while evaluating access to a schema path.";
+    leaf access-rejects {
+      type uint64;
+      description
+        "The total number of times the gNSI.pathz module denied access
+         to a schema path.";
+    }
+    leaf last-access-reject {
+      type srl-comm:date-and-time-delta;
+      description
+        "A timestamp of the last time the gNSI.pathz denied access to
+         a schema path.";
+    }
+    leaf access-accepts {
+      type uint64;
+      description
+        "The total number of times the gNSI.pathz module allowed access
+         to a schema path.";
+    }
+    leaf last-access-accept {
+      type srl-comm:date-and-time-delta;
+      description
+        "A timestamp of the last time the gNSI.pathz allowed access to
+         a schema path.";
+    }
+  }
+
+  grouping pathz-policy-success-failure-counters {
+    description
+      "A collection of counters collected by the gNSI.pathz module.";
+    list path {
+      description
+        "A collection of counters collected by the gNSI.pathz module for a schema path identified by the `name`.";
+      key "name";
+      leaf name {
+        type string;
+        description
+          "A schema path the counters were collected for.
+
+           Uses xpath format.";
+      }
+      container reads {
+        description
+          "The counter were collected while performing a read operation on the schema path.";
+        uses counters;
+      }
+      container writes {
+        description
+          "The counter were collected while performing a write operation on the schema path.";
+        uses counters;
+      }
+    }
+  }
+
+  grouping grpc-server-pathz-policy-success-failure-counters {
+    description
+      "A collection of counters collected by the gNSI.pathz module.";
+    container counters {
+      description
+        "A collection of per-schema path counters collected by the gNSI.pathz module.";
+      config false;
+      uses pathz-policy-success-failure-counters;
+    }
+  }
+
+  grouping grpc-server-pathz-policy-state {
+    description
+      "Pathz authorization policy freshness-related data.";
+    leaf version {
+      type version;
+      description
+        "The version of the Pathz authorization policy (sent by the gNSI client).";
+    }
+    leaf created-on {
+      type created-on;
+      description
+        "The timestamp of the moment when the Pathz policy was created (sent by the gNSI client).";
+    }
+  }
+
+  grouping pathz-policy-instances-state {
+    description
+      "Operational state data for a schema-path-based Pathz authorization policy.";
+    list policy {
+      config false;
+      key "instance";
+      ordered-by system;
+      description
+        "Information about freshness of an schema-path-based Pathz authorization policy that have been installed
+         on the device using the gNSI schema-path-based Pathz authorization policy management service.";
+      leaf instance {
+        type enumeration {
+          enum ACTIVE {
+            value 1;
+            description
+              "The Pathz authorization policy that is currently used to authorize access.";
+          }
+          enum SANDBOX {
+            value 2;
+            description
+              "The most recent Pathz policy that has been uploaded during the Rotation RPC.
+               If there is no Rotate() RPC in progress, then the values of version and created-on will be empty.";
+          }
+        }
+      }
+      uses grpc-server-pathz-policy-state;
+    }
+  }
+
+  grouping pathz-top {
+    description
+      "Grouping of Pathz authorization policy instance information";
+    container pathz {
+      description
+        "Information relating to the active Pathz authorization policy instances
+
+         This policies is provided by the gNSI gRPC service, and can be changed using the gNSI.Pathz.Rotate RPC";
+      leaf collect-policy-success-failure-counters {
+        type boolean;
+        default "false";
+        description
+          "Indicates whether the gNSI.pathz module should collect access counters information.";
+      }
+      uses pathz-policy-instances-state;
+    }
+  }
+
+  grouping grpc-server-pathz-top {
+    description
+      "Grouping of grpc server Pathz state information and counters";
+    container pathz {
+      config false;
+      description
+        "Information relating to the active Pathz authorization policy instances
+
+         This policies is provided by the gNSI gRPC service, and can be changed using the gNSI.Pathz.Rotate RPC";
+      uses grpc-server-pathz-policy-state;
+      uses grpc-server-pathz-policy-success-failure-counters;
+    }
+  }
+
+  augment "/srl-system:system/srl-grpc:grpc-server" {
+    if-feature "srl-feat:gnsi-pathz";
+    uses grpc-server-pathz-top;
+  }
+}

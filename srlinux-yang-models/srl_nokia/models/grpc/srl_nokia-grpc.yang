@@ -1,0 +1,495 @@
+module srl_nokia-grpc {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:grpc";
+  prefix srl-grpc;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-tls {
+    prefix srl-tls;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-gnsi-authz {
+    prefix srl-gnsi-authz;
+  }
+  import srl_nokia-gnsi-certz {
+    prefix srl-gnsi-certz;
+  }
+  import srl_nokia-gnmi {
+    prefix srl-gnmi;
+  }
+  import srl_nokia-gribi {
+    prefix srl-gribi;
+  }
+  import srl_nokia-p4rt {
+    prefix srl-p4rt;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to gRPC servers.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  identity grpc-service {
+    description
+      "Base identity for a gRPC-based service.";
+  }
+
+  identity gnmi {
+    base grpc-service;
+    description
+      "gNMI: gRPC Network Management Interface";
+  }
+
+  identity gnoi {
+    base grpc-service;
+    description
+      "gNOI: gRPC Network Operations Interface";
+  }
+
+  identity gnoi.bgp {
+    base grpc-service;
+    description
+      "gNOI: BGP Service";
+  }
+
+  identity gnoi.factory_reset {
+    base grpc-service;
+    description
+      "gNOI: FactoryReset Service";
+  }
+
+  identity gnoi.file {
+    base grpc-service;
+    description
+      "gNOI: File Service";
+  }
+
+  identity gnoi.healthz {
+    if-feature "srl-feat:gnoi-healthz";
+    base grpc-service;
+    description
+      "gNOI: Healthz Service";
+  }
+
+  identity gnoi.os {
+    base grpc-service;
+    description
+      "gNOI: OS Service";
+  }
+
+  identity gnoi.packet_link_qualification {
+    base grpc-service;
+    description
+      "gNOI: PacketLinkQualification Service";
+  }
+
+  identity gnoi.system {
+    base grpc-service;
+    description
+      "gNOI: System Service";
+  }
+
+  identity gnsi {
+    if-feature "srl-feat:gnsi-authz";
+    base grpc-service;
+    description
+      "gNSI: gRPC Network Security Interface";
+  }
+
+  identity gnsi.acctz {
+    if-feature "srl-feat:gnsi-accounting";
+    base grpc-service;
+    description
+      "gNSI: Accounting Service";
+  }
+
+  identity gnsi.attestz {
+    if-feature "srl-feat:tpm-attestz";
+    base grpc-service;
+    description
+      "gNSI: Attestz Service";
+  }
+
+  identity gnsi.authz {
+    if-feature "srl-feat:gnsi-authz";
+    base grpc-service;
+    description
+      "gNSI: Authorization Policy Management Service";
+  }
+
+  identity gnsi.certz {
+    if-feature "srl-feat:gnsi-certz";
+    base grpc-service;
+    description
+      "gNSI: Certificate Management Service";
+  }
+
+  identity gnsi.credentialz {
+    if-feature "srl-feat:gnsi-credentialz";
+    base grpc-service;
+    description
+      "gNSI: Credentials Management Service";
+  }
+
+  identity gnsi.enrollz {
+    if-feature "srl-feat:tpm-enrollz";
+    base grpc-service;
+    description
+      "gNSI: Enrollz Service";
+  }
+
+  identity gnsi.pathz {
+    if-feature "srl-feat:gnsi-pathz";
+    base grpc-service;
+    description
+      "gNSI: Path-based Authorization Policy Management Service";
+  }
+
+  identity gribi {
+    base grpc-service;
+    description
+      "gRIBI: gRPC Routing Information Base Interface";
+  }
+
+  identity p4rt {
+    base grpc-service;
+    description
+      "P4RT: P4 Runtime";
+  }
+
+  grouping grpc-session-info {
+    list client {
+      config false;
+      description
+        "List of active gRPC client sessions";
+      key "id";
+      leaf id {
+        type uint32 {
+          range "0..4294967295";
+        }
+        description
+          "System generated ID for for the client";
+      }
+      leaf type {
+        type enumeration {
+          enum gnmi;
+          enum acctz {
+            if-feature "srl-feat:gnsi-accounting";
+          }
+        }
+      }
+      leaf user {
+        type string;
+        srl-ext:show-importance "high";
+        description
+          "Authenticated username for the client";
+      }
+      leaf user-agent {
+        type string;
+        srl-ext:show-importance "low";
+        description
+          "User agent used for the client";
+      }
+      leaf remote-host {
+        type srl-comm:ip-address;
+        srl-ext:show-importance "high";
+        description
+          "Remote host of the client";
+      }
+      leaf remote-port {
+        type srl-comm:port-number;
+        srl-ext:show-importance "high";
+        description
+          "Remote port of the client";
+      }
+      leaf election-id {
+        type string;
+        srl-ext:show-importance "high";
+        description
+          "Election ID of this client
+
+           Provided only for services supporting an election ID";
+      }
+      leaf acctz-starting-point {
+        if-feature "srl-feat:gnsi-accounting";
+        type srl-comm:date-and-time-delta;
+        srl-ext:show-importance "low";
+        description
+          "Time of the acctz accounting subscription starting point";
+      }
+      leaf rpc {
+        type string;
+        srl-ext:show-importance "high";
+        description
+          "The called package, service, and RPC
+
+           For example gnmi.gNMI.Subscribe";
+      }
+      leaf start-time {
+        type srl-comm:date-and-time-delta;
+        srl-ext:show-importance "high";
+        description
+          "Time of the subscription creation";
+      }
+      uses srl-gnmi:gnmi-session-info;
+      uses srl-gribi:gribi-session-info;
+      uses srl-p4rt:p4rt-session-info;
+    }
+  }
+
+  grouping statistics {
+    description
+      "A collection of counters that were collected by the gRPC server";
+    container statistics {
+      config false;
+      description
+        "Statistics related to the gRPC server";
+      leaf access-rejects {
+        if-feature "srl-feat:gnsi-certz";
+        type uint64;
+        description
+          "The total number of times the gRPC server denied access to the server";
+      }
+      leaf last-access-reject {
+        if-feature "srl-feat:gnsi-certz";
+        type srl-comm:date-and-time-delta;
+        description
+          "A timestamp of the last time the gRPC server denied access to the server";
+      }
+      leaf access-accepts {
+        if-feature "srl-feat:gnsi-certz";
+        type uint64;
+        description
+          "The total number of times the gPRC allowed access to the server";
+      }
+      leaf last-access-accept {
+        if-feature "srl-feat:gnsi-certz";
+        type srl-comm:date-and-time-delta;
+        description
+          "A timestamp of the last time the gRPC allowed access to the server";
+      }
+      uses srl-gnsi-authz:grpc-server-user-authz-policy-success-failure-counters {
+        if-feature "srl-feat:gnsi-authz";
+      }
+    }
+  }
+
+  grouping grpc-socket {
+    container unix-socket {
+      description
+        "Top-level container for configuration and state related to unix sockets";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        srl-ext:show-importance "high";
+        default "disable";
+        description
+          "Administratively enable or disable the gRPC server";
+      }
+      leaf socket-path {
+        srl-ext:show-importance "high";
+        config false;
+        type string;
+        description
+          "Path to the unix socket used by gRPC";
+      }
+    }
+  }
+
+  grouping grpc-netinst {
+    leaf network-instance {
+      type leafref {
+        path "/srl-netinst:network-instance/srl-netinst:name";
+      }
+      must 'not(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:mac-vrf")' {
+        error-message "gRPC server cannot be started in a network-instance of type 'mac-vrf'";
+      }
+      description
+        "Reference to a configured network instance where the gRPC will listen on for incoming connections";
+    }
+    leaf-list source-address {
+      type srl-comm:ip-address;
+      default "::";
+      description
+        "List of IP addresses the gRPC server will listen on within the network instance";
+    }
+    leaf port {
+      type srl-comm:port-number;
+      srl-ext:show-importance "high";
+      default "57400";
+      description
+        "Port the gRPC server will listen on for incoming connections";
+    }
+    leaf oper-state {
+      config false;
+      type srl-comm:oper-state;
+      srl-ext:show-importance "high";
+      description
+        "Details if the gRPC server is operationally available";
+    }
+    uses statistics {
+      if-feature "srl-feat:gnsi-certz or srl-feat:gnsi-authz";
+    }
+    uses srl-gnsi-certz:certz-top {
+      if-feature "srl-feat:gnsi-certz";
+    }
+  }
+
+  grouping grpc-traceoptions {
+    description
+      "Top-level grouping for gRPC trace options";
+    leaf-list trace-options {
+      description
+        "gRPC trace options";
+      type enumeration {
+        enum request;
+        enum response;
+        enum common;
+        enum grpc;
+      }
+    }
+  }
+
+  grouping grpc-server-top {
+    list grpc-server {
+      description
+        "List of configured gRPC server instances";
+      key "name";
+      leaf name {
+        type srl-comm:name;
+        srl-ext:show-importance "high";
+        description
+          "User-provided name of this server instance";
+      }
+      leaf admin-state {
+        type srl-comm:admin-state;
+        default "disable";
+        srl-ext:show-importance "high";
+        description
+          "Globally enable or disable the gRPC server instance
+
+           Disabling this will disable all gRPC server sockets in all network instances, and any configured unix domain sockets.";
+      }
+      uses grpc-traceoptions;
+      leaf timeout {
+        type uint16 {
+          range "0..65535";
+        }
+        default "7200";
+        srl-ext:show-importance "low";
+        units "seconds";
+        description
+          "Set the idle timeout in seconds on gRPC connections";
+      }
+      leaf rate-limit {
+        type uint16 {
+          range "0..65535";
+        }
+        srl-ext:show-importance "low";
+        default "60";
+        description
+          "Set a limit on the number of RPC calls per minute";
+      }
+      leaf session-limit {
+        type uint16 {
+          range "0..65535";
+        }
+        srl-ext:show-importance "low";
+        default "20";
+        description
+          "Set a limit on the number of simultaneous active gRPC sessions
+
+           A session is defined as an individual RPC invocation, which could result in a single client generating multiple sessions.
+           In the context of a Subscribe RPC this is the number of simultaneously active SubscribeRequests across all Subscribe RPCs.";
+      }
+      leaf max-concurrent-streams {
+        if-feature "srl-feat:grpc-server-max-concurrent-streams";
+        type uint32 {
+          range "0..2147483647";
+        }
+        srl-ext:show-importance "low";
+        default "100";
+        description
+          "Set a limit on the number of concurrent gRPC streams";
+      }
+      leaf metadata-authentication {
+        type boolean;
+        srl-ext:show-importance "high";
+        default "true";
+        description
+          "Enable or disable the use of username/password metadata authentication for every gRPC request";
+      }
+      leaf yang-models {
+        if-feature "srl-feat:openconfig";
+        type enumeration {
+          enum native;
+          enum openconfig;
+        }
+        srl-ext:show-importance "high";
+        default "native";
+        description
+          "Specify yang-models to be used when origin field is not present in requests";
+      }
+      leaf-list services {
+        type identityref {
+          base grpc-service;
+        }
+        description
+          "The gRPC service definitions that should be enabled for this gRPC server instance";
+      }
+      leaf tls-profile {
+        type leafref {
+          path "/srl-system:system/srl-tls:tls/srl-tls:server-profile/srl-tls:name";
+          require-instance false;
+        }
+        srl-ext:show-importance "high";
+        description
+          "Reference to the TLS profile to use on the gRPC server
+
+           If none is specified, then TLS is not used.";
+      }
+      leaf default-tls-profile {
+        if-feature "srl-feat:gnsi-authz";
+        type boolean;
+        srl-ext:show-importance "high";
+        default "false";
+        description
+          "Whether to use default TLS profile (generated by the system) if none is configured via tls-profile field";
+      }
+      uses srl-gnmi:gnmi-top;
+      uses grpc-netinst;
+      uses grpc-socket;
+      uses grpc-session-info;
+    }
+  }
+
+  augment "/srl-system:system" {
+    srl-ext:first-released "24.3.1";
+    if-feature "srl-feat:grpc-server";
+    uses grpc-server-top;
+  }
+}

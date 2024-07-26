@@ -1,0 +1,116 @@
+module srl_nokia-gnmi {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:gnmi";
+  prefix srl-gnmi;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the gnmi service";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping gnmi-session-info {
+    container gnmi {
+      description
+        "Container for gNMI related session info";
+      list paths {
+        description
+          "List of paths being subscribed to";
+        key "id";
+        leaf id {
+          type uint16 {
+            range "0..65535";
+          }
+          description
+            "System generated ID for the subscribed path (within subscription)";
+        }
+        leaf path {
+          type string;
+          srl-ext:show-importance "low";
+          description
+            "Path being subscribed to";
+        }
+        leaf mode {
+          type enumeration {
+            enum ON_CHANGE {
+              value 1;
+            }
+            enum SAMPLE {
+              value 2;
+            }
+            enum TARGET_DEFINED {
+              value 3;
+            }
+            enum POLL {
+              value 4;
+            }
+            enum ONCE {
+              value 5;
+            }
+          }
+          srl-ext:show-importance "low";
+          description
+            "Subscription mode (on-change, sample, target-defined, poll, once)";
+        }
+        leaf sample-interval {
+          type uint64;
+          srl-ext:show-importance "low";
+          units "seconds";
+          description
+            "Time in seconds to provide updates to the remote host, set to 0 for all subscription modes except SAMPLE";
+        }
+      }
+    }
+  }
+
+  grouping gnmi-top {
+    container gnmi {
+      description
+        "Container for gnmi configuration and state";
+      leaf commit-confirmed-timeout {
+        srl-ext:first-released "20.6.1";
+        type uint32 {
+          range "0..86400";
+        }
+        default "0";
+        srl-ext:show-importance "low";
+        units "seconds";
+        description
+          "Number of seconds to wait for confirmation
+
+           A value of 0 means commit confirmed is not used";
+      }
+      leaf commit-save {
+        srl-ext:first-released "21.3.1";
+        type boolean;
+        default "false";
+        srl-ext:show-importance "low";
+        description
+          "Specifies whether to save startup configuration after every successful commit";
+      }
+      leaf include-defaults-in-config-only-responses {
+        srl-ext:first-released "20.6.4";
+        type boolean;
+        default "false";
+        srl-ext:show-importance "low";
+        description
+          "Specifies whether to include field default values in get/subscribe responses when
+           using configuration only datastore (for example running/intended datastore)";
+      }
+    }
+  }
+}

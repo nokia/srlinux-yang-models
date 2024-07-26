@@ -1,0 +1,2049 @@
+module srl_nokia-sync-ptp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:time:sync-ptp";
+  prefix srl_nokia-sync-ptp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-sync-types {
+    prefix srl_nokia-sync-types;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  identity network-protocol {
+    description
+      "Enumeration for the protocol used by a PTP instance to transport PTP messages
+
+       YANG identity is used so that a PTP Profile's YANG augment
+       can assign values, using numeric range F000 to FFFD hex.";
+    reference
+      "7.4.1 of IEEE Std 1588-2019";
+  }
+
+  identity udp-ipv4 {
+    base network-protocol;
+    description
+      "UDP on IPv4. Numeric value is 0001 hex";
+  }
+
+  identity udp-ipv6 {
+    base network-protocol;
+    description
+      "UDP on IPv6. Numeric value is 0002 hex";
+  }
+
+  identity ieee802-3 {
+    base network-protocol;
+    description
+      "IEEE Std 802.3 (Ethernet). Numeric value is 0003 hex";
+  }
+
+  identity devicenet {
+    base network-protocol;
+    description
+      "DeviceNet. Numeric value is 0004 hex";
+  }
+
+  identity controlnet {
+    base network-protocol;
+    description
+      "ControlNet. Numeric value is 0005 hex";
+  }
+
+  identity profinet {
+    base network-protocol;
+    description
+      "PROFINET. Numeric value is 0006 hex";
+  }
+
+  identity otn {
+    base network-protocol;
+    description
+      "Optical Transport Network (OTN). Numeric value is 0007 hex";
+  }
+
+  identity unknown {
+    base network-protocol;
+    description
+      "Unknown. Numeric value is FFFE hex";
+  }
+
+  grouping clock-quality-grouping {
+    description
+      "Quality of a PTP instance
+
+       This contains IEEE Std 1588 clockClass, clockAccuracy and offsetScaledLogVariance.";
+    leaf clock-class {
+      type uint8;
+      config false;
+      description
+        "The clockClass denotes the traceability of the time or frequency distributed by the clock";
+    }
+    leaf clock-accuracy {
+      type uint8;
+      config false;
+      description
+        "The clockAccuracy indicates the expected accuracy of the clock";
+    }
+    leaf offset-scaled-log-variance {
+      type uint16;
+      config false;
+      description
+        "The offsetScaledLogVariance provides an estimate of the variations of the clock";
+    }
+  }
+
+  grouping ptp-time-grouping {
+    description
+      "Recovered PTP time, including seconds and nanoseconds";
+    leaf time-seconds {
+      type srl_nokia-sync-types:time-seconds-type;
+      config false;
+      description
+        "Seconds of time";
+    }
+    leaf time-nano-seconds {
+      type srl_nokia-sync-types:time-nanoseconds-type;
+      config false;
+      description
+        "Nano-seconds of time";
+    }
+  }
+
+  grouping port-address {
+    description
+      "The IEEE Std 1588 PortAddress type represents the protocol address of a PTP Port";
+    leaf network-protocol {
+      type identityref {
+        base network-protocol;
+      }
+      description
+        "Protocol used by a PTP instance to transport PTP messages";
+    }
+    leaf mac-address {
+      type srl_nokia-comm:mac-address;
+      description
+        "The MAC address of the PTP port
+
+         This is only valid for PTP over ethernet encapsulation.";
+    }
+    container ip {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      must '(../network-protocol = "udp-ipv4") or (../network-protocol = "udp-ipv6")' {
+        error-message "ip-address is only relevant for PTP over UDP/IPv4 or UDP/IPv6";
+      }
+      leaf network-instance {
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+        }
+        description
+          "Network instance containing the IP address";
+      }
+      leaf ip-address {
+        type srl_nokia-comm:ip-address;
+        description
+          "IP address for the PTP peer";
+      }
+    }
+  }
+
+  grouping ptp-message-counts {
+    leaf anno-msg-tx {
+      type uint32;
+      description
+        "Specifies the number of announce messages transmitted";
+    }
+    leaf anno-msg-rx {
+      type uint32;
+      description
+        "Specifies the number of announce messages received";
+    }
+    leaf sync-msg-tx {
+      type uint32;
+      description
+        "Specifies the number of sync messages transmitted";
+    }
+    leaf sync-msg-rx {
+      type uint32;
+      description
+        "Specifies the number of sync messages received";
+    }
+    leaf del-req-msg-tx {
+      type uint32;
+      description
+        "Specifies the number of delay-req messages transmitted";
+    }
+    leaf del-req-msg-rx {
+      type uint32;
+      description
+        "Specifies the number of delay-req messages received";
+    }
+    leaf del-resp-msg-tx {
+      type uint32;
+      description
+        "Specifies the number of delay-resp messages transmitted";
+    }
+    leaf del-resp-msg-rx {
+      type uint32;
+      description
+        "Specifies the number of delay-resp messages received";
+    }
+    leaf follow-up-msg-tx {
+      type uint32;
+      description
+        "Specifies the number of follow-up messages transmitted";
+    }
+    leaf follow-up-msg-rx {
+      type uint32;
+      description
+        "Specifies the number of follow-up messages received";
+    }
+    leaf signaling-msg-tx {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      type uint32;
+      description
+        "Specifies the number of follow-up messages transmitted";
+    }
+    leaf signaling-msg-rx {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      type uint32;
+      description
+        "Specifies the number of follow-up messages received";
+    }
+    leaf other-rx {
+      type uint32;
+      description
+        "Specifies the number of other messages received";
+    }
+    container discards {
+      description
+        "Aggregate discard statistics for the PTP clock";
+      leaf bad-domain {
+        type uint32;
+        description
+          "Specifies the number of bad domain messages that were discarded";
+      }
+      leaf alternate-master {
+        type uint32;
+        description
+          "Specifies the number of alternate master messages that were discarded";
+      }
+      leaf out-of-sequence {
+        type uint32;
+        description
+          "Specifies the number of out of sequence messages that were discarded";
+      }
+      leaf peer-disabled {
+        if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+        type uint32;
+        description
+          "Specifies the number of PTP messages that were discarded from disabled PTP peer
+
+           Occurs when a PTP peer has been administratively disabled.
+           This information is only available for configured and discovered peers.";
+      }
+      leaf other {
+        type uint32;
+        description
+          "Specifies the number of other messages that were discarded";
+      }
+    }
+  }
+
+  grouping signaling-uni-neg-tlv-counts {
+    container signaling-uni-neg-tlv {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      description
+        "Counts of different unicast negotiation TLVs";
+      leaf request-anno-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of requests for announce messages have been received";
+      }
+      leaf grant-anno-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of grants for announce messages have been received";
+      }
+      leaf reject-anno-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of rejections for announce messages have been received";
+      }
+      leaf cancel-anno-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of cancels for announce messages have been received";
+      }
+      leaf ack-cancel-anno-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of acknowledgements of cancels for announce messages have been received";
+      }
+      leaf request-sync-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of requests for sync messages have been received";
+      }
+      leaf grant-sync-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of grants for sync messages have been received";
+      }
+      leaf reject-sync-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of rejections for sync messages have been received";
+      }
+      leaf cancel-sync-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of cancels for sync messages have been received";
+      }
+      leaf ack-cancel-sync-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of acknowledgements of cancels for sync messages have been received";
+      }
+      leaf request-delay-resp-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of requests for delay-resp messages have been received";
+      }
+      leaf grant-delay-resp-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of grants for delay-resp messages have been received";
+      }
+      leaf reject-delay-resp-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of rejections for delay-resp messages have been received";
+      }
+      leaf cancel-delay-resp-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of cancels for delay-resp messages have been received";
+      }
+      leaf ack-cancel-delay-resp-rx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of acknowledgements of cancels for delay-resp messages have been received";
+      }
+      leaf request-anno-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of requests for announce messages have been transmitted";
+      }
+      leaf grant-anno-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of grants for announce messages have been transmitted";
+      }
+      leaf reject-anno-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of rejections for announce messages have been transmitted";
+      }
+      leaf cancel-anno-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of cancels for announce messages have been transmitted";
+      }
+      leaf ack-cancel-anno-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of acknowledgements of cancels for announce messages have been transmitted";
+      }
+      leaf request-sync-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of requests for sync messages have been transmitted";
+      }
+      leaf grant-sync-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of grants for sync messages have been transmitted";
+      }
+      leaf reject-sync-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of rejections for sync messages have been transmitted";
+      }
+      leaf cancel-sync-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of cancels for sync messages have been transmitted";
+      }
+      leaf ack-cancel-sync-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of acknowledgements of cancels for sync messages have been transmitted";
+      }
+      leaf request-delay-resp-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of requests for delay-resp messages have been transmitted";
+      }
+      leaf grant-delay-resp-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of grants for delay-resp messages have been transmitted";
+      }
+      leaf reject-delay-resp-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of rejections for delay-resp messages have been transmitted";
+      }
+      leaf cancel-delay-resp-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of cancels for delay-resp messages have been transmitted";
+      }
+      leaf ack-cancel-delay-resp-tx {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Specifies the number of acknowledgements of cancels for delay-resp messages have been transmitted";
+      }
+      leaf other-tlv {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The count of unsupported signaling message TLVs received.";
+      }
+    }
+  }
+
+  grouping ptp-message-rates {
+    leaf anno-msg-rate-tx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of announce messages transmitted";
+    }
+    leaf anno-msg-rate-rx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of announce messages received";
+    }
+    leaf sync-msg-rate-tx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of sync messages transmitted";
+    }
+    leaf sync-msg-rate-rx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of sync messages received";
+    }
+    leaf del-req-msg-rate-tx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of delay-req messages transmitted";
+    }
+    leaf del-req-msg-rate-rx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of delay-req messages received";
+    }
+    leaf del-resp-msg-rate-tx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of delay-resp messages transmitted";
+    }
+    leaf del-resp-msg-rate-rx {
+      units "messages-per-second";
+      type decimal64 {
+        fraction-digits 1;
+      }
+      description
+        "Specifies the rate of messages of delay-resp messages received";
+    }
+    leaf follow-up-msg-rate-tx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of follow-up messages transmitted";
+    }
+    leaf follow-up-msg-rate-rx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of follow-up messages received";
+    }
+    leaf signaling-msg-rate-tx {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of signaling messages transmitted";
+    }
+    leaf signaling-msg-rate-rx {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of signaling messages received";
+    }
+    leaf other-rate-rx {
+      type decimal64 {
+        fraction-digits 1;
+      }
+      units "messages-per-second";
+      description
+        "Specifies the rate of messages of other messages received";
+    }
+  }
+
+  grouping ptp-default-ds-top {
+    description
+      "Grouping for ptp default data set configuration";
+    container default-ds {
+      description
+        "The default data set of the PTP instance
+
+         In the context of the protocol, this data set is required
+         for an Ordinary Clock or Boundary Clock";
+      leaf instance-type {
+        default "bc";
+        type enumeration {
+          enum bc {
+            value 5;
+            description
+              "boundary clock";
+          }
+        }
+        description
+          "The type of PTP instance as per IEEE1588 standard
+
+           For G.8275.1:
+            oc is for T-GM,
+            bc is for T-BC;
+            T-TSC not supported since T-BC can be used for this role
+           For G.8275.2:
+            oc is for T-GM,
+            bc is for T-BC-A and T-BC-P;
+            T-TSC-A and T-TSC-P are not supported since T-BC-A or T-BC-P can be used for this role";
+      }
+      leaf instance-enable {
+        type boolean;
+        default "false";
+        description
+          "Enable PTP clock";
+      }
+      leaf clock-identity {
+        type srl_nokia-sync-types:clock-identity-type;
+        config false;
+        description
+          "The clockIdentity of the local clock";
+      }
+      leaf number-ports {
+        type uint16;
+        description
+          "The number of PTP ports on the instance";
+        config false;
+      }
+      container clock-quality {
+        description
+          "The clockQuality of the local clock";
+        config false;
+        uses clock-quality-grouping;
+      }
+      leaf priority1 {
+        type uint8 {
+          range "0..255";
+        }
+        default "128";
+        description
+          "The IEEE Std 1588 priority1 of the PTP instance
+
+           Since priority1 is one of the first comparisons
+           performed by the Best Master Clock Algorithm (BMCA).
+           Range is 0-255.";
+      }
+      leaf priority2 {
+        type uint8 {
+          range "0..255";
+        }
+        default "128";
+        description
+          "The IEEE Std 1588 priority2 of the PTP instance
+
+           The priority2 member is compared by the Best Master
+           Clock Algorithm (BMCA) after priority1 and clockQuality.
+           Lower values take precedence.";
+      }
+      leaf domain-number {
+        type uint8 {
+          range "0..255";
+        }
+        description
+          "The IEEE Std 1588 domainNumber of the PTP instance
+
+           A domain consists of one or more PTP instances
+           communicating with each other as defined by the
+           protocol. A domain shall define the scope of PTP message
+           communication, state, operations, data sets, and
+           timescale. Therefore, each domain represents a distinct
+           time.
+           The default domain number is defined by the profile.
+              itug8275dot1: 24
+              itug8275dot2: 44";
+      }
+      leaf log-announce-interval {
+        type int8 {
+          range "-3..4";
+        }
+        description
+          "The base-2 logarithm of the mean announceInterval
+
+           This is the mean time interval between successive Announce messages.
+           The default log announce interval is defined by the profile.
+              itug8275dot1: -3 (8 messages per second)
+              itug8275dot2: 1 (1 message every two seconds)";
+      }
+      leaf announce-receipt-timeout {
+        type uint8 {
+          range "2..10";
+        }
+        default "3";
+        description
+          "Sets the time limit for missed Announce packets before the master clock is deemed down
+
+           This command configures the announceReceiptTimeout value for all peer associations.
+           This defines the number of Announce message intervals that must expire with no received
+           Announce messages before declaring an ANNOUNCE_RECEIPT_TIMEOUT event.";
+      }
+      container current-time {
+        description
+          "The current time in the current data set";
+        config false;
+        uses ptp-time-grouping;
+        leaf date-time {
+          description
+            "PTP current time converted to UTC and presented as a date-time string";
+          type srl_nokia-comm:date-and-time;
+        }
+      }
+      leaf local-priority {
+        type uint8 {
+          range "1..255";
+        }
+        default "128";
+        description
+          "The IEEE Std 1588 priority2 of the PTP instance
+
+           The priority2 member is compared by the Best Master
+           Clock Algorithm (BMCA) after priority1 and clockQuality.
+           Lower values take precedence.";
+      }
+      leaf two-step-flag {
+        type boolean;
+        config false;
+        description
+          "Indicates if the clock is operating in two-step mode";
+      }
+      container statistics {
+        srl_nokia-ext:stream-mode "sample=2";
+        srl_nokia-ext:statistics-node "true";
+        config false;
+        description
+          "Aggregate statistics for the PTP clock";
+        uses ptp-message-counts;
+        uses signaling-uni-neg-tlv-counts;
+        leaf sync-packet-loss {
+          type srl_nokia-comm:zero-based-counter32;
+          description
+            "The number of events with detected packet loss of sync packets from the master clock";
+        }
+        leaf sync-high-packet-loss {
+          type srl_nokia-comm:zero-based-counter32;
+          description
+            "The number of events with high packet loss of sync packets";
+        }
+        leaf delay-packet-loss {
+          type srl_nokia-comm:zero-based-counter32;
+          description
+            "The number of events with detected packet loss for the delay request/response packets";
+        }
+        leaf delay-high-packet-loss {
+          type srl_nokia-comm:zero-based-counter32;
+          description
+            "The number of events with high packet loss for delay req packets";
+        }
+        container unicast-msg-rate {
+          if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+          description
+            "Aggregate unicast message rates for the PTP clock";
+          uses ptp-message-rates;
+        }
+        container multicast-msg-rate {
+          description
+            "Aggregate multicast message rates for the PTP clock";
+          uses ptp-message-rates;
+        }
+      }
+      container time-recovery-engine {
+        config false;
+        leaf recovery-state {
+          type enumeration {
+            enum not-applicable {
+              value 0;
+              description
+                "Not applicable to time recovery";
+            }
+            enum initial {
+              value 1;
+              description
+                "Initializing state";
+            }
+            enum acquiring {
+              value 2;
+              description
+                "Acquiring state";
+            }
+            enum holdover {
+              value 3;
+              description
+                "Holdover state";
+            }
+            enum locked {
+              value 4;
+              description
+                "Locked state";
+            }
+          }
+          description
+            "Specifies the current state of the time recovery engine in the PTP clock";
+        }
+        leaf state-last-changed {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Specifies the last occurrence of a ptp state change for the time recovery engine";
+        }
+        leaf last-adjustment {
+          type int64;
+          units "nanoseconds";
+          description
+            "Specifies the last adjustment in nanoseconds to the local time of the PTP clock";
+        }
+        leaf last-adjustment-timestamp {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "The time when last-adjustment was last calculated";
+        }
+        container statistics {
+          srl_nokia-ext:stream-mode "sample=2";
+          srl_nokia-ext:statistics-node "true";
+          description
+            "Time recovery engine state statistics for the PTP clock";
+          leaf time-in-initial {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Initializing state";
+          }
+          leaf time-in-acquiring {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Acquiring state";
+          }
+          leaf time-in-holdover {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Holdover state";
+          }
+          leaf time-in-locked {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Locked state";
+          }
+          leaf sync-too-much-pdv {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The number of events with high PDV for sync packets for time recovery";
+          }
+          leaf delay-too-much-pdv {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The number of events with high PDV for delay request/response packets for time recovery";
+          }
+        }
+      }
+      container freq-recovery-engine {
+        if-feature "srl_nokia-feat:sync-ptp-freq";
+        config false;
+        leaf recovery-state {
+          type enumeration {
+            enum not-applicable {
+              value 0;
+              description
+                "Not applicable to time recovery";
+            }
+            enum initial {
+              value 1;
+              description
+                "Initializing state";
+            }
+            enum acquiring {
+              value 2;
+              description
+                "Acquiring state";
+            }
+            enum phase-tracking {
+              value 3;
+              description
+                "Phase Tracking state";
+            }
+            enum holdover {
+              value 4;
+              description
+                "Holdover state";
+            }
+            enum locked {
+              value 5;
+              description
+                "Locked state";
+            }
+          }
+          description
+            "Specifies the current state of the time recovery engine in the PTP clock";
+        }
+        leaf state-last-changed {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Specifies the last occurrence of a ptp state change for the time recovery engine";
+        }
+        leaf frequency-offset {
+          type decimal64 {
+            fraction-digits 3;
+          }
+          units "parts-per-billion";
+          description
+            "The frequency offset of the recovered PTP clock
+
+              Positive values indicate that the recovered clock is faster than nominal,
+              negative values indicate that the recovered clock is slower than nominal.";
+        }
+        leaf last-adjustment-timestamp {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "The time when last-adjustment was last calculated";
+        }
+        container statistics {
+          srl_nokia-ext:stream-mode "sample=2";
+          srl_nokia-ext:statistics-node "true";
+          config false;
+          description
+            "Freq recovery engine state statistics for the PTP clock";
+          leaf time-in-initial {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Initializing state";
+          }
+          leaf time-in-acquiring {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Acquiring state";
+          }
+          leaf time-in-phase-tracking {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Phase Tracking state";
+          }
+          leaf time-in-holdover {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Holdover state";
+          }
+          leaf time-in-locked {
+            type uint32;
+            units "seconds";
+            description
+              "Specifies the number of seconds while in Locked state";
+          }
+          leaf sync-high-phase-shift {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The number of events with large clock shift from sync packets for frequency recovery";
+          }
+          leaf sync-too-much-pdv {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The number of events with high PDV for sync packets for frequency recovery";
+          }
+          leaf delay-high-phase-shift {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The number of events with large clock shift for delay req packets for frequency recovery";
+          }
+          leaf delay-too-much-pdv {
+            type srl_nokia-comm:zero-based-counter32;
+            description
+              "The number of events with high PDV for delay req packets for frequency recovery";
+          }
+        }
+      }
+    }
+  }
+
+  grouping ptp-current-ds-top {
+    container current-ds {
+      description
+        "Provides current data from operation of the protocol";
+      config false;
+      leaf steps-removed {
+        type uint16;
+        config false;
+        description
+          "The number of PTP clock steps in the path between the this PTP instance and the GM";
+      }
+      leaf offset-from-master {
+        type srl_nokia-sync-types:time-interval-type;
+        config false;
+        description
+          "The time difference between this PTP instance and the master clock";
+      }
+      leaf mean-delay {
+        type srl_nokia-sync-types:time-interval-type;
+        config false;
+        description
+          "The mean propagation time between this PTP instance and the master clock";
+      }
+    }
+  }
+
+  grouping ptp-parent-ds-top {
+    description
+      "Grouping for ptp parent data set configuration";
+    container parent-ds {
+      description
+        "The parent data set of the clock";
+      reference
+        "IEEE Std 1588-2008: 8.2.3";
+      config false;
+      container parent-port-identity {
+        description
+          "The portIdentity of the port on the master";
+        reference
+          "IEEE Std 1588-2008: 5.3.5";
+        config false;
+        leaf clock-identity {
+          type srl_nokia-sync-types:clock-identity-type;
+          config false;
+          description
+            "Identity of the parent clock";
+        }
+        leaf port-number {
+          type uint16;
+          config false;
+          description
+            "Port number of the parent clock";
+        }
+      }
+      leaf grandmaster-identity {
+        type srl_nokia-sync-types:clock-identity-type;
+        config false;
+        description
+          "The clockIdentity of the grandmaster clock";
+      }
+      container grandmaster-clock-quality {
+        description
+          "The clockQuality of the grandmaster clock";
+        config false;
+        uses clock-quality-grouping;
+      }
+      leaf grandmaster-priority1 {
+        type uint8;
+        config false;
+        description
+          "The priority1 attribute of the grandmaster clock";
+      }
+      leaf grandmaster-priority2 {
+        type uint8;
+        config false;
+        description
+          "The priority2 attribute of the grandmaster clock";
+      }
+      container protocol-address {
+        config false;
+        description
+          "The protocol address of the PTP Port that issues the Sync messages";
+        uses port-address;
+      }
+    }
+  }
+
+  grouping ptp-time-ds-top {
+    description
+      "Grouping for ptp data set configuration";
+    container time-properties-ds {
+      description
+        "The timeProperties data set of the clock";
+      reference
+        "IEEE Std 1588-2008: 8.2.4";
+      config false;
+      leaf current-utc-offset-valid {
+        type boolean;
+        config false;
+        description
+          "When set to true, the current UTC offset is valid";
+      }
+      leaf current-utc-offset {
+        when "../current-utc-offset-valid='true'";
+        type int16;
+        config false;
+        description
+          "The offset between TAI and UTC
+
+           Only applies when the epoch of the PTP system is the PTP epoch in units of seconds
+           (i.e. when ptp-timescale is TRUE). Otherwise, the value has no meaning.";
+      }
+      leaf leap59 {
+        type boolean;
+        config false;
+        description
+          "If true, the last minute of the current UTC day contains 59 seconds";
+      }
+      leaf leap61 {
+        type boolean;
+        config false;
+        description
+          "If true, the last minute of the current UTC day contains 61 seconds";
+      }
+      leaf time-traceable {
+        type boolean;
+        config false;
+        description
+          "If true, the timescale and the currentUtcOffset are traceable to a primary reference";
+      }
+      leaf frequency-traceable {
+        type boolean;
+        config false;
+        description
+          "If true, the frequency determining the timescale is traceable to a primary reference";
+      }
+      leaf ptp-timescale {
+        type boolean;
+        config false;
+        description
+          "If true clock timescale of the grandmaster is PTP; false it is ARB (arbitrary)";
+      }
+      leaf time-source {
+        type enumeration {
+          enum atomic-clock {
+            value 16;
+          }
+          enum gps {
+            value 32;
+          }
+          enum terrestrial-radio {
+            value 48;
+          }
+          enum ptp {
+            value 64;
+          }
+          enum ntp {
+            value 80;
+          }
+          enum hand-set {
+            value 96;
+          }
+          enum other {
+            value 144;
+          }
+          enum internal-oscillator {
+            value 160;
+          }
+          enum reserved {
+            value 255;
+          }
+        }
+        config false;
+        description
+          "The source of time used by the grandmaster clock
+
+           If a value is received that does not map to one of the enumerations, then the reserved value is used";
+      }
+    }
+  }
+
+  grouping unicast-negotiation-session-data {
+    leaf state {
+      type enumeration {
+        enum pending {
+          value 1;
+        }
+        enum granted {
+          value 2;
+        }
+        enum denied {
+          value 3;
+        }
+        enum expired {
+          value 4;
+        }
+        enum canceled {
+          value 5;
+        }
+      }
+      description
+        "Indicates the state of the negotiation";
+    }
+    leaf log-interval {
+      type int8;
+      description
+        "The packet rate requested or granted for unicast transmission between the PTP peers";
+    }
+    leaf duration {
+      type uint32;
+      units "seconds";
+      description
+        "The duration, in seconds, requested/granted for unicast transmission between the PTP peers";
+    }
+    leaf time-of-last-grant {
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "The time when status last changed or the unicast session between the PTP clocks was renewed";
+    }
+  }
+
+  grouping ptp-port-ds-top {
+    description
+      "Grouping for ptp port data set information
+
+       There are multiple portDS lists based on the type of port.";
+    list port-ds-interface-list {
+      must '(../../ptp-profile = "itug8275dot1")' {
+        error-message "Only supported for PTP profile itug8275dot1 ";
+      }
+      key "port-index";
+      description
+        "List of port data sets for interfaces";
+      reference
+        "IEEE Std 1588-2008: 8.2.5";
+      leaf port-index {
+        type uint16 {
+          range "1..999";
+        }
+        description
+          "Index into the port-ds list
+
+           This is not the PTP port number.
+           Configurable ports use port indices 1 through 999 but there is a limit on the overall number of these configured ports based on the platform and software release.
+
+           The data sets (i.e., information model) of IEEE Std
+           1588-2008 specify a member portDS.portIdentity, which
+           uses a typed struct with members clockIdentity and
+           portNumber.
+
+           In this YANG data model, portIdentity is not modeled
+           in the port-ds.  However, its members are provided
+           as follows:
+           portIdentity.portNumber is provided as this
+           ptp-port-number leaf in port-ds, and
+           portIdentity.clockIdentity is provided as the
+           clock-identity leaf in default-ds of the instance
+           (i.e., ../../default-ds/clock-identity).";
+      }
+      leaf ptp-port-number {
+        config false;
+        type uint16;
+        description
+          "IEEE Std 1588 portNumber
+
+           This is the port-number that will appear in messages sent for this port-index.";
+        reference
+          "7.5.2.3 of IEEE Std 1588-2019";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "The administrative state of the ptp port";
+      }
+      leaf port-state {
+        type srl_nokia-sync-types:port-state;
+        config false;
+        description
+          "Current state associated with the port";
+      }
+      container source {
+        description
+          "Source interface used by this PTP port";
+        choice interface-or-sync0 {
+          mandatory true;
+          case interface {
+            description
+              "Local interface used for ptp over ethernet communication";
+            leaf interface {
+              type leafref {
+                path "/srl_nokia-if:interface/srl_nokia-if:name";
+              }
+              must "starts-with(.,'eth')" {
+                error-message "Ethernet interfaces only";
+              }
+              must 'not (/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:breakout-mode)' {
+                error-message "Interfaces with breakout-mode configured are not supported";
+              }
+              must '(not (../sync0))' {
+                error-message "Only one source for this PTP port may be configured";
+              }
+            }
+          }
+          case sync0 {
+            container sync0 {
+              if-feature "srl_nokia-feat:sync-ptp-sync-port-support";
+              presence "specifies sync0 port as source";
+              must '(not (../interface))' {
+                error-message "Only one source for this PTP port may be configured";
+              }
+            }
+          }
+        }
+      }
+      leaf best-master {
+        config false;
+        type boolean;
+        description
+          "Indicates if this interface was selected by the BMCA to be the best master";
+      }
+      leaf parent-clock {
+        config false;
+        type boolean;
+        description
+          "Indicates if this interface is the current parent clock of this PTP clock
+
+           May differ from best-master due to use of local GNSS as time source.";
+      }
+      leaf log-min-delay-req-interval {
+        type int8 {
+          range "-6..0";
+        }
+        description
+          "The base-2 logarithm of the minDelayReqInterval
+
+           The minimum permitted mean time interval between successive Delay_Req messages.
+           The default log-min-delay-req-interval is defined by the profile.
+              itug8275dot1: -4 (16 messages per second)
+              itug8275dot2: -6 (64 messages per second)";
+      }
+      leaf log-announce-interval {
+        type int8 {
+          range "-3..4";
+        }
+        config false;
+        description
+          "The base-2 logarithm of the mean announceInterval
+
+           Mean time interval between successive Announce messages. To change this setting,
+           refer to log-announce-interval in the Default data set.";
+      }
+      leaf announce-receipt-timeout {
+        type uint8 {
+          range "2..10";
+        }
+        config false;
+        description
+          "Sets the time limit for missed Announce packets before the master clock is deemed down
+
+           This defines the number of Announce message intervals that must expire with no received
+           Announce messages before declaring an ANNOUNCE_RECEIPT_TIMEOUT event. To change this
+           setting, refer to announce-receipt-timeout in the Default data set.";
+      }
+      leaf log-sync-interval {
+        type int8 {
+          range "-6..0";
+        }
+        description
+          "The base-2 logarithm of the mean SyncInterval for multicast messages
+
+           The default log sync interval is defined by the profile.
+              itug8275dot1: -4 (16 messages per second)
+              itug8275dot2: -6 (64 messages per second)";
+      }
+      leaf major-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP major version number in use on the port";
+      }
+      leaf minor-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP minor version number in use on the port";
+      }
+      leaf local-priority {
+        type uint8 {
+          range "1..255";
+        }
+        default "128";
+        description
+          "Specifies the local priority of the ptp port";
+      }
+      leaf master-only {
+        type boolean;
+        default "true";
+        description
+          "Specifies the masterOnly attribute of the ptp port";
+      }
+      leaf dest-mac {
+        type enumeration {
+          enum forwardable {
+            value 0;
+            description
+              "The clock uses the forwardable MAC address: 01-1B-19-00-00-00";
+          }
+          enum non-forwardable {
+            value 1;
+            description
+              "The clock uses the non-forwardable MAC address: 01-80-C2-00-00-0E";
+          }
+        }
+        default "forwardable";
+        description
+          "Configure the MAC address associated with forwardable or non-forwardable";
+      }
+      container statistics {
+        srl_nokia-ext:stream-mode "sample=2";
+        srl_nokia-ext:statistics-node "true";
+        config false;
+        description
+          "Total messages for a specific PTP port";
+        uses ptp-message-counts;
+      }
+      leaf neighbor-count {
+        type uint32;
+        config false;
+        description
+          "The number of neighbors for the port";
+      }
+      list neighbor-list {
+        key "clock-identity port-number";
+        config false;
+        description
+          "List of MAC address of all the neighbors of this port";
+        leaf clock-identity {
+          type srl_nokia-sync-types:clock-identity-type;
+          config false;
+          description
+            "The clockIdentity of this neighbor clock";
+        }
+        leaf port-number {
+          type uint16;
+          description
+            "The port number of this neighbor clock";
+          config false;
+        }
+        leaf mac-address {
+          config false;
+          type srl_nokia-comm:mac-address;
+          description
+            "Specifies the MAC address of this neighbor";
+        }
+        leaf rx-message-rate {
+          type decimal64 {
+            fraction-digits 1;
+          }
+          units "messages-per-second";
+          description
+            "The receive message rate from this neighbor clock";
+          config false;
+        }
+        leaf parent-clock {
+          config false;
+          type boolean;
+          description
+            "Indicates if this neighbor is the current parent clock of this PTP clock";
+        }
+      }
+    }
+    list port-ds-cfg-ip-list {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      must '../../ptp-profile = "itug8275dot2"' {
+        error-message "Only supported for PTP profile itug8275dot2 ";
+      }
+      key "port-index";
+      description
+        "List of port data sets for configured IP peers";
+      reference
+        "IEEE Std 1588-2008: 8.2.5";
+      leaf port-index {
+        type uint16 {
+          range "1..999";
+        }
+        description
+          "Index into the port-ds list
+
+           This is not the PTP port number.
+           Configurable ports use port indices 1 through 999 but there is a limit on the overall number of these configured ports based on the platform and software release.
+
+           The data sets (i.e., information model) of IEEE Std
+           1588-2008 specify a member portDS.portIdentity, which
+           uses a typed struct with members clockIdentity and
+           portNumber.
+
+           In this YANG data model, portIdentity is not modeled
+           in the port-ds.  However, its members are provided
+           as follows:
+           portIdentity.portNumber is provided as this
+           ptp-port-number leaf in port-ds, and
+           portIdentity.clockIdentity is provided as the
+           clock-identity leaf in default-ds of the instance
+           (i.e., ../../default-ds/clock-identity).";
+      }
+      leaf ptp-port-number {
+        config false;
+        type uint16;
+        description
+          "IEEE Std 1588 portNumber
+
+           This is the port-number that will appear in messages sent for this port-index.";
+        reference
+          "7.5.2.3 of IEEE Std 1588-2019";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "The administrative state of the ptp port";
+      }
+      leaf port-state {
+        type srl_nokia-sync-types:port-state;
+        config false;
+        description
+          "Current state associated with the port";
+      }
+      container peer {
+        leaf network-instance {
+          config false;
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "Network instance used by this peer
+
+             All configured peers use the same network-instance.   It can be configured at the top level of the ptp tree.";
+        }
+        leaf ip-address {
+          mandatory true;
+          must '((../../../../timing-source-net-inst))' {
+            error-message "Timing source network instance must be defined";
+          }
+          type srl_nokia-comm:ip-address;
+          description
+            "IP address for the PTP peer
+
+             Only Unicast addresses are supported";
+        }
+      }
+      leaf best-master {
+        config false;
+        type boolean;
+        description
+          "Indicates if this peer was selected by the BMCA to be the best master";
+      }
+      leaf parent-clock {
+        config false;
+        type boolean;
+        description
+          "Indicates if this peer is the current parent clock of this PTP clock
+
+           May differ from best-master due to use of local GNSS as time source.";
+      }
+      leaf log-min-delay-req-interval {
+        config false;
+        type int8 {
+          range "-6..0";
+        }
+        description
+          "The base-2 logarithm of the minDelayReqInterval
+
+           The minimum permitted mean time interval between successive Delay_Req messages.
+           The value is not configurable.  The delay messages use the same interval as for Sync messages (log-sync-interval)";
+      }
+      leaf log-announce-interval {
+        type int8 {
+          range "-3..4";
+        }
+        config false;
+        description
+          "The base-2 logarithm of the mean announceInterval
+
+           Mean time interval between successive Announce messages. To change this setting,
+           refer to log-announce-interval in the Default data set.";
+      }
+      leaf announce-receipt-timeout {
+        type uint8 {
+          range "2..10";
+        }
+        config false;
+        description
+          "Sets the time limit for missed Announce packets before the master clock is deemed down
+
+           This command configures the announceReceiptTimeout value for all peer associations.
+           This defines the number of Announce message intervals that must expire with no received
+           Announce messages before declaring an ANNOUNCE_RECEIPT_TIMEOUT event. To change this
+           setting, refer to announce-receipt-timeout in the Default data set.";
+      }
+      leaf log-sync-interval {
+        type int8 {
+          range "-6..0";
+        }
+        description
+          "The base-2 logarithm of the mean SyncInterval for multicast messages
+
+           The default log sync interval is defined by the profile.
+              itug8275dot1: -4 (16 messages per second)
+              itug8275dot2: -6 (64 messages per second)
+           The rates for unicast transmissions are negotiated separately on a per-port
+           basis and are not constrained by this attribute.";
+      }
+      leaf major-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP major version number in use on the port";
+      }
+      leaf minor-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP minor version number in use on the port";
+      }
+      leaf local-priority {
+        type uint8 {
+          range "1..255";
+        }
+        default "128";
+        description
+          "Specifies the local priority of the ptp port";
+      }
+      leaf clock-identity {
+        type srl_nokia-sync-types:clock-identity-type;
+        config false;
+        description
+          "Identity of the peer clock";
+      }
+      leaf port-number {
+        type uint16;
+        config false;
+        description
+          "Port number of the peer clock";
+      }
+      leaf grandmaster-identity {
+        type srl_nokia-sync-types:clock-identity-type;
+        config false;
+        description
+          "The clockIdentity of the grandmaster clock in the last Announce message received from this peer";
+      }
+      container grandmaster-clock-quality {
+        description
+          "The clock quality of the grandmaster clock in the last Announce message received from this peer";
+        config false;
+        uses clock-quality-grouping;
+      }
+      leaf grandmaster-priority1 {
+        type uint8;
+        config false;
+        description
+          "The priority1 of the grandmaster clock in the last Announce message received from this peer";
+      }
+      leaf grandmaster-priority2 {
+        type uint8;
+        config false;
+        description
+          "The priority2 of the grandmaster clock in the last Announce message received from this peer";
+      }
+      leaf steps-removed {
+        type uint16;
+        config false;
+        description
+          "The stepsRemoved in the last Announce message received from this peer";
+      }
+      leaf last-rx-interface {
+        type leafref {
+          path "/srl_nokia-if:interface/srl_nokia-if:name";
+        }
+        config false;
+        description
+          "Interface used for the last PTP message received from this peer";
+      }
+      leaf last-tx-interface {
+        type leafref {
+          path "/srl_nokia-if:interface/srl_nokia-if:name";
+        }
+        config false;
+        description
+          "Interface used for the last PTP message transmitted to this peer";
+      }
+      container statistics {
+        srl_nokia-ext:stream-mode "sample=2";
+        srl_nokia-ext:statistics-node "true";
+        config false;
+        description
+          "Total messages for a specific PTP port";
+        uses ptp-message-counts;
+        uses signaling-uni-neg-tlv-counts;
+      }
+      container unicast-negotiation {
+        config false;
+        description
+          "Details of each negotiation session";
+        container rx-announce {
+          description
+            "Statistics for receive announce sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container rx-sync {
+          description
+            "Statistics for receive sync sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container rx-delay-resp {
+          description
+            "Statistics for receive delay-resp sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container tx-announce {
+          description
+            "Statistics for transmit announce sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container tx-sync {
+          description
+            "Statistics for transmit sync sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container tx-delay-resp {
+          description
+            "Statistics for transmit delay-resp sessions";
+          uses unicast-negotiation-session-data;
+        }
+      }
+    }
+    list port-ds-dsc-ip-list {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      config false;
+      key "port-index";
+      description
+        "List of port data sets for discovered IP peers";
+      reference
+        "IEEE Std 1588-2008: 8.2.5";
+      leaf port-index {
+        type uint16;
+        description
+          "Index into the port-ds list
+
+           This is not the PTP port number.
+           Discovered IP peer ports are created based on Unicast negotiation.
+
+           If an IP peer is a discovered IP peer and later that IP address is entered as a configured peer, then
+           port DS information will move from this list to teh port-ds-cfg-ip-list to cover both aspects of communication with this peer.
+
+           The data sets (i.e., information model) of IEEE Std
+           1588-2008 specify a member portDS.portIdentity, which
+           uses a typed struct with members clockIdentity and
+           portNumber.
+
+           In this YANG data model, portIdentity is not modeled
+           in the port-ds.  However, its members are provided
+           as follows:
+           portIdentity.portNumber is provided as this
+           ptp-port-number leaf in port-ds, and
+           portIdentity.clockIdentity is provided as the
+           clock-identity leaf in default-ds of the instance
+           (i.e., ../../default-ds/clock-identity).";
+      }
+      leaf ptp-port-number {
+        config false;
+        type uint16;
+        description
+          "IEEE Std 1588 portNumber
+
+           This is the port-number that will appear in messages sent for this port-index.";
+        reference
+          "7.5.2.3 of IEEE Std 1588-2019";
+      }
+      leaf port-state {
+        type srl_nokia-sync-types:port-state;
+        config false;
+        description
+          "Current state associated with the port";
+      }
+      container peer {
+        leaf network-instance {
+          config false;
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "Network instance that owns the PTP peer";
+        }
+        leaf ip-address {
+          config false;
+          type srl_nokia-comm:ip-address;
+          description
+            "IP address for the PTP peer
+
+             Only Unicast addresses are supported";
+        }
+      }
+      leaf log-min-delay-req-interval {
+        config false;
+        type int8 {
+          range "-6..0";
+        }
+        description
+          "The base-2 logarithm of the minDelayReqInterval
+
+           This reports the value that was established during the unicast negotiation.";
+      }
+      leaf log-announce-interval {
+        type int8 {
+          range "-3..4";
+        }
+        config false;
+        description
+          "The base-2 logarithm of the mean announceInterval
+
+           Mean time interval between successive Announce messages.
+           This reports the value that was established during the unicast negotiation.";
+      }
+      leaf log-sync-interval {
+        config false;
+        type int8 {
+          range "-6..0";
+        }
+        description
+          "The base-2 logarithm of the mean SyncInterval for multicast messages
+
+           This reports the value that was established during the unicast negotiation.";
+      }
+      leaf major-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP major version number in use on the port";
+      }
+      leaf minor-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP minor version number in use on the port";
+      }
+      leaf last-rx-interface {
+        type leafref {
+          path "/srl_nokia-if:interface/srl_nokia-if:name";
+        }
+        config false;
+        description
+          "Interface used for the last PTP message received from this peer";
+      }
+      leaf last-tx-interface {
+        type leafref {
+          path "/srl_nokia-if:interface/srl_nokia-if:name";
+        }
+        config false;
+        description
+          "Interface used for the last PTP message transmitted to this peer";
+      }
+      container statistics {
+        srl_nokia-ext:stream-mode "sample=2";
+        srl_nokia-ext:statistics-node "true";
+        config false;
+        description
+          "Total messages for a specific PTP port
+
+           This container is not used with PTP special ports (gnss).";
+        uses ptp-message-counts;
+        uses signaling-uni-neg-tlv-counts;
+      }
+      container unicast-negotiation {
+        config false;
+        description
+          "Details of each negotiation session";
+        container rx-announce {
+          description
+            "Statistics for receive announce sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container rx-sync {
+          description
+            "Statistics for receive sync sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container rx-delay-resp {
+          description
+            "Statistics for receive delay-resp sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container tx-announce {
+          description
+            "Statistics for transmit announce sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container tx-sync {
+          description
+            "Statistics for transmit sync sessions";
+          uses unicast-negotiation-session-data;
+        }
+        container tx-delay-resp {
+          description
+            "Statistics for transmit delay-resp sessions";
+          uses unicast-negotiation-session-data;
+        }
+      }
+    }
+    container port-ds-gnss {
+      if-feature "srl_nokia-feat:sync-gnss";
+      config false;
+      description
+        "List of port data sets for the GNSS special PTP port";
+      reference
+        "IEEE Std 1588-2008: 8.2.5";
+      leaf ptp-port-number {
+        config false;
+        type uint16;
+        description
+          "IEEE Std 1588 portNumber";
+        reference
+          "7.5.2.3 of IEEE Std 1588-2019";
+      }
+      leaf port-state {
+        type srl_nokia-sync-types:port-state;
+        config false;
+        description
+          "Current state associated with the port";
+      }
+      leaf best-master {
+        config false;
+        type boolean;
+        description
+          "Indicates if this peer was selected by the BMCA to be the best master";
+      }
+      leaf parent-clock {
+        config false;
+        type boolean;
+        description
+          "Indicates if this peer is the current parent clock of this PTP clock
+
+           May differ from best-master due to use of local GNSS as time source.";
+      }
+      leaf major-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP major version number in use on the port";
+      }
+      leaf minor-version-number {
+        type uint8;
+        config false;
+        description
+          "The PTP minor version number in use on the port";
+      }
+    }
+  }
+
+  grouping ptp-instance-top {
+    description
+      "The PTP struct containing all attributes of PTP data set";
+    leaf ptp-profile {
+      type enumeration {
+        enum itug8275dot1 {
+          value 1;
+          description
+            "ITU-T G.8275.1 (2014) Profile";
+        }
+        enum itug8275dot2 {
+          if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+          value 2;
+          description
+            "ITU-T G.8275.2 Profile";
+        }
+      }
+      default "itug8275dot1";
+      description
+        "Specifies the PTP profile mode for the PTP clock";
+    }
+    leaf timing-source-net-inst {
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      must '../ptp-profile = "itug8275dot2"' {
+        error-message "Only supported for PTP profile itug8275dot2 ";
+      }
+      must '((/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:protocols/srl_nokia-sync-ptp:ptp))' {
+        error-message "Network instance must be defined and have PTP protocol enabled";
+      }
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+      }
+      description
+        "Network instance to be used for configured peers
+
+         This is the network instance that will be used to provide timing into the local clock via PTP over IP.";
+    }
+    list instance {
+      key "instance-index";
+      description
+        "List of one or more PTP instances in the product (PTP Node)
+
+         Each PTP instance represents a distinct instance of PTP
+         implementation (i.e. distinct Ordinary Clock, Boundary Clock,
+         or Transparent Clock), maintaining a distinct time.";
+      leaf instance-index {
+        type uint32 {
+          range "1..2";
+        }
+        description
+          "The instance index of the current PTP instance
+
+           This instance index is used for management purposes
+           only.  This instance index does not represent the PTP
+           domain number and is not used in PTP messages.";
+      }
+      uses ptp-default-ds-top;
+      uses ptp-current-ds-top;
+      uses ptp-parent-ds-top;
+      uses ptp-time-ds-top;
+      uses ptp-port-ds-top;
+    }
+  }
+
+  grouping ptp-network-instance-top {
+    container ptp {
+      presence "Enables PTP within the network-instance";
+      if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+      must '(source-address-ipv4 or source-address-ipv6)' {
+        error-message "At least one address must be provisioned ";
+      }
+      description
+        "Per network instance PTP configuration and state";
+      leaf peer-limit {
+        type int32 {
+          range "0..512";
+        }
+        description
+          "Number of discovered peers allowed for network-instance
+
+           If not defined then the number is not restricted within this network-instance.";
+      }
+      leaf oper-state {
+        config false;
+        type srl_nokia-comm:oper-state;
+        description
+          "Operational state of PTP within the network instance
+
+           This is dependent on the administrative state of the ptp instance, the administrative state of the this network-instance under ptp, and the operational state of the network-instance itself.";
+      }
+      leaf source-address-ipv4 {
+        type srl_nokia-comm:ipv4-address;
+        description
+          "IPv4 source address to be used for PTP messages sent in this network-instance
+
+           Only unicast IP supported.";
+      }
+      leaf source-address-ipv6 {
+        if-feature "srl_nokia-feat:sync-ptp-ip-peers-ipv6";
+        type srl_nokia-comm:ipv6-address;
+        description
+          "IPv6 source address to be used for PTP messages sent in this network-instance
+
+           Only unicast IP supported.";
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses ptp-network-instance-top;
+  }
+}

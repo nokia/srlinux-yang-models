@@ -1,0 +1,246 @@
+module srl_nokia-acl-qos {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:acl:acl-qos";
+  prefix srl_nokia-acl-qos;
+
+  import srl_nokia-acl {
+    prefix srl_nokia-acl;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data for access control lists (ACL) support of QoS classification conditions and actions.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+
+  typedef drop-probability {
+    description
+      "The various drop probability classifications that can be applied to a packet";
+    type enumeration {
+      enum low {
+        description
+          "Traffic that should be dropped last when there is congestion. Internally this is traffic that is
+           colored green.";
+        value 1;
+      }
+      enum medium {
+        description
+          "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
+        value 2;
+      }
+      enum high {
+        description
+          "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
+        value 3;
+      }
+    }
+  }
+
+  grouping qos-actions {
+    container action {
+      description
+        "Container for the actions to be applied to packets matching the classifier entry.";
+      leaf forwarding-class {
+        type leafref {
+          path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+        }
+        description
+          "The forwarding class to which the DSCP value is mapped";
+      }
+      leaf drop-probability {
+        if-feature "not srl_nokia-feat:fpcx";
+        type drop-probability;
+        description
+          "Assign matching packets to the specified drop probability level
+
+           The implicit default, if not specified, is low drop-probability.";
+      }
+      container rewrite {
+        if-feature "not srl_nokia-feat:platform-7250-ixr and not srl_nokia-feat:platform-7250-ixr-e and not srl_nokia-feat:platform-7250-ixr-x3b and not srl_nokia-feat:fpcx";
+        description
+          "Rewrite actions associated with packets that match the classifier entry. Where a packet matches these criteria, the specified rewrite actions should be performed.";
+        leaf set-dscp {
+          type uint8 {
+            range "0..63";
+          }
+          description
+            "Sets the 6-bit DSCP (differentiated services code point) value in the IP packet header.";
+          reference
+            "RFC 2474 - Definition of the Differentiated Services Field (DS Field) in the IPv4 and IPv6 Headers";
+        }
+      }
+      leaf profile {
+        if-feature "srl_nokia-feat:fpcx";
+        type srl_nokia-comm:classify-profile;
+        description
+          "The profile to which the DSCP value is mapped";
+      }
+    }
+  }
+
+  grouping qos-multifield-classification-criteria {
+    container ipv4 {
+      description
+        "Container for the layer-3 IPv4 match criteria";
+      uses srl_nokia-acl:common-acl-filter-entry-match-ipv4-config {
+        when "../../../../type='ipv4' " {
+          description
+            "IPv4 layer fields are valid when the multifield-clasifier type is IPv4";
+        }
+      }
+    }
+    container ipv6 {
+      description
+        "Container for the layer-3 IPv6 match criteria";
+      uses srl_nokia-acl:common-acl-filter-entry-match-ipv6-config {
+        when "../../../../type='ipv6' " {
+          description
+            "IPv6 layer fields are valid when the multifield-classifier type is IPv4";
+        }
+      }
+    }
+    container transport {
+      description
+        "Container for the layer-4 transport match criteria";
+      uses srl_nokia-acl:common-acl-filter-entry-match-layer4-config {
+        when "../../../../type='ipv4' or ../../../../type='ipv6' " {
+          description
+            "Layer-4 transport fields are valid when the ACL type is IPv4 or IPv6";
+        }
+      }
+    }
+  }
+
+  grouping multifield-classification-policies {
+    list multifield-classifier {
+      description
+        "List of multifield-classifier QoS policies";
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "The name of multifield-classifier QoS policy";
+      }
+      leaf type {
+        description
+          "Type of the QoS multifield-classifier";
+        mandatory true;
+        type enumeration {
+          enum ipv4 {
+            value 4;
+            description
+              "Multifield-classifier using ipv4-based matching criteria";
+          }
+          enum ipv6 {
+            value 6;
+            description
+              "Multifield-classifier using ipv6-based matching criteria";
+          }
+        }
+      }
+      list entry {
+        description
+          "List of individual QoS multifield-classifier entries";
+        key "sequence-id";
+        leaf sequence-id {
+          type uint32 {
+            range "0..65535";
+          }
+          description
+            "A number to indicate the relative evaluation order of the different terms; lower numbered terms are evaluated before higher numbered terms";
+        }
+        container match {
+          description
+            "Matching conditions for QoS multifield-classifier";
+          uses qos-multifield-classification-criteria;
+        }
+        uses qos-actions;
+        uses srl_nokia-acl:interface-filter-entry-tcam;
+      }
+    }
+  }
+
+  augment "/srl_nokia-qos:qos/srl_nokia-qos:classifiers" {
+    if-feature "srl_nokia-feat:ip-qos-multifield";
+    if-feature "not srl_nokia-feat:fpcx";
+    uses multifield-classification-policies;
+  }
+
+  grouping qos-interface-classifiers-config {
+    description
+      "Configuration parameters for the list of classifiers";
+    list classifier {
+      key "type";
+      description
+        "A list of classifiers that should be applied to the interface";
+      leaf name {
+        type leafref {
+          path "/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-acl-qos:multifield-classifier/srl_nokia-acl-qos:name";
+        }
+        description
+          "Reference to the classifier to be applied to ingress traffic on
+           the interface";
+        must '/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-acl-qos:multifield-classifier[srl_nokia-acl-qos:name = current()]/srl_nokia-acl-qos:type = ../type' {
+          error-message "qos classifier type should match with input classifier type";
+        }
+      }
+      leaf type {
+        type enumeration {
+          enum ipv4 {
+            value 4;
+            description
+              "Classifier matches IPv4 Unicast packets.";
+          }
+          enum ipv6 {
+            value 6;
+            description
+              "Classifier matches IPv6 Unicast packets.";
+          }
+        }
+        description
+          "Type of packets matched by the classifier.";
+      }
+    }
+  }
+
+  augment "/srl_nokia-qos:qos/srl_nokia-qos:interfaces/srl_nokia-qos:interface/srl_nokia-qos:input/srl_nokia-qos:classifiers" {
+    if-feature "srl_nokia-feat:ip-qos-multifield";
+    if-feature "not srl_nokia-feat:fpcx";
+    uses qos-interface-classifiers-config;
+  }
+}

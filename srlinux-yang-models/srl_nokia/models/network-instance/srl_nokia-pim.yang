@@ -1,0 +1,2023 @@
+module srl_nokia-pim {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:pim:pim";
+  prefix srl_nokia-pim;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl-rpol;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-mvpn-l3 {
+    prefix srl_nokia-mvpn;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of the PIM protocol";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping pim-global-config {
+    description
+      "PIM specific configuration";
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      description
+        "Administratively enable or disable PIM";
+      default "enable";
+    }
+    uses pim-policies;
+    uses pim-ecmp;
+  }
+
+  grouping pim-global-state {
+    leaf multicast-ecmp-last-rebalance-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Last system time where multicast did a ecmp rebalance on this system";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf multicast-ecmp-next-balance-time {
+      config false;
+      description
+        "The time remaining until the next rebalance would occur.";
+      type uint32;
+      units "seconds";
+    }
+    leaf multicast-ecmp-rebalance-inprogress {
+      config false;
+      description
+        "Whether or not multicast ECMP re-balancing is currently in progress.";
+      type boolean;
+    }
+    leaf multicast-ecmp-rebalance-type {
+      config false;
+      description
+        "The value of this object indicates the type of ECMP rebalance.";
+      type enumeration {
+        enum triggered {
+          value 1;
+        }
+        enum operator-forced {
+          value 2;
+        }
+      }
+    }
+    leaf oper-state {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Operational state of the PIM instance";
+      type srl_nokia-comm:oper-state;
+    }
+  }
+
+  grouping pim-policies {
+    container import-policies {
+      if-feature "srl_nokia-feat:mcast-route-policy";
+      description
+        "Import policies.";
+      leaf-list join-policy {
+        description
+          "Policies that apply to the Join message";
+        type leafref {
+          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+        }
+        max-elements 5;
+        ordered-by user;
+      }
+      leaf-list register-policy {
+        description
+          "Policies that apply to the register message";
+        type leafref {
+          path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+        }
+        max-elements 5;
+        ordered-by user;
+      }
+    }
+  }
+
+  grouping pim-ecmp {
+    description
+      "PIM ECMP Config";
+    container ecmp-hashing {
+      presence "Enable ecmp hashing for pim.";
+      srl_nokia-ext:show-importance "high";
+      description
+        "Enables hashing for multicast streams
+
+         This command enables hash-based multicast balancing of traffic over ECMP links and causes PIM joins to be distributed over the multiple ECMP paths based on a hash of S and G (and possibly next-hop IP address).
+         When a link in the ECMP set is removed, the multicast flows that were using that link are redistributed over the remaining ECMP links using the same hash algorithm.
+         When a link is added to the ECMP set new joins may be allocated to the new link based on the hash algorithm, but existing.";
+      must 'not(. = true() and ../ecmp-balance = true())' {
+        error-message "ecmp-balance and ecmp-hashing are mutually exclusive";
+      }
+      leaf rebalance {
+        description
+          "Enables rebalance for ecmp hashing";
+        type boolean;
+        default "false";
+      }
+    }
+    leaf ecmp-balance {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Enables hashing balance for multicast streams
+
+         This command enables multicast balancing of traffic over ECMP links based on the number of (S, G) distributed over each link.
+         When enabled, each new multicast stream that needs to be forwarded over an ECMP link is compared to the count of (S, G) already using each link, so that the link with the fewest (S, G) is chosen.";
+      type boolean;
+      default "false";
+    }
+    leaf ecmp-balance-hold {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Hold period for ecmp balancing
+
+         This command defines a hold period that applies after an interface has been added to the ECMP link.
+         It is also used periodically to rebalance if channels have been removed from the ECMP link.
+         If the ECMP interface has not changed in the hold period and if no multicast streams have been removed, then no action is taken when the timer triggers.
+         This parameter should be used to avoid excessive changes to the multicast distribution.";
+      type uint32 {
+        range "1..600";
+      }
+      default "1";
+      units "minutes";
+    }
+  }
+
+  grouping pim-global-rp-config {
+    container rendezvous-points {
+      description
+        "Define rendezvous points for sparse mode multicast";
+      container static {
+        description
+          "Static rendezvous point (RP) configuration";
+        list rendezvous-point {
+          description
+            "List of static rendezvous points";
+          key "address";
+          leaf address {
+            description
+              "IP address of the rendezvous point";
+            type srl_nokia-comm:ip-address;
+            must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*') or .='::/128' or .='::1/128' or starts-with(.,'ff') or starts-with(.,'fe80'))" {
+              error-message "Not a valid unicast IP address";
+            }
+          }
+          list group {
+            description
+              "List of multicast groups for the rendezvous point";
+            key "prefix";
+            leaf prefix {
+              description
+                "IP prefix of the multicast group";
+              type srl_nokia-comm:ip-prefix;
+              must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*')) or starts-with(.,'ff')" {
+                error-message "Not a valid multicast IP address";
+              }
+              must "not((re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*')) and not(re-match(../../srl_nokia-pim:address,'.*\\..*')))" {
+                error-message "RP address family 'IPv6' does not match group prefix family 'IPv4'";
+              }
+              must "not(starts-with(.,'ff') and not(re-match(../../srl_nokia-pim:address,'.*:.*')))" {
+                error-message "RP address family 'IPv4' does not match group prefix family 'IPv6'";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping pim-global-ssm-config {
+    container ssm {
+      description
+        "Source Specific Multicast (SSM) configuration";
+      container ssm-ranges {
+        description
+          "List of accepted Source Specific Multicast (SSM) address ranges";
+        list group-range {
+          description
+            "Define an accepted SSM group range";
+          key "ip-prefix";
+          leaf ip-prefix {
+            description
+              "A multicast IP prefix for SSM group range";
+            type srl_nokia-comm:ip-prefix;
+            must "re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*') or starts-with(.,'ff')" {
+              error-message "Not a valid multicast IP address";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping pim-global-spt-switchover-config {
+    container spt-switchover {
+      description
+        "Define Shortest Path Tree (SPT) switchover threshold for multicast groups";
+      list group {
+        description
+          "Configure SPT switchover threshold for a multicast group prefix";
+        key "prefix";
+        leaf prefix {
+          description
+            "IP prefix of the multicast group";
+          type srl_nokia-comm:ip-prefix;
+          must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*')) or starts-with(.,'ff')" {
+            error-message "Not a valid multicast IP address";
+          }
+        }
+        leaf threshold {
+          description
+            "SPT switchover threshold in kbps";
+          type union {
+            type uint32 {
+              range "1..4294967294";
+            }
+            type enumeration {
+              enum infinity {
+                value -1;
+              }
+            }
+          }
+          units "kbps";
+          mandatory true;
+        }
+      }
+    }
+  }
+
+  grouping pim-address-family-statistics-state {
+    container received {
+      leaf candidate-rp-advertisement-messages {
+        config false;
+        description
+          "The number of Candidate-RP Advertisements (C-RP-Adv) received";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf candidate-rp-advertisement-drops {
+        config false;
+        description
+          "The number of received but dropped Candidate-RP Advertisements";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf control-pdu-interface-drops {
+        config false;
+        description
+          "The number of control PDU drops
+
+           These can be on an operationally down interface or on an interface on which PIM is not enabled.";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    container transmitted {
+      leaf register-messages {
+        config false;
+        description
+          "The number of PIM Register messages transmitted";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-errors {
+        config false;
+        description
+          "The number of errors while transmitting Register messages";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf null-register-messages {
+        config false;
+        description
+          "The number of Null Register messages transmitted";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf candidate-rp-advertisement-messages {
+        config false;
+        description
+          "The number of Candidate-RP Advertisements transmitted";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf candidate-rp-advertisement-errors {
+        config false;
+        description
+          "The number of errors while transmitting PIM Candidate-RP Advertisements";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-ttl-drops {
+        config false;
+        description
+          "The number of TTL dropped data PDUs
+
+           The number of multicast data packets which could not be encapsulated in Register messages because the Time To Live (TTL) was zero.";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    leaf forwarded-candidate-rp-advertisements {
+      config false;
+      description
+        "The number of Candidate-RP Advertisements that were forwarded
+
+         C-RP-Adv's are forwarded when the received advertisement has a router alert set and the destination address is not the router's local address.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf forwarded-candidate-rp-advertisement-drops {
+      config false;
+      description
+        "The number of times the Candidate-RP Advertisements could not be forwarded";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf sg-count {
+      config false;
+      description
+        "The number of (S,G)s";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf star-g-count {
+      config false;
+      description
+        "The number of (*,G)s";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf star-star-rp-count {
+      config false;
+      description
+        "The number of (*,*,RP)s";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping pim-address-family-config {
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Administratively enable or disable PIM address family";
+      default "enable";
+    }
+  }
+
+  grouping pim-address-family-state {
+    leaf oper-state {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The operational state of the PIM af instance";
+      type srl_nokia-comm:oper-state;
+    }
+    container statistics {
+      config false;
+      description
+        "Global PIM address family statistics";
+      uses pim-address-family-statistics-state;
+    }
+  }
+
+  grouping pim-database-state {
+    description
+      "State of PIM (S,G) (*,G), (*,*,RP) database entry";
+    leaf source-type {
+      config false;
+      description
+        "Type of this entry";
+      type enumeration {
+        enum star-star-rp {
+          value 0;
+        }
+        enum star-g {
+          value 1;
+        }
+        enum sg {
+          value 2;
+        }
+      }
+    }
+    leaf up-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Time elapsed since this entry was created";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf rpf-neighbor-address {
+      config false;
+      description
+        "IP address of the Reverse Path Forwarding (RPF) neighbor";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf rpf-neighbor-interface-name {
+      config false;
+      description
+        "Router interface on which the RPF neighbor exists";
+      type string;
+    }
+    leaf sg-state {
+      config false;
+      description
+        "Current state of the (S,G)";
+      type enumeration {
+        enum none {
+          value 0;
+        }
+        enum active {
+          value 1;
+        }
+        enum standby {
+          value 2;
+        }
+      }
+    }
+    leaf rp-address {
+      config false;
+      description
+        "IP address of the Rendezvous Point (RP)";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf advertising-router {
+      config false;
+      description
+        "Router address that advertised the route to the source";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf source-flags {
+      config false;
+      description
+        "spt-bit and PruneDesired state of the entry
+
+         This object is applicable only for (S,G) entries,i.e., when source-type is 'sg'.
+         The (S,G) 'spt-bit' is used to distinguish whether to forward on (*,*,RP) or (*,G) or on (S,G) state.
+         It is updated when the (S,G) data comes on the RPF interface towards the source.
+         'rpt-prune-desired' is set according to the PruneDesired(S,G,rpt) algorithm.";
+      type bits {
+        bit spt-bit {
+          position 0;
+        }
+        bit rpt-prune-desired {
+          position 1;
+        }
+      }
+    }
+    leaf multicast-rib-nh-address {
+      config false;
+      description
+        "Next hop address towards the RP";
+      type srl_nokia-comm:ip-address-with-zone;
+    }
+    leaf multicast-rib-source-flags {
+      config false;
+      description
+        "Multicast RIB (mrib) information about the source
+
+         If the entry is of type 'star-g' or 'star-star-rp', it will contain information about the RP for this group.";
+      type bits {
+        bit self {
+          position 0;
+        }
+        bit direct {
+          position 1;
+        }
+        bit remote {
+          position 2;
+        }
+      }
+    }
+    leaf keepalive-timer {
+      config false;
+      description
+        "Keepalive timer for (S,G)
+
+         It Is applicable only for (S,G) entries.
+         The (S,G) keepalive timer is updated by data being forwarded using this (S,G) forwarding state.
+         It is used to keep (S,G) state alive in the absence of explicit (S,G) Joins.";
+      type uint32;
+      units "seconds";
+    }
+    leaf resolved-by {
+      config false;
+      description
+        "Routing table used to resolve this entry
+
+         The value of this object will be 'multicast-route-table' if the source or Rendezvous Point (RP) is resolved by the multicast route table.
+         The value of this object will be 'unicast-route-table' if the source or Rendezvous Point (RP) is resolved by the unicast route table.
+         The value will be 'none' if the source or RP is unresolved.";
+      type enumeration {
+        enum none {
+          value 0;
+        }
+        enum multicast-route-table {
+          value 1;
+        }
+        enum unicast-route-table {
+          value 2;
+        }
+      }
+    }
+    leaf upstream-jp-state {
+      config false;
+      description
+        "Upstream Join-Prune state
+
+         This is a result of sending PIM Join-Prune messages towards the source or the RP.";
+      type enumeration {
+        enum not-joined {
+          value 0;
+        }
+        enum joined {
+          value 1;
+        }
+      }
+    }
+    leaf upstream-jp-timer {
+      config false;
+      description
+        "Time remaining before the router sends another Join message to its upstream neighbor";
+      type uint32;
+      units "seconds";
+    }
+    leaf upstream-rpt-jp-state {
+      config false;
+      description
+        "Upstream RPT Join-Prune state
+
+         (S,G,rpt) Joins and Prunes are (S,G) Joins or Prunes sent on the RP tree with the RPT bit set.
+         To either modify the results of (*,G) Joins, or to override the behavior of other upstream LAN peers.";
+      type enumeration {
+        enum not-joined-star-g {
+          value 0;
+        }
+        enum not-pruned {
+          value 1;
+        }
+        enum pruned {
+          value 2;
+        }
+      }
+    }
+    leaf upstream-rpt-override-timer {
+      config false;
+      description
+        "Delay to triggered Join(S,G,rpt) messages to prevent implosions of triggered messages
+
+         If non-zero, it means that the router was in 'not-pruned' state and it saw a Prune(S,G,rpt) message being sent to RPF'(S,G,rpt).
+         If the router sees a Join(S,G,rpt) override message being sent by some other router on the LAN while the timer is still non-zero, it simply cancels the override timer.
+         If it does not see a Join(S,G,rpt) message, then on expiry of the override timer, it sends it's own Join(S,G,rpt) message to RPF'(S,G,rpt).
+         A similar scenario exists when RPF'(S,G,rpt) changes to become equal to RPF'(*,G).";
+      type uint32;
+      units "seconds";
+    }
+    leaf register-state {
+      config false;
+      description
+        "Register state kept at the source DR
+
+         When the host starts sending multicast packets and if there are no entries programmed for that group, the source DR sends a Register packet to the RP(G).
+         Register state transition happen based on the register stop timer and the response received from the RP.";
+      type enumeration {
+        enum no-info {
+          value 0;
+        }
+        enum join {
+          value 1;
+        }
+        enum join-pending {
+          value 2;
+        }
+        enum prune {
+          value 3;
+        }
+        enum null-join {
+          value 4;
+        }
+      }
+    }
+    leaf register-stop-timer {
+      config false;
+      description
+        "Time remaining before the register-state might transition to a different state
+
+         This timer has a non-zero value when the value of register-state is not 'no-info'.";
+      type uint32;
+      units "seconds";
+    }
+    leaf register-from-anycast-rp {
+      config false;
+      description
+        "Register message received from anycast RP
+
+         Whether a register message for this source group combination was received from the anycast RP and not from the Designated Router (DR) connected to the source.
+         It is not applicable when the value of source-type is 'star-star-rp' or 'star-g'.";
+      type boolean;
+    }
+    leaf inherited-outgoing-interface-count {
+      config false;
+      description
+        "Number of interfaces in the inherited outgoing interface list
+
+         An 'inherited' list inherits state from other types.";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf s-g-rpt-prune-interface-count {
+      config false;
+      description
+        "Number of interfaces on which the router received (S,G,Rpt) prunes";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf spt-switchover-threshold {
+      config false;
+      description
+        "Configured threshold in kilobits per second(kbps) for the group to which this (S,G) belongs
+
+         For a group G configured with a threshold, switchover to SPT for an (S,G) is attempted only if the (S,G)'s rate exceeds this configured threshold.";
+      type uint32;
+      units "kbps";
+    }
+    leaf rpt-rpf-neighbor-address {
+      config false;
+      description
+        "The address of the RPF neighbor on the RPT";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf immediate-outgoing-interface-count {
+      config false;
+      description
+        "Number of interfaces in the immediate outgoing interface list
+
+         An outgoing list can be 'immediate' if it is built directly from the state of the relevant type as indicated by 'source-type'.";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf inherited-rpt-outgoing-interface-count {
+      config false;
+      description
+        "Number of interfaces in the inherited outgoing interface list for (S,G,Rpt)";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf local-rx-include-interface-count {
+      config false;
+      description
+        "Number of interfaces in the local membership include interface list
+
+         Local membership is the result of the local membership mechanism (MLD) running on a interface.
+         Include list contains interfaces which are interested in receiving multicast traffic for this source group entry.";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf local-rx-exclude-interface-count {
+      config false;
+      description
+        "Number of interfaces in the local membership exclude interface list
+
+         Local membership is the result of the local membership mechanism (MLD) running on the interface.
+         Exclude list contains interfaces which are not interested in receiving multicast traffic for this source group entry.";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf join-or-prune-interface-count {
+      config false;
+      description
+        "Number of interfaces on which the router received a Join or Prune message";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf lost-assert-interface-count {
+      config false;
+      description
+        "Number of interfaces on which the router lost assert";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf current-forwarding-rate {
+      config false;
+      description
+        "Current forwarding rate for the entry in bps
+
+         Current forwarding rate being used by a source group(S,G) entry or (*,G) entry for the traffic in bits per second (bps), where * means any source entry.";
+      type srl_nokia-comm:zero-based-counter64;
+      units "bps";
+    }
+  }
+
+  grouping pim-database-interface-flags {
+    leaf flags {
+      config false;
+      description
+        "Set of lists to which this interface belongs";
+      type bits {
+        bit immediate-oif-list {
+          position 0;
+        }
+        bit inherited-oif-list {
+          position 1;
+        }
+        bit inherited-rpt-oif-list {
+          position 2;
+        }
+        bit local-rx-include {
+          position 3;
+        }
+        bit local-rx-exclude {
+          position 4;
+        }
+        bit join-prune-list {
+          position 5;
+        }
+        bit lost-assert-list {
+          position 6;
+        }
+        bit sg-rpt-prune-oif-list {
+          position 7;
+        }
+      }
+    }
+  }
+
+  grouping pim-database-interface {
+    list outgoing-interface {
+      config false;
+      description
+        "List of the PIM enabled interfaces for the Multicast entry <S,G>";
+      key "name";
+      leaf name {
+        config false;
+        description
+          "Router interface name";
+        type srl_nokia-comm:subinterface-all;
+      }
+      uses pim-database-interface-flags;
+    }
+    container outgoing-tunnel-interface {
+      if-feature "srl_nokia-feat:l3-multicast-vpn";
+      config false;
+      description
+        "The outgoing PMSI for the database entry";
+      leaf name {
+        config false;
+        description
+          "The outgoing I-PMSI tunnel name";
+        type string;
+      }
+      leaf s-pmsi-name {
+        config false;
+        description
+          "The outgoing S-PMSI tunnel name, if any, corresponding to the outgoing I-PMSI tunnel";
+        type string;
+      }
+      uses pim-database-interface-flags;
+    }
+  }
+
+  grouping pim-database-statistics {
+    container statistics {
+      config false;
+      description
+        "Forwarding statistics for the database entry
+
+         These statistics are collected by the forwarding engine.";
+      leaf forwarded-packets {
+        config false;
+        description
+          "Number of multicast packets that were forwarded to the interfaces in the outgoing interface list";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+      leaf discarded-packets {
+        config false;
+        description
+          "Number of multicast packets that matched this entry but were discarded
+
+           For (S,G) entries, if the traffic is getting forwarded on the SPT, the packets arriving from the RPT will be discarded.";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+      leaf rpf-mismatches {
+        config false;
+        description
+          "Number of multicast packets that matched this entry but did not arrive on the 'rpf-neighbor-interface-name' interface";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+      leaf forwarded-octets {
+        config false;
+        description
+          "Number of multicast octects that were forwarded to the interfaces in the outgoing interface list";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+    }
+  }
+
+  grouping pim-database-top {
+    container database {
+      config false;
+      description
+        "Database of PIM (S,G) (*,G), (*,*,RP)";
+      list group {
+        key "group source";
+        leaf group {
+          srl_nokia-ext:show-importance "high";
+          description
+            "Multicast group IP address";
+          type srl_nokia-comm:ip-address;
+        }
+        leaf source {
+          srl_nokia-ext:show-importance "high";
+          description
+            "Source IP address";
+          type srl_nokia-comm:ip-address;
+        }
+        uses pim-database-state;
+        uses pim-database-interface;
+        uses pim-database-statistics;
+      }
+    }
+  }
+
+  grouping pim-interface-database-state {
+    container database {
+      config false;
+      description
+        "Database of PIM (S,G) (*,G), (*,*,RP) for the interface";
+      list group {
+        key "group source";
+        leaf group {
+          srl_nokia-ext:show-importance "high";
+          description
+            "Multicast group IP address";
+          type srl_nokia-comm:ip-address;
+        }
+        leaf source {
+          srl_nokia-ext:show-importance "high";
+          description
+            "Source IP address";
+          type srl_nokia-comm:ip-address;
+        }
+        leaf source-type {
+          config false;
+          description
+            "Type of this entry";
+          type enumeration {
+            enum star-star-rp {
+              value 0;
+            }
+            enum star-g {
+              value 1;
+            }
+            enum sg {
+              value 2;
+            }
+          }
+        }
+        leaf up-time {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          description
+            "Time elapsed since this entry was created";
+          type srl_nokia-comm:date-and-time-delta;
+        }
+        leaf jp-state {
+          config false;
+          description
+            "The Join Prune state for this entry on the interface
+
+             PIM Join or Prune messages are sent by the downstream routers towards the RPF neighbor.";
+          type enumeration {
+            enum no-info {
+              value 0;
+            }
+            enum joined {
+              value 1;
+            }
+            enum prune-pend {
+              value 2;
+            }
+            enum pruned {
+              value 3;
+            }
+          }
+        }
+        leaf jp-timer {
+          config false;
+          description
+            "The time remaining before the router transitions the value of
+              jp-state to 'no-info'
+
+              The timer is started or restarted when a valid Join message is received.
+              If the value of this object is zero and jp-state is 'join' state, it means that the downstream router sent a holdtime of '0xffff'.
+              In this case, jp-state will not transition until an appropriate cancelling of Join or Prune message is received.";
+          type uint32;
+          units "seconds";
+        }
+        leaf prune-pending-timer {
+          config false;
+          description
+            "The time remaining before the router transitions the value of jp-state to 'no-info'
+
+             The timer is set when the PIM Prune message is received.";
+          type uint32;
+          units "seconds";
+        }
+        leaf jp-rpt-state {
+          config false;
+          description
+            "The Join Prune Rpt state for this entry on the interface
+
+             PIM Join or Prune messages are sent by the downstream routers towards the RPF neighbor.
+             (S,G,rpt) state is a result of receiving (S,G, rpt) JP message from the downstream router on the RP tree.";
+          type enumeration {
+            enum no-info {
+              value 0;
+            }
+            enum joined {
+              value 1;
+            }
+            enum prune-pend {
+              value 2;
+            }
+            enum pruned {
+              value 3;
+            }
+          }
+        }
+        leaf jp-rpt-timer {
+          config false;
+          description
+            "The time remaining before the router transitions the value of jp-rpt-state to 'no-info'
+
+              The timer is started or restarted when a valid Join message is received.
+              If the value of this object is zero and jp-rpt-state is in 'join' state, it means that the downstream router sent a holdtime of '0xffff'.
+              In this case, jp-rpt-state will not transition until an appropriate cancelling of Join or Prune message is received from the downstream router.";
+          type uint32;
+          units "seconds";
+        }
+        leaf jp-rpt-pending-timer {
+          config false;
+          description
+            "The time remaining before the router transitions the value of jp-rpt-state to 'no-info'
+
+              The timer is set when the (S,G,rpt) PIM Prune message is received.";
+          type uint32;
+          units "seconds";
+        }
+        leaf rp-address {
+          config false;
+          description
+            "IP address of the Rendezvous Point(RP)";
+          type srl_nokia-comm:ip-address;
+        }
+        leaf assert-state {
+          config false;
+          description
+            "The ASSERT state for this entry
+
+             Where multiple PIM routers peer over a shared LAN it  possible for more than one upstream router to have valid forwarding state for a packet, which can lead to packet duplication.
+             PIM does not attempt to prevent this from occurring.
+             Instead it detects when this has happened and elects a single forwarder amongst the upstream routers to prevent further duplication.
+             This election is performed using PIM Assert messages.
+             Assert messages are also received by downstream routers on the LAN, and these cause subsequent Join or Prune messages to be sent to the upstream router that won the Assert.";
+          type enumeration {
+            enum no-info {
+              value 0;
+            }
+            enum lost-assert {
+              value 1;
+            }
+            enum won-assert {
+              value 2;
+            }
+          }
+        }
+        leaf assert-timer {
+          config false;
+          description
+            "Assert time remaining
+
+             If the value of assert-state is 'lost-assert': the time remaining before the router transitions the assert-state to 'no-info'.
+             If the value of assert-state is 'won-assert':  the time remaining before the ASSERT message is resent.";
+          type uint32;
+          units "seconds";
+        }
+        leaf assert-metric {
+          config false;
+          description
+            "The metric associated by the Multicast RIB for the route towards the source or the RP";
+          type uint32;
+        }
+        leaf assert-metric-preference {
+          config false;
+          description
+            "The preference associated by the Multicast RIB for the route towards the source or the RP";
+          type uint32;
+        }
+        leaf assert-rpt-bit {
+          config false;
+          description
+            "The value is 'true' if the RPT bit is set and 'false' when the RPT bit is not set";
+          type boolean;
+        }
+        leaf assert-winner-address {
+          config false;
+          description
+            "The Assert Message winner's interface IP address";
+          type srl_nokia-comm:ip-address;
+        }
+        leaf assert-winner-metric {
+          config false;
+          description
+            "The ASSERT winner's metric associated by its Multicast RIB for the route towards the source or the RP";
+          type uint32;
+        }
+        leaf assert-winner-metric-preference {
+          config false;
+          description
+            "The ASSERT winner's preference associated by its Multicast RIB for the route towards the source or the RP";
+          type uint32;
+        }
+        leaf assert-winner-rpt-bit {
+          config false;
+          description
+            "The value is 'true' if the RPT bit is set and 'false' when the RPT bit is not set";
+          type boolean;
+        }
+      }
+    }
+  }
+
+  grouping pmsi-state {
+    container s-pmsi {
+      if-feature "srl_nokia-feat:l3-multicast-vpn";
+      config false;
+      description
+        "Selective Provider Multicast Service Interface (S-PMSI) tunnel state";
+      list mldp {
+        config false;
+        description
+          "List of mLDP S-PMSI tunnels";
+        key "root-address lsp-id";
+        leaf root-address {
+          description
+            "The extended tunnel address for the PMSI";
+          config false;
+          type srl_nokia-comm:ip-address;
+        }
+        leaf lsp-id {
+          description
+            "LSP Identifier for the S-PMSI";
+          config false;
+          type uint32;
+        }
+        leaf interface-name {
+          config false;
+          description
+            "Interface name of the S-PMSI";
+          type string;
+        }
+        leaf interface-type {
+          config false;
+          description
+            "PMSI tunnel type, either receiver or transmitter";
+          type srl_nokia-mvpn:provider-tunnel-type;
+        }
+        list customer-source-group {
+          config false;
+          description
+            "The list of the (C-S,C-G) mapped to the Data Multicast Tunnel (MT)";
+          key "group source";
+          leaf group {
+            config false;
+            description
+              "Multicast group IP address";
+            type srl_nokia-comm:ip-address;
+          }
+          leaf source {
+            description
+              "Source IP address";
+            type srl_nokia-comm:ip-address;
+            config false;
+          }
+          leaf current-forwarding-rate {
+            config false;
+            description
+              "Current forwarding rate for this (C-S, C-G) entry in bps";
+            type srl_nokia-comm:zero-based-counter64;
+            units "bps";
+          }
+          leaf cscg-state {
+            config false;
+            description
+              "The state of this PMSI (C-S,C-G)
+
+               If the S-PMSI is bound to a (C-S,C-G) on the ingress PE and if the PE is allocating a PMSI, the state will be 'tx-join-pending'.
+               The state will change to 'tx-joined' when the (C-S,C-G) traffic is switched over to the new S-PMSI.
+               If the S-PMSI is not bound to a (C-S,C-G) on the egress PE, the state will be 'rx-not-joined'.
+               The state will be 'rx-joined' if the (C-S,C-G) has bound to the S-PMSI.
+               Egress PE state will be 'rx-joined-tracking' if it receives SPMSI-AD with no tunnel information.";
+            type enumeration {
+              enum tx-join-pending {
+                value 0;
+              }
+              enum tx-joined {
+                value 1;
+              }
+              enum rx-not-joined {
+                value 2;
+              }
+              enum rx-joined {
+                value 3;
+              }
+              enum rx-joined-tracking {
+                value 4;
+              }
+            }
+          }
+          leaf data-rate-threshold {
+            config false;
+            description
+              "The threshold in kilobits per second (kbps) for (C-S,C-G) to switch to S-PMSI";
+            type uint32;
+            units "kbps";
+          }
+          leaf join-timer {
+            config false;
+            description
+              "The time interval before the Provider Edge (PE) router connected to the source, switches to the S-PMSI group
+
+               After providing sufficient time for all PE's to join the S-PMSI, the transmitting PE switches the given multicast stream to the S-PMSI.
+               The PE router connected to the source then starts encapsulating traffic using the S-PMSI group.";
+            type uint32;
+            units "seconds";
+          }
+          leaf hold-down-timer {
+            config false;
+            description
+              "The time interval before the PE router will switch back to the Default I-PMSI after it traffic rate goes below the data-rate-threshold
+
+               This is used to avoid (C-S, C-G) switching back and forth between SPMSI and IPMSI when traffic is bursty.";
+            type uint32;
+            units "seconds";
+          }
+          leaf expiry-timer {
+            config false;
+            description
+              "The time interval after which the Provider Edge (PE) router connected to the receivers time out SPMSI Join Tag Length Value (TLV) received and leave the S-PMSI group
+
+               This value must be consistent among all PE routers.";
+            type uint32;
+            units "seconds";
+          }
+          leaf up-time {
+            config false;
+            description
+              "Time elapsed since this (C-S,C-G) entry was created";
+            type srl_nokia-comm:date-and-time-delta;
+          }
+        }
+      }
+    }
+  }
+
+  grouping pim-interface-statistics-state {
+    description
+      "Statistics related to PIM messages";
+    container received {
+      leaf hello-messages {
+        config false;
+        description
+          "The number of PIM hello messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf hellos-dropped {
+        config false;
+        description
+          "The number of dropped Hello messages which were received";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf join-prune-messages {
+        config false;
+        description
+          "The number of Join Prune messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf join-prune-errors {
+        config false;
+        description
+          "The number of errors while processing Join-Prune messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf assert-messages {
+        config false;
+        description
+          "The number of PIM Assert messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf assert-errors {
+        config false;
+        description
+          "The number of errors while processing Assert messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-messages {
+        config false;
+        description
+          "The number of PIM Register messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-errors {
+        config false;
+        description
+          "The number of errors while processing Register messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf null-register-messages {
+        config false;
+        description
+          "The number of PIM Null Register messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-stop-messages {
+        config false;
+        description
+          "The number of PIM Register Stop messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-stop-errors {
+        config false;
+        description
+          "The number of errors while processing Register Stop messages received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf packets {
+        config false;
+        description
+          "The number of multicast data packets received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf invalid-register-messages {
+        config false;
+        description
+          "The number of invalid PIM Register messages received on this interface
+
+           A Register message is invalid when the RP address in the message is not the RP for the group specified in the message.
+           If such a message arrives, a Invalid Register notification is sent.";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf neighbor-unknown {
+        config false;
+        description
+          "The number of PDUs dropped due to uknown neighborship
+
+           The number of PIM messages (other than Hello messages) which were received on this interface and were rejected because the adjacency with the neighbor router was not already established.";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf bad-checksum-discard {
+        config false;
+        description
+          "The number of discarded messages due to bad checksum received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf bad-encodings {
+        config false;
+        description
+          "The number of PIM messages with bad encodings received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf bad-version-discard {
+        config false;
+        description
+          "The number of PIM messages with bad versions received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf candidate-rp-adv-no-router-alert {
+        config false;
+        description
+          "The number of Candidate-RP Advertisements without router alert option received on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf invalid-join-prune-messages {
+        config false;
+        description
+          "The number of invalid PIM Join Prune messages received on this interface
+
+           A Join Prune message is invalid when the RP address in the message is not the RP for the group specified in the message.
+           If such a message arrives, a Invalid Join Prune notification is sent.";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf unknown-pdu-type {
+        config false;
+        description
+          "The number of packets received with an unsupported PIM type";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    container transmitted {
+      leaf hello-messages {
+        config false;
+        description
+          "The number of PIM Hello messages transmitted on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf join-prune-messages {
+        config false;
+        description
+          "The number of Join Prune messages transmitted on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf assert-messages {
+        config false;
+        description
+          "The number of PIM Assert messages transmitted on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-stop-messages {
+        config false;
+        description
+          "The number of PIM Register Stop messages transmitted on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf register-stop-errors {
+        config false;
+        description
+          "The number of PIM errors while trasmitting PIM Register Stop messages on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf packets {
+        config false;
+        description
+          "The number of multicast data packets transmitted on this interface";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    leaf join-policy-drops {
+      if-feature "srl_nokia-feat:mcast-route-policy";
+      config false;
+      description
+        "The number of Join Prune PDU drops due to policy mismatch
+
+         The number of times the join policy match resulted in dropping Join-Prune message or one of the source group contained in the message.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf register-policy-drops {
+      if-feature "srl_nokia-feat:mcast-route-policy";
+      config false;
+      description
+        "The number of times the register policy match resulted in dropping Register Message";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf sg-count {
+      config false;
+      description
+        "The number of (S,G) entries on this interface";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf star-g-count {
+      config false;
+      description
+        "The number of (*,G) entries on this interface";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf star-star-rp-count {
+      config false;
+      description
+        "The number of (*,*,RP) entries on this interface";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping pim-interface-key {
+    leaf interface-name {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+      type srl_nokia-comm:subinterface-all;
+    }
+  }
+
+  grouping pim-interface-config {
+    leaf admin-state {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Administratively enable or disable the PIM protocol for this interface";
+      type srl_nokia-comm:admin-state;
+      default "enable";
+    }
+    leaf ipv4-admin-state {
+      description
+        "Administratively enable or disable PIM IPv4 address family";
+      type srl_nokia-comm:admin-state;
+      default "enable";
+    }
+    leaf ipv6-admin-state {
+      description
+        "Administratively enable or disable PIM IPv6 address family";
+      type srl_nokia-comm:admin-state;
+      default "enable";
+    }
+    leaf maximum-number-groups {
+      description
+        "Limit the number of accepted (S, G) and (*, G) PIM join states on the interface";
+      type uint32 {
+        range "1..16000";
+      }
+    }
+    leaf assert-interval {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Interval at which the router sends PIM assert messages";
+      type uint32 {
+        range "1..300";
+      }
+      default "60";
+    }
+    leaf hello-interval {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Interval at which the router sends the PIM hello messages";
+      type uint32 {
+        range "0..255";
+      }
+      default "30";
+    }
+    leaf improved-assert {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Whether the improved assert processing is enabled.";
+      type boolean;
+      default "true";
+    }
+    leaf hello-multiplier {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of hello multiplier to determine the hold time
+
+         This command configures the multiplier to determine the holdtime for a PIM neighbor on this interface.
+         The hello-multiplier in conjunction with the hello-interval determines the holdtime for a PIM neighbor.
+         The formula used to calculate the hello-holdtime is: (hello-interval * hello-multiplier) / 10.";
+      type uint32 {
+        range "20..100";
+      }
+      default "35";
+    }
+    leaf dr-priority {
+      srl_nokia-ext:show-importance "high";
+      description
+        "Designated Router (DR) priority value on this interface
+
+         The value of this object specifies the value sent in PIM Hello messages and used by routers to elect the Designated Router (DR).";
+      type uint32 {
+        range "0..4294967295";
+      }
+      default "1";
+      reference
+        "RFC7761 4.3.1 page 33";
+    }
+  }
+
+  grouping pim-interface-state {
+    leaf oper-state {
+      config false;
+      description
+        "The operational state of the PIM interface
+
+         This simply tracks the operational state of the subinterface.";
+      type srl_nokia-comm:oper-state;
+    }
+    container ipv4 {
+      config false;
+      description
+        "IPv4 specific interface parameters";
+      leaf oper-state {
+        config false;
+        description
+          "The operational state of the PIM IPv4 interface";
+        type srl_nokia-comm:oper-state;
+      }
+      leaf dr-address {
+        config false;
+        type srl_nokia-comm:ipv4-address;
+        description
+          "IPv4 address of designated router";
+      }
+      leaf oper-priority {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The operational value of DR priority on this interface
+
+           The value of this object specifies the value sent in PIM Hello messages and used by routers to elect the Designated Router (DR).
+           This is the operational value.";
+        config false;
+        type uint32 {
+          range "0..4294967295";
+        }
+      }
+      container statistics {
+        config false;
+        description
+          "PIM Interface Statistics";
+        uses pim-interface-statistics-state;
+      }
+    }
+    container ipv6 {
+      config false;
+      description
+        "IPv6 specific interface parameters";
+      leaf oper-state {
+        config false;
+        description
+          "The operational state of the PIM IPv6 interface";
+        type srl_nokia-comm:oper-state;
+      }
+      leaf dr-address {
+        config false;
+        type srl_nokia-comm:ipv6-address;
+        description
+          "IPv6 address of Designated Router (DR)";
+      }
+      leaf oper-priority {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The operational value of Designated Router (DR) priority on this interface
+
+           The value of this object specifies the value sent in PIM Hello messages and used by routers to elect the Designated Router (DR).
+           This is the operational value.";
+        config false;
+        type uint32 {
+          range "0..4294967295";
+        }
+      }
+      container statistics {
+        config false;
+        description
+          "PIM Interface statistics";
+        uses pim-interface-statistics-state;
+      }
+    }
+    uses pim-neighbors;
+    uses pim-interface-database-state;
+  }
+
+  grouping pim-neighbor-state {
+    description
+      "PIM neighbor state";
+    leaf dr-priority {
+      config false;
+      description
+        "The dr-priority value received on hello message
+
+         This value indicates neighbor's DR priority which is received in the hello message.
+         If the Hello Message did not contain the Designated Router (DR) priority field, the value of priority will be '1'.";
+      type uint32;
+    }
+    leaf dr-priority-present {
+      config false;
+      description
+        "Indication of existence of DR priority on received hello message
+
+         This value of indicates whether the DR priority field was present in the Hello message received from the PIM neighbor.";
+      type boolean;
+    }
+    leaf tracking-support {
+      config false;
+      description
+        "Indication of existence of tracking-support on received hello message
+
+         This value indicates whether the T bit in the LAN Prune Delay option was present in the Hello message.
+         This indicates the neighbor's capability to disable Join message suppression.";
+      type boolean;
+    }
+    leaf lan-delay {
+      config false;
+      description
+        "The lan-delay value on received hello message
+
+         This value indicates the value of lan delay field present in the Hello message received from the neighbor. ";
+      type uint32;
+      units "milliseconds";
+    }
+    leaf lan-delay-present {
+      config false;
+      description
+        "Indication of existence of Lan Delay on received hello message
+
+         This value indicates whether the Hello message received from the neighbor contained the Lan Delay field.";
+      type boolean;
+    }
+    leaf generated-id {
+      config false;
+      description
+        "The Gen-Id value on the received hello message
+
+         This value indicates a randomly generated 32-bit value that is regenerated each time PIM forwarding is started or restarted on the interface, including when the router itself restarts.";
+      type uint32;
+    }
+    leaf override-interval {
+      config false;
+      description
+        "The override interval on the received hello message
+
+         This value indicates the value of the override interval present in the Hello message.";
+      type uint32;
+      units "milliseconds";
+    }
+    leaf up-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time since when the neighbor has come up
+
+         This value indicates the time since this PIM neighbor (last) became a neighbor of the local router.";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf expiry-time {
+      config false;
+      description
+        "The time until the expiry of this neighbor
+
+         This value indicates the minimum time remaining before this PIM neighbor will be aged out.";
+      type uint32;
+      units "seconds";
+    }
+    leaf hold-time {
+      config false;
+      description
+        "This value indicates the value of the hold time present in the Hello message";
+      type uint32;
+      units "seconds";
+    }
+    leaf join-attribute-support {
+      config false;
+      description
+        "Existence of Join-attribute in the received hello message
+
+         This value indicates whether the Hello Message received from the neighbor contained the Join Attribute field.";
+      type boolean;
+    }
+  }
+
+  grouping pim-neighbors {
+    description
+      "Details about PIM neighbors";
+    container neighbors {
+      config false;
+      description
+        "Details about PIM neighbors";
+      list neighbor {
+        key "address";
+        leaf address {
+          description
+            "IP address of a neighbor router";
+          type srl_nokia-comm:ip-address-with-zone;
+        }
+        uses pim-neighbor-state;
+      }
+    }
+  }
+
+  grouping pim-events-tracing-grp-src-filter {
+    leaf group-address {
+      description
+        "The IP multicast group address for which to trace events";
+      type srl_nokia-comm:ip-address;
+      must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*')) or starts-with(.,'ff')" {
+        error-message "Not a valid multicast IP address";
+      }
+    }
+    leaf source-address {
+      description
+        "The source address for which to trace events";
+      type srl_nokia-comm:ip-address;
+    }
+  }
+
+  grouping pim-events-tracing-detail-filter {
+    leaf detail {
+      description
+        "Enable detail tracing.";
+      type boolean;
+      default "false";
+    }
+  }
+
+  grouping pim-events-tracing-config {
+    container events {
+      presence "Enable the tracing of PIM events";
+      description
+        "Enable the tracing of PIM events";
+      choice type {
+        default "all-types";
+        case all-types {
+          container all-event-types {
+            presence "Enable tracing for all events";
+            description
+              "Enable tracing for all events";
+            uses pim-events-tracing-grp-src-filter;
+            leaf interface-name {
+              description
+                "Enable interface event tracing for a specific interface";
+              type leafref {
+                path "../../../../../interface/interface-name";
+              }
+            }
+            uses pim-events-tracing-detail-filter;
+          }
+        }
+        case selected-types {
+          container event-types {
+            description
+              "Enable tracing for selected event types only";
+            container adjacency {
+              presence "Enable tracing for adjacency events";
+              description
+                "Enable tracing for adjacency events";
+            }
+            container assert {
+              presence "Enable tracing for assert events";
+              description
+                "Enable tracing for assert events";
+              uses pim-events-tracing-grp-src-filter;
+              uses pim-events-tracing-detail-filter;
+            }
+            container data-exception {
+              presence "Enable tracing for data events";
+              description
+                "Enable tracing for data events";
+              uses pim-events-tracing-grp-src-filter;
+              uses pim-events-tracing-detail-filter;
+            }
+            container database {
+              presence "Enable tracing for db events";
+              description
+                "Enable tracing for db events";
+              uses pim-events-tracing-grp-src-filter;
+              uses pim-events-tracing-detail-filter;
+            }
+            container interface {
+              presence "Enable tracing for interface events";
+              description
+                "Enable tracing for interface events";
+              leaf interface-name {
+                description
+                  "Enable interface event tracing for a specific interface";
+                type leafref {
+                  path "../../../../../../interface/interface-name";
+                }
+              }
+              uses pim-events-tracing-detail-filter;
+            }
+            container join-prune {
+              presence "Enable tracing for join-prune events";
+              description
+                "Enable tracing for jp events";
+              uses pim-events-tracing-grp-src-filter;
+              uses pim-events-tracing-detail-filter;
+            }
+            container messaging {
+              presence "Enable tracing for messaging events";
+              description
+                "Enable tracing for msg events";
+            }
+            container register {
+              presence "Enable tracing for register events";
+              description
+                "Enable tracing for register events";
+              uses pim-events-tracing-grp-src-filter;
+              uses pim-events-tracing-detail-filter;
+            }
+            container pim-route-table {
+              presence "Enable tracing for pim rtm events";
+              description
+                "Enable tracing for rtm events";
+              uses pim-events-tracing-detail-filter;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping pim-packet-tracing-type-interface {
+    choice interface {
+      default "all-interfaces";
+      case all-interfaces {
+        leaf all-interfaces {
+          description
+            "Enable packet tracing for all interfaces";
+          type empty;
+        }
+      }
+      case interface-name {
+        leaf interface-name {
+          description
+            "Enable packet tracing for a specific interface";
+          type leafref {
+            path "../../../../../../interface/interface-name";
+          }
+        }
+      }
+    }
+  }
+
+  grouping pim-packet-tracing-type-filters {
+    leaf ipv4 {
+      description
+        "Enable tracing for PIM ipv4 packets";
+      type boolean;
+      default "true";
+    }
+    leaf ipv6 {
+      description
+        "Enable tracing for PIM ipv6 packets";
+      type boolean;
+      default "true";
+    }
+    leaf ingress {
+      description
+        "Enable tracing for received packets";
+      type boolean;
+      default "true";
+    }
+    leaf egress {
+      description
+        "Enable tracing for sent packets";
+      type boolean;
+      default "true";
+    }
+  }
+
+  grouping pim-packet-tracing-config {
+    container packet {
+      presence "Enable the tracing of PIM packets";
+      description
+        "Enable the tracing of PIM packets";
+      choice type {
+        default "all-types";
+        case all-types {
+          container all-packet-types {
+            presence "Enable tracing for all packet types";
+            description
+              "Enable tracing for all packet types";
+            choice interface {
+              default "all-interfaces";
+              case all-interfaces {
+                leaf all-interfaces {
+                  description
+                    "Enable packet tracing for all interfaces";
+                  type empty;
+                }
+              }
+              case interface-name {
+                leaf interface-name {
+                  description
+                    "Enable packet tracing for a specific interface";
+                  type leafref {
+                    path "../../../../../interface/interface-name";
+                  }
+                }
+              }
+            }
+            uses pim-packet-tracing-type-filters;
+          }
+        }
+        case selected-types {
+          container packet-types {
+            description
+              "Enable tracing for selected packet types only";
+            container hello {
+              presence "Enable tracing for hello packets";
+              description
+                "Enable tracing for hello packets";
+              uses pim-packet-tracing-type-interface;
+              uses pim-packet-tracing-type-filters;
+            }
+            container register {
+              presence "Enable tracing for register packets";
+              description
+                "Enable tracing for register packets";
+              uses pim-packet-tracing-type-interface;
+              uses pim-packet-tracing-type-filters;
+            }
+            container register-stop {
+              presence "Enable tracing for register-stop packets";
+              description
+                "Enable tracing for register-stop packets";
+              uses pim-packet-tracing-type-interface;
+              uses pim-packet-tracing-type-filters;
+            }
+            container join-prune {
+              presence "Enable tracing for join-prune packets";
+              description
+                "Enable tracing for join-prune packets";
+              uses pim-packet-tracing-type-interface;
+              uses pim-packet-tracing-type-filters;
+            }
+            container assert {
+              presence "Enable tracing for assert packets";
+              description
+                "Enable tracing for assert packets";
+              uses pim-packet-tracing-type-interface;
+              uses pim-packet-tracing-type-filters;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping pim-global-trace-options {
+    container trace-options {
+      description
+        "Enter the trace-options context";
+      container trace {
+        description
+          "Tracing parameter flags";
+        uses pim-events-tracing-config;
+        uses pim-packet-tracing-config;
+      }
+    }
+  }
+
+  grouping pim-top {
+    container pim {
+      if-feature "srl_nokia-feat:pim";
+      presence "Configure PIM";
+      must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:ip-vrf')" {
+        srl_nokia-ext:if-feature "not srl_nokia-features:pim-ipvrf";
+        error-message "PIM routing configuration is not possible on network-instance of type ip-vrf";
+      }
+      must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
+        error-message "PIM routing configuration is not possible on network-instance of type mac-vrf";
+      }
+      must "../../srl_nokia-netinst:type != 'srl_nokia-netinst:host'" {
+        error-message "PIM routing configuration is not possible on network-instance of type host";
+      }
+      uses pim-global-config;
+      uses pim-global-state;
+      container ipv4 {
+        description
+          "IPv4 specific PIM parameters";
+        uses pim-address-family-config;
+        uses pim-address-family-state;
+      }
+      container ipv6 {
+        description
+          "IPv6 specific PIM parameters";
+        uses pim-address-family-config;
+        uses pim-address-family-state;
+      }
+      list interface {
+        description
+          "List of PIM interfaces";
+        key "interface-name";
+        uses pim-interface-key;
+        uses pim-interface-config;
+        uses pim-interface-state;
+      }
+      uses pim-database-top;
+      uses pmsi-state;
+      uses pim-global-ssm-config;
+      uses pim-global-rp-config;
+      uses pim-global-spt-switchover-config;
+      uses pim-global-trace-options;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses pim-top;
+  }
+}

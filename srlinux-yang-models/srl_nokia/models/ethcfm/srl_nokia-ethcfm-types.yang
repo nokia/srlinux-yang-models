@@ -1,0 +1,1034 @@
+module srl_nokia-ethcfm-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:ethcfm-types";
+  prefix srl_nokia-ethcfm-types;
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines derived types for configuration and operational state data
+     related to Ethernet CFM management.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  typedef string-not-all-spaces {
+    type string {
+      pattern '(.*\S.*)|()' {
+        error-message "The given string must not be all spaces.";
+      }
+    }
+  }
+
+  typedef admin-name {
+    description
+      "Used to define a name that can be used to uniquely identify an object";
+    type string-not-all-spaces {
+      length "1..64";
+      pattern '([1-9]|[1-9][0-9]{1,8}|[1-3][0-9]{9}|4[0-1][0-9]{8}|42[0-8][0-9]{7}|429[0-3][0-9]{6}|4294[0-8][0-9]{5}|42949[0-5][0-9]{4}|429496[0-6][0-9]{3}|4294967[0-1][0-9]{2}|42949672[0-8][0-9]|429496729[0-5])'
+            + '|'
+            + '([^0-9_ +]\P{C}*[^ ])'
+            + '|'
+            + '([^0-9_ +])' {
+        error-message "The admin name must not contain a leading underscore, space or plus sign and must not contain a trailing space. It can only begin with a number if it is numeric only and within the range 1..4294967295.";
+      }
+    }
+  }
+
+  typedef domain-format-type {
+    type enumeration {
+      enum none {
+        value 1;
+        description
+          "No Maintenance Domain Name";
+      }
+      enum dns-like {
+        value 2;
+        description
+          "Domain Name based string";
+      }
+      enum mac-address {
+        value 3;
+        description
+          "MAC address";
+      }
+      enum string {
+        value 4;
+        description
+          "Character string";
+      }
+    }
+  }
+
+  typedef association-format-type {
+    type enumeration {
+      enum vlan-id {
+        value 1;
+        description
+          "Primary VLAN ID";
+      }
+      enum string {
+        value 2;
+        description
+          "Character string";
+      }
+      enum integer {
+        value 3;
+        description
+          "2 octet number";
+      }
+      enum vpn-id {
+        value 4;
+        description
+          "IETF RFC 2685 VPN ID";
+      }
+      enum icc-based {
+        value 32;
+        description
+          "13 character string";
+      }
+    }
+  }
+
+  typedef md-level-type {
+    description
+      "Integer identifying the Maintenance Domain Level
+
+       Higher numbers correspond Maintenance Domains with the greatest
+       physical reach. Lower numbers correspond to  Maintenance
+       Domains with more limited physical reach.  CFM packets with higher
+       levels will flow transparently across domains of lower level values.";
+    reference
+      "[IEEE 802.1Q] 22.3";
+    type uint8 {
+      range "0..7";
+    }
+  }
+
+  typedef md-levels-ordered-type {
+    description
+      "Forced ascending order of the maintenance domain levels from 0 to 7 starting
+
+       This forces the allowable maintenance domain levels within the range of 0..7 in ascending order, starting
+       at 0.  Partial ranges can be entered and must start at 0 separated by space.
+       For example, 0 1 2 3 4 would be acceptable based on the regular expression pattern match.
+       However, 0 2 3 4 would cause an error condition because the numbers are not contiguous.  This pattern does
+       not allow trailing spaces after the last numerical value.";
+    type string {
+      pattern '^(0|0 1|0 1 2|0 1 2 3|0 1 2 3 4|0 1 2 3 4 5|0 1 2 3 4 5 6|0 1 2 3 4 5 6 7)$';
+    }
+  }
+
+  typedef ccm-interval-type {
+    description
+      "The allowable intervals for CCM transmissions.";
+    reference
+      "[IEEE 802.1Q 20.8.1]";
+    type enumeration {
+      enum 10ms {
+        value 1;
+      }
+      enum 100ms {
+        value 2;
+      }
+      enum 1s {
+        value 3;
+      }
+      enum 10s {
+        value 4;
+      }
+    }
+  }
+
+  typedef mep-id-type {
+    description
+      "A uniquely assigned MEP identifier with a given maintenance association";
+    reference
+      "[IEEE 802.1Q] 19.2.1";
+    type uint16 {
+      range "1..8191";
+    }
+  }
+
+  typedef mep-direction-type {
+    description
+      "The direction the MEP faces
+
+       If 'down' the MEP sends CFM PDUs away from the MAC Relay Entity. If 'up' the MEP
+       sends CFM PDUs towards the MAC Relay Entity.";
+    reference
+      "[IEEE 802.1Q] clauses 12.14.6.3.2:c";
+    type enumeration {
+      enum down;
+      enum up;
+    }
+  }
+
+  typedef vlan-id-or-none {
+    description
+      "The VLAN ID that uniquely identifies a specific VLAN, or no VLAN.
+
+       The special value of none is used to indicate that no VLAN ID is present or used.  This can
+       be used in any situation where an object or a table entry must refer either to a specific VLAN, or to no VLAN.";
+    type union {
+      type uint16 {
+        range "1..4094";
+      }
+      type enumeration {
+        enum none {
+          value 0;
+        }
+      }
+    }
+  }
+
+  typedef priority-type {
+    description
+      "Used to define the priority of OAM frames.";
+    type uint8 {
+      range "0..7";
+    }
+  }
+
+  typedef highest-priority-defect-type {
+    description
+      "Value indicating the highest-priority defect present since the MEP FNG state machine was in RESET.
+
+       Multiple defect conditions may be present on a local MEP at any given time.  This leaf records the highest
+       priority defect since the MEP Fault Notification Generator (FNG) State Machine was last in the FNG_RESET
+       state.  This will be cleared when the when no defect flags are present.
+
+       Value 'none' - no current highest priority defect
+       Value 'rdi-ccm' - receiving remote defect indicator bit set in ccm from peer
+       Value 'mac-status' - Interface Status TLV or Port Status TLV are reporting state other than 'isUp' or 'psUp' respectively
+       Value 'remote-ccm' - Peer ccm has timed out
+       Value 'error-ccm' - Error condition detected, example unexpected peer, or mismatch information from expected peer where MAID is correct
+       Value 'xcon-ccm' Cross-connect condition detected, receiving ccm from incorrect maintenance association";
+    reference
+      "[IEEE 802.1Q 20.1.2]";
+    type enumeration {
+      enum none {
+        value 0;
+      }
+      enum rdi-ccm {
+        value 1;
+      }
+      enum mac-status {
+        value 2;
+      }
+      enum remote-ccm {
+        value 3;
+      }
+      enum error-ccm {
+        value 4;
+      }
+      enum xcon-ccm {
+        value 5;
+      }
+    }
+  }
+
+  typedef lowest-alarm-priority-type {
+    description
+      "An enumerated value indicating the lowest priority defect that is allowed to generate a fault alarm
+
+       An order priority list that from lowest priority to highest
+
+       Value 'all-def' - any defect
+       Value 'mac-rem-err-xcon' - defects equal to or higher than mac-status defect
+       Value 'rem-err-xcon' - defects equal to or higher than remote-ccm
+       Value 'err-xcon' - defects equal to or higher than error-ccm
+       Value 'xcon' - only defect xcon-ccm
+       Value 'no-xcon' - no defect will generate a fault alarm";
+    reference
+      "[IEEE 802.1Q] 20.9.5";
+    type enumeration {
+      enum all-def {
+        value 1;
+      }
+      enum mac-remote-error-xcon {
+        value 2;
+      }
+      enum remote-error-xcon {
+        value 3;
+      }
+      enum error-xcon {
+        value 4;
+      }
+      enum xcon {
+        value 5;
+      }
+      enum no-xcon {
+        value 6;
+      }
+    }
+  }
+
+  typedef mep-defect-flags {
+    description
+      "A MEP can detect and report a number of defects, and multiple defects can be present at the same time
+
+       Value 'none' - no current highest priority defect
+       Value 'rdi-ccm' - receiving rdi bit set in ccm from peer
+       Value 'mac-status' - Interface Status TLV or Port Status TLV are reporting state other than 'isUp' or 'psUp' respectively
+       Value 'remote-ccm' - Peer ccm has timed out
+       Value 'error-ccm' - Error condition detected, example unexpected peer, or mismatch information from expected peer where MAID is correct
+       Value 'xcon-ccm' Cross-connect condition detected, receiving ccm from incorrect maintenance association";
+    type enumeration {
+      enum none {
+        value 0;
+      }
+      enum rdi-ccm {
+        value 1;
+      }
+      enum mac-status {
+        value 2;
+      }
+      enum remote-ccm {
+        value 3;
+      }
+      enum error-ccm {
+        value 4;
+      }
+      enum xcon-ccm {
+        value 5;
+      }
+    }
+  }
+
+  typedef mep-stack-table-defect-type {
+    description
+      "Indicates the current received defects of the MEP
+
+       Value 'none' - no defects are present
+       Value 'rdi-ccm' -  rdi bit set in ccm from peer
+       Value 'mac-status' - Interface Status TLV or Port Status TLV are reporting state other than 'isUp' or 'psUp' respectively
+       Value 'remote-ccm' - Peer ccm has timed out
+       Value 'error-ccm' - Error condition detected, example unexpected peer, or mismatch information from expected peer where MAID is correct
+       Value 'xcon-ccm'  ccm from incorrect MAID
+       Value 'ais' -  alarm indication signal active
+       Value 'csf-ais' - client signal fail (CSF) alarm indication signal
+       Value 'csf-rdi' - client signal fail (CSF) rdi
+       Value 'csf-los' - client signal fail (CSF) loss of signal
+       Value 'eth-ed' - expected defect active";
+    type enumeration {
+      enum none {
+        value 0;
+      }
+      enum rdi-ccm {
+        value 1;
+      }
+      enum mac-status {
+        value 2;
+      }
+      enum remote-ccm {
+        value 3;
+      }
+      enum error-ccm {
+        value 4;
+      }
+      enum xcon-ccm {
+        value 5;
+      }
+      enum ais {
+        value 6;
+      }
+      enum csf-ais {
+        value 7;
+      }
+      enum csf-rdi {
+        value 8;
+      }
+      enum csf-los {
+        value 9;
+      }
+      enum eth-ed {
+        value 10;
+      }
+    }
+  }
+
+  typedef action-type {
+    description
+      "Enable or disable an action based on a match condition
+
+       Value 'permit' - take action
+       Value 'deny' - do not take action";
+    type enumeration {
+      enum permit {
+        description
+          "Action taken";
+      }
+      enum deny {
+        description
+          "No action taken";
+      }
+    }
+  }
+
+  typedef protocol-status-type {
+    description
+      "The state of the protocol.  Where a protocol is actively functioning or idle for a CFM on-demand test";
+    type enumeration {
+      enum active {
+        value 1;
+      }
+      enum inactive {
+        value 2;
+      }
+    }
+  }
+
+  typedef cfm-on-demand-test-status {
+    description
+      "The status of the last test that was executed
+
+       A value of 'completed' means the test has run and ended without intervention, to completion.
+       A value of 'terminated-incomplete' indicates the test started but conditions existed that caused
+       if to terminate before the natural completion.  A value 'in-progress' means the test is currently executing.
+       A value of 'failed-to-start' meant a requirement to start the test was not met and the test had failed to start.
+       When this value is set the statistics from a prior latest-run are deleted.";
+    type enumeration {
+      enum completed {
+        value 1;
+      }
+      enum terminated-incomplete {
+        value 2;
+      }
+      enum in-progress {
+        value 3;
+      }
+      enum failed-to-start {
+        value 4;
+      }
+    }
+  }
+
+  typedef terminate-on-demand {
+    description
+      "Stop an active on-demand test by type name";
+    type enumeration {
+      enum loopback {
+        value 1;
+      }
+      enum linktrace {
+        value 2;
+      }
+    }
+  }
+
+  typedef statistics-opcode-name {
+    type enumeration {
+      enum total {
+        value 0;
+      }
+      enum other {
+        value 1;
+      }
+      enum ccm {
+        value 2;
+      }
+      enum lbr {
+        value 3;
+      }
+      enum lbm {
+        value 4;
+      }
+      enum ltr {
+        value 5;
+      }
+      enum ltm {
+        value 6;
+      }
+      enum ais {
+        value 7;
+      }
+      enum lck {
+        value 8;
+      }
+      enum tst {
+        value 9;
+      }
+      enum laps {
+        value 10;
+      }
+      enum raps {
+        value 11;
+      }
+      enum mcc {
+        value 12;
+      }
+      enum lmr {
+        value 13;
+      }
+      enum lmm {
+        value 14;
+      }
+      enum 1dm {
+        value 15;
+      }
+      enum dmr {
+        value 16;
+      }
+      enum dmm {
+        value 17;
+      }
+      enum exr {
+        value 18;
+      }
+      enum exm {
+        value 19;
+      }
+      enum csf {
+        value 20;
+      }
+      enum vsr {
+        value 21;
+      }
+      enum vsm {
+        value 22;
+      }
+      enum 1sl {
+        value 23;
+      }
+      enum slr {
+        value 24;
+      }
+      enum slm {
+        value 25;
+      }
+      enum gnm {
+        value 26;
+      }
+    }
+    description
+      "An enumerated value indicating the CFM PDU Opcode to which a statistic is associated.
+
+       total(0)              The total CFM PDUs of all types below.
+       other(1)              Indicates the CFM PDU type does not match any other type explicitly detailed below.
+       ccm(2)                Connectivity check messages.
+       lbr(3)                Loopback response messages.
+       lbm(4)                Loopback request messages.
+       ltr(5)                Linktrace response messages.
+       ltm(6)                Linktrace request messages.
+       ais(7)                Alarm indication signal messages.
+       lck(8)                Ethernet locked signal messages.
+       tst(9)                Ethernet test signal messages.
+       laps(10)              Linear automatic protection switching messages.
+       raps(11)              Ring automatic protection switching messages.
+       mcc(12)               Maintenance communications channel messages.
+       lmr(13)               Single-ended frame loss measurement response messages.
+       lmm(14)               Single-ended frame loss measurement messages.
+       1dm(15)               Dual-ended delay measurement messages.
+       dmr(16)               Single-ended delay measurement response messages.
+       dmm(17)               Single-ended delay measurement message.
+       exr(18)               Ethernet experimental response messages.
+       exm(19)               Ethernet experimental messages.
+       csf(20)               Client signal fail messages.
+       vsr(21)               Vendor specific response messages.
+       vsm(22)               Vendor specific messages.
+       1sl(23)               Dual-ended synthetic loss measurement messages.
+       slr(24)               Single-ended synthetic loss measurement response messages.
+       slm(25)               Single-ended synthetic loss measurement messages.
+       gnm(26)               Generic notification messages.";
+  }
+
+  typedef port-status-type {
+    type enumeration {
+      enum no-status-tlv {
+        value 0;
+        description
+          "Indicates either that no CCM has been received or that no port status TLV was present in the last CCM received";
+      }
+      enum blocked {
+        value 1;
+        description
+          "Ordinary data cannot pass freely through the port on which the remote MEP resides";
+      }
+      enum up {
+        value 2;
+        description
+          "Ordinary data can pass freely through the port on which the remote MEP resides";
+      }
+    }
+    description
+      "The set of values available from the Port Status TLV in CCM PDUs including the default no-status-tlv";
+    reference
+      "[802.1Q] 20.19.3";
+  }
+
+  typedef interface-status-type {
+    type enumeration {
+      enum no-status-tlv {
+        value 0;
+        description
+          "Indicates either that no CCM has been received or that no interface status TLV was present in the last CCM received";
+      }
+      enum up {
+        value 1;
+        description
+          "The interface is ready to pass packets";
+      }
+      enum down {
+        value 2;
+        description
+          "The interface cannot pass packets";
+      }
+      enum testing {
+        value 3;
+        description
+          "The interface is in some test mode";
+      }
+      enum unknown {
+        value 4;
+        description
+          "The interface status cannot be determined for some reason";
+      }
+      enum dormant {
+        value 5;
+        description
+          "The interface is not in a state to pass packets but is in a pending state, waiting for some external event";
+      }
+      enum not-present {
+        value 6;
+        description
+          "Some component of the interface is missing";
+      }
+      enum lower-layer-down {
+        value 7;
+        description
+          "The interface is down due to state of the lower layer interface condition";
+      }
+    }
+    description
+      "The set of values available from the Interface Status TLV in CCM PDUs including the default no-status-tlv";
+    reference
+      "[802.1q] 20.19.4";
+  }
+
+  typedef remote-mep-state-type {
+    type enumeration {
+      enum idle {
+        value 1;
+        description
+          "Indicates momentary state during reset";
+      }
+      enum start {
+        value 2;
+        description
+          "Indicates the timer has not expired since the state machine was reset, and no valid CCM has yet been received";
+      }
+      enum failed {
+        value 3;
+        description
+          "Indicates the timer has expired, both since the state machine was reset and since a valid CCM was received.";
+      }
+      enum ok {
+        value 4;
+        description
+          "Indicates the timer has not expired since a valid CCM was received.";
+      }
+    }
+    description
+      "An enumerated value indicating the operational state of a Remote MEP state machine for a remote MEP";
+    reference
+      "[IEEE 802.1Q] 12.14.7.6.3:b";
+  }
+
+  typedef dmm-interval {
+    description
+      "frequency of single ended dmm";
+    type enumeration {
+      enum 20ms {
+        value 20000;
+      }
+      enum 50ms {
+        value 50000;
+      }
+      enum 100ms {
+        value 100000;
+      }
+      enum 200ms {
+        value 200000;
+      }
+      enum 300ms {
+        value 300000;
+      }
+      enum 400ms {
+        value 400000;
+      }
+      enum 500ms {
+        value 500000;
+      }
+      enum 600ms {
+        value 600000;
+      }
+      enum 700ms {
+        value 700000;
+      }
+      enum 800ms {
+        value 800000;
+      }
+      enum 900ms {
+        value 900000;
+      }
+      enum 1s {
+        value 1000000;
+      }
+      enum 10s {
+        value 10000000;
+      }
+    }
+    units "microseconds";
+  }
+
+  typedef slm-interval {
+    description
+      "frequency of single ended slm";
+    type enumeration {
+      enum 20ms {
+        value 20000;
+      }
+      enum 50ms {
+        value 50000;
+      }
+      enum 100ms {
+        value 100000;
+      }
+      enum 200ms {
+        value 200000;
+      }
+      enum 300ms {
+        value 300000;
+      }
+      enum 400ms {
+        value 400000;
+      }
+      enum 500ms {
+        value 500000;
+      }
+      enum 600ms {
+        value 600000;
+      }
+      enum 700ms {
+        value 700000;
+      }
+      enum 800ms {
+        value 800000;
+      }
+      enum 900ms {
+        value 900000;
+      }
+      enum 1s {
+        value 1000000;
+      }
+      enum 10s {
+        value 10000000;
+      }
+    }
+    units "microseconds";
+  }
+
+  typedef eth-lbm-interval {
+    description
+      "frequency of loopback messages";
+    type enumeration {
+      enum 0s {
+        value 0;
+      }
+      enum 10ms {
+        value 10000;
+      }
+      enum 20ms {
+        value 20000;
+      }
+      enum 50ms {
+        value 50000;
+      }
+      enum 100ms {
+        value 100000;
+      }
+      enum 200ms {
+        value 200000;
+      }
+      enum 300ms {
+        value 300000;
+      }
+      enum 400ms {
+        value 400000;
+      }
+      enum 500ms {
+        value 500000;
+      }
+      enum 600ms {
+        value 600000;
+      }
+      enum 700ms {
+        value 700000;
+      }
+      enum 800ms {
+        value 800000;
+      }
+      enum 900ms {
+        value 900000;
+      }
+      enum 1s {
+        value 1000000;
+      }
+      enum 10s {
+        value 10000000;
+      }
+    }
+    units "microseconds";
+  }
+
+  typedef relay-action {
+    type enumeration {
+      enum hit {
+        description
+          "Indicates the LTM reached an MP whose MAC address matches the target MAC address";
+        value 1;
+      }
+      enum filtering-database {
+        description
+          "Indicates the Egress Port was determined by consulting the Filtering Database";
+        value 2;
+      }
+      enum mip-ccm-database {
+        description
+          "Indicates the Egress Port was determined by consulting the MIP CCM Database";
+        value 3;
+      }
+    }
+  }
+
+  typedef id-permission-type {
+    type enumeration {
+      enum none {
+        value 1;
+      }
+      enum chassis {
+        value 2;
+      }
+    }
+    description
+      "Indicates what, if anything, is to be included in the Sender ID TLV transmitted in CCMs, LBMs, LTMs, and LTRs
+
+       This is a subset of permission-type. The valid values are:
+
+       none(1)           The Sender ID TLV is not to be sent.
+       chassis(2)        The Chassis ID Length, Chassis ID Subtype, and Chassis ID fields of  the
+                         Sender ID TLV are to be sent.";
+    reference
+      "[IEEE 802.1Q] 21.5.3";
+  }
+
+  typedef chassis-id-subtype {
+    type enumeration {
+      enum system {
+        value 1;
+      }
+      enum local {
+        value 7;
+      }
+    }
+    default "system";
+    description
+      "Indicates the chassis id type and value to be used in the transmitted Sender ID TLV
+
+       The enumeration 'system(1)' represents a chassis identifier based on the value of entPhysicalAlias object
+       (defined in IETF RFC 2737) for a chassis component (i.e., an entPhysicalClass value of 'chassis(3)').
+
+       The enumeration 'local(7)' represents a chassis identifier based on a locally defined value.";
+  }
+
+  typedef reply-action {
+    description
+      "The replying management point action response to an LTM request ";
+    type enumeration {
+      enum ok {
+        description
+          "Indicates the target data frame would be passed through to the MAC Relay Entity";
+        value 1;
+      }
+      enum down {
+        description
+          "Indicates the Bridge Ports MAC Operational parameter is false";
+        value 2;
+      }
+      enum blocked {
+        description
+          "Indicates the target data frame would not be forwarded if received on this Port due to active topology enforcement";
+        value 3;
+      }
+      enum vid {
+        description
+          "Indicates the ingress port is not in the member set of the LTMs VID, and ingress filtering is enabled
+
+           This means the target data frame would be filtered by ingress filtering.";
+        value 4;
+      }
+    }
+  }
+
+  typedef chassis-id-type {
+    type enumeration {
+      enum CHASSIS_COMPONENT {
+        value 1;
+        description
+          "Chassis identifier based on the value of entPhysicalAlias
+           object defined in IETF RFC 2737";
+      }
+      enum INTERFACE_ALIAS {
+        value 2;
+        description
+          "Chassis identifier based on the value of ifAlias object
+           defined in IETF RFC 2863";
+      }
+      enum PORT_COMPONENT {
+        value 3;
+        description
+          "Chassis identifier based on the value of entPhysicalAlias
+           object defined in IETF RFC 2737 for a port or backplane
+           component";
+      }
+      enum MAC_ADDRESS {
+        value 4;
+        description
+          "Chassis identifier based on the value of a unicast source
+           address (encoded in network byte order and IEEE 802.3
+           canonical bit order), of a port on the containing chassis
+           as defined in IEEE Std 802-2001";
+      }
+      enum NETWORK_ADDRESS {
+        value 5;
+        description
+          "Chassis identifier based on a network address,
+           associated with a particular chassis.  The encoded address
+           is composed of two fields.  The first field is a single
+           octet, representing the IANA AddressFamilyNumbers value
+           for the specific address type, and the second field is the
+           network address value";
+      }
+      enum INTERFACE_NAME {
+        value 6;
+        description
+          "Chassis identifier based on the name of the interface,
+           e.g., the value of ifName object defined in IETF RFC 2863";
+      }
+      enum LOCAL {
+        value 7;
+        description
+          "Chassis identifier based on a locally defined value";
+      }
+    }
+    description
+      "Type definition with enumerations describing the source of
+       the chassis identifier";
+    reference
+      "IEEE 802.1AB LLDP MIB";
+  }
+
+  typedef port-id-type {
+    type enumeration {
+      enum INTERFACE_ALIAS {
+        value 1;
+        description
+          "Chassis identifier based on the value of ifAlias object
+           defined in IETF RFC 2863";
+      }
+      enum PORT_COMPONENT {
+        value 2;
+        description
+          "Port identifier based on the value of entPhysicalAlias
+           object defined in IETF RFC 2737 for a port component";
+      }
+      enum MAC_ADDRESS {
+        value 3;
+        description
+          "Port identifier based on the value of a unicast source
+           address (encoded in network byte order and IEEE 802.3
+           canonical bit order) associated with a port";
+      }
+      enum NETWORK_ADDRESS {
+        value 4;
+        description
+          "Port identifier based on a network address,
+           associated with a particular port";
+      }
+      enum INTERFACE_NAME {
+        value 5;
+        description
+          "Port identifier based on the name of the interface,
+           e.g., the value of ifName object defined in IETF RFC 2863";
+      }
+      enum AGENT_CIRCUIT_ID {
+        value 6;
+        description
+          "Port identifer based on the circuit id in the DHCP
+           relay agent information option as defined in IETF
+           RFC 3046";
+      }
+      enum LOCAL {
+        value 7;
+        description
+          "Port identifier based on a locally defined alphanumeric
+           string";
+      }
+    }
+    description
+      "Type definition with enumerations describing the basis of
+       the port identifier";
+    reference
+      "IEEE 802.1AB LLDP MIB";
+  }
+
+  typedef management-address-type {
+    type enumeration {
+      enum IPv4 {
+        value 1;
+        description
+          "Use IPv4 address for management address type";
+      }
+      enum IPv6 {
+        value 2;
+        description
+          "Use IPv6 address for management address type";
+      }
+    }
+    description
+      "Type definition with enumerations describing the source of
+       the management address type";
+    reference
+      "IEEE 802.1AB LLDP MIB";
+  }
+}

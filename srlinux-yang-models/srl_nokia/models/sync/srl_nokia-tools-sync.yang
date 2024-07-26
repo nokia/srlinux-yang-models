@@ -1,0 +1,170 @@
+module srl_nokia-tools-sync {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:time:tools-sync";
+  prefix srl_nokia-tools-sync;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands on time protocols and statstics";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping tools-sync-top {
+    description
+      "Tools grouping for sync";
+    container sync {
+      if-feature "srl_nokia-feat:sync";
+      presence "Configure sync.";
+      description
+        "Top-level grouping for sync operational commands";
+      container ptp {
+        description
+          "Grouping for ptp operational commands";
+        list instance {
+          key "instance-index";
+          description
+            "Grouping for PTP instance operational commands";
+          leaf instance-index {
+            type uint32 {
+              range "1..10";
+            }
+          }
+          leaf clear-statistics {
+            type empty;
+            description
+              "Clears all PTP statistics for PTP";
+          }
+          container default-ds {
+            description
+              "The default data set of the PTP Instance
+               In the context of the protocol, this data set is required
+               for an Ordinary Clock or Boundary Clock";
+            container statistics {
+              leaf clear {
+                type empty;
+                description
+                  "Clears PTP statistics and event counters in the default-ds";
+              }
+            }
+            container time-recovery-engine {
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Clears all PTP statistics for PTP time recovery engine";
+                }
+              }
+            }
+            container freq-recovery-engine {
+              if-feature "srl_nokia-feat:sync-ptp-freq";
+              container statistics {
+                leaf clear {
+                  type empty;
+                  description
+                    "Clears all PTP statistics for PTP freq recovery engine";
+                }
+              }
+            }
+          }
+          list port-ds-interface {
+            key "port-index";
+            description
+              "Grouping for PTP Port DS for interfaces operational commands";
+            leaf port-index {
+              type uint16;
+            }
+            container statistics {
+              leaf clear {
+                type empty;
+                description
+                  "Clears all PTP statistics for this PTP Port DS";
+              }
+            }
+          }
+          list port-ds-configured-peer {
+            if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+            key "port-index";
+            description
+              "Grouping for PTP Port DS for configured IP peers operational commands";
+            leaf port-index {
+              type uint16;
+            }
+            container statistics {
+              leaf clear {
+                type empty;
+                description
+                  "Clears all PTP statistics for this PTP Port DS";
+              }
+            }
+          }
+          list port-ds-discovered-peer {
+            if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+            key "port-index";
+            description
+              "Grouping for PTP Port DS for discovered IP peers operational commands";
+            leaf port-index {
+              type uint16;
+            }
+            container statistics {
+              leaf clear {
+                type empty;
+                description
+                  "Clears all PTP statistics for this PTP Port DS";
+              }
+            }
+          }
+          container inactive-peers {
+            if-feature "srl_nokia-feat:sync-ptp-ip-peers";
+            leaf clear {
+              type empty;
+              description
+                "Clears information related to inactive PTP peers";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    uses tools-sync-top;
+  }
+}

@@ -1,0 +1,269 @@
+module srl_nokia-stamp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:twamp:stamp";
+  prefix srl_nokia-stamp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping session-reflector-statistics-common {
+    leaf test-frames-received {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "STAMP test frames received";
+    }
+    leaf test-frames-sent {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "STAMP test frames transmitted";
+    }
+  }
+
+  grouping reflector-top-level-statistics {
+    leaf test-session-count {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "STAMP test session count";
+    }
+    leaf reflector-table-entries-full {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Session-Reflector no available state table entries to add new test session";
+    }
+    leaf packet-discards-on-reception {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Received STAMP test packets discarded lack of resources or resource contention";
+    }
+    leaf packet-discards-on-transmission {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Transmitted STAMP test packets discarded due to lack of resources or resource contention";
+    }
+    leaf session-reflector-not-found {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Session-Sender is sending to a destination UDP port that is not part of the Session-Reflector
+
+         The Session-Reflector has not allocated the UDP port for this network instance reflector.   This counter may
+         increase when the Session-Reflector is deleted and packets for that specific Session-Reflector had been queued
+         for processing.  This counter does not increment when there is failure to map UDP port to the STAMP protocol.";
+    }
+    leaf reflectors-configured {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Count of STAMP Session-Reflectors administratively enabled regardless of operational state";
+    }
+    leaf reflectors-operational {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Count of STAMP Session-Reflectors with an administrative state 'enable' and operational state 'up'";
+    }
+    leaf reflectors-not-operational {
+      type srl_nokia-comm:zero-based-counter32;
+      description
+        "Count of STAMP Session-Reflectors with an administrative state 'enable' and operational state 'down'";
+    }
+  }
+
+  grouping reflector-network-instance-statistics {
+    leaf test-sessions {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "STAMP test session count";
+    }
+    leaf prefix-match-failure {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Session-Sender IP does not have a prefix match configured on the Session-Reflector";
+    }
+    leaf session-reflector-udp-port-registration-failure {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The Session-Reflector was unable to allocate the UDP port for this network instance reflector";
+    }
+    leaf malformed-packet {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Session-Reflector was able to identify STAMP test packet but the packet was incorrectly formatted, packet discarded
+
+         This counter will be increased if the malformation affects the mapping of the test packet to the test session.
+         This would be the case where the session cannot be identified.";
+    }
+    leaf packet-discards-source-destination-equal {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Session-Reflector discarded the received test packet because source IP and destination IP are the same
+
+         The test session is never created in the case where source IP and destination IP are the same.";
+    }
+  }
+
+  grouping reflector-test-session-statistics {
+    leaf malformed-tlv {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Session-Reflector was able to identify STAMP test packet but the packet was incorrectly formatted, packet discarded
+
+         This counter will be increased if the malformation does not affect the mapping of the test packet to the test session.
+         This would be the case if a TLV is malformed.";
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    if-feature "srl_nokia-feat:stamp";
+    container stamp {
+      presence "Configuration and state for Simple Two-way Active Measurement Protocol (STAMP)";
+      container session-reflector {
+        presence "Configuration and state for Simple Two-way Active Measurement Protocol (STAMP) reflector";
+        description
+          "STAMP Session-Reflector configuration and state";
+        leaf inactivity-timer {
+          type uint32 {
+            range "1..604800";
+          }
+          units "seconds";
+          default "900";
+          description
+            "STAMP test session timeout on inactivity
+
+             The amount of time (ref-wait) a test session must be inactive, no packets arriving, before the test session is
+             removed from the Session-Reflector stateful table.";
+        }
+        container statistics {
+          srl_nokia-ext:delivery-node-override "true";
+          srl_nokia-ext:stream-mode "sample=5";
+          config false;
+          uses session-reflector-statistics-common;
+          uses reflector-top-level-statistics;
+        }
+        list network-instance {
+          description
+            "The list of network instances configured for STAMP Session-Reflector function";
+          key "name";
+          leaf name {
+            type leafref {
+              path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+            }
+            description
+              "The name of the network instances to which the Session-Reflector state and configuration applies";
+          }
+          leaf description {
+            type srl_nokia-comm:description;
+            description
+              "A string describing the STAMP Session-Reflector";
+          }
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            default "disable";
+            description
+              "This attribute specifies whether the STAMP Session-Reflector is enabled or disabled";
+          }
+          list ip-prefix {
+            description
+              "The list of IP source addresses or ranges allowed to send STAMP test packets to Session-Reflector";
+            key "ip-prefix";
+            leaf ip-prefix {
+              type srl_nokia-comm:ip-prefix;
+              description
+                "The IP address or range allowed to send STAMP test packets to the Session-Reflector";
+            }
+          }
+          leaf udp-port {
+            description
+              "The UDP Port listening port of the STAMP Session-Reflector";
+            type uint16 {
+              range "862|64364..64373";
+            }
+            default "862";
+          }
+          leaf oper-state {
+            config false;
+            type srl_nokia-comm:oper-state;
+          }
+          container statistics {
+            srl_nokia-ext:delivery-node-override "true";
+            srl_nokia-ext:stream-mode "sample=5";
+            config false;
+            uses session-reflector-statistics-common;
+            uses reflector-network-instance-statistics;
+          }
+          list test-session-statistics {
+            srl_nokia-ext:delivery-node-override "true";
+            srl_nokia-ext:stream-mode "sample=5";
+            config false;
+            description
+              "The per test session statistics";
+            key "session-sender-ip session-sender-udp session-reflector-ip session-reflector-udp session-identifier";
+            leaf session-sender-ip {
+              description
+                "The Source IP address of the Session-Sender";
+              type srl_nokia-comm:ip-address;
+            }
+            leaf session-sender-udp {
+              description
+                "The Source UDP address of the Session-Sender";
+              type srl_nokia-comm:port-number;
+            }
+            leaf session-reflector-ip {
+              description
+                "The Destination IP address in the Session-Sender STAMP test packet, an IP on the Session-Reflector";
+              type srl_nokia-comm:ip-address;
+            }
+            leaf session-reflector-udp {
+              description
+                "The Destination UDP address in the Session-Sender STAMP test packet, the listening port on the Session-Reflector";
+              type srl_nokia-comm:port-number;
+            }
+            leaf session-identifier {
+              description
+                "The SSID in the Session-Sender STAMP test packet";
+              type uint16;
+            }
+            leaf last-sequence-number-received {
+              description
+                "The last sequence number received in the Session-Sender test packet";
+              type uint32;
+            }
+            leaf last-sequence-number-transmitted {
+              description
+                "The last sequence number transmitted in the Session-Reflector test packet";
+              type uint32;
+            }
+            leaf current-ref-wait {
+              description
+                "The current value of the ref wait time for the test session";
+              type uint32;
+            }
+            uses session-reflector-statistics-common;
+            uses reflector-test-session-statistics;
+          }
+        }
+      }
+    }
+  }
+}

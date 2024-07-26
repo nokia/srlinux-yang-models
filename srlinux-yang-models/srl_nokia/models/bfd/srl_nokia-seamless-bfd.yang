@@ -1,0 +1,92 @@
+module srl_nokia-seamless-bfd {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:bfd:seamless-bfd";
+  prefix srl_nokia-seamless-bfd;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of bfd protocol
+     configuration.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping seamless-bfd {
+    container bfd {
+      if-feature "srl_nokia-feat:seamless-bfd";
+      description
+        "Container for BFD related network-instance related configuration";
+      container seamless-bfd {
+        description
+          "Container for BFD related network-instance related configuration";
+        list peer {
+          key "address";
+          leaf address {
+            type srl_nokia-comm:ip-address;
+            description
+              "An IPv4 or IPv6 address of the farend seamless-bfd descriminator binding";
+          }
+          leaf discriminator {
+            type uint32 {
+              range "524288..526335";
+            }
+            description
+              "Static seamless-BFD discriminator for the farend binding";
+          }
+        }
+        list reflector {
+          key "name";
+          description
+            "List of seamless BFD reflector instances";
+          max-elements 1;
+          leaf name {
+            type srl_nokia-comm:name;
+            description
+              "A name for the local seamless-bfd reflector agent";
+          }
+          leaf local-discriminator {
+            type uint32 {
+              range "524288..526335";
+            }
+            description
+              "Seamless-BFD discriminator for the local reflector agent";
+          }
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            description
+              "Used to administratively enable or disable seamless-bfd reflector";
+          }
+          leaf description {
+            type srl_nokia-comm:description;
+            description
+              "Description of the seamless-bfd reflector";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses seamless-bfd;
+  }
+}

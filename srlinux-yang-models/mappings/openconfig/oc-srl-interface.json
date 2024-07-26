@@ -1,0 +1,1475 @@
+{
+    "mapping": [{
+            "oc": "/interfaces",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface",
+            "srlinux": "/interface"
+        },
+        {
+            "oc": "/interfaces/interface/penalty-based-aied",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/name",
+            // See comment for srlinux:/interface/name
+            "transform": "direct-key-transform"
+        },
+        {
+            "srlinux": "/interface/name",
+            // This also maps to /lacp/interfaces/interface/name so must use direct-key-transform
+            "transform": "direct-key-transform"
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/name",
+            "srlinux": "",
+            "type": "srl_nokia-common:interface-name"
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/mtu",
+            "srlinux": "/interface/mtu"
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/type",
+            "finalize-transform": "oc-interface-type",
+            "deviations": {
+                "add": {
+                    "must": [
+                    {
+                        "expression": ". = 'ethernetCsmacd' or not (starts-with(../name,'ethernet') or starts-with(../name,'mgmt'))",
+                        "error-message": "ethernet and mgmt interfaces must be a type of ethernetCsmacd"
+                    },
+                    {
+                        "expression": ". = 'softwareLoopback' or not (starts-with(../name,'lo') or starts-with(../name,'system'))",
+                        "error-message": "loopback and system interfaces must be a type of softwareLoopback"
+                    },
+                    {
+                        "expression": ". = 'ipForward' or not (starts-with(../name,'irb'))",
+                        "error-message": "irb interfaces must be a type of ipForward"
+                    },
+                    {
+                        "expression": ". = 'ieee8023adLag' or not (starts-with(../name,'lag'))",
+                        "error-message": "lag interfaces must be a type of ieee8023adLag"
+                    }
+                    ]
+                }
+            }
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/loopback-mode",
+            "srlinux": "/interface/loopback-mode",
+            "feature-flagged": true,
+            "mapping": [
+                {"NONE":"none"},
+                {"FACILITY":"facility"},
+                {"TERMINAL":"terminal"}
+            ]
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/description",
+            "srlinux": "/interface/description"
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/enabled",
+            "srlinux": "/interface/admin-state",
+            "transform":"bool-to-admin-state"
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/oc-vlan:tpid",
+            // not enabled on ixr chassis
+            // "srlinux": "/interface/tpid",
+            // "feature-flagged": true
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/oc-if-sdn:forwarding-viable",
+            "srlinux": "/interface/ethernet/forwarding-viable",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/state/ifindex",
+            "srlinux": "/interface/ifindex"
+        },
+        {
+            "oc": "/interfaces/interface/state/admin-status",
+            "finalize-transform": "oc-admin-status"
+        },
+        {
+            "oc": "/interfaces/interface/state/oper-status",
+            "srlinux": "/interface/oper-state",
+            "mapping": [
+                {"UP":"up"},
+                {"DOWN":"down"},
+                {"TESTING":"testing"},
+                {"UNKNOWN":""},
+                {"DORMANT":""},
+                {"NOT_PRESENT":""},
+                {"LOWER_LAYER_DOWN":""}
+            ]
+        },
+        {
+            "oc": "/interfaces/interface/state/last-change",
+            "srlinux": "/interface/last-change",
+            "transform": "timeticks-to-timestamp"
+        },
+        {
+            "oc": "/interfaces/interface/{config,state}/id",
+            "srlinux": "/interface/p4rt/id",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/state/logical",
+            "supported": false
+            // FUTURE: we could set these on create
+            // "special-handling": "true-for-non-ethernet-non-mgmt-interfaces"
+        },
+        {
+            "oc": "/interfaces/interface/state/management",
+            "finalize-transform": "oc-interface-management"
+        },
+        {
+            "oc": "/interfaces/interface/state/physical-channel",
+            "srlinux": "/interface/physical-channel"
+        },
+        {
+            "oc": "/interfaces/interface/state/physical-channel/physical-channel",
+            "srlinux": "/interface/physical-channel/physical-channel"
+        },
+        {
+            "oc": "/interfaces/interface/state/cpu",
+            "supported": false
+            // FUTURE: we could set these on create
+            // "special-handling": "always-false"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters",
+            "srlinux": "/interface/statistics"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-octets",
+            "srlinux": "/interface/statistics/in-octets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-pkts",
+            "srlinux": "/interface/statistics/in-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-unicast-pkts",
+            "srlinux": "/interface/statistics/in-unicast-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-broadcast-pkts",
+            "srlinux": "/interface/statistics/in-broadcast-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-multicast-pkts",
+            "srlinux": "/interface/statistics/in-multicast-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-discards",
+            "srlinux": "/interface/statistics/in-discarded-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-errors",
+            "srlinux": "/interface/statistics/in-error-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-unknown-protos",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/in-fcs-errors",
+            "srlinux": "/interface/statistics/in-fcs-error-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/out-octets",
+            "srlinux": "/interface/statistics/out-octets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/out-pkts",
+            "srlinux": "/interface/statistics/out-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/out-unicast-pkts",
+            "srlinux": "/interface/statistics/out-unicast-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/out-broadcast-pkts",
+            "srlinux": "/interface/statistics/out-broadcast-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/out-multicast-pkts",
+            "srlinux": "/interface/statistics/out-multicast-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/out-discards",
+            "srlinux": "/interface/statistics/out-discarded-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/out-errors",
+            "srlinux": "/interface/statistics/out-error-packets"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/carrier-transitions",
+            "srlinux": "/interface/statistics/carrier-transitions"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/last-clear",
+            "srlinux": "/interface/statistics/last-clear",
+            "transform": "timeticks-to-timestamp"
+        },
+        {
+            "oc": "/interfaces/interface/state/counters/resets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/hold-time",
+            "srlinux": "/interface/ethernet/hold-time"
+        },
+        {
+            "oc": "/interfaces/interface/hold-time/{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/hold-time/{config,state}/up",
+            "srlinux": "/interface/ethernet/hold-time/up"
+        },
+        {
+            "oc": "/interfaces/interface/hold-time/{config,state}/down",
+            "srlinux": "/interface/ethernet/hold-time/down"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface",
+            "srlinux": "/interface/subinterface"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/index",
+            "srlinux": "/interface/subinterface/index"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/config",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/{state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/{config,state}/index",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/{config,state}/description",
+            "srlinux": "/interface/subinterface/description"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/{config,state}/enabled",
+            "srlinux": "/interface/subinterface/admin-state",
+            "transform":"bool-to-admin-state"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/name",
+            "srlinux": "/interface/subinterface/name"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/ifindex",
+            "srlinux": "/interface/subinterface/ifindex"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/admin-status",
+            "finalize-transform": "oc-admin-status"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/oper-status",
+            "srlinux": "/interface/subinterface/oper-state",
+            "mapping": [
+                {"UP":"up"},
+                {"DOWN":"down"},
+                {"TESTING":""},
+                {"UNKNOWN":""},
+                {"DORMANT":""},
+                {"NOT_PRESENT":""},
+                {"LOWER_LAYER_DOWN":""}
+            ]
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/last-change",
+            "srlinux": "/interface/subinterface/last-change",
+            "transform": "timeticks-to-timestamp"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/logical",
+            "supported": false
+            // FUTURE: we could set these on create
+            // "special-handling": "true-for-non-ethernet-non-mgmt-interfaces"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/management",
+            "supported": false
+            // FUTURE: we could set these on create
+            // "special-handling": "true-for-mgmt-interfaces"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/cpu",
+            "supported": false
+            // FUTURE: we could set these on create
+            // "special-handling": "always-false"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters",
+            "srlinux": "/interface/subinterface/statistics"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-octets",
+            "srlinux": "/interface/subinterface/statistics/in-octets"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-pkts",
+            "srlinux": "/interface/subinterface/statistics/in-packets"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-unicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-broadcast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-multicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-discards",
+            "srlinux": "/interface/subinterface/statistics/in-discarded-packets"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-errors",
+            // Bruce - srl doesn't have this
+            // "srlinux": "/interface/subinterface/statistics/in-error-packets"
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-unknown-protos",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/in-fcs-errors",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/out-octets",
+            "srlinux": "/interface/subinterface/statistics/out-octets"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/out-pkts",
+            "srlinux": "/interface/subinterface/statistics/out-packets"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/out-unicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/out-broadcast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/out-multicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/out-discards",
+            "srlinux": "/interface/subinterface/statistics/out-discarded-packets"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/out-errors",
+            // Bruce - srl doesn't have this
+            // "srlinux": "/interface/subinterface/statistics/out-error-packets"
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/carrier-transitions",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/state/counters/last-clear",
+            "srlinux": "/interface/subinterface/statistics/last-clear",
+            "transform": "timeticks-to-timestamp"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan",
+            "srlinux": "/interface/subinterface/srl_nokia-if-vlan:vlan"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:{config,state}/oc-vlan:vlan-id",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match",
+            "srlinux": "/interface/subinterface/srl_nokia-if-vlan:vlan/srl_nokia-if-vlan:encap"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:single-tagged",
+            "srlinux": "/interface/subinterface/srl_nokia-if-vlan:vlan/srl_nokia-if-vlan:encap/srl_nokia-if-vlan:single-tagged"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:single-tagged/oc-vlan:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:single-tagged/oc-vlan:{config,state}/oc-vlan:vlan-id",
+            "srlinux": "/interface/subinterface/srl_nokia-if-vlan:vlan/srl_nokia-if-vlan:encap/srl_nokia-if-vlan:single-tagged/srl_nokia-if-vlan:vlan-id",
+            // this transform will set/clear srl:/interface/vlan-tagging if necessary
+            "transform": "subif-vlan-tag"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:single-tagged-list",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:single-tagged-range",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:double-tagged",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:double-tagged-inner-list",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:double-tagged-outer-list",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:double-tagged-inner-range",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:double-tagged-outer-range",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:match/oc-vlan:double-tagged-inner-outer-range",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:ingress-mapping",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-vlan:vlan/oc-vlan:egress-mapping",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4",
+            "srlinux": ""
+
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address",
+            "srlinux": "/interface/subinterface/ipv4/address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:ip",
+            "srlinux": "/interface/subinterface/ipv4/address/ip-prefix",
+            "transform": "ip-address+prefix"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}/oc-ip:ip",
+            "srlinux": "",
+            "type": "srl_nokia-common:ipv4-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}/oc-ip:prefix-length",
+            "srlinux": "",
+            "immutable": "../.." // this is part of srl key, parent address list entry must get deleted/recreated
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}/oc-ip:type",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:state/oc-ip:origin",
+            "srlinux": "/interface/subinterface/ipv4/address/origin",
+            "transform": "uppercase-to-lowercase"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp",
+            "supported": false
+            // TODO - srl model is changing
+        },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:virtual-router-id",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-router-id"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}",
+        //     "srlinux": ""
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:virtual-router-id",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-router-id"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:virtual-address",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-address"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:virtual-address/oc-ip:virtual-address",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-address"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:priority",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:priority"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:preempt",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:preempt"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:preempt-delay",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:preempt-delay"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:accept-mode",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:accept-mode"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:advertisement-interval",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:advertise-interval",
+        //     // "transform": "centisecond-to-millisecond"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:state/oc-ip:current-priority",
+        //     "supported": false
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}",
+        //     "srlinux": ""
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}/oc-ip:track-interface",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking/srl_nokia-if-ip-vrrp:track-interface"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}/oc-ip:track-interface/oc-ip:track-interface",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking/srl_nokia-if-ip-vrrp:track-interface"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}/oc-ip:priority-decrement",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking/srl_nokia-if-ip-vrrp:track-interface/srl_nokia-if-ip-vrrp:priority-decrement"
+        // },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:proxy-arp",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:proxy-arp/oc-ip:{config,state}",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:proxy-arp/oc-ip:{config,state}/oc-ip:mode",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors",
+            "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-nbr:arp"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor",
+            "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-nbr:arp/srl_nokia-if-ip-nbr:neighbor"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor/oc-ip:ip",
+            "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-nbr:arp/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:ipv4-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}/oc-ip:ip",
+            "srlinux": "",
+            "type": "srl_nokia-common:ipv4-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}/oc-ip:link-layer-address",
+            "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-nbr:arp/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:link-layer-address",
+            "type": "srl_nokia-common:mac-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:neighbors/oc-ip:neighbor/oc-ip:state/oc-ip:origin",
+            "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-nbr:arp/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:origin",
+            "transform": "uppercase-to-lowercase"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:unnumbered",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:unnumbered/oc-ip:{config,state}",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:unnumbered/oc-ip:{config,state}/oc-ip:enabled",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:unnumbered/oc-ip:interface-ref",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:unnumbered/oc-ip:interface-ref/oc-ip:{config,state}",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:unnumbered/oc-ip:interface-ref/oc-ip:{config,state}/oc-ip:interface",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:unnumbered/oc-ip:interface-ref/oc-ip:{config,state}/oc-ip:subinterface",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:{config,state}/oc-ip:enabled",
+            "srlinux": "/interface/subinterface/ipv4/admin-state",
+            "transform":"bool-to-admin-state"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/{config,state}/oc-ip:mtu",
+            "srlinux": "/interface/subinterface/ip-mtu",
+            "finalize-transform": "oc-set-additional-field{../../ipv6/{config,state}/mtu=mtu}",
+            "deviations": {
+                "add": {
+                    "must": [
+                    {
+                        "expression": ". = ../../../ipv6/config/mtu",
+                        "error-message": "ipv4 and ipv6 mtu values must be the same"
+                    }
+                    ]
+                }
+            }
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:{config,state}/oc-ip:dhcp-client",
+            "supported": false
+            // FUTURE - not currently needed
+            // "srlinux": "/interface/subinterface/ipv4/srl_nokia-if-ip-dhcp:dhcp-client",
+            // "special-handling": "bool-to-presence"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters",
+            "srlinux": "/interface/subinterface/ipv4/statistics",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-pkts",
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-multicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-multicast-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-multicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-multicast-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-error-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-forwarded-pkts",
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-forwarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-forwarded-octets",
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-forwarded-octets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:in-discarded-pkts",
+            "srlinux": "/interface/subinterface/ipv4/statistics/in-discarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-pkts",
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-error-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-forwarded-pkts",
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-forwarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-forwarded-octets",
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-forwarded-octets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv4/oc-ip:state/oc-ip:counters/oc-ip:out-discarded-pkts",
+            "srlinux": "/interface/subinterface/ipv4/statistics/out-discarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address",
+            "srlinux": "/interface/subinterface/ipv6/address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:ip",
+            "srlinux": "/interface/subinterface/ipv6/address/ip-prefix",
+            "transform": "ip-address+prefix"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}/oc-ip:ip",
+            "srlinux": "",
+            "type": "srl_nokia-common:ipv6-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}/oc-ip:prefix-length",
+            "srlinux": "",
+            "immutable": "../.." // this is part of srl key, parent address list entry must get deleted/recreated
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:{config,state}/type",
+            "srlinux": "/interface/subinterface/ipv6/address/type",
+            "mapping": [
+                {"GLOBAL_UNICAST":"global-unicast"},
+                {"LINK_LOCAL_UNICAST":"link-local-unicast"}
+            ]
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:state/oc-ip:origin",
+            "srlinux": "/interface/subinterface/ipv6/address/origin",
+            "transform": "uppercase-to-lowercase"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:state/oc-ip:status",
+            "srlinux": "/interface/subinterface/ipv6/address/status",
+            "transform": "uppercase-to-lowercase"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp",
+            "supported": false
+            // TODO - srl model is changing
+        },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:virtual-router-id",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-router-id"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}",
+        //     "srlinux": ""
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:virtual-router-id",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-router-id"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:virtual-address",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-address"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:virtual-address/oc-ip:virtual-address",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-address"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:priority",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:priority"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:preempt",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:preempt"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:preempt-delay",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:preempt-delay"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:accept-mode",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:accept-mode"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:advertisement-interval",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:advertise-interval",
+        //     // "transform": "centisecond-to-millisecond"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:{config,state}/oc-ip:virtual-link-local",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:virtual-link-local-address"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:state/oc-ip:current-priority",
+        //     "supported": false
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}",
+        //     "srlinux": ""
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}/oc-ip:track-interface",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking/srl_nokia-if-ip-vrrp:track-interface"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}/oc-ip:track-interface/oc-ip:track-interface",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking/srl_nokia-if-ip-vrrp:track-interface"
+        // },
+        // {
+        //     "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:addresses/oc-ip:address/oc-ip:vrrp/oc-ip:vrrp-group/oc-ip:interface-tracking/oc-ip:{config,state}/oc-ip:priority-decrement",
+        //     "srlinux": ""
+        //     // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-vrrp:vrrp/srl_nokia-if-ip-vrrp:vrrp-group/srl_nokia-if-ip-vrrp:interface-tracking/srl_nokia-if-ip-vrrp:track-interface/srl_nokia-if-ip-vrrp:priority-decrement"
+        // },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-ra:router-advertisement"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}/oc-ip:interval",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-ra:router-advertisement/srl_nokia-if-ip-ra:router-role/srl_nokia-if-ip-ra:min-advertisement-interval",
+            "finalize-transform": "srl-set-additional-field{max-advertisement-interval=min-advertisement-interval}"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}/oc-ip:lifetime",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-ra:router-advertisement/srl_nokia-if-ip-ra:router-role/srl_nokia-if-ip-ra:router-lifetime"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}/oc-ip:suppress",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}/oc-ip:enable",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-ra:router-advertisement/srl_nokia-if-ip-ra:router-role/srl_nokia-if-ip-ra:admin-state",
+            "transform": "bool-to-admin-state"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}/oc-ip:mode",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}/oc-ip:managed",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:{config,state}/oc-ip:other-config",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:router-advertisement/oc-ip:prefixes",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:ip",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:ipv6-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}/oc-ip:ip",
+            "srlinux": "",
+            "type": "srl_nokia-common:ipv6-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:{config,state}/oc-ip:link-layer-address",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:link-layer-address",
+            "type": "srl_nokia-common:mac-address"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:state/oc-ip:origin",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:origin",
+            "transform": "uppercase-to-lowercase"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:state/oc-ip:is-router",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:is-router"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:neighbors/oc-ip:neighbor/oc-ip:state/oc-ip:neighbor-state",
+            "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-nbr:neighbor-discovery/srl_nokia-if-ip-nbr:neighbor/srl_nokia-if-ip-nbr:current-state",
+            "transform": "uppercase-to-lowercase"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:unnumbered",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:unnumbered/oc-ip:{config,state}",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:unnumbered/oc-ip:{config,state}/oc-ip:enabled",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:unnumbered/oc-ip:interface-ref",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:unnumbered/oc-ip:interface-ref/oc-ip:{config,state}",
+            "srlinux": ""
+            // "supported": false - this is a non-presence container
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:unnumbered/oc-ip:interface-ref/oc-ip:{config,state}/oc-ip:interface",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:unnumbered/oc-ip:interface-ref/oc-ip:{config,state}/oc-ip:subinterface",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}/oc-ip:enabled",
+            "srlinux": "/interface/subinterface/ipv6/admin-state",
+            "transform":"bool-to-admin-state"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:config/oc-ip:mtu",
+            "srlinux": "",
+            "type": "uint16",
+            "deviations": {
+                "add": {
+                    "must": [
+                    {
+                        "expression": ". = ../../../ipv4/config/mtu",
+                        "error-message": "ipv4 and ipv6 mtu values must be the same"
+                    }
+                    ]
+                }
+            }
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:mtu",
+            "srlinux": "",
+            "type": "uint16"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}/oc-ip:dup-addr-detect-transmits",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:{config,state}/oc-ip:dhcp-client",
+            "supported": false
+            // FUTURE - not currently needed
+            // "srlinux": "/interface/subinterface/ipv6/srl_nokia-if-ip-dhcp:dhcp-client",
+            // "special-handling": "bool-to-presence"
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters",
+            "srlinux": "/interface/subinterface/ipv6/statistics",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-pkts",
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-multicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-multicast-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-multicast-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-multicast-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-error-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-forwarded-pkts",
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-forwarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-forwarded-octets",
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-forwarded-octets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:in-discarded-pkts",
+            "srlinux": "/interface/subinterface/ipv6/statistics/in-discarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-pkts",
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-octets",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-error-pkts",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-forwarded-pkts",
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-forwarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-forwarded-octets",
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-forwarded-octets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip:state/oc-ip:counters/oc-ip:out-discarded-pkts",
+            "srlinux": "/interface/subinterface/ipv6/statistics/out-discarded-packets",
+            "feature-flagged": true
+        },
+        {
+            "oc": "/interfaces/interface/subinterfaces/subinterface/oc-ip:ipv6/oc-ip-ext:autoconf",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet",
+            "srlinux": "/interface/ethernet"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:mac-address",
+            "srlinux": "/interface/ethernet/mac-address",
+            "feature-flagged": true,
+            "type": "srl_nokia-common:mac-address"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:auto-negotiate",
+            // not enabled on ixr chassis
+            // "srlinux": "/interface/ethernet/auto-negotiate",
+            // "feature-flagged": true
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:standalone-link-training",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:duplex-mode",
+            // not enabled on ixr chassis
+            // "srlinux": "/interface/ethernet/duplex-mode",
+            // "transform": "uppercase-to-lowercase",
+            // "feature-flagged": true
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:port-speed",
+            "srlinux": "/interface/ethernet/port-speed",
+            "mapping": [
+                {"SPEED_10MB":"10M"},
+                {"SPEED_100MB":"100M"},
+                {"SPEED_1GB":"1G"},
+                {"SPEED_2500MB":""},
+                {"SPEED_5GB":""},
+                {"SPEED_10GB":"10G"},
+                {"SPEED_25GB":"25G"},
+                {"SPEED_40GB":"40G"},
+                {"SPEED_50GB":"50G"},
+                {"SPEED_100GB":"100G"},
+                {"SPEED_200GB":"200G"},
+                {"SPEED_400GB":"400G"},
+                {"SPEED_600GB":""},
+                {"SPEED_800GB":""},
+                {"SPEED_UNKNOWN":""}
+            ]
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:enable-flow-control",
+            // srlinux has two values for this - /interface/ethernet/flow-control/{receive,transmit}"
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-eth:fec-mode",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:{config,state}/oc-lag:aggregate-id",
+            "srlinux": "/interface/ethernet/aggregate-id"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:hw-mac-address",
+            "srlinux": "/interface/ethernet/hw-mac-address"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:negotiated-duplex-mode",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:negotiated-port-speed",
+            // Need to change SRL port-speed to always return the configured port-speed, and add a negotiated leaf.
+            // This field is not required at this time.
+            // "srlinux": "/interface/ethernet/port-speed",
+            // "mapping": [
+            //     {"SPEED_10MB":"10M"},
+            //     {"SPEED_100MB":"100M"},
+            //     {"SPEED_1GB":"1G"},
+            //     {"SPEED_2500MB":""},
+            //     {"SPEED_5GB":""},
+            //     {"SPEED_10GB":"10G"},
+            //     {"SPEED_25GB":"25G"},
+            //     {"SPEED_40GB":"40G"},
+            //     {"SPEED_50GB":"50G"},
+            //     {"SPEED_100GB":"100G"},
+            //     {"SPEED_200GB":"200G"},
+            //     {"SPEED_400GB":"400G"},
+            //     {"SPEED_600GB":""},
+            //     {"SPEED_800GB":""},
+            //     {"SPEED_UNKNOWN":""}
+            // ]
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters",
+            "srlinux": "/interface/ethernet/statistics"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-mac-control-frames",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-mac-pause-frames",
+            "srlinux": "/interface/ethernet/statistics/in-mac-pause-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-oversize-frames",
+            "srlinux": "/interface/ethernet/statistics/in-oversize-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-undersize-frames",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-jabber-frames",
+            "srlinux": "/interface/ethernet/statistics/in-jabber-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-fragment-frames",
+            "srlinux": "/interface/ethernet/statistics/in-fragment-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-8021q-frames",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-crc-errors",
+            "srlinux": "/interface/ethernet/statistics/in-crc-error-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-block-errors",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-carrier-errors",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-interrupted-tx",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-late-collision",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-mac-errors-rx",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-single-collision",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-symbol-error",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:in-maxsize-exceeded",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:out-mac-control-frames",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:out-mac-pause-frames",
+            "srlinux": "/interface/ethernet/statistics/out-mac-pause-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:out-8021q-frames",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth:out-mac-errors-tx",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth-ext:in-distribution",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth-ext:in-distribution/oc-eth-ext:in-frames-64-octets",
+            "srlinux": "/interface/ethernet/statistics/in-64b-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth-ext:in-distribution/oc-eth-ext:in-frames-65-127-octets",
+            "srlinux": "/interface/ethernet/statistics/in-65b-to-127b-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth-ext:in-distribution/oc-eth-ext:in-frames-128-255-octets",
+            "srlinux": "/interface/ethernet/statistics/in-128b-to-255b-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth-ext:in-distribution/oc-eth-ext:in-frames-256-511-octets",
+            "srlinux": "/interface/ethernet/statistics/in-256b-to-511b-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth-ext:in-distribution/oc-eth-ext:in-frames-512-1023-octets",
+            "srlinux": "/interface/ethernet/statistics/in-512b-to-1023b-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-eth:state/oc-eth:counters/oc-eth-ext:in-distribution/oc-eth-ext:in-frames-1024-1518-octets",
+            "srlinux": "/interface/ethernet/statistics/in-1024b-to-1518b-frames"
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-vlan:switched-vlan",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-1x:dot1x",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-1x:authenticated-sessions",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-eth:ethernet/oc-poe:poe",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:{config,state}",
+            "srlinux": ""
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:{config,state}/oc-lag:lag-type",
+            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:lag-type",
+            "transform": "uppercase-to-lowercase"
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:{config,state}/oc-lag:min-links",
+            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:min-links"
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:{config,state}/oc-lag:member-speed",
+            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:member-speed",
+            "mapping": [
+                {"SPEED_10MB":"10M"},
+                {"SPEED_100MB":"100M"},
+                {"SPEED_1GB":"1G"},
+                {"SPEED_2500MB":""},
+                {"SPEED_5GB":""},
+                {"SPEED_10GB":"10G"},
+                {"SPEED_25GB":"25G"},
+                {"SPEED_40GB":"40G"},
+                {"SPEED_50GB":"50G"},
+                {"SPEED_100GB":"100G"},
+                {"SPEED_200GB":"200G"},
+                {"SPEED_400GB":"400G"},
+                {"SPEED_600GB":""},
+                {"SPEED_800GB":""},
+                {"SPEED_UNKNOWN":""}
+            ]
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:state/oc-lag:lag-speed",
+            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:lag-speed"
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:state/oc-lag:member",
+            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:member",
+            "state-request-from-here": true
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-lag:state/oc-lag:member/member",
+            "transform": "direct-key-transform"
+        },
+        {
+            "srlinux": "/interface/srl_nokia-if-lag:lag/srl_nokia-if-lag:member/name",
+            "transform": "unused-key-transform" // srl state only
+            // also used by /lacp/interfaces/interface/members/member/interface
+        },
+        {
+            "oc": "/interfaces/interface/oc-lag:aggregation/oc-vlan:switched-vlan",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-vlan:routed-vlan",
+            "supported": false
+        },
+        {
+            "oc": "/interfaces/interface/oc-tun:tunnel",
+            "supported": false
+        }
+    ]
+}

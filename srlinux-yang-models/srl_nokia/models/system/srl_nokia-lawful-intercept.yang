@@ -1,0 +1,199 @@
+module srl_nokia-lawful-intercept {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:lawful-interecept:targets";
+  prefix srl_nokia-lawful-interecept;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data for lawful-intercept.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  typedef direction {
+    type enumeration {
+      enum ingress-only {
+        value 1;
+        description
+          "Ingress-only";
+      }
+      enum egress-only {
+        value 2;
+        description
+          "Egress-only";
+      }
+      enum ingress-egress {
+        value 4;
+        description
+          "Ingress-egress";
+      }
+    }
+    description
+      "The direction of traffic to be mirrored";
+  }
+
+  grouping lawful-intercept-global-top {
+    description
+      "Global configuration for lawful intercept";
+    leaf system-name {
+      type srl-comm:name;
+      description
+        "Specfy the LI management system host name";
+    }
+    container pfcp {
+      description
+        "Configuration related to the PFCP interface between mag-c and upf";
+      presence "Configuration related to the PFCP interface between mag-c and upf";
+      srl-ext:delivery-node-override "separate-state-request";
+      leaf shared-secret {
+        type srl-comm:routing-password {
+          length "1..128";
+        }
+        mandatory true;
+        description
+          "Shared secret between mag-c and upf";
+      }
+    }
+    container admf {
+      presence "Configuration related to ADMF IP address and port";
+      description
+        "Configuration related to ADMF IP address and port";
+      srl-ext:delivery-node-override "separate-state-request";
+      leaf address {
+        type srl-comm:ipv4-address;
+        description
+          "Specify the IP address of ADMF server";
+        must 'not(re-match(., "(0|127|22[4-9]|2[3-5][0-9]])\..*"))' {
+          error-message "Not a valid IPv4 unicast address";
+        }
+        mandatory true;
+      }
+      leaf port {
+        type srl-comm:port-number;
+        description
+          "Specify the port number of ADMF server";
+        must '. != 0' {
+          error-message "Port 0 is not supported";
+        }
+      }
+    }
+    leaf admin-state {
+      type srl-comm:admin-state;
+      default "enable";
+      description
+        "This leaf contains the configured, desired state of lawful intercept";
+    }
+    leaf oper-state {
+      config false;
+      type srl-comm:oper-state;
+      description
+        "This leaf reflects the admin state of the lawful intercept";
+    }
+  }
+
+  grouping lawful-intercept-target-top {
+    description
+      "Top-level grouping for a list of lawful-intercept targets";
+    container li-hourly-status {
+      config false;
+      description
+        "An hourly notification to the LI monitoring system where li deployment status is success and in-use";
+      leaf allow-local-save {
+        type boolean;
+      }
+      leaf hourly-count {
+        type srl-comm:date-and-time;
+      }
+    }
+    container targets {
+      description
+        "Lawful-intercept targets configured on the local system";
+      list subscriber {
+        key "subscriber-name";
+        max-elements 32768;
+        description
+          "Indicates the LI target is a broadband subsriber";
+        leaf subscriber-name {
+          type srl-comm:name;
+          description
+            "Specfy the LI target is a wireline subscriber and is identified by the subscriber name/id";
+        }
+        leaf description {
+          type srl-comm:description;
+          description
+            "A user-entered description of this LI target";
+        }
+        leaf intercept-id {
+          type uint32 {
+            range "1..4294967295";
+          }
+          description
+            "Specifies the shim header intercept-id";
+        }
+        leaf session-id {
+          description
+            "Specifies the shim header session-id";
+          type uint32 {
+            range "1..4294967295";
+          }
+        }
+        leaf direction {
+          mandatory true;
+          type direction;
+        }
+        leaf mirror-instance-name {
+          description
+            "Specifies that the mirror instance name would be used to identify the mirror destination.  In the case of MAG-c the mirror-instance-name should match the mirror service name on the User Plane";
+          mandatory true;
+          type srl-comm:name;
+        }
+        leaf oper-state {
+          config false;
+          type srl-comm:oper-state;
+          description
+            "Indicates the lawful intercept operational state of the subscriber, true indicates that the subscriber is online and interception is active, false indicates the interception has not started";
+        }
+        leaf oper-down-reason {
+          config false;
+          type string;
+          description
+            "Indicates the interception has not started because either the subscriber is not online or a problem occured";
+        }
+      }
+    }
+  }
+
+  grouping lawful-intercept-top {
+    container lawful-intercept {
+      presence "Enable lawful intercept";
+      if-feature "srl-feat:lawful-intercept";
+      description
+        "Top level container for configuration and operational state for lawful-intercept";
+      uses lawful-intercept-target-top;
+      uses lawful-intercept-global-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses lawful-intercept-top;
+  }
+}

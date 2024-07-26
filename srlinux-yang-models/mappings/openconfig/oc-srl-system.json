@@ -1,0 +1,943 @@
+{
+  "mapping": [
+    {
+      "oc": "/system",
+      "srlinux": "/system"
+    },
+    {
+      "oc": "/system/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/{config,state}/hostname",
+      "srlinux": "/system/srl_nokia-system-name:name/srl_nokia-system-name:host-name"
+    },
+    {
+      "oc": "/system/{config,state}/domain-name",
+      "srlinux": "/system/srl_nokia-system-name:name/srl_nokia-system-name:domain-name"
+    },
+    {
+      "oc": "/system/{config,state}/login-banner",
+      "srlinux": "/system/srl_nokia-system-banner:banner/srl_nokia-system-banner:login-banner"
+    },
+    {
+      "oc": "/system/{config,state}/motd-banner",
+      "srlinux": "/system/srl_nokia-system-banner:banner/srl_nokia-system-banner:motd-banner"
+    },
+    {
+      "oc": "/system/state/current-datetime",
+      "srlinux": "/system/srl_nokia-system-info:information/srl_nokia-system-info:current-datetime"
+    },
+    {
+      "oc": "/system/state/boot-time",
+      "srlinux": "/system/srl_nokia-system-info:information/srl_nokia-system-info:last-booted",
+      "transform" : "timeticks-to-timestamp"
+    },
+    {
+      "oc": "/system/state/up-time",
+      "supported": false
+    },
+    {
+      "oc": "/@",
+      "srlinux": "/system/information"
+    },
+    {
+      "oc": "/@/protobuf-metadata",
+      "srlinux": "/system/information/protobuf-metadata"
+    },
+    {
+      "oc": "/system/state/software-version",
+      "srlinux": "/system/information/version",
+      "transform": "version-to-full-version"
+    },
+    {
+      "oc": "/system/state/last-configuration-timestamp",
+      "srlinux": "/system/configuration/last-change",
+      "transform": "timeticks-to-timestamp"
+    },
+    {
+      "oc": "/system/mount-points",
+      "supported": false
+    },
+    {
+      "oc": "/system/clock",
+      "srlinux": "/system/srl_nokia-ntp:clock"
+    },
+    {
+      "oc": "/system/clock/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/clock/{config,state}/timezone-name",
+      "srlinux": "/system/srl_nokia-ntp:clock/srl_nokia-ntp:timezone"
+    },
+    {
+      "oc": "/system/dns",
+      "srlinux": "/system/srl_nokia-dns:dns",
+      "finalize-transform": "srl-set-field-to-value{network-instance=mgmt}"
+    },
+    {
+      "oc": "/system/dns/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/dns/{config,state}/search",
+      "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:search-list",
+      "finalize-transform": "srl-set-field-to-value{../network-instance=mgmt}"
+    },
+    {
+      "oc": "/system/dns/{config,state}/search/search",
+      "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:search-list/search-list"
+    },
+    {
+      "oc": "/system/dns/servers",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/dns/servers/server",
+      "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:server-list",
+      "finalize-transform": "srl-set-field-to-value{../network-instance=mgmt}"
+    },
+    {
+      "oc": "/system/dns/servers/server/address",
+      "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:server-list/server-list"
+    },
+    {
+      "oc": "/system/dns/servers/server/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/dns/servers/server/{config,state}/address",
+      "srlinux": "",
+      "type": "srl_nokia-common:ip-address"
+    },
+    {
+      "oc": "/system/dns/servers/server/{config,state}/port",
+      "supported": false
+    },
+    {
+      "oc": "/system/dns/host-entries",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/dns/host-entries/host-entry",
+      "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:host-entry",
+      "finalize-transform": "srl-set-field-to-value{../network-instance=mgmt}"
+    },
+    {
+      "oc": "/system/dns/host-entries/host-entry/hostname",
+      "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:host-entry/srl_nokia-dns:name"
+    },
+    {
+      "oc": "/system/dns/host-entries/host-entry/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/dns/host-entries/host-entry/{config,state}/hostname",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/dns/host-entries/host-entry/{config,state}/alias",
+      "supported": false
+    },
+    {
+      "oc": "/system/dns/host-entries/host-entry/{config,state}/ipv4-address",
+      "supported": false
+    },
+    // {
+    //   "oc": "/system/dns/host-entries/host-entry/{config,state}/ipv4-address",
+    //   "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:host-entry/srl_nokia-dns:ipv4-address"
+    // },
+    {
+      "oc": "/system/dns/host-entries/host-entry/{config,state}/ipv6-address",
+      "supported": false
+    },
+    // {
+    //   "oc": "/system/dns/host-entries/host-entry/{config,state}/ipv6-address",
+    //   "srlinux": "/system/srl_nokia-dns:dns/srl_nokia-dns:host-entry/srl_nokia-dns:ipv6-address"
+    // },
+    {
+      "oc": "/system/ntp",
+      "srlinux": "/system/srl_nokia-ntp:ntp"
+      // network-instance is a mandatory field and must be set via SRL interface
+    },
+    {
+      "oc": "/system/ntp/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/ntp/{config,state}/enabled",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:admin-state",
+      "transform": "bool-to-admin-state"
+    },
+    {
+      "oc": "/system/ntp/{config,state}/enable-ntp-auth",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/state/auth-mismatch",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/ntp-keys",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/servers",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/ntp/servers/server",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server"
+      // network-instance is a mandatory field and must be set via SRL interface
+    },
+    {
+      "oc": "/system/ntp/servers/server/address",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:address"
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/address",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/port",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/version",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/association-type",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/iburst",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:iburst"
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/prefer",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:prefer"
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/network-instance",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/servers/server/{config,state}/source-address",
+      "supported": false
+    },
+    {
+      "oc": "/system/ntp/servers/server/state/stratum",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:stratum"
+    },
+    {
+      "oc": "/system/ntp/servers/server/state/root-delay",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:root-delay"
+    },
+    {
+      "oc": "/system/ntp/servers/server/state/root-dispersion",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:root-dispersion"
+    },
+    {
+      "oc": "/system/ntp/servers/server/state/offset",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:offset"
+    },
+    {
+      "oc": "/system/ntp/servers/server/state/poll-interval",
+      "srlinux": "/system/srl_nokia-ntp:ntp/srl_nokia-ntp:server/srl_nokia-ntp:poll-interval"
+    },
+    {
+      "oc": "/system/grpc-servers",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/name",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/name"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/name",
+      "srlinux": ""
+    },
+    {
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/services",
+      "pretranslate-transform": "srl-system-gnmi-services-transform"
+      // This handles:
+      // mapping single OC service of GNMI to SRL services of gnmi, gnsi, gnoi
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/services",
+      "pretranslate-transform": "oc-system-gnmi-services-transform",
+      "state-request-from-here": true
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/enable",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/admin-state",
+      "transform": "bool-to-admin-state"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/port",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/port"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/transport-security",
+      "supported": false
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/certificate-id",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/tls-profile"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/metadata-authentication",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/metadata-authentication"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/listen-addresses",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/source-address",
+      "type": "srl_nokia-common:ip-address"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/listen-addresses/listen-addresses",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/source-address/source-address"
+    },
+    {
+      "oc": "/system/grpc-servers/grpc-server/{config,state}/network-instance",
+      "srlinux": "/system/srl_nokia-grpc:grpc-server/network-instance"
+    },
+    {
+      "oc": "/system/ssh-server",
+      "srlinux": "/system/srl_nokia-ssh:ssh-server",
+      "finalize-transform": "srl-set-field-to-value{network-instance=mgmt}",
+      "state-request-from-here": true
+    },
+    {
+      "srlinux": "/system/srl_nokia-ssh:ssh-server/name",
+      "transform": "fixed-value-transform{field=mgmt}"
+    },
+    {
+      "oc": "/system/ssh-server/config",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/ssh-server/state",
+      "srlinux": "",
+      "finalize-transform": "oc-set-field-to-value{protocol-version=V2}"
+    },
+    {
+      "oc": "/system/ssh-server/{config,state}/enable",
+      "srlinux": "/system/srl_nokia-ssh:ssh-server/srl_nokia-ssh:admin-state",
+      "transform": "bool-to-admin-state"
+    },
+    {
+      "oc": "/system/ssh-server/config/protocol-version",
+      "supported": false
+    },
+    {
+      "oc": "/system/ssh-server/state/protocol-version",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/ssh-server/{config,state}/timeout",
+      "srlinux": "/system/srl_nokia-ssh:ssh-server/srl_nokia-ssh:timeout"
+    },
+    {
+      "oc": "/system/ssh-server/{config,state}/rate-limit",
+      "srlinux": "/system/srl_nokia-ssh:ssh-server/srl_nokia-ssh:rate-limit"
+    },
+    {
+      "oc": "/system/ssh-server/{config,state}/session-limit",
+      "supported": false
+    },
+    {
+      "oc": "/system/telnet-server",
+      "supported": false
+    },
+    {
+      "oc": "/system/logging",
+     "srlinux": "/system/srl_nokia-logging:logging"
+    },
+    {
+      "oc": "/system/logging/console",
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:console"
+    },
+    {
+      "oc": "/system/logging/console/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/console/selectors",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/console/selectors/selector",
+      "pretranslate-transform": "oc-system-logging-console-selectors-transform"
+    },
+    {
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:console/srl_nokia-logging:facility",
+      "pretranslate-transform": "srl-system-logging-console-selectors-transform"
+    },
+    {
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:console/srl_nokia-logging:facility/srl_nokia-logging:priority",
+      "pretranslate-transform": "srl-system-logging-console-selectors-transform"
+    },
+    {
+      "oc": "/system/logging/console/selectors/selector/facility",
+      "srlinux": "",
+      "transform": "null-key-transform"
+    },
+    {
+      "oc": "/system/logging/console/selectors/selector/severity",
+      "srlinux": "",
+      "transform": "null-key-transform"
+    },
+    {
+      "oc": "/system/logging/console/selectors/selector/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/console/selectors/selector/{config,state}/facility",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/console/selectors/selector/{config,state}/severity",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/files",
+      "supported": false
+    },
+    {
+      "oc": "/system/logging/vty",
+      "supported": false
+    },
+    {
+      "oc": "/system/logging/remote-servers",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server",
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:remote-server"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/host",
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:remote-server/srl_nokia-logging:host"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/{config,state}/host",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/{config,state}/source-address",
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:remote-server/srl_nokia-logging:source-address"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/{config,state}/network-instance",
+      "supported": false
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/{config,state}/remote-port",
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:remote-server/srl_nokia-logging:remote-port"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/selectors",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/selectors/selector",
+      "pretranslate-transform": "oc-system-logging-remote-server-selectors-transform"
+    },
+    {
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:remote-server/srl_nokia-logging:facility",
+      "pretranslate-transform": "srl-system-logging-remote-server-selectors-transform"
+    },
+    {
+      "srlinux": "/system/srl_nokia-logging:logging/srl_nokia-logging:remote-server/srl_nokia-logging:facility/srl_nokia-logging:priority",
+      "pretranslate-transform": "srl-system-logging-remote-server-selectors-transform"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/selectors/selector/facility",
+      "srlinux": "",
+      "transform": "null-key-transform"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/selectors/selector/severity",
+      "srlinux": "",
+      "transform": "null-key-transform"
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/selectors/selector/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/selectors/selector/{config,state}/facility",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/logging/remote-servers/remote-server/selectors/selector/{config,state}/severity",
+      "srlinux": ""
+    },
+    {
+      "srlinux": "/platform/srl_nokia-platform-control:control/slot",
+      "transform": "fixed-value-transform{field=##active-cpm##}"
+    },
+    {
+      "oc": "/system/memory",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-memory:memory",
+      "feature-flagged": true, // ignore if can't find mapping otherwise cfg will complain
+      "state-request-from-here": true
+    },
+    {
+      "oc": "/system/memory/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/memory/state/counters",
+      "supported": false
+    },
+    {
+      "oc": "/system/memory/state/physical",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-memory:memory/srl_nokia-platform-memory:physical"
+    },
+    {
+      "oc": "/system/memory/state/reserved",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-memory:memory/srl_nokia-platform-memory:reserved"
+    },
+    {
+      "oc": "/system/memory/state/used",
+      "supported": false
+    },
+    {
+      "oc": "/system/memory/state/free",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu"
+    },
+    {
+      "oc": "/system/cpus/cpu/index",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:index",
+      "transform": "uppercase-to-lowercase"
+    },
+    {
+      "oc": "/system/cpus/cpu/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/index",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:total",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:total/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:total/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/total/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:user",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:user/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:user/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/user/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:system",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:system/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:system/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/kernel/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:nice",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:nice/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:nice/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/nice/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:idle",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:idle/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:idle/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/idle/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:iowait",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:iowait/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:iowait/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/wait/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:hardware-interrupt",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:hardware-interrupt/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:hardware-interrupt/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/hardware-interrupt/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:software-interrupt",
+      "finalize-transform": "oc-set-field-to-value{interval=60000000000}"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt/instant",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:software-interrupt/srl_nokia-platform-cpu:instant"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt/avg",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:software-interrupt/srl_nokia-platform-cpu:average-1"
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt/min",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt/max",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt/interval",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/cpus/cpu/state/software-interrupt/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/system/processes",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/processes/process",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process"
+    },
+    {
+      "oc": "/system/processes/process/pid",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:pid"
+    },
+    {
+      "oc": "/system/processes/process/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/processes/process/state/pid",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/processes/process/state/name",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:name"
+    },
+    {
+      "oc": "/system/processes/process/state/args",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:args"
+    },
+    {
+      "oc": "/system/processes/process/state/args/args",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:args/args"
+    },
+    {
+      "oc": "/system/processes/process/state/start-time",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:start-time",
+      "transform": "timeticks-to-timestamp"
+    },
+    {
+      "oc": "/system/processes/process/state/cpu-usage-user",
+      "supported": false
+    },
+    {
+      "oc": "/system/processes/process/state/cpu-usage-system",
+      "supported": false
+    },
+    {
+      "oc": "/system/processes/process/state/cpu-utilization",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:cpu-utilization"
+    },
+    {
+      "oc": "/system/processes/process/state/memory-usage",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:memory-usage"
+    },
+    {
+      "oc": "/system/processes/process/state/memory-utilization",
+      "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:process/srl_nokia-platform-cpu:memory-utilization"
+    },
+    {
+      "oc": "/system/alarms",
+      "supported": false
+    },
+    {
+      "oc": "/system/messages",
+      "supported": false
+    },
+    {
+      "oc": "/system/license",
+      "supported": false
+    },
+    {
+      "oc": "/system/mac-address",
+      "pretranslate-transform": "srl-system-mac-address-transform",
+      "state-request-from-here": true
+    },
+    {
+      "oc": "/system/mac-address/{config,state}",
+      "pretranslate-transform": "srl-system-mac-address-transform"
+    },
+    {
+      // The SRL mapping is done by the components DB
+      "oc": "/system/mac-address/{config,state}/routing-mac",
+      "type": "srl_nokia-common:mac-address"
+    },
+    {
+      "oc": "/system/utilization",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/utilization/resources",
+      "srlinux": ""
+    },
+    {
+      "oc": "/system/utilization/resources/resource",
+      "pretranslate-transform": "oc-system-utilization-resource-transform"
+      // This handles:
+      // {
+      //   "oc": "/system/utilization/resources/resource"
+      //   "srlinux": "/platform/resource/datapath{asic,xdp}/resource",
+      // },
+      // {
+      //   "oc": "/system/utilization/resources/resource/{config,state}"
+      //   "srlinux": "/platform/resource/datapath{asic,xdp}/resource",
+      // }
+      // The asic or xdp container depends on the resource name
+    },
+    {
+      "oc": "/system/utilization/resources/resource/{config,state}",
+      "pretranslate-transform": "oc-system-utilization-resource-transform"
+    },
+    {
+      "oc": "/system/utilization/resources/resource/state/active-component-list",
+      "supported": false
+    },
+    {
+      "srlinux": "/platform/resource-monitoring/datapath/asic/resource",
+      "pretranslate-transform": "srl-platform-resource-monitoring-transform"
+
+      // This handles:
+      // {
+      //   "srlinux": "/platform/resource-monitoring/datapath{asic,xdp}/resource",
+      //   "oc": "/system/utilization/resources/resource"
+      // }
+    },
+    {
+
+      "srlinux": "/platform/resource-monitoring/datapath/xdp/resource",
+      "pretranslate-transform": "srl-platform-resource-monitoring-transform"
+    }
+  ]
+}

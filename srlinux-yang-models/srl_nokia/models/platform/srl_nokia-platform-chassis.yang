@@ -1,0 +1,272 @@
+module srl_nokia-platform-chassis {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-chassis";
+  prefix srl_nokia-platform-chassis;
+
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to chassis.";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  typedef watts {
+    type uint32;
+    units "watts";
+  }
+
+  grouping chassis-power-redundancy {
+    container redundancy {
+      if-feature "srl-feat:chassis and srl-feat:power-management";
+      description
+        "Top-level container for power redundancy configuration and state";
+      leaf mode {
+        config true;
+        type enumeration {
+          enum feed {
+            description
+              "Set the redundancy mode to feed redundant
+
+               In this mode it is expected that N+N PSUs are available, where N is the minimum PSUs required to run the current chassis configuration. This mode should be used when redundant power feeds are distributed evenly across all PSUs.";
+          }
+          enum module {
+            description
+              "Set the redundancy mode to be power supply unit redundant
+
+               In this mode it is expected that N+1 PSUs are available, where N is the minimum PSUs required to run the current chassis configuration. This mode should be used with power feeds that are non redundant.";
+          }
+          enum none {
+            description
+              "Disable monitoring and thresholding of power redundancy
+
+               In this mode no warnings of loss of redundancy are generated.";
+          }
+        }
+        description
+          "Set the power redundancy mode in use
+
+           This only sets the level at which power redundancy will be assumed unavailable, and will not result in the powering down of components unless there is insufficient non-redundant power available.";
+        default "none";
+      }
+      leaf status {
+        config false;
+        type enumeration {
+          enum up {
+            description
+              "The configured power redundancy mode is available
+
+               This indicates that there are sufficient PSUs operational to accomplish the desired redundancy mode.";
+          }
+          enum down {
+            description
+              "The configured power redundancy mode is not available
+
+               This indicates that there are insufficient PSUs operational to accomplish the desired redundancy mode.";
+          }
+        }
+        description
+          "Current status of the selected power redundancy mode";
+      }
+    }
+  }
+
+  grouping chassis-per-component-power {
+    leaf allocated {
+      if-feature "srl-feat:chassis and srl-feat:power-management";
+      type watts;
+      description
+        "Power allocated to components as part of power management";
+    }
+    leaf required {
+      if-feature "srl-feat:chassis";
+      type watts;
+      description
+        "Power required to power on all present admin enabled components as part of power management";
+    }
+    leaf used {
+      type watts;
+      description
+        "Used power";
+    }
+    leaf peak {
+      type watts;
+      description
+        "Peak power used";
+    }
+  }
+
+  grouping chassis-config-top {
+    description
+      "Grouping for chassis configuration.";
+    leaf secondary-mac-address {
+      if-feature "srl-feat:jericho2 or srl-feat:jericho2cp";
+      type srl-comm:unicast-mac-address;
+      description
+        "MAC address programmed as a secondary terminating MAC address on every IP interface, across all network instances
+
+         If an IP packet is received on a routed subinterface and it arrives with a DMAC equal to the secondary-mac-address then it is terminated and forwarded exactly the same way it would be forwarded if it had arrived on this subinterface with a DMAC equal to the subinterface MAC address.";
+    }
+    leaf id {
+      config true;
+      description
+        "A user configured chassis ID
+
+         This value is not used by the system, but is provided for user convenience.";
+      type uint32;
+    }
+  }
+
+  grouping chassis-state-top {
+    description
+      "Grouping for chassis state.";
+    leaf type {
+      config false;
+      description
+        "The chassis type";
+      srl-ext:show-importance "high";
+      type string;
+    }
+    leaf last-boot-type {
+      config false;
+      description
+        "The type of boot the chassis initialized from
+
+         This field indicates what type of reboot occurred, whether it be warm, normal, or otherwise.";
+      srl-ext:show-importance "high";
+      type string;
+    }
+    uses srl-platform:component-delayed-reboot-state;
+    leaf hw-mac-address {
+      config false;
+      description
+        "The chassis MAC address
+
+         Read from hardware, or derived from the systems UUID";
+      type srl-comm:mac-address;
+    }
+    leaf slots {
+      config false;
+      description
+        "The number of line card slots supported by the chassis";
+      type uint8;
+    }
+    container power {
+      description
+        "Top-level container for chassis-wide power state";
+      container total {
+        srl-ext:delivery-node-override "true";
+        srl-ext:stream-mode "sample=5";
+        config false;
+        description
+          "Top-level container for total power usage and capacity";
+        leaf capacity {
+          type watts;
+          description
+            "Total power capacity provided by all power supplies";
+        }
+        uses chassis-per-component-power;
+      }
+      container fan-tray {
+        srl-ext:delivery-node-override "true";
+        srl-ext:stream-mode "sample=5";
+        config false;
+        if-feature "srl-feat:chassis";
+        description
+          "Top-level container for power usage of fan-trays";
+        uses chassis-per-component-power;
+      }
+      container control {
+        srl-ext:delivery-node-override "true";
+        srl-ext:stream-mode "sample=5";
+        config false;
+        if-feature "srl-feat:chassis";
+        description
+          "Top-level container for power usage of control modules";
+        uses chassis-per-component-power;
+      }
+      container linecard {
+        srl-ext:delivery-node-override "true";
+        srl-ext:stream-mode "sample=5";
+        config false;
+        if-feature "srl-feat:chassis";
+        description
+          "Top-level container for power usage of linecard modules";
+        uses chassis-per-component-power;
+      }
+      container fabric {
+        srl-ext:delivery-node-override "true";
+        srl-ext:stream-mode "sample=5";
+        config false;
+        if-feature "srl-feat:chassis";
+        description
+          "Top-level container for power usage of fabric modules";
+        uses chassis-per-component-power;
+      }
+      uses chassis-power-redundancy;
+    }
+    uses srl-platform:component-common-state-top;
+    uses srl-platform:component-common-eeprom;
+  }
+
+  grouping chassis-top {
+    description
+      "Grouping for chassis configuration and state";
+    container chassis {
+      description
+        "Top-level container for chassis configuration and state";
+      uses chassis-config-top;
+      uses chassis-state-top;
+    }
+  }
+
+  augment "/srl-platform:platform" {
+    uses chassis-top;
+  }
+}
