@@ -275,6 +275,10 @@ module srl_nokia-interfaces-nbr {
       uses host-route-top;
       leaf proxy-arp {
         if-feature "srl-feat:l3-proxy-arp";
+        must "not (current() and starts-with(../../../../srl_nokia-if:name,'irb'))" {
+          error-message "Not supported on IRB subinterfaces";
+          srl_nokia-ext:if-feature "not srl_nokia-feat:l3-proxy-arp-irb";
+        }
         type boolean;
         default "false";
         description
@@ -422,6 +426,10 @@ module srl_nokia-interfaces-nbr {
       uses nbr-limit-top;
       leaf proxy-nd {
         if-feature "srl-feat:l3-proxy-nd";
+        must "not (current() and starts-with(../../../../srl_nokia-if:name,'irb'))" {
+          error-message "Not supported on IRB subinterfaces";
+          srl_nokia-ext:if-feature "not srl_nokia-feat:l3-proxy-nd-irb";
+        }
         type boolean;
         default "false";
         description

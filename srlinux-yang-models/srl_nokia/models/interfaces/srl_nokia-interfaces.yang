@@ -161,6 +161,7 @@ module srl_nokia-interfaces {
       enum cfm-ccm-defect;
       enum crc-monitor-fail-threshold;
       enum symbol-monitor-fail-threshold;
+      enum unsupported-num-channels-for-speed;
     }
   }
 
@@ -355,7 +356,7 @@ module srl_nokia-interfaces {
         "Configuration of breakout options.
 
          7220 D3 ports 3-33: 4x10G and 4x25G
-         7220 D3L ports 1-31: 4x10G and 4x25G
+         7220 D3L ports 1-31: 2x50G, 4x10G and 4x25G
          7220 H3 ports 3-34: 4x10G, 2x100G/4x100G, and 2x200G
          7220 H4 ports 1-64: 4x100G and 2x200G
          7220 H4-32D ports 1-32: 4x100G and 2x200G
@@ -366,14 +367,11 @@ module srl_nokia-interfaces {
          7730 SXR-1d-32D QSFPDD ports 17-20: 4x100G, 3x100G (Note 1), 4x25G, and 4x10G
          7730 SXR-1x-44S SFPDD ports 1-20, 23-42: No breakouts
          7730 SXR-1x-44S QSFPDD ports 21,22,43,44: 4x100G, 3x100G (Note 1), 4x25G, and 4x10G
-         7250 IXR-6e/10e 60p QSFP28 IMM all ports: 4x25G and 4x10G supported but with port group dependencies (Note 2)
          7250 IXR-6e/10e 36p QSFPDD IMM all ports: 4x100G, 2x100G, 4x25G, and 4x10G
          7250 IXR-X1b QSFP28 ports 1-24: 4x25G, and 4x10G (Note 4)
          7250 IXR-X1b QSFPDD ports 25-36: 4x100G, 3x100G (Note 1), 2x100G, 4x25G, and 4x10G
          7250 IXR-X3b QSFPDD all ports: 4x100G, 3x100G (Note 1), 2x100G, 4x25G, and 4x10G
          Note 1: 3x100G is only supported for Digital Coherent Optic transceivers
-
-         Note 2: For the following port groupings only the higher numbered port can be configured and enabled for breakout-mode.  If the higher numbered port is configured and enabled for breakout-mode, then the lower numbered port cannot be enabled.  Groupings are (25,28),(31,34),(37,40) and (n,n+3) and (n+1,n+2) and (n+4,n+5) for n=1,7,13,19,43,49,55.
 
          Note 3: Breakout and 40G is only supported on odd numbered ports.
                  For the QSFP28 four port groupings [1-4], [5-8], [9-12], [13-16], [21-24], [25-28], and [29-32] if either of the odd numbered ports within a group is enabled and configured for 40G, 4x10G, or 4x25G,
@@ -460,7 +458,7 @@ module srl_nokia-interfaces {
          The default value for ethernet-x interfaces is taken from /system/mtu/default-port-mtu. For the mgmt0 and mgmt0-standby interfaces the default is 1514 bytes, but the value can be changed for each interface individually.
          Port MTU is not configurable for loopback interfaces or irb interfaces. For irb interfaces, if the size of the ip packets to be routed to a mac-vrf has to be restricted, the subinterface.ip-mtu should be configured instead.
          The max mtu for the mgmt0 and mgmt0-standby interfaces is 9216.
-         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum port MTU of 9412 bytes and minimum of 1500 bytes.
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-D4, 7220 IXR-D5, 7220 IXR-H2, 7220 IXR-H3, and 7220 IXR-H4 systems support a maximum port MTU of 9412 bytes and minimum of 1500 bytes.
          The VSRL system supports a maximum port MTU of 9500 and minimum of 1450 bytes.
          The 7730 SXR systems support a maximum port MTU of 9408 bytes and minimum of 1500 bytes.
          All other systems support a maximum port MTU of 9500 and minimum of 1500 bytes.
@@ -812,7 +810,7 @@ module srl_nokia-interfaces {
 
          The IP MTU is not configurable for subinterfaces of loopback interfaces.
 
-         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum IP MTU of 9398 bytes.
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-D4, 7220 IXR-D5, 7220 IXR-H2, 7220 IXR-H3, and 7220 IXR-H4 systems support a maximum IP MTU of 9398 bytes.
 
          The 7730 SXR systems support a maximum IP MTU of 9394 bytes.
 
@@ -840,7 +838,7 @@ module srl_nokia-interfaces {
 
          The default value for a subinterface is taken from /system/mtu/default-l2-mtu. The L2 MTU is only configurable for bridged subinterfaces.
 
-         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-H2, and 7220 IXR-H3 systems support a maximum L2 MTU of 9412 bytes and minimum of 1500 bytes.
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-D4, 7220 IXR-D5, 7220 IXR-H2, 7220 IXR-H3, and 7220 IXR-H4 systems support a maximum L2 MTU of 9412 bytes and minimum of 1500 bytes.
 
          The 7730 SXR systems support a maximum L2 MTU of 9408 bytes.
 
@@ -992,16 +990,19 @@ module srl_nokia-interfaces {
            <port>=port id {1,2,3,..}
 
            [note1] The maximum number of LAGs per platform is as follows:
-            D1: 32
-            D2-D3: 128
-            D4-D5: 64
-            H2-H3: 127
-            H4-32D: 127
-            H4: 255
-            IXR: 128
-            SXR-1d-32D: 128
-            SXR-1x-44S: 128
-            vSRL: 8";
+            D1: 32 (N must be 1..32)
+            D2-D3: 128 (N must be 1..1000)
+            D4-D5: 64 (N must be 1..64)
+            H2-H3: 127 (N must be 1..127)
+            H4-32D: 127 (N must be 1..127)
+            H4: 255 (N must be 1..255)
+            IXR: 128 (N must be 1..128)
+            SXR-1d-32D: 128 (N must be 1..128)
+            SXR-1x-44S: 128 (N must be 1..128)
+            vSRL: 8 (N must be 1..8)
+            A1: 10 (N must be 1..10)
+            IXR-X1b: 128 (N must be 1..128)
+            IXR-X3b: 128 (N must be 1..128)";
       }
       uses interface-phys-config;
       leaf ifindex {
@@ -1321,6 +1322,7 @@ module srl_nokia-interfaces {
           }
         }
         leaf forward-error-correction {
+          if-feature "not srl_nokia-feat:platform-7215-a1";
           type enumeration {
             enum disabled;
             enum rs-528;
@@ -1947,6 +1949,8 @@ module srl_nokia-interfaces {
              mgmt0 and mgmt0-standby ports: 1G
              J2 IMM ports 1-32:  100G
              J2 IMM ports 33-36: 100G
+             7215 IXS-A1 ports 1-48: 1G
+             7215 IXS-A1 ports 49-52: 10G
              7220-D1 ports 1-48: 1G
              7220-D1 ports 49-52: 10G
              7220-D2/D2L ports 1-48: 25G
@@ -1983,6 +1987,8 @@ module srl_nokia-interfaces {
              mgmt0 and mgmt0-standby ports: 1G
              J2 IMM ports 1-32: 40G, 100G (Note 1)
              J2 IMM ports 33-36: 40G, 100G, 400G
+             7215 IXS-A1 ports 1-48: 10M, 100M, 1G
+             7215 IXS-A1 ports 49-52: 1G, 10G
              7220-D1 ports 1-48: 10M, 100M, 1G
              7220-D1 ports 49-52: 10G
              7220-D2/D2L ports 1-48: 1G, 10G, 25G (Note 2)

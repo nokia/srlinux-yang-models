@@ -39,6 +39,21 @@ module ietf-srl-deviations {
     }
   }
 
+  typedef srl-error-option {
+    type enumeration {
+      enum stop-on-error {
+        description
+          "The server will stop on errors.";
+      }
+      enum rollback-on-error {
+        description
+          "The server will roll back on errors.
+            This value can only be used if the 'rollback-on-error'
+            feature is supported.";
+      }
+    }
+  }
+
   deviation "/ncds:get-data/ncds:input/ncds:with-defaults" {
     deviate replace {
       type srl-with-defaults-mode;
@@ -78,6 +93,12 @@ module ietf-srl-deviations {
   deviation "/nc:copy-config/nc:input/ncwd:with-defaults" {
     deviate replace {
       type srl-with-defaults-mode;
+    }
+  }
+
+  deviation "/nc:edit-config/nc:input/nc:error-option" {
+    deviate replace {
+      type srl-error-option;
     }
   }
 

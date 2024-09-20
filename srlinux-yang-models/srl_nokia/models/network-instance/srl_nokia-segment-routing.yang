@@ -121,7 +121,9 @@ module srl_nokia-segment-routing {
         presence "Enable segment routing based on the MPLS dataplane";
         description
           "Adding this container activates datapath support for SR-MPLS";
-        must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")';
+        must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+          error-message "Segment routing is supported only in the default network instance";
+        }
         must 'global-block/label-range' {
           error-message "SRGB label-range must be defined.";
         }

@@ -849,6 +849,9 @@ module srl_nokia-qos {
         must 'boolean(/srl_nokia-qos:qos/srl_nokia-qos:preserve-dscp) = false()' {
           error-message "DSCP rewrite not supported with preserve-dscp option";
         }
+        must "/srl_nokia-if:interface[srl_nokia-if:name=current()/../../../interface-ref/interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()/../../../interface-ref/subinterface]/srl_nokia-if:type != 'srl_nokia-if:bridged' " {
+          error-message "rewrite-rules not allowed with type bridged";
+        }
       }
       leaf ipv6-dscp-policy {
         if-feature "srl-feat:qos-ipv6-dscp-rewrite-policy";
@@ -859,6 +862,9 @@ module srl_nokia-qos {
           "Reference to the name of a DSCP rewrite-rule policy that applies only to IPv6 traffic";
         must 'boolean(/srl_nokia-qos:qos/srl_nokia-qos:preserve-dscp) = false()' {
           error-message "DSCP rewrite not supported with preserve-dscp option";
+        }
+        must "/srl_nokia-if:interface[srl_nokia-if:name=current()/../../../interface-ref/interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()/../../../interface-ref/subinterface]/srl_nokia-if:type != 'srl_nokia-if:bridged' " {
+          error-message "rewrite-rules not allowed with type bridged";
         }
       }
       leaf dscp-policy {
