@@ -1,0 +1,134 @@
+module srl_nokia-static-routes {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:static-route:static-routes";
+  prefix srl_nokia-static-routes;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-next-hop-groups {
+    prefix srl_nokia-nhg;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-routing-pol;
+  }
+  import srl_nokia-policy-types {
+    prefix srl_nokia-pol-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of static route configuration.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping static-route-top {
+    container static-routes {
+      presence "Configure Static Routes";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        must "current() = 'enable'" {
+          error-message "Static routes admin-state cannot be disabled";
+        }
+      }
+      list route {
+        max-elements 16384;
+        key "prefix";
+        leaf prefix {
+          must "not(../../../srl_nokia-netinst:type = 'srl_nokia-netinst:host')" {
+            error-message "Static route configuration not valid in network instance of type host";
+          }
+          type srl_nokia-comm:ip-prefix;
+        }
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default "enable";
+          description
+            "Administratively enable or disable the static route.";
+        }
+        leaf metric {
+          type uint32;
+          default "1";
+          description
+            "IGP metric of the static route.";
+        }
+        leaf preference {
+          type uint8 {
+            range "0..255";
+          }
+          default "5";
+          description
+            "Route preference with lower values indicating a higher degree of preference.";
+        }
+        leaf next-hop-group {
+          type leafref {
+            path "../../../srl_nokia-nhg:next-hop-groups/srl_nokia-nhg:group/srl_nokia-nhg:name";
+          }
+        }
+        leaf tag-set {
+          if-feature "srl_nokia-feat:internal-tags and srl_nokia-feat:static-route-tag-set";
+          description
+            "Tag set to associate with the static route";
+          type leafref {
+            path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+          }
+        }
+        leaf tag-value {
+          if-feature "srl_nokia-feat:static-route-tag-value";
+          description
+            "Tag value to associate with the static route";
+          type srl_nokia-pol-types:tag-type;
+          must 'not(../tag-set)' {
+            error-message "tag-value and tag-set are mutually exclusive";
+          }
+          must "not(re-match(string(.), '[0:]+'))" {
+            error-message "tag-value must be non-zero";
+          }
+        }
+        leaf installed {
+          config false;
+          type boolean;
+          description
+            "If set to true, this indicates that the static route was installed into the datapath. If this is false then there are 3 possible reasons:
+             (a) the admin-state is disable
+             (b) there is another IP route for the same prefix that has a superior preference
+             (c) the next-hop-group has no resolvable next-hops";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses static-route-top;
+  }
+}

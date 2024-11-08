@@ -1,0 +1,250 @@
+module srl_nokia-ssh {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:ssh";
+  prefix srl_nokia-ssh;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines SSH configuration";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping ssh-server-instance-top {
+    leaf admin-state {
+      type srl-comm:admin-state;
+      default "disable";
+      description
+        "Enable or disable the SSH server instance";
+    }
+    leaf oper-state {
+      type srl-comm:oper-state;
+      config false;
+      description
+        "Operational state of the SSH server instance";
+    }
+    leaf network-instance {
+      if-feature "not srl_nokia-feat:platform-imgmt";
+      description
+        "Network instance to run the SSH server in";
+      type leafref {
+        path "/srl-netinst:network-instance/srl-netinst:name";
+      }
+      must 'not(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:mac-vrf")' {
+        error-message "SSH server cannot be started in a network-instance of type 'mac-vrf'";
+      }
+    }
+    leaf-list source-address {
+      type srl-comm:ip-address;
+      description
+        "List of IP addresses for the SSH server to listen on within the network-instance";
+    }
+    leaf port {
+      type srl-comm:port-number;
+      srl-ext:show-importance "high";
+      default "22";
+      description
+        "Port the SSH server instance will listen on for incoming connections";
+    }
+    leaf disable-shell {
+      type boolean;
+      default "false";
+      description
+        "Disable the ability to spawn a shell for incoming connections";
+    }
+    leaf timeout {
+      type uint16;
+      units "seconds";
+      default "0";
+      description
+        "Set the idle timeout in seconds on SSH connections";
+    }
+    leaf rate-limit {
+      type uint16;
+      default "20";
+      description
+        "Set a limit on the number of unauthenticated sessions to the SSH server
+          after this number is met, the server will start dropping connection attempts";
+    }
+    leaf protocol-version {
+      type uint8;
+      config false;
+      description
+        "Protocol version in use by the SSH server";
+    }
+    leaf use-credentialz {
+      type boolean;
+      description
+        "Use the gNSI Credentialz service global SSH configuration for this SSH server instance
+
+         Setting this to true will apply any gNSI Credentialz configuration for this SSH server instance. Static
+         configuration will override any gNSI Credentialz configuration.";
+    }
+    leaf-list trust-anchors {
+      type string;
+      description
+        "List of public keys used to verify user certificates during authentication
+
+          Each items value should be the public key of a CA, e.g. 'ssh-rsa AAAA<...>= comment'. If no trust anchors are configured, authentication using SSH certificates will not function.
+
+          This sets the TrustedUserCAKeys option within each SSH servers configuration file.";
+    }
+    leaf-list revoked-keys {
+      type string;
+      description
+        "List of revoked public keys
+
+          Each items value should be the public key of a revoked keypair, e.g. 'ssh-rsa AAAA<...>= comment'. Any keys provided here cannot be used for public key authentication.
+
+          This sets the RevokedKeys option within each SSH servers configuration file.";
+    }
+    leaf-list allowed-authentication-types {
+      ordered-by user;
+      type enumeration {
+        enum password;
+        enum publickey;
+        enum keyboard-interactive;
+      }
+      default "publickey";
+      default "password";
+      description
+        "List of allowed authentication types
+
+          This sets the AuthenticationMethods option within each SSH servers configuration file. Also sets
+          PasswordAuthentication PubkeyAuthentication KbdInteractiveAuthentication options within each SSH servers
+          configuration file.";
+    }
+    leaf authorized-principal-check-tool {
+      type enumeration {
+        enum hiba-chk;
+      }
+      description
+        "Configure the tool used to check the authorized principals
+
+         Setting the value to hiba-chk sets the AuthorizedPrincipalsCommand to hiba-chk tool. If
+         unset, the aaamgr will do the principal checking.";
+    }
+    container host-key {
+      list type {
+        key "type";
+        description
+          "List of the SSH servers host private-keys and certificates";
+        leaf type {
+          type enumeration {
+            enum ssh-rsa-3076;
+            enum ecdsa-sha2-nistp256;
+            enum ecdsa-sha2-nistp521;
+            enum ssh-ed25519;
+            enum ssh-rsa-2048;
+            enum ssh-rsa-4096;
+          }
+          description
+            "Type of generated host key";
+        }
+        leaf private-key {
+          srl-ext:show-importance "low";
+          type string {
+            srl-ext:generated-class-name "SecretKey";
+          }
+          description
+            "The value should be the host private key as read from the private key file.
+
+             This sets the HostKey option within each SSH servers configuration file.";
+        }
+        leaf public-key {
+          config false;
+          srl-ext:show-importance "low";
+          type string;
+          description
+            "The value is be the host public key as read from the public key file.";
+        }
+        leaf certificate {
+          type string;
+          description
+            "Each item value should be the host key certificate as read from the *-cert.pub file generated by the CA including the certificate type, e.g. 'ssh-rsa-cert-v01@openssh.com AAAA<...> comment'.
+
+             This certificate is returned to clients during SSH init for the client to verify the host it is communicating with.
+
+             This sets the HostCertificate option within each SSH servers configuration file. The certificate should be generated by first extracting the systems current public key and having this signed by a CA.";
+        }
+      }
+      leaf preserve {
+        type boolean;
+        default "true";
+        description
+          "Indicates whether the autogenerated SSH server host keys should be preserved on reboots
+
+           Setting this to true will result in host keys in /etc/sshd not being cleared on a reboot. Alternatively
+           setting this to false will result in host keys being removed and regenerated on each reboot of the system.
+
+           This is useful only when the host keys are not statically configured and not dynamically configured using
+           gNSI Credentialz service (and therefore are suitable to be potentially regenerated on every reboot).
+
+           Takes effect only if the value is set to false for every configured ssh server instance.";
+      }
+    }
+  }
+
+  grouping ssh-top {
+    list ssh-server {
+      key "name";
+      leaf name {
+        type srl-comm:name;
+        srl-ext:show-importance "high";
+        description
+          "User-provided name of this server instance";
+      }
+      uses ssh-server-instance-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses ssh-top;
+  }
+}

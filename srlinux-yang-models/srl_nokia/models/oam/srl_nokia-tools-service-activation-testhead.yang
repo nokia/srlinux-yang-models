@@ -1,0 +1,54 @@
+module srl_nokia-tools-service-activation-testhead {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mplsoam:tools-service-activation-testhead";
+  prefix srl_nokia-tools-service-activation-testhead;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-oam {
+    prefix srl_nokia-tools-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+
+  grouping sath-oam-top {
+    container service-activation-testhead {
+      list service-test {
+        key "test-name";
+        description
+          "Enter the service-test list instance";
+        leaf test-name {
+          type srl_nokia-comm:name {
+            length "1..64";
+          }
+        }
+        leaf start {
+          type empty;
+          description
+            "starts a new run of the service test with given test name";
+          must 'not(../stop)';
+        }
+        leaf stop {
+          type empty;
+          description
+            "stops the current run of the service test with given test name";
+          must 'not(../start)';
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-oam:oam" {
+    uses sath-oam-top;
+  }
+}

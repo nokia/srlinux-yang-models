@@ -1,0 +1,116 @@
+module ietf-srl-deviations {
+
+  yang-version 1.1;
+
+  namespace "urn:nokia.com:srlinux:ietf:ietf-srl-deviations";
+
+  prefix ietf-srl-deviations;
+
+  import ietf-netconf-with-defaults {
+    prefix ncwd;
+  }
+  import ietf-netconf {
+    prefix nc;
+  }
+  import ietf-netconf-nmda {
+    prefix ncds;
+  }
+
+  organization "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module contains deviations related to ietf models on SR Linux";
+  revision 2024-06-24 {
+    description "Initial version";
+  }
+
+  typedef srl-with-defaults-mode {
+    type enumeration {
+      enum report-all {
+        description
+          "All default data is reported.";
+        reference
+          "RFC 6243; Section 3.1";
+      }
+      enum explicit {
+        description
+          "Report values that contain the definition of
+           explicitly set data.";
+        reference
+          "RFC 6243; Section 3.3";
+      }
+    }
+    description
+      "Possible modes to report default data.";
+    reference
+      "RFC 6243; Section 3.";
+  }
+
+  typedef srl-error-option {
+    type enumeration {
+      enum stop-on-error {
+        description
+          "The server will stop on errors.";
+      }
+      enum rollback-on-error {
+        description
+          "The server will roll back on errors.
+            This value can only be used if the 'rollback-on-error'
+            feature is supported.";
+      }
+    }
+    description
+      "Supported error options.";
+  }
+
+  deviation "/ncds:get-data/ncds:input/ncds:with-defaults" {
+    deviate replace {
+      type srl-with-defaults-mode;
+    }
+  }
+
+  deviation "/nc:get/nc:input/ncwd:with-defaults" {
+    deviate replace {
+      type srl-with-defaults-mode;
+    }
+  }
+
+  deviation "/nc:get-config/nc:input/ncwd:with-defaults" {
+    deviate replace {
+      type srl-with-defaults-mode;
+    }
+  }
+
+  deviation "/nc:copy-config/nc:input/ncwd:with-defaults" {
+    deviate replace {
+      type srl-with-defaults-mode;
+    }
+  }
+
+  deviation "/nc:edit-config/nc:input/nc:error-option" {
+    deviate replace {
+      type srl-error-option;
+    }
+  }
+
+  deviation "/nc:lock/nc:input/nc:target/nc:config-target/nc:startup" {
+        description
+            "lock operation on startup datastore is not supported.";
+        deviate not-supported;
+  }
+
+  deviation "/nc:unlock/nc:input/nc:target/nc:config-target/nc:startup" {
+        description
+            "unlock operation on startup datastore is not supported.";
+        deviate not-supported;
+  }
+
+  deviation "/nc:delete-config/nc:input/nc:target/nc:config-target/nc:url" {
+        description
+            "delete-config operation on url datastore is not supported.";
+        deviate not-supported;
+  }
+
+}

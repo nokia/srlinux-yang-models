@@ -1,0 +1,130 @@
+module srl_nokia-stp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:stp:stp";
+  prefix srl_nokia-stp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-stp-types {
+    prefix srl_nokia-stp-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of the stp protocol";
+
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+
+  grouping stp-interface-key {
+    leaf interface-name {
+      description
+        "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+      type srl_nokia-comm:subinterface-all;
+    }
+  }
+
+  grouping stp-global-config {
+    description
+      "stp specific configuration";
+    leaf admin-state {
+      description
+        "Administratively enable or disable the stp instance.
+
+         When STP on the network instance is administratively disabled,
+         any BPDUs are forwarded transparently.
+         When STP on the network instance is administratively enabled,
+         but the administrative state on a sub-interface is disabled,
+         BPDUs received on such a subinterface are discarded.";
+      type srl_nokia-comm:admin-state;
+      default "disable";
+    }
+    leaf mode {
+      type srl_nokia-stp-types:stp-mode-type;
+    }
+    leaf bridge-priority {
+      type srl_nokia-stp-types:stp-bridge-priority-type;
+    }
+    leaf max-age {
+      type srl_nokia-stp-types:stp-max-age-type;
+    }
+    leaf forward-delay {
+      type srl_nokia-stp-types:stp-forward-delay-type;
+    }
+    leaf hello-time {
+      type srl_nokia-stp-types:stp-hello-time-type;
+    }
+    leaf hold-count {
+      type srl_nokia-stp-types:stp-hold-count-type;
+    }
+  }
+
+  grouping mstp-global-config {
+    description
+      "Top-level grouping containing a list of mstp policies.";
+    leaf mst-name {
+      type srl_nokia-stp-types:stp-msti-region-name-type;
+    }
+    leaf mst-revision {
+      type srl_nokia-stp-types:stp-msti-revision-type;
+    }
+    leaf mst-max-hops {
+      type srl_nokia-stp-types:stp-msti-max-hops-type;
+    }
+    list mst-instance {
+      key "mst-instance";
+      description
+        "MST instance used by this mstp-global";
+      leaf mst-instance {
+        type uint32;
+        description
+          "Key of type uint32";
+      }
+      leaf mst-priority {
+        type srl_nokia-stp-types:stp-msti-priority-type;
+      }
+      list mst-vlan-range {
+        key "mst-vlan-range";
+        leaf mst-vlan-range {
+          type string {
+            pattern '([0-9]+\-[0-9]+)|exact';
+          }
+          description
+            "Range of VLANs managed by this Multiple Spanning Tree instance.
+             If no VLAN-ranges are defined in any mst-instances, then all
+             VLANs are mapped to the CIST. range: 1..1024";
+        }
+      }
+    }
+  }
+
+  grouping stp-top {
+    container stp {
+      presence "Configure STP";
+      uses stp-global-config;
+      uses mstp-global-config;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses stp-top {
+      if-feature "srl_nokia-feat:stp";
+    }
+  }
+}

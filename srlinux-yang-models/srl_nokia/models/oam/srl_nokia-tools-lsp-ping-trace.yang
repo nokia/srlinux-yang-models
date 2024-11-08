@@ -1,0 +1,424 @@
+module srl_nokia-tools-lsp-ping-trace {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mplsoam:tools-lsp-ping-trace";
+  prefix srl_nokia-tools-lsp-ping-trace;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-oam {
+    prefix srl_nokia-tools-oam;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for LSP ping and trace operational commands";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping ping-common-params {
+    leaf interval {
+      description
+        "The time interval between successive MPLS echo-request messages in case of send-count > 1";
+      type uint8 {
+        range "1..10";
+      }
+      units "seconds";
+      default "1";
+    }
+    leaf send-count {
+      description
+        "The number of MPLS echo-request messages to be sent in sequence";
+      type uint8 {
+        range "1..100";
+      }
+      default "1";
+    }
+    leaf probe-size {
+      description
+        "The size of the IP packet MPLS echo-request message. Probe size does not include MPLS headers, if any";
+      type uint16 {
+        range "1..9500";
+      }
+      units "bytes";
+      default "1";
+    }
+    leaf source-ip {
+      description
+        "The source IP address of the UDP/IP MPLS echo request message
+
+         This should be a routable address of the router. This will be destination of the MPLS echo reply message sent back to the sender. By default this is the system address of the default network-instance; if the default network-instance does not have system interface then it will be primary address of the lowest numbered loopback subinterface of the default network-instace.";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf timeout {
+      description
+        "The maximum time the sender waits to receive an MPLS echo-reply message before considering that the ping failed";
+      type uint8 {
+        range "1..60";
+      }
+      units "seconds";
+      default "3";
+    }
+    leaf mpls-ttl {
+      description
+        "The TTL value written into the topmost label stack entry of the MPLS echo-request message
+
+         This TTL is expected to be decremented at each hop along the path to the destination. If TTL reaches 1 the segment routing packet will be discrded due to TTL expiry and the ping will fail if the destination has not been reached uyet.";
+      type uint8 {
+        range "1..255";
+      }
+      default "255";
+    }
+    leaf ecmp-interface-select {
+      description
+        "Send the LSP ping messages out the specified subinterface
+
+         If this router has multiple ECMP next-hops to the endpoint of the MPLS tunnel this can select one of those subinterfaces specifically";
+      type srl_nokia-comm:subinterface-name;
+    }
+    leaf ecmp-next-hop-select {
+      description
+        "Send the LSP ping messages to the specified next-hop
+
+         If this router has multiple ECMP next-hops to the endpoint of the MPLS tunnel this can select one of those next-hops specifically";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf destination-ip {
+      description
+        "The destination IP address of the UDP/IP MPLS echo request message
+
+         This should be a non-forwardable address in the 127/8 address block (or the 0:0:0:0:0:FFFF:7F00:0/104 IPv6 address block). Varying this address can help to exercise different ECMP paths towards the destination. By default, the destination address is selected randomly from these address blocks.";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf traffic-class {
+      description
+        "MPLS Header Traffic Class/Exp value";
+      type uint8 {
+        range "0..7";
+      }
+      default "7";
+    }
+  }
+
+  grouping trace-common-params {
+    leaf minimum-mpls-ttl {
+      description
+        "The minimum or starting TTL value of the MPLS trace messages";
+      type uint8 {
+        range "1..255";
+      }
+      default "1";
+    }
+    leaf maximum-mpls-ttl {
+      description
+        "The maximum or final TTL value of the MPLS trace messages";
+      type uint8 {
+        range "1..255";
+      }
+      default "30";
+    }
+    leaf interval {
+      description
+        "The time interval between successive MPLS trace messages while incrementing the TTL";
+      type uint8 {
+        range "1..10";
+      }
+      units "seconds";
+      default "1";
+    }
+    leaf probe-count {
+      description
+        "The maximum number of MPLS trace messages sent per hop";
+      type uint8 {
+        range "1..10";
+      }
+      default "1";
+    }
+    leaf timeout {
+      description
+        "The maximum time the sender waits to receive an MPLS trace message before considering that the ping failed";
+      type uint8 {
+        range "1..60";
+      }
+      units "seconds";
+      default "3";
+    }
+    leaf maximum-failures {
+      description
+        "The maximum number of consecutive MPLS trace requests that do not receive a reply before the trace operation fails for a given TTL";
+      type uint8 {
+        range "1..255";
+      }
+      default "5";
+    }
+    leaf probe-size {
+      description
+        "The size of the IP packet MPLS trace message. Probe size does not include MPLS headers, if any";
+      type uint16 {
+        range "1..9500";
+      }
+      units "bytes";
+      default "1";
+    }
+    leaf source-ip {
+      description
+        "The source IP address of the UDP/IP MPLS trace message
+
+         This should be a routable address of the router. This will be destination of the MPLS echo reply message sent back to the sender. By default this is the system address of the default network-instance; if the default network-instance does not have system interface then it will be primary address of the lowest numbered loopback subinterface of the default network-instace.";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf ecmp-interface-select {
+      description
+        "Send the LSP trace messages out the specified subinterface
+
+         If this router has multiple ECMP next-hops to the endpoint of the MPLS tunnel this can select one of those subinterfaces specifically";
+      type srl_nokia-comm:subinterface-name;
+    }
+    leaf ecmp-next-hop-select {
+      description
+        "Send the LSP trace messages to the specified next-hop
+
+         If this router has multiple ECMP next-hops to the endpoint of the MPLS tunnel this can select one of those next-hops specifically";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf destination-ip {
+      description
+        "The destination IP address of the UDP/IP MPLS trace message
+
+         This should be a non-forwardable address in the 127/8 address block (or the 0:0:0:0:0:FFFF:7F00:0/104 IPv6 address block). Varying this address can help to exercise different ECMP paths towards the destination. By default, the destination address is selected randomly from these address blocks.";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf traffic-class {
+      description
+        "MPLS Header Traffic Class/Exp value";
+      type uint8 {
+        range "0..7";
+      }
+      default "7";
+    }
+  }
+
+  grouping sr-isis-ping {
+    container sr-isis {
+      description
+        "Parameters required to ping the endpoint of an SR-ISIS tunnel";
+      list prefix-sid {
+        key "prefix";
+        leaf prefix {
+          description
+            "The IPv4 or IPv6 prefix associated with the SID
+
+             This is the destination that is being pinged.";
+          type srl_nokia-comm:ip-prefix;
+        }
+        leaf igp-instance {
+          description
+            "ISIS instance id";
+          type uint8 {
+            range "0..255";
+          }
+          default "0";
+        }
+        uses ping-common-params;
+      }
+      leaf clear {
+        type empty;
+        description
+          "Clear all SR-ISIS ping session transmit and receive packet counts and all error counts";
+      }
+    }
+  }
+
+  grouping ldp-ping {
+    container ldp {
+      description
+        "Parameters required to ping the endpoint of an LDP tunnel";
+      list fec {
+        key "prefix";
+        leaf prefix {
+          description
+            "The IPv4 or IPv6 prefix associated with the FEC
+
+             This is the destination that is being pinged.";
+          type srl_nokia-comm:ip-prefix;
+        }
+        uses ping-common-params;
+      }
+      leaf clear {
+        type empty;
+        description
+          "Clear all LDP ping session transmit and receive packet counts and all error counts";
+      }
+    }
+  }
+
+  grouping te-policy-ping {
+    container te-policy {
+      if-feature "srl_nokia-feat:mpls-oam-uncolored-tepolicy";
+      description
+        "Parameters required to ping the endpoint of a TE-Policy tunnel";
+      container sr-uncolored {
+        list policy {
+          key "policy-name protocol-origin";
+          leaf policy-name {
+            type srl_nokia-comm:name;
+            description
+              "Name of Uncolored Traffic Engineering Policy to be tested. ny available primary or standby or active secondaty candidate-path can be probed.";
+          }
+          leaf protocol-origin {
+            description
+              "Uncolored Traffic Engrineering Policy, origination source. The method Policy path is computed. This list includes Path Computation Engine, explicitly configured paths, etc.";
+            type srl_nokia-comm:protocol-origin-type;
+          }
+          leaf segment-list-index {
+            type uint32;
+            description
+              "Uncolored Traffic Engineering Policy active segment-list index";
+          }
+          uses ping-common-params;
+        }
+        leaf clear {
+          type empty;
+          description
+            "Clear all uncolored MPLS TE-Policy ping session transmit and receive packet counts and all error counts";
+        }
+      }
+    }
+  }
+
+  grouping sr-isis-trace {
+    container sr-isis {
+      description
+        "Parameters required to trace a path towards the endpoint of an SR-ISIS tunnel";
+      list prefix-sid {
+        key "prefix";
+        leaf prefix {
+          description
+            "The IPv4 or IPv6 prefix associated with the SID
+
+             This is the destination that is being traced.";
+          type srl_nokia-comm:ip-prefix;
+        }
+        leaf igp-instance {
+          description
+            "ISIS instance id";
+          type uint8 {
+            range "0..255";
+          }
+          default "0";
+        }
+        uses trace-common-params;
+      }
+      leaf clear {
+        type empty;
+        description
+          "Clear all SR-ISIS trace session transmit and receive packet counts and all error counts";
+      }
+    }
+  }
+
+  grouping ldp-trace {
+    container ldp {
+      description
+        "Parameters required to trace a path towards the endpoint of an LDP tunnel";
+      list fec {
+        key "prefix";
+        leaf prefix {
+          description
+            "The IPv4 or IPv6 prefix associated with the FEC
+
+             This is the destination that is being traced.";
+          type srl_nokia-comm:ip-prefix;
+        }
+        uses trace-common-params;
+      }
+      leaf clear {
+        type empty;
+        description
+          "Clear all LDP trace session transmit and receive packet counts and all error counts";
+      }
+    }
+  }
+
+  grouping te-policy-trace {
+    container te-policy {
+      if-feature "srl_nokia-feat:mpls-oam-uncolored-tepolicy";
+      description
+        "Parameters required to trace the endpoint of a TE-Policy tunnel";
+      container sr-uncolored {
+        list policy {
+          key "policy-name protocol-origin";
+          leaf policy-name {
+            type srl_nokia-comm:name;
+            description
+              "Name of Uncolored Traffic Engineering Policy which is to be traced. Any available primary or standby or active secondaty candidate-path can be traced.";
+          }
+          leaf protocol-origin {
+            description
+              "Uncolored Traffic Engrineering Policy, origination source. The method Policy path is computed. This list includes Path Computation Engine, explicitly configured paths, etc.";
+            type srl_nokia-comm:protocol-origin-type;
+          }
+          leaf segment-list-index {
+            description
+              "Uncolored Traffic Engineering Policy active segment-list index";
+            type uint32;
+          }
+          uses trace-common-params;
+        }
+        leaf clear {
+          type empty;
+          description
+            "Clear all uncolored MPLS TE-Policy trace session transmit and receive packet counts and all error counts";
+        }
+      }
+    }
+  }
+
+  grouping lsp-ping-top {
+    container lsp-ping {
+      description
+        "Initiate LSP ping of the remote endpoint of an MPLS or segment routing tunnel";
+      uses sr-isis-ping;
+      uses ldp-ping;
+      uses te-policy-ping;
+    }
+  }
+
+  grouping lsp-trace-top {
+    container lsp-trace {
+      description
+        "Perform LSP trace of the path towards the remote endpoint of an MPLS or segment routing tunnel";
+      uses sr-isis-trace;
+      uses ldp-trace;
+      uses te-policy-trace;
+    }
+  }
+
+  augment "/srl_nokia-tools-oam:oam" {
+    if-feature "srl_nokia-feat:mpls-oam";
+    uses lsp-ping-top;
+    uses lsp-trace-top;
+  }
+}

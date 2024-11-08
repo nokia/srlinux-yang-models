@@ -1,0 +1,283 @@
+module srl_nokia-tools-pim {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:pim:tools-pim";
+  prefix srl_nokia-tools-pim;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for PIM operational commands";
+
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+
+  grouping pim-tools-top {
+    container pim {
+      if-feature "srl_nokia-feat:pim";
+      presence "Send operational commands to PIM manager";
+      container statistics {
+        container ipv4 {
+          description
+            "IPv4 multicast PDU statistics";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM statistics";
+          }
+        }
+        container ipv6 {
+          description
+            "IPv6 multicast PDU statistics";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM statistics";
+          }
+        }
+        list group {
+          key "group";
+          description
+            "Multicast group";
+          leaf group {
+            type srl_nokia-comm:ip-address;
+            description
+              "Multicast group address";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear all PIM statistics for this group";
+          }
+          list source {
+            key "source";
+            description
+              "Source addresses.";
+            leaf source {
+              type srl_nokia-comm:ip-address;
+              description
+                "Source address";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all PIM statistics for this group and source";
+            }
+          }
+        }
+        list interface {
+          description
+            "List of PIM interfaces";
+          key "interface-name";
+          leaf interface-name {
+            type srl_nokia-comm:subinterface-all;
+            description
+              "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+          }
+          container ipv4 {
+            description
+              "IPv4 multicast PDU statistics";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM statistics.";
+            }
+          }
+          container ipv6 {
+            description
+              "IPv6 multicast PDU statistics";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM statistics.";
+            }
+          }
+        }
+      }
+      container database {
+        container ipv4 {
+          description
+            "IPv4 multicast database tools";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM instance database";
+          }
+        }
+        container ipv6 {
+          description
+            "IPv6 multicast database tools";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM instance database";
+          }
+        }
+        list group {
+          key "group";
+          description
+            "Multicast group";
+          leaf group {
+            type srl_nokia-comm:ip-address;
+            description
+              "Multicast group address";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear all PIM instance database entries for this group";
+          }
+          list interface {
+            description
+              "List of PIM interfaces";
+            key "interface-name";
+            leaf interface-name {
+              type srl_nokia-comm:subinterface-all;
+              description
+                "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all PIM database entries for this multicast group on the interface";
+            }
+          }
+          list source {
+            key "source";
+            description
+              "Source addresses";
+            leaf source {
+              type srl_nokia-comm:ip-address;
+              description
+                "Source address";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all PIM database entries for this source";
+            }
+            list interface {
+              description
+                "List of PIM interfaces";
+              key "interface-name";
+              leaf interface-name {
+                type srl_nokia-comm:subinterface-all;
+                description
+                  "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+              }
+              leaf clear {
+                type empty;
+                description
+                  "Clear all PIM database entries for this group and source on this interface";
+              }
+            }
+          }
+        }
+        list interface {
+          description
+            "List of PIM interfaces";
+          key "interface-name";
+          leaf interface-name {
+            type srl_nokia-comm:subinterface-all;
+            description
+              "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+          }
+          container ipv4 {
+            description
+              "IPv4 specific database";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM database";
+            }
+          }
+          container ipv6 {
+            description
+              "IPv6 specific statistics";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM database";
+            }
+          }
+        }
+      }
+      container neighbor {
+        description
+          "Clear PIM neighbors by disabling pim adjacency messages";
+        container ipv4 {
+          description
+            "Clear all IPv4 pin adjacency on the system";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM adjacency";
+          }
+        }
+        container ipv6 {
+          description
+            "Clear all IPv6 pin adjacency on the systems";
+          leaf clear {
+            type empty;
+            description
+              "Clear the PIM adjacency";
+          }
+        }
+        list interface {
+          description
+            "List of PIM interfaces";
+          key "interface-name";
+          leaf interface-name {
+            type srl_nokia-comm:subinterface-all;
+            description
+              "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+          }
+          container ipv4 {
+            description
+              "Clear IPv4 specific adjacency on this interface";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM adjacency";
+            }
+          }
+          container ipv6 {
+            description
+              "Clear IPv6 specific adjacency on this interface";
+            leaf clear {
+              type empty;
+              description
+                "Clear the PIM adjacency";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {
+    uses pim-tools-top;
+  }
+}

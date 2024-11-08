@@ -1,0 +1,344 @@
+module srl_nokia-acl-policers {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:acl:acl-policers";
+  prefix srl_nokia-acl-policers;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+  import srl_nokia-qos-policers {
+    prefix srl_nokia-qos-policers;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  typedef drop-probability-level {
+    description
+      "The various drop probability classifications that can be applied to a packet";
+    type enumeration {
+      enum low {
+        description
+          "Traffic that should be dropped last when there is congestion. Internally this is traffic that is colored green.";
+        value 1;
+      }
+      enum medium {
+        description
+          "Traffic that should be dropped before green traffic but after red traffic when there is congestion. Internally this is traffic that is colored yellow.";
+        value 2;
+      }
+      enum high {
+        description
+          "Traffic that should be dropped first when there is congestion. Internally this is traffic that is colored red.";
+        value 3;
+      }
+    }
+  }
+
+  grouping acl-managed-policer-templates {
+    list policer-template {
+      description
+        "List of policer templates.";
+      key "name";
+      leaf name {
+        description
+          "The name assigned to the policer template.";
+        type srl_nokia-comm:name;
+      }
+      list policer {
+        max-elements 32;
+        description
+          "The list of policer instances belonging to the template definition.";
+        key "sequence-id";
+        leaf sequence-id {
+          type uint32 {
+            range "1..65535";
+          }
+          description
+            "A number to indicate the relative evaluation order of the different policers in a template; policers with lower sequence-id numbers are evaluated before policers with higher sequence-id numbers";
+        }
+        list forwarding-class {
+          description
+            "The list of forwarding classes with traffic to be sent to the policer. If this list is not configured then all subinterface traffic is matched.";
+          key "fc";
+          leaf fc {
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            description
+              "A forwarding class that has traffic to match to the policer";
+          }
+          leaf-list forwarding-type {
+            ordered-by system;
+            max-elements 5;
+            description
+              "The list of forwarding types, belonging to this forwarding-class, to match to the policer. If none are specified, this implies ALL forwarding types.";
+            type srl_nokia-comm:forwarding-type;
+          }
+        }
+        leaf peak-rate-kbps {
+          mandatory true;
+          type uint32;
+          units "kbps";
+          description
+            "The peak information rate (PIR) of the policer, defined in kilobits (1024 bits) per second.
+             On 7220-D2/D3 the minimum rate is 8 Kbps";
+        }
+        leaf committed-rate-kbps {
+          mandatory true;
+          type uint32;
+          units "kbps";
+          description
+            "The committed information rate (CIR) of the policer, defined in kilobits (1024 bits) per second
+             On 7220-D2/D3 the minimum rate  is 8 Kbps";
+        }
+        leaf maximum-burst-size {
+          mandatory true;
+          type uint32;
+          units "bytes";
+          description
+            "Maximum PIR bucket depth in bytes
+
+             On 7220-D2/D3 the lower limit is 512 Bytes and higher limit is 268 MB";
+        }
+        leaf committed-burst-size {
+          mandatory true;
+          type uint32;
+          units "bytes";
+          description
+            "Maximum CIR bucket depth in bytes
+
+             On 7220-D2/D3 the lower limit is 512 Bytes and higher limit is 268 MB";
+        }
+        container exceed-action {
+          description
+            "Container with options that specify the handling of packets that the policer has determined are exceeding (yellow)";
+          leaf drop-probability {
+            description
+              "Recolor exceeding packets to the specified drop-probability level";
+            type drop-probability-level;
+            default "medium";
+          }
+        }
+        container violate-action {
+          description
+            "Container with options that specify the handling of packets that the policer has determined are violating (red)";
+          choice violate-handling {
+            default "re-color";
+            case drop {
+              leaf drop {
+                description
+                  "Violating packets should be dropped immediately";
+                type empty;
+              }
+            }
+            case re-color {
+              leaf drop-probability {
+                description
+                  "Recolor violating packets to the specified drop-probability level";
+                type drop-probability-level;
+                default "high";
+              }
+            }
+          }
+        }
+      }
+      leaf statistics-mode {
+        description
+          "The statistics mode of all policers belonging to this template";
+        type enumeration {
+          enum violating-focus {
+            value 1;
+            description
+              "In this statistics mode only 4 counters are provided: accepted-packets, accepted-octets, violating-packets, violating-octets";
+          }
+          enum forwarding-focus {
+            value 2;
+            description
+              "In this statistics mode only 4 counters are provided: committed-packets, committed-octets, exceeding-packets, exceeding-octets";
+          }
+        }
+        default "violating-focus";
+      }
+    }
+  }
+
+  grouping policer-instance-state {
+    leaf peak-rate-kbps {
+      config false;
+      type uint32;
+      units "kbps";
+      description
+        "The actual/operational peak information rate (PIR) of the policer as it is programmed into hardware.";
+    }
+    leaf committed-rate-kbps {
+      config false;
+      type uint32;
+      units "kbps";
+      description
+        "The actual/operational committed information rate (CIR) of the policer as it is programmed into hardware.";
+    }
+    leaf maximum-burst-size {
+      config false;
+      type uint32;
+      units "bytes";
+      description
+        "The actual/operational maximum PIR bucket depth in bytes as it is programmed into hardware.";
+    }
+    leaf committed-burst-size {
+      config false;
+      type uint32;
+      units "bytes";
+      description
+        "The actual/operational maximum CIR bucket depth in bytes as it is programmed into hardware.";
+    }
+    container statistics {
+      config false;
+      leaf accepted-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of packets that were accepted by the policer, counting all drop-probabilities at policer output
+
+           Not available in forwarding-focus mode";
+      }
+      leaf accepted-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in packets that were accepted by the policer, counting all drop-probabilities at policer output
+
+           Not available in forwarding-focus mode";
+      }
+      leaf violating-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of packets that were considered violating by the policer
+
+           Not available in forwarding-focus mode";
+      }
+      leaf violating-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in packets that were considered violating by the policer
+
+           Not available in forwarding-focus mode";
+      }
+      leaf committed-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of packets that were accepted with low drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+      leaf committed-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in packets that were accepted with low drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+      leaf exceeding-packets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of packets that were accepted with medium drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+      leaf exceeding-octets {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in packets that were accepted with medium drop-probability at policer output
+
+           Not available in violating-focus mode";
+      }
+      leaf last-clear {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time of the last clear command performed by the user at this level";
+      }
+    }
+  }
+
+  grouping subinterface-qos-policer {
+    container policer-templates {
+      presence "acl policer templates";
+      description
+        "acl policers";
+      must 'string(../../interface-ref/subinterface) != ""' {
+        error-message "Attachment of policier-templates, not permitted for interfaces";
+      }
+      leaf policer-template {
+        if-feature "not srl_nokia-feat:fpcx and srl_nokia-feat:subif-policer";
+        must "not(starts-with(../../../../../srl_nokia-if:name,'irb'))" {
+          error-message "Not supported on IRB interfaces";
+        }
+        must "../../../../srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
+          error-message "policer not allowed on subinterface with type local-mirror-dest";
+        }
+        description
+          "The name of the policer template applied to input traffic on the subinterface";
+        type leafref {
+          path "/srl_nokia-qos:qos/srl_nokia-acl-policers:policer-templates/srl_nokia-acl-policers:policer-template/name";
+        }
+      }
+      list policer {
+        if-feature "not srl_nokia-feat:fpcx";
+        config false;
+        description
+          "The list of policer instances belonging to the template definition.";
+        key "sequence-id";
+        leaf sequence-id {
+          type uint32 {
+            range "1..65535";
+          }
+          description
+            "Policer sequence-id";
+        }
+        uses srl_nokia-acl-policers:policer-instance-state;
+      }
+    }
+  }
+
+  augment "/srl_nokia-qos:qos" {
+    container policer-templates {
+      if-feature "srl_nokia-feat:subif-policer";
+      uses acl-managed-policer-templates;
+    }
+  }
+
+  augment "/srl_nokia-qos:qos/srl_nokia-qos:interfaces/srl_nokia-qos:interface/srl_nokia-qos:input" {
+    if-feature "srl_nokia-feat:ingress-subif-policing and srl_nokia-feat:subif-policer";
+    uses subinterface-qos-policer;
+  }
+}

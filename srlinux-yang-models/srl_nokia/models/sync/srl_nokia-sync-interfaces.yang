@@ -1,0 +1,307 @@
+module srl_nokia-sync-interfaces {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:time:sync-interfaces";
+  prefix srl_nokia-sync-interfaces;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping specific-gnss-info {
+    description
+      "This struct containing all attributes for a specific gnss instance in the node";
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Configure the administrative state of the GNSS port";
+    }
+    leaf oper-state {
+      config false;
+      type srl_nokia-comm:oper-state;
+      description
+        "Operational state of the GNSS port";
+    }
+    leaf antenna-cable-delay {
+      type uint16 {
+        range "0..1000";
+      }
+      default "0";
+      units "nanoseconds";
+      description
+        "Sets the cable delay value (integer) in ns to the GNSS antenna";
+    }
+    leaf elevation-mask-angle {
+      type uint8 {
+        range "0..89";
+      }
+      default "10";
+      units "degrees";
+      description
+        "Sets the elevation mask angle
+
+         This provides a method of filtering satellites low on the horizon to be
+         used by the system.";
+    }
+    leaf gnss-receiver-status {
+      type string;
+      config false;
+      description
+        "Specifies the current state of the GNSS receiver module";
+    }
+    leaf gnss-sync-status {
+      type enumeration {
+        enum unknown {
+          value 0;
+          description
+            "GNSS sync status is unknown";
+        }
+        enum locked {
+          value 1;
+          description
+            "GNSS sync status is locked";
+        }
+        enum not-locked {
+          value 2;
+          description
+            "GNSS sync status is unlocked";
+        }
+      }
+      config false;
+      description
+        "Specifies the current state of the sync recovery from GNSS";
+    }
+    leaf gnss-antenna-status {
+      type enumeration {
+        enum unknown {
+          value 0;
+          description
+            "GNSS antenna is unknown";
+        }
+        enum unsupported {
+          value 1;
+          description
+            "GNSS antenna is not supported";
+        }
+        enum ok {
+          value 2;
+          description
+            "GNSS antenna is working as expected";
+        }
+        enum over-current {
+          value 3;
+          description
+            "GNSS antenna is over-current";
+        }
+        enum under-current {
+          value 4;
+          description
+            "GNSS antenna is under-current";
+        }
+        enum no-bias-voltage {
+          value 5;
+          description
+            "GNSS antenna has no bias voltage";
+        }
+      }
+      config false;
+      description
+        "Specifies the current state of the GNSS antenna";
+    }
+    leaf latitude-position {
+      type decimal64 {
+        fraction-digits 5;
+      }
+      config false;
+      description
+        "Specifies the current latitude of the GNSS antenna";
+    }
+    leaf longitude-position {
+      type decimal64 {
+        fraction-digits 5;
+      }
+      config false;
+      description
+        "Specifies the current longitude of the GNSS antenna";
+    }
+    leaf altitude-position {
+      type decimal64 {
+        fraction-digits 5;
+      }
+      config false;
+      description
+        "Specifies the current altitude of the GNSS antenna";
+    }
+    leaf position-valid {
+      type boolean;
+      config false;
+      description
+        "Specifies if the current position information is valid";
+    }
+    leaf gnss-date-and-time {
+      type srl_nokia-comm:date-and-time;
+      config false;
+      description
+        "Specifies the date and time as recovered from GNSS";
+    }
+    leaf gnss-utc-offset {
+      type int16;
+      config false;
+      description
+        "Specifies the UTC as recovered from GNSS";
+    }
+    leaf gnss-utc-offset-valid {
+      type boolean;
+      config false;
+      description
+        "Specifies the UTC offset is valid as recovered from GNSS";
+    }
+    leaf gnss-firmware {
+      type string;
+      config false;
+      description
+        "Specifies the current firmware used by the GNSS receiver";
+    }
+    leaf number-of-satellites-visible {
+      type uint8;
+      config false;
+      description
+        "The number of satellites currently visible";
+    }
+    container satellites-in-use {
+      config false;
+      description
+        "The list of satellites currently in use";
+      leaf number-of-satellites-in-use {
+        type uint8;
+        description
+          "The number of satellites currently in use";
+      }
+      list instance {
+        key "instance-number";
+        leaf instance-number {
+          type uint8;
+          description
+            "Information regarding each SV (Space Vehicle)";
+        }
+        leaf constellation {
+          type string;
+          description
+            "Constellation of the SV (Space Vehicle)";
+        }
+        leaf prn {
+          type uint8;
+          description
+            "Pseudo Random Number (PRN) of the Space Vehicle
+
+             This represents the satellite's unique pseudorandom noise code";
+        }
+        leaf band {
+          type string;
+          description
+            "SV's band";
+        }
+        leaf signal-strength {
+          type uint8;
+          units "dB-Hz";
+          description
+            "Carrier to noise ratio in dB-Hz";
+        }
+      }
+    }
+  }
+
+  grouping gnss-interface-top {
+    description
+      "This struct containing all attributes for the GNSS reference";
+    container constellation {
+      description
+        "Selects which constellations to be used for GNSS";
+      leaf gps {
+        type boolean;
+        default "true";
+        config false;
+      }
+      leaf galileo {
+        type boolean;
+        default "false";
+      }
+    }
+    list receiver {
+      key "gnss-id";
+      description
+        "Specific configuration and states of a specific receiver";
+      leaf gnss-id {
+        type enumeration {
+          enum gnss-a {
+            value 1;
+            description
+              "This may be the sole GNSS receiver or GNSS-A receiver in routers with redundant CPMs";
+          }
+          enum gnss-b {
+            if-feature "srl_nokia-feat:sync-gnss-redundant";
+            value 2;
+            description
+              "Specific configuration and states of GNSS-B receiver in routers with redundant CPMs";
+          }
+        }
+      }
+      uses specific-gnss-info;
+    }
+  }
+
+  grouping one-pps-interface-top {
+    description
+      "This struct containing all attributes for the 1PPS output port";
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Configure the administrative state of the 1PPS (50 ohm) output port
+
+         When enabled, output is enabled. Otherwise, the output is disabled.";
+    }
+  }
+}

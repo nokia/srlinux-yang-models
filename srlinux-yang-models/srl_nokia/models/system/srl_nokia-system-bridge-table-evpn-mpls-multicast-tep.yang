@@ -1,0 +1,106 @@
+module srl_nokia-system-bridge-table-evpn-mpls-multicast-tep {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:evpn-mpls-multicast-tep:system-bridge-table-evpn-mpls-multicast-tep";
+  prefix srl_nokia-system-bridge-table-evpn-mpls-multicast-tep;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-system-bridge-table {
+    prefix srl_nokia-system-bridge-table;
+  }
+  import srl_nokia-system-bridge-table-evpn {
+    prefix srl_nokia-system-bridge-table-evpn;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines system bridge-table proxy entry operational
+     state data";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping bridge-table-evpn-mpls-multicast-tep-multicast-tep-statistics-top {
+    container statistics {
+      config false;
+      leaf max-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The maximum number of BGP-EVPN MPLS multicast Termination EndPoints (TEPs) allowed in the system";
+      }
+      leaf total-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of BGP-EVPN MPLS multicast Termination EndPoints (TEPs)";
+      }
+      leaf active-entries {
+        type srl_nokia-comm:zero-based-counter64;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The total number of active BGP-EVPN MPLS multicast Termination Endpoints (TEPs)";
+      }
+    }
+  }
+
+  grouping bridge-table-evpn-mpls-multicast-tep-multicast-tep-top {
+    list tep {
+      config false;
+      key "tep";
+      leaf tep {
+        srl_nokia-ext:show-importance "high";
+        type srl_nokia-comm:ip-address;
+        description
+          "The IP address that identifies the remote BGP-EVPN MPLS multicast Termination Endpoint (TEP)";
+      }
+      leaf index {
+        srl_nokia-ext:show-importance "high";
+        type uint64;
+        description
+          "The hardware index (system allocated) for the BGP-EVPN MPLS multicast Termination Endpoint (TEP)
+
+           If a non-zero hardware index is allocated, then there are available system resources and there is
+           at least one BGP-EVPN MPLS multicast destination (using this TEP) ready to be programmed. If the
+           hardware index is 0, there are not resources left and the TEP is not programmed, even if an Inclusive
+           Multicast Ethernet Tag route was correctly imported from a peer.";
+      }
+      leaf last-changed {
+        type srl_nokia-comm:date-and-time-delta;
+        srl_nokia-ext:show-importance "high";
+        description
+          "The date and time of the last update of this BGP-EVPN MPLS multicast Termination Endpoint";
+      }
+    }
+  }
+
+  grouping bridge-table-evpn-mpls-multicast-tep-top {
+    container mpls-multicast-tep {
+      if-feature "srl-feat:evpn-mpls";
+      description
+        "System bridge-table BGP-EVPN MPLS multicast Termination Endpoint information";
+      uses bridge-table-evpn-mpls-multicast-tep-multicast-tep-statistics-top;
+      uses bridge-table-evpn-mpls-multicast-tep-multicast-tep-top;
+    }
+  }
+
+  augment "/srl-system:system/srl_nokia-system-bridge-table:bridge-table/srl_nokia-system-bridge-table-evpn:evpn" {
+    uses bridge-table-evpn-mpls-multicast-tep-top;
+  }
+}

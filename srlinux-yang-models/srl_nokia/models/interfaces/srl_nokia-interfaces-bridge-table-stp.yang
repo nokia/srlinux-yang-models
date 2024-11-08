@@ -1,0 +1,93 @@
+module srl_nokia-interfaces-bridge-table-stp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:l2-mac:interfaces-bridge-table-stp";
+  prefix srl_nokia-interfaces-bridge-table-stp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-stp-types {
+    prefix srl_nokia-stp-types;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of mac entries learned on this interface's bridge table.";
+
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+
+  grouping bridge-table-stp-top {
+    container stp {
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "Administratively enable or disable the STP protocol for this interface
+           When STP on the network instance is administratively disabled,
+           any BPDUs are forwarded transparently.
+           When STP on the network instance is administratively enabled,
+           but the administrative state on a sub-interface is disabled,
+           BPDUs received on such a subinterface are discarded.";
+      }
+      leaf port-number {
+        type srl_nokia-stp-types:stp-port-number-type;
+      }
+      leaf priority {
+        type srl_nokia-stp-types:stp-port-priority-type;
+      }
+      leaf path-cost {
+        type srl_nokia-stp-types:stp-path-cost-type;
+      }
+      leaf edge-port {
+        type srl_nokia-stp-types:stp-edge-port-type;
+      }
+      leaf auto-edge {
+        type srl_nokia-stp-types:stp-auto-edge-type;
+      }
+      leaf link-type {
+        type srl_nokia-stp-types:stp-link-type;
+      }
+      leaf root-guard {
+        type srl_nokia-stp-types:stp-root-guard-type;
+      }
+      list mst-instance {
+        key "mst-instance";
+        description
+          "List of subinterfaces used by this mstp-policy";
+        leaf mst-instance {
+          type uint32;
+          description
+            "Name of the subinterface bound to this mstp-policy";
+        }
+        leaf mst-port-priority {
+          type srl_nokia-stp-types:stp-port-priority-type;
+        }
+        leaf mst-path-cost {
+          type srl_nokia-stp-types:stp-path-cost-type;
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:bridge-table" {
+    uses bridge-table-stp-top {
+      if-feature "srl_nokia-feat:stp";
+    }
+  }
+}

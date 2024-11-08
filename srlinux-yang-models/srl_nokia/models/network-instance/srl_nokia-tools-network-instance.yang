@@ -1,0 +1,63 @@
+module srl_nokia-tools-network-instance {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:net-inst:tools-network-instance";
+  prefix srl_nokia-tools-network-instance;
+
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands on system.";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2018-12-12 {
+    description
+      "SRLinux 19.12.1";
+  }
+
+  list network-instance {
+    key "name";
+    leaf name {
+      type string;
+      description
+        "A unique name identifying the network instance";
+    }
+    container protocols {
+      description
+        "The routing protocols that are enabled for this
+         network-instance.";
+    }
+    container bridge-table {
+      description
+        "bridge-table";
+    }
+    list connection-point {
+      if-feature "srl-feat:connection-point";
+      description
+        "Connection-point information.";
+      key "name";
+      leaf name {
+        type string;
+        description
+          "A unique name identifying the connection-point";
+      }
+      container bridge-table {
+        description
+          "bridge-table";
+      }
+    }
+  }
+}

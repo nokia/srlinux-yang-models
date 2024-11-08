@@ -1,0 +1,76 @@
+module srl_nokia-interfaces-local-mirror-destination {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mirror:interfaces-local-mirror-destination";
+  prefix srl_nokia-if-local-mirror-dest;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing subinterfaces of type local-mirror-destination";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+
+  grouping subinterface-local-mirror-destination-top {
+    container local-mirror-destination {
+      if-feature "srl_nokia-feat:mirroring";
+      presence "Performs local-mirror-destination";
+      description
+        "Container for options related to local mirror destination";
+      must "(../srl_nokia-if:type = 'local-mirror-dest')" {
+        error-message "local-mirror-destination is only allowed on subinterfaces with type local-mirror-dest";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "The configurable state of the local mirror destination";
+      }
+      leaf oper-state {
+        config false;
+        type srl_nokia-comm:oper-state;
+        description
+          "The operational state of the local mirror destination";
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface" {
+    uses subinterface-local-mirror-destination-top;
+  }
+}

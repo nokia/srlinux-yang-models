@@ -1,0 +1,91 @@
+module srl_nokia-ippm-source-udp-pool {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:twamp:ippm-source-udp-pool";
+  prefix srl_nokia-ippm-source-udp-pool;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module contains configuration and state data for the IP PM reserved source UDP pool.  This pool is available to multiple IP PM
+     features.  The ports must be allocated to a function prior to that port being configurable under a specific function.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping source-udp-allocation-configuration {
+    list port {
+      key "port-number";
+      description
+        "List of UDP ports";
+      leaf port-number {
+        type srl_nokia-comm:port-number {
+          range "64374..64383";
+        }
+        description
+          "UDP port number";
+      }
+      leaf application-assignment {
+        type enumeration {
+          enum oam-pm-ip {
+            value 1;
+            description
+              "Performance monitoring IP";
+            if-feature "srl_nokia-feat:oam-pm-ip";
+          }
+          enum link-measurement {
+            value 2;
+            description
+              "Link Measurement";
+            if-feature "srl_nokia-feat:link-measurement";
+          }
+          enum unassigned {
+            value 3;
+            description
+              "No IPPM application assigned";
+          }
+        }
+        default "unassigned";
+        description
+          "IP Performance Measurement application assigned to the UDP port";
+      }
+      leaf in-use {
+        config false;
+        type boolean;
+        description
+          "Referenced by an application test
+
+           When false no test is referencing the UDP port. When true a test is referencing
+           the UDP port.  The application assignment can only be changed when the value is false.";
+      }
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    if-feature "srl_nokia-feat:link-measurement or srl_nokia-feat:oam-pm-ip";
+    container ippm {
+      presence "Allocation of the reserved UDP source ports to STAMP applications";
+      description
+        "Context for IP Performance Measurement shared elements";
+      container source-udp-port-pools {
+        description
+          "Context for source UDP port allocation to IPPM application";
+        uses source-udp-allocation-configuration;
+      }
+    }
+  }
+}

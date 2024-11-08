@@ -1,0 +1,72 @@
+module srl_nokia-tools-te-policies {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:tepolicy:tools-te-policies";
+  prefix srl_nokia-tools-te-policies;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for Taffic Engineering Policies operational commands";
+
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping te-policies-tools-top {
+    container traffic-engineering-policies {
+      if-feature "srl_nokia-feat:te-policies";
+      list policy {
+        description
+          "List of traffic engineering policies";
+        key "policy-name";
+        leaf policy-name {
+          description
+            "The name of the traffic engineering policy";
+          type srl_nokia-comm:name;
+        }
+        list segment-list {
+          key "segment-list-index";
+          leaf segment-list-index {
+            description
+              "Index to enumerate the different segment lists of a TE policy.";
+            type uint8 {
+              range "1..32";
+            }
+          }
+          leaf resignal {
+            type empty;
+            description
+              "Trigger resignal for segment-list ";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear segment-list";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance" {
+    uses te-policies-tools-top;
+  }
+}

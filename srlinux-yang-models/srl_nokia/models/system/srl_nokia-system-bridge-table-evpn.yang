@@ -1,0 +1,45 @@
+module srl_nokia-system-bridge-table-evpn {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:evpn:system-bridge-table-evpn";
+  prefix srl_nokia-system-bridge-table-evpn;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-system-bridge-table {
+    prefix srl_nokia-system-bridge-table;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines system bridge-table evpn operational
+     state data";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping bridge-table-evpn-top {
+    container evpn {
+      if-feature "srl-feat:evpn";
+      srl_nokia-ext:first-released "20.10.1";
+      description
+        "System bridge-table BGP-EVPN information";
+    }
+  }
+
+  augment "/srl-system:system/srl_nokia-system-bridge-table:bridge-table" {
+    uses bridge-table-evpn-top;
+  }
+}

@@ -1,0 +1,143 @@
+module srl_nokia-mtu {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:mtu";
+  prefix srl-mtu;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the system MTU";
+
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping mtu-config-top {
+    description
+      "Configuration data related to the system MTU";
+    leaf default-port-mtu {
+      type uint16 {
+        range "1500..9500";
+      }
+      default "9232";
+      description
+        "System default port MTU in bytes including ethernet overhead but excluding 4-bytes FCS
+
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-D4, 7220 IXR-D5, 7220 IXR-H2, 7220 IXR-H3, and 7220 IXR-H4 systems support a maximum port MTU of 9412 bytes.
+
+         The 7730 SXR systems support a maximum port MTU of 9408 bytes.";
+    }
+    leaf default-l2-mtu {
+      if-feature "srl_nokia-feat:config-l2-mtu-default";
+      type uint16 {
+        range "1500..9500";
+      }
+      default "9232";
+      description
+        "System default Layer-2 MTU in bytes for bridged subinterfaces
+
+         It includes the ethernet overhead and VLAN tags but excludes 4-bytes FCS. The default-l2-mtu
+         is also used as the oper-mac-vrf-mtu and oper-vpws-mtu value if the network-instance does
+         not have subinterfaces.
+
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-D4, 7220 IXR-D5, 7220 IXR-H2, 7220 IXR-H3, and
+         7220 IXR-H4 systems support a maximum L2 MTU of 9412 bytes.
+
+         The 7730 SXR systems support a maximum L2 MTU of 9408 bytes.";
+    }
+    leaf default-ip-mtu {
+      type uint16 {
+        range "1280..9486";
+      }
+      default "1500";
+      description
+        "System default IP MTU in bytes including the IP header but excluding Ethernet overhead
+
+         The 7220 IXR-D1, 7220 IXR-D2, 7220 IXR-D3, 7220 IXR-D4, 7220 IXR-D5, 7220 IXR-H2, 7220 IXR-H3, and 7220 IXR-H4 systems support a maximum IP MTU of 9398 bytes.
+
+         The 7730 SXR systems support a maximum IP MTU of 9394 bytes.";
+    }
+    leaf default-mpls-mtu {
+      if-feature "srl_nokia-feat:mpls";
+      type uint16 {
+        range "1284..9496";
+      }
+      default "1508";
+      description
+        "System default MPLS MTU in bytes including the size of the transmitted label stack.
+
+         The 7730 SXR systems support a maximum MPLS MTU of 9404 bytes.";
+    }
+    leaf min-path-mtu {
+      type uint16 {
+        range "552..9232";
+      }
+      default "552";
+      description
+        "Sets the minimum path MTU to use when receiving an ICMP fragmentation needed message
+
+         The 7730 SXR systems support a maximum min path MTU of 9176 bytes.
+
+         This is controlled via the kernel min_pmtu option. In the event an ICMP fragmentation needed message is received by the kernel, the system will drop the session to this MTU to allow packets to traverse the entire path.";
+    }
+  }
+
+  grouping mtu-top {
+    container mtu {
+      description
+        "Top-level container for configuration and state data related to the system MTU";
+      uses mtu-config-top;
+    }
+  }
+
+  augment "/srl_nokia-system:system" {
+    uses mtu-top;
+  }
+}
