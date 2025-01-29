@@ -1099,6 +1099,10 @@ module srl_nokia-qos {
             must '../interface' {
               error-message "interface must be configured when subinterface is set";
             }
+            must "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()]/srl_nokia-if:type != 'srl_nokia-if:local-mirror-dest'" {
+              error-message "qos configuration not supported on mirror subinterface";
+              srl_nokia-ext:if-feature "srl_nokia-features:fpcx";
+            }
           }
         }
         uses pfc-interface {

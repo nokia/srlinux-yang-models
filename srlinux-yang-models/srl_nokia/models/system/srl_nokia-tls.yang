@@ -285,8 +285,8 @@ module srl_nokia-tls {
         description
           "Base64 encoded key to use with the server certificate
 
-           This includes the '-----BEGIN PRIVATE KEY-----', and '-----END PRIVATE KEY-----' header and footer
-           The value is hashed, and only the hashed value is kept";
+           This includes the '-----BEGIN PRIVATE KEY-----', and '-----END PRIVATE KEY-----' header and footer.
+           The value is hashed, and only the hashed value is kept.";
       }
       leaf certificate {
         srl-ext:show-importance "low";
@@ -294,7 +294,9 @@ module srl_nokia-tls {
         description
           "Base64 encoded certificate to use with the private key
 
-           This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+           This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer.
+           Can contain a certificate chain containing multiple certificates separated by '-----BEGIN CERTIFICATE-----'
+           and '-----END CERTIFICATE-----' headers and footers. Must start with the client certificate.";
       }
       leaf use-tpm-devid {
         if-feature "srl_nokia-feat:tpm-idevid";
@@ -330,7 +332,9 @@ module srl_nokia-tls {
         description
           "Base64 encoded certificate to use as a trust anchor
 
-           This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+           This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer.
+           Can contain multiple trust anchors separated by '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----'
+           headers and footers.";
       }
       leaf certificate-revocation-list {
         type string;
@@ -338,7 +342,20 @@ module srl_nokia-tls {
         description
           "Base64 encoded certificate revocation list
 
-           This includes the '-----BEGIN X509 CRL' and '-----END X509 CRL' header and footer";
+           This includes the '-----BEGIN X509 CRL' and '-----END X509 CRL' header and footer.
+           Can contain multiple crls separated by '-----BEGIN X509 CRL' and '-----END X509 CRL' headers and footers.
+           If empty, then no CRL verification is performed.";
+      }
+      leaf relaxed-crl-verification {
+        type boolean;
+        srl-ext:show-importance "low";
+        default false;
+        description
+          "Defines if the CRL verification is done in a relaxed (non-strict) way.
+
+           If set to true, the CRL verification allows nonexistent and/or expired CRLs in the client certificate chain.
+           If set to false, the CRL verification will fail if any CRL in the client certificate chain is not found or
+           expired.";
       }
       leaf-list cipher-list {
         ordered-by user;

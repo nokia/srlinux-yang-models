@@ -1282,6 +1282,12 @@ module srl_nokia-sync-ptp {
               must '(not (../sync0))' {
                 error-message "Only one source for this PTP port may be configured";
               }
+              must "not(/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:ethernet/srl_nokia-if:l2cp-transparency/srl_nokia-if:tunnel-all-l2cp = true())" {
+                error-message "l2cp-transparency tunnel-all-l2cp cannot be enabled on interface";
+              }
+              must "not(/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:ethernet/srl_nokia-if:l2cp-transparency/srl_nokia-if:ptp/srl_nokia-if:tunnel = true())" {
+                error-message "l2cp-transparency ptp tunnel cannot be enabled on interface";
+              }
             }
           }
           case sync0 {

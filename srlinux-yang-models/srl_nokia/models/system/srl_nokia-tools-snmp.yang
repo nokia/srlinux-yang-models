@@ -1,0 +1,74 @@
+module srl_nokia-tools-snmp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:tools-snmp";
+  prefix srl_nokia-tools-snmp;
+
+  import srl_nokia-tools-system {
+    prefix srl_nokia_tools-system;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+
+  description
+    "Model for SNMP operational commands";
+
+  revision 2024-09-09 {
+    description
+      "SRLinux 24.10.1";
+  }
+
+  grouping snmp-tools-trap-top {
+    list trap {
+        description
+            "Send simulated SNMP trap";
+        key "trap-name";
+        leaf trap-name {
+            type string;
+            description
+            "Name of the SNMP trap";
+        }
+        leaf trigger {
+            type string;
+            mandatory true;
+            description
+            "Trigger that will generate the trap with a simulated on-change notification.
+
+             Uses xpath format";
+        }
+        leaf value {
+            type string;
+            description
+            "Value that will be used in the simulated on-change notification";
+        }
+        leaf force {
+            type empty;
+            description
+            "Force trap to be send even if value doesn't trigger the python-script to generate a trap";
+        }
+        leaf network-instance {
+          if-feature "srl_nokia-feat:snmp-traps";
+          type srl_nokia-comm:name;
+          description
+            "The name of the network instance that will be used to send an SNMP trap.
+
+              If none is provided, all possible network-instances will receive the trap";
+        }
+    }
+  }
+
+  grouping tools-system-snmp-top {
+    container snmp {
+      if-feature "srl_nokia-feat:snmp-tools-trap";
+      presence "Performs SNMP tools commands";
+      uses snmp-tools-trap-top;
+    }
+  }
+
+  augment "/srl_nokia_tools-system:system" {
+    uses tools-system-snmp-top;
+  }
+}

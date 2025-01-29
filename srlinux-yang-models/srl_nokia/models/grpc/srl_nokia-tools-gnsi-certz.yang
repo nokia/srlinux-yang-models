@@ -24,9 +24,9 @@ module srl_nokia-tools-gnsi-certz {
   description
     "This module defines operational commands related to Certz.";
 
-  revision 2023-10-31 {
+  revision 2025-01-09 {
     description
-      "SRLinux 23.10.1";
+      "SRLinux 24.10.2";
   }
 
   grouping certz-top {
@@ -75,6 +75,27 @@ module srl_nokia-tools-gnsi-certz {
             "Base64 encoded certificate to use with the provided or existing private key
 
              This includes the '-----BEGIN CERTIFICATE-----' and '-----END CERTIFICATE-----' header and footer";
+        }
+        leaf use-tpm-devid {
+          if-feature "srl-feat:tpm-idevid";
+          type enumeration {
+            enum "idevid" {
+              value 1;
+              description
+                "The TPM iDevID key and certificate is used";
+            }
+            enum "oidevid" {
+              if-feature "srl-feat:tpm-oidevid";
+              value 2;
+              description
+                "The TPM iDevID key and oIDevID certificate is used";
+            }
+          }
+          must "not (../key or ../certificate)" {
+            error-message "The server profile can only be configured with idevid or oidevid if the local key and certificate are not configured";
+          }
+          description
+            "Defines if the server profile key and certificate uses the TPM idevid or oidevid";
         }
         leaf trust-anchor {
           type string;
