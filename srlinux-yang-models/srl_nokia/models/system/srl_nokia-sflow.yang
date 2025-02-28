@@ -173,6 +173,26 @@ module srl_nokia-sflow {
 
            This value specifies the DSCP value used in IP header of samples sent to the associated collectors.";
       }
+      leaf ipv6-udp-checksum {
+        if-feature srl-feat:sflow-ipv6-udp-cksum-knob;
+        type enumeration {
+          enum "zero" {
+            value 0;
+            description
+              "For IPv6 sFlow sample messages, the UDP checksum is set to 0x0";
+          }
+          enum "all-ones" {
+            value 1;
+            description
+              "For IPv6 sFlow sample messages, the UDP checksum is set to 0xFFFF";
+          }
+        }
+        default "all-ones";
+        description
+         "Value to be placed in the UDP transport checksum for IPv6 sFlow sample messages.
+          zero    : The UDP checksum is set to 0x0
+          all-ones: The UDP checksum is set to 0xFFFF";
+      }
       container statistics {
         config false;
         leaf total-offered-packets {

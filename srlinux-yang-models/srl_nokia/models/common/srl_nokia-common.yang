@@ -283,8 +283,7 @@ module srl_nokia-common {
     srl_nokia-ext:generated-class-variant "v6";
     type ipv6;
     description
-      "An IPv6 address represented as either a full address; shortened
-       or mixed-shortened formats.";
+      "An IPv6 address represented as either a full address, shortened or mixed-shortened formats";
   }
 
   typedef ipv4-address-unicast {
@@ -641,7 +640,13 @@ module srl_nokia-common {
 
   typedef host {
     type union {
-      type ip-address;
+      // Unions of custom string like classes and other string types do not work properly.
+      // The generated code will have a string type, but the ordering will be different in the generated telemetry
+      // key storage in the app and on the mgmt_server side causing issues with info from state output (missing items).
+      // As a workaround, we use pure string types with patterns as the ip address types in these unions.
+      // type ip-address;
+      type ipv4;
+      type ipv6;
       type domain-name;
     }
     description
