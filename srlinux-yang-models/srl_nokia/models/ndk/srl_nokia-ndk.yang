@@ -1,0 +1,59 @@
+module srl_nokia-ndk {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:ndk:ndk";
+  prefix srl-ndk;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-grpc {
+    prefix srl-grpc;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to NDK server.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  identity ndk {
+    base srl-grpc:grpc-service;
+    description
+      "NDK: NetOps Development Kit server";
+  }
+
+  grouping ndk-server-top {
+    container ndk-server {
+      presence "Configure NDK server";
+      description
+        "Top-level container for configuration and state related to NDK server instance.";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        default "disable";
+        srl-ext:show-importance "high";
+        description
+          "Globally enable or disable the NDK server
+
+           Disabling the NDK server will disable its unix domain and tcp/ip sockets.";
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    srl-ext:first-released "24.10.1";
+    uses ndk-server-top;
+  }
+}

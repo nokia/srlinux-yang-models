@@ -1,0 +1,63 @@
+module srl_nokia-platform-p4rt {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-p4rt";
+  prefix srl_nokia-platform-p4rt;
+
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-platform-lc {
+    prefix srl_nokia-platform-lc;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing P4Runtime configuration and state underneath forwarding complexes.";
+
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping p4rt-platform {
+    description
+      "Forwarding complex configuration and state data relating to P4Runtime";
+    container p4rt {
+      presence "Enable P4Runtime";
+      if-feature "srl_nokia-feat:p4rt";
+      description
+        "Top-level container for P4Runtime forwarding complex configuration and state";
+      leaf id {
+        srl_nokia-ext:show-importance "high";
+        type uint64 {
+          range "1..max";
+        }
+        description
+          "The numeric ID used by the controller to address the forwarding complex
+
+           This ID may be referred to as a 'device', 'node' or 'target' by the P4RT specification.
+
+           Each ASIC is addressed by the client based on this numeric identifier.";
+        mandatory true;
+      }
+    }
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-lc:linecard/srl_nokia-platform-lc:forwarding-complex" {
+    uses p4rt-platform;
+  }
+}

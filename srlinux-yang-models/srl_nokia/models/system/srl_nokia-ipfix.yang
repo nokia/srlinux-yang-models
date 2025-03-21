@@ -1,0 +1,955 @@
+module srl_nokia-ipfix {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:ipfix";
+  prefix srl_nokia-ipfix;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of ipfix-agentity-
+     configuration.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  identity options-type {
+    description
+      "Base identity for report types exported with
+       options.  Identities derived from this base are used by the leaf
+       /ipfix/exportingProcess/options/options-type.";
+  }
+
+  identity metering-statistics {
+    base options-type;
+    description
+      "Metering Process Statistics.";
+  }
+
+  identity metering-reliability {
+    base options-type;
+    description
+      "Metering Process Reliability Statistics.";
+  }
+
+  identity exporting-reliability {
+    base options-type;
+    description
+      "Exporting Process Reliability
+       Statistics.";
+  }
+
+  identity flow-keys {
+    base options-type;
+    description
+      "Flow Keys.";
+  }
+
+  identity selection-sequence {
+    base options-type;
+    description
+      "Selection Sequence and Selector Reports.";
+  }
+
+  identity selection-statistics {
+    base options-type;
+    description
+      "Selection Sequence Statistics Report.";
+  }
+
+  identity accuracy {
+    base options-type;
+    description
+      "Accuracy Report.";
+  }
+
+  identity reducing-redundancy {
+    base options-type;
+    description
+      "Enables the utilization of Options Templates to
+       reduce redundancy in the exported Data Records.";
+  }
+
+  identity extended-type-information {
+    base options-type;
+    description
+      "Export of extended type information for
+       enterprise-specific Information Elements used in the
+       exported Templates.";
+  }
+
+  identity export-mode {
+    description
+      "Base identity for different usages of export
+       destinations configured for an Exporting Process.
+       Identities derived from this base are used by the leaf
+       /ipfix/exportingProcess/export-mode.";
+  }
+
+  identity parallel {
+    base export-mode;
+    description
+      "Parallel export of Data Records to all
+       destinations configured for the Exporting Process.";
+  }
+
+  identity load-balancing {
+    base export-mode;
+    description
+      "Load-balancing between the different destinations
+       configured for the Exporting Process.";
+  }
+
+  identity fallback {
+    base export-mode;
+    description
+      "Export to the primary destination (i.e., the first
+       SCTP, UDP, TCP, or file destination configured for the
+       Exporting Process).  If the export to the primary destination
+       fails, the Exporting Process tries to export to the secondary
+       destination.  If the secondary destination fails as well, it
+       continues with the tertiary, etc.";
+  }
+
+  typedef direction {
+    type enumeration {
+      enum input {
+        description
+          "This value is used for monitoring incoming
+           packets.";
+      }
+      enum output {
+        description
+          "This value is used for monitoring outgoing
+           packets.";
+      }
+      enum both {
+        description
+          "This value is used for monitoring incoming and
+           outgoing packets.";
+      }
+    }
+    description
+      "Direction of packets going through an interface or
+       linecard.";
+  }
+
+  typedef element-id-type {
+    type uint16 {
+      range "1..32767" {
+        description
+          "Valid range of Information Element
+           identifiers.";
+      }
+    }
+    description
+      "Type for Information Element identifiers.";
+  }
+
+  grouping observation-point-parameters {
+    description
+      "Interface as input to Observation Point.";
+    leaf observation-domain-id {
+      type uint32;
+      mandatory true;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The Observation Domain ID associates the Observation Point to an Observation Domain.
+
+         Observation Points with identical Observation Domain IDs belong to the
+         same Observation Domain.
+         Note that this parameter corresponds to
+         ipfixObservationPointObservationDomainId in the IPFIX MIB
+         module.";
+    }
+    list interface {
+      description
+        "List of interfaces associated with the observation-point";
+      key "name";
+      leaf name {
+        type srl_nokia-comm:subinterface-no-mgmt;
+        srl_nokia-ext:show-importance "high";
+        description
+          " Subinterface to associate with Observation-point and perform sampling";
+      }
+      leaf direction {
+        type direction;
+        default "input";
+        srl_nokia-ext:show-importance "high";
+        description
+          "The direction of traffic to be sampled";
+      }
+      leaf ifindex {
+        config false;
+        type uint32;
+        srl_nokia-ext:show-importance "high";
+        description
+          "System-wide persistent unique ifIndex assigned to the subinterface";
+      }
+    }
+  }
+
+  grouping sample-count-based-parameters {
+    description
+      "Configuration parameters of a Selector applying
+       systematic count-based packet Sampling to the packet
+       stream.";
+    leaf packet-interval {
+      type uint32 {
+        range "1";
+      }
+      units "packets";
+      description
+        "The number of packets that are consecutively
+         sampled between gaps of length packetSpace.
+         This parameter corresponds to the Information Element
+         samplingPacketInterval and to psampSampCountBasedInterval
+         in the PSAMP MIB module.";
+    }
+    leaf packet-space {
+      type uint32;
+      units "packets";
+      mandatory true;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The number of unsampled packets between two
+         Sampling intervals.
+         This parameter corresponds to the Information Element
+         samplingPacketSpace and to psampSampCountBasedSpace
+         in the PSAMP MIB module.";
+    }
+  }
+
+  grouping flow-cache-parameters {
+    description
+      "Configuration and state parameters of a Cache
+       generating Flow Records.";
+    leaf maximum-flows {
+      type uint32;
+      units "flows";
+      description
+        "This parameter configures the maximum number of flows in the Cache
+
+         This values is the maximum number of Flows that can be monitored simultaneously.
+         The Monitoring Device MUST ensure that sufficient resources
+         are available to store the configured maximum number of Flows.
+         If the maximum number of Flows is measured, an additional
+         Flow can be measured only if an existing entry is removed
+         and exported to available collectors.";
+    }
+    leaf active-timeout {
+      type uint32;
+      units "seconds";
+      description
+        "This parameters specified the active timeout for active flows within the cache
+
+         This parameter configures the time in seconds after which a Flow is expired even though packets matching this Flow are still received by the Cache.
+         The parameter value zero indicates infinity, meaning that there is no active timeout.";
+    }
+    leaf idle-timeout {
+      type uint32;
+      units "seconds";
+      description
+        "This parameters specified the active timeout for active flows within the cache.
+
+         This parameter configures the time in seconds after which a Flow is expired if no more packets matching this Flow are received by the Cache.
+         The parameter value zero indicates infinity, meaning that there is no idle timeout.
+         If not configured by the user, the Monitoring Device sets this parameter.";
+    }
+    leaf active-flows {
+      type srl_nokia-comm:gauge32;
+      units "flows";
+      config false;
+      description
+        "The number of Flows currently active in this Cache.
+
+         Note that this parameter corresponds to ipfixMeteringProcessCacheActiveFlows in the IPFIX MIB module.";
+    }
+    leaf unused-cache-entries {
+      type srl_nokia-comm:gauge32;
+      units "flows";
+      config false;
+      description
+        "The number of unused Cache entries in this Cache.
+         Note that this parameter corresponds to ipfixMeteringProcessCacheUnusedCacheEntries in the IPFIX MIB module.";
+    }
+    leaf overflow-flush {
+      type uint8;
+      units "percentage";
+      default "1";
+      description
+        "Set the percentage of the cache that is flushed when an overflow event occurs";
+    }
+  }
+
+  grouping selector-parameters {
+    description
+      "Configuration and state parameters of a Selector.";
+    choice method {
+      mandatory true;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Packet selection method applied by the Selector.";
+      container sample-count-based {
+        description
+          "Systematic count-based packet Sampling.";
+        uses sample-count-based-parameters;
+      }
+    }
+    leaf packets-observed {
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      config false;
+      description
+        "The number of packets observed at the input of
+         the Selector.";
+    }
+    leaf packets-dropped {
+      type srl_nokia-comm:zero-based-counter64;
+      srl_nokia-ext:show-importance "high";
+      config false;
+      description
+        "The total number of packets discarded by the
+         Selector.
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         selectorDiscontinuityTime.";
+      reference
+        "RFC 6615, Section 8
+         (ipfixSelectorStatsPacketsDropped).";
+    }
+    leaf selector-discontinuity-time {
+      type srl_nokia-comm:date-and-time;
+      config false;
+      description
+        "Timestamp of the most recent occasion at which
+         one or more of the Selector counters suffered a
+         discontinuity.";
+    }
+  }
+
+  grouping options-parameters {
+    description
+      "Parameters specifying the data export using an
+       Options Template.";
+    leaf options-type {
+      type identityref {
+        base options-type;
+      }
+      mandatory true;
+      description
+        "Type of the exported options data.";
+    }
+    leaf options-timeout {
+      type uint32;
+      units "milliseconds";
+      description
+        "Time interval for periodic export of the options
+         data.  If set to zero, the export is triggered when the
+         options data has changed.
+         If not configured by the user, this parameter is set by the
+         Monitoring Device.";
+    }
+  }
+
+  grouping exporting-process-parameters {
+    description
+      "Parameters of an Exporting Process.";
+    leaf exporting-process-id {
+      type uint32;
+      config false;
+      description
+        "The identifier of the Exporting Process.
+         This parameter corresponds to the Information Element
+         exportingProcessId.  Its occurrence helps to associate
+         Exporting Process parameters with Exporing Process
+         statistics exported by the Monitoring Device using the
+         Exporting Process Reliability Statistics Template as
+         defined by the IPFIX protocol specification.";
+    }
+    leaf export-mode {
+      type identityref {
+        base export-mode;
+      }
+      default "parallel";
+      description
+        "This parameter determines to which configured
+         destination(s) the incoming Data Records are exported.";
+    }
+    list destination {
+      key "name";
+      min-elements 1;
+      description
+        "List of export destinations.";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Key of this list.";
+      }
+      choice destination-parameters {
+        mandatory true;
+        description
+          "Configuration parameters depend on transport protocol.
+           Currently limited to UDP";
+        container udp-exporter {
+          description
+            "UDP parameters.";
+          uses udp-exporter-parameters;
+        }
+      }
+    }
+    list options {
+      key "name";
+      description
+        "List of options reported by the Exporting
+         Process.";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Key of this list.";
+      }
+      uses options-parameters;
+    }
+  }
+
+  grouping common-exporter-parameters {
+    description
+      "Parameters of en export destination that are
+       common to all transport protocols.";
+    leaf ipfix-version {
+      type uint16;
+      default "10";
+      description
+        "IPFIX version number.";
+    }
+    leaf destination-port {
+      type srl_nokia-comm:port-number;
+      default "4739";
+      srl_nokia-ext:show-importance "high";
+      description
+        "If not configured by the user, the Monitoring
+         Device uses the default port number for IPFIX, which is
+         4739 without TLS or DTLS and 4740 if TLS or DTLS is
+         activated.";
+    }
+    leaf rate-limit {
+      type uint32;
+      units "bytes per second";
+      description
+        "Maximum number of bytes per second the Exporting
+         Process may export to the given destination.  The number of
+         bytes is calculated from the lengths of the IPFIX Messages
+         exported.  If not configured, no rate limiting is performed.";
+    }
+    container transport-session {
+      config false;
+      description
+        "State parameters of the Transport Session
+         directed to the given destination.";
+      uses transport-session-parameters;
+    }
+  }
+
+  grouping udp-exporter-parameters {
+    description
+      "Parameters of a UDP export destination.";
+    uses common-exporter-parameters;
+    leaf source-ip-address {
+      type srl_nokia-comm:ip-address;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Source IP address used by the Exporting Process.
+         If not configured, the IP address assigned to the outgoing
+         interface is used as source IP address.";
+    }
+    leaf destination-ip-address {
+      type srl_nokia-comm:ip-address;
+      mandatory true;
+      srl_nokia-ext:show-importance "high";
+      description
+        "IP address of the Collection Process to which
+         IPFIX Messages are sent.";
+    }
+    leaf max-packet-size {
+      type uint16;
+      units "octets";
+      description
+        "This parameter specifies the maximum size of
+         IP packets sent to the Collector.  If set to zero, the
+         Exporting Device MUST derive the maximum packet size
+         from path MTU discovery mechanisms.
+         If not configured by the user, this parameter is set by
+         the Monitoring Device.";
+    }
+    leaf template-refresh-timeout {
+      type uint32;
+      units "seconds";
+      default "600";
+      description
+        "Sets time after which Templates are resent in the
+         UDP Transport Session.
+         Note that the configured lifetime MUST be adapted to the
+         templateLifeTime parameter value at the receiving Collecting
+         Process.";
+    }
+    leaf options-template-refresh-timeout {
+      type uint32;
+      config false;
+      units "seconds";
+      default "600";
+      description
+        "Sets time after which Options Templates are
+         resent in the UDP Transport Session.
+         Note that the configured lifetime MUST be adapted to the
+         optionsTemplateLifeTime parameter value at the receiving
+         Collecting Process.
+         Note that this parameter corresponds to
+         ipfixTransportSessionOptionsTemplateRefreshTimeout in the
+         IPFIX MIB module.";
+    }
+    leaf network-instance {
+      type leafref {
+        path "/srl-netinst:network-instance/srl-netinst:name";
+      }
+      must 'not(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:mac-vrf")' {
+        error-message "sFlow collector cannot be in a network-instance of type 'mac-vrf'";
+      }
+      mandatory true;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Reference to a configured network-instance";
+    }
+  }
+
+  grouping template-parameters {
+    description
+      "State parameters of a Template used by an Exporting
+       Process or received by a Collecting Process in a specific
+       Transport Session.  Parameter names and semantics correspond to
+       the managed objects in IPFIX-MIB";
+    reference
+      "RFC 5101; RFC 6615, Section 8 (ipfixTemplateEntry,
+       ipfixTemplateDefinitionEntry, ipfixTemplateStatsEntry)";
+    leaf observation-domain-id {
+      type uint32;
+      description
+        "The ID of the Observation Domain for which this
+         Template is defined.";
+    }
+    leaf template-id {
+      type uint16 {
+        range "256..65535" {
+          description
+            "Valid range of Template IDs.";
+        }
+      }
+      description
+        "This number indicates the Template ID in the IPFIX
+         message.";
+    }
+    leaf set-id {
+      type uint16;
+      description
+        "This number indicates the Set ID of the Template.
+         Currently, there are two values defined.  The value 2 is used
+         for Sets containing Template definitions.  The value 3 is
+         used for Sets containing Options Template definitions.";
+    }
+    leaf access-time {
+      type srl_nokia-comm:date-and-time;
+      description
+        "Used for Exporting Processes, this parameter
+         contains the time when this (Options) Template was last
+         sent to the Collector(s) or written to the file.
+         Used for Collecting Processes, this parameter contains the
+         time when this (Options) Template was last received from the
+         Exporter.";
+    }
+    leaf template-data-records {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of transmitted or received Data
+         Records defined by this (Options) Template.
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         templateDiscontinuityTime.";
+    }
+    leaf template-discontinuity-time {
+      type srl_nokia-comm:date-and-time;
+      description
+        "Timestamp of the most recent occasion at which
+         the counter templateDataRecords suffered a discontinuity.
+         Note that this parameter functionally corresponds to
+         ipfixTemplateDiscontinuityTime in the IPFIX MIB module.
+         In contrast to ipfixTemplateDiscontinuityTime, the time
+         is absolute and not relative to sysUpTime.";
+    }
+    list field {
+      description
+        "This list contains the (Options) Template
+         fields of which the (Options) Template is defined.
+         The order of the list corresponds to the order of the fields
+         in the (Option) Template Record.";
+      leaf element-id {
+        type element-id-type;
+        description
+          "This parameter indicates the Information
+           Element identifier of the field.
+           Note that this parameter corresponds to
+           ipfixTemplateDefinitionIeId in the IPFIX MIB module.";
+      }
+      leaf element-length {
+        type uint16;
+        units "octets";
+        description
+          "This parameter indicates the length of the
+           Information Element of the field.
+           Note that this parameter corresponds to
+           ipfixTemplateDefinitionIeLength in the IPFIX MIB
+           module.";
+      }
+      leaf ie-enterprise-number {
+        type uint32;
+        description
+          "This parameter indicates the IANA enterprise
+           number of the authority defining the Information Element
+           identifier.
+           If the Information Element is not enterprise-specific,
+           this state parameter is zero.
+           Note that this parameter corresponds to
+           ipfixTemplateDefinitionIeEnterpriseNumber in the IPFIX
+           MIB module.";
+      }
+      leaf is-flowKey {
+        type empty;
+        description
+          "If present, this is a Flow Key field.
+
+           Note that this corresponds to flowKey(1) being set in
+           ipfixTemplateDefinitionFlags.";
+      }
+      leaf is-scope {
+        type empty;
+        description
+          "If present, this is a scope field.
+
+           Note that this corresponds to scope(0) being set in
+           ipfixTemplateDefinitionFlags.";
+      }
+    }
+  }
+
+  grouping transport-session-parameters {
+    description
+      "State parameters of a Transport Session originating
+       from an Exporting Process or terminating at a Collecting
+       Process.  Parameter names and semantics correspond to the
+       managed objects in IPFIX-MIB.";
+    leaf ipfix-version {
+      type uint16;
+      description
+        "This parameters contains the version of the IPFIX protocol
+
+         Used for Exporting Processes, this parameter contains the version number of the IPFIX protocol that the Exporter uses to export its data in this Transport Session";
+    }
+    leaf source-address {
+      type srl_nokia-comm:ip-address;
+      description
+        "The source address of the Exporter of the IPFIX Transport Session";
+    }
+    leaf destination-address {
+      type srl_nokia-comm:ip-address;
+      description
+        "The destination address of the Collector of the IPFIX Transport Session";
+    }
+    leaf source-port {
+      type srl_nokia-comm:port-number;
+      description
+        "The transport-protocol port number of the Exporter of the IPFIX Transport Session";
+    }
+    leaf destination-port {
+      type srl_nokia-comm:port-number;
+      description
+        "The transport-protocol port number of the Collector of the IPFIX Transport Session";
+    }
+    leaf oper-state {
+      type srl_nokia-comm:oper-state;
+      description
+        "Status of the Transport Session
+
+         Note that this parameter corresponds to
+         ipfixTransportSessionStatus in the IPFIX MIB module.";
+    }
+    leaf rate {
+      type srl_nokia-comm:gauge32;
+      units "bytes per second";
+      description
+        "The number of bytes per second transmitted by the
+         Exporting Process or received by the Collecting Process
+
+         This parameter is updated every second.
+         Note that this parameter corresponds to
+         ipfixTransportSessionRate in the IPFIX MIB module.";
+    }
+    leaf bytes {
+      type srl_nokia-comm:zero-based-counter64;
+      units "bytes";
+      description
+        "The number of bytes transmitted by the
+         Exporting Process or received by the Collecting Process
+
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         transportSessionDiscontinuityTime.
+         Note that this parameter corresponds to
+         ipfixTransportSessionBytes in the IPFIX MIB module.";
+    }
+    leaf messages {
+      type srl_nokia-comm:zero-based-counter64;
+      units "IPFIX Messages";
+      description
+        "The number of messages transmitted by the
+         Exporting Process or received by the Collecting Process
+
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         transportSessionDiscontinuityTime.
+         Note that this parameter corresponds to
+         ipfixTransportSessionMessages in the IPFIX MIB module.";
+    }
+    leaf discarded-messages {
+      type srl_nokia-comm:zero-based-counter64;
+      units "IPFIX Messages";
+      description
+        "The number of messages that could not be sent to a collector
+
+         Used for Exporting Processes, this parameter
+         indicates the number of messages that could not be sent due
+         to internal buffer overflows, network congestion, routing
+         issues, etc.  Used for Collecting Process, this parameter
+         indicates the number of received IPFIX Message that are
+         malformed, cannot be decoded, are received in the wrong
+         order or are missing according to the sequence number.
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         transportSessionDiscontinuityTime.";
+    }
+    leaf records {
+      type srl_nokia-comm:zero-based-counter64;
+      units "Data Records";
+      description
+        "The number of Data Records transmitted by the Exporting Process
+
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         transportSessionDiscontinuityTime.";
+    }
+    leaf templates {
+      type srl_nokia-comm:zero-based-counter32;
+      units "Templates";
+      description
+        "The number of Templates transmitted by the
+         Exporting Process or received by the Collecting Process.
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         transportSessionDiscontinuityTime.";
+    }
+    leaf options-templates {
+      type srl_nokia-comm:zero-based-counter32;
+      units "Options Templates";
+      description
+        "The number of Option Templates transmitted by the
+         Exporting Process or received by the Collecting Process.
+         Discontinuities in the value of this counter can occur at
+         re-initialization of the management system, and at other
+         times as indicated by the value of
+         transportSessionDiscontinuityTime.";
+    }
+    leaf transport-session-start-time {
+      type srl_nokia-comm:date-and-time;
+      description
+        "Timestamp of the start of the given Transport
+         Session.
+         This state parameter does not correspond to any object in
+         the IPFIX MIB module.";
+    }
+    leaf transport-session-discontinuity-time {
+      type srl_nokia-comm:date-and-time;
+      description
+        "Timestamp of the most recent occasion at which
+         one or more of the Transport Session counters suffered a
+         discontinuity.";
+    }
+    list template {
+      description
+        "This list contains the Templates and Options
+         Templates that are transmitted by the Exporting Process
+         or received by the Collecting Process.
+         Withdrawn or invalidated (Options) Templates MUST be removed
+         from this list.";
+      uses template-parameters;
+    }
+  }
+
+  grouping ipfix-top {
+    container ipfix {
+      presence "Configure IPFIX";
+      description
+        "Top-level node of the IPFIX configuration
+         data model.";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        srl_nokia-ext:show-importance "high";
+        description
+          "Administratively enable or disable IPFIX for the system";
+      }
+      leaf oper-state {
+        config false;
+        type srl_nokia-comm:oper-state;
+        srl_nokia-ext:show-importance "high";
+        description
+          "Details if IPFIX is operationally available";
+      }
+      list observation-point {
+        key "name";
+        max-elements 1;
+        description
+          "Observation Point of the Monitoring Device.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Key of this list.";
+        }
+        uses observation-point-parameters;
+        leaf-list selection-process {
+          type leafref {
+            path "/srl_nokia-system:system/ipfix/selection-process/name";
+          }
+          description
+            "Selection Processes in this list process
+             packets in parallel.";
+        }
+      }
+      list selection-process {
+        key "name";
+        description
+          "Selection Process of the Monitoring Device.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Key of this list.";
+        }
+        list selector {
+          key "name";
+          min-elements 1;
+          ordered-by user;
+          description
+            "List of Selectors that define the action of the
+             Selection Process on a single packet.  The Selectors are
+             serially invoked in the same order as they appear in this
+             list.";
+          leaf name {
+            type srl_nokia-comm:name;
+            description
+              "Key of this list.";
+          }
+          uses selector-parameters;
+        }
+        leaf cache {
+          type leafref {
+            path "/srl_nokia-system:system/ipfix/cache/name";
+          }
+          description
+            "Cache that receives the output of the
+             Selection Process.";
+        }
+      }
+      list cache {
+        key "name";
+        description
+          "Cache of the Monitoring Device.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Key of this list.";
+        }
+        leaf data-records {
+          type srl_nokia-comm:zero-based-counter64;
+          units "Data Records";
+          config false;
+          description
+            "The number of Data Records generated by this Cache.
+
+             Discontinuities in the value of this counter can occur at
+             re-initialization of the management system, and at other
+             times as indicated by the value of
+             cacheDiscontinuityTime.";
+        }
+        choice cache-type {
+          mandatory true;
+          srl_nokia-ext:show-importance "high";
+          description
+            "Type of Cache and specific parameters.";
+          container timeout-cache {
+            description
+              "Flow expiration after active and idle
+               timeout; generation of Flow Records.";
+            uses flow-cache-parameters;
+          }
+        }
+        leaf-list exporting-process {
+          type leafref {
+            path "/srl_nokia-system:system/ipfix/exporting-process/name";
+          }
+          description
+            "Records are exported by all Exporting Processes
+             in the list.";
+        }
+      }
+      list exporting-process {
+        key "name";
+        description
+          "Exporting Process of the Monitoring Device.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Key of this list.";
+        }
+        uses exporting-process-parameters;
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl_nokia-feat:ipfix";
+    uses ipfix-top;
+  }
+}

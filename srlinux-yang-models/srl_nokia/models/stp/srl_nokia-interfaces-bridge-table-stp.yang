@@ -1,0 +1,202 @@
+module srl_nokia-interfaces-bridge-table-stp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:stp:interfaces-bridge-table-stp";
+  prefix srl_nokia-interfaces-bridge-table-stp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-stp-types {
+    prefix srl_nokia-stp-types;
+  }
+  import srl_nokia-stp-common {
+    prefix srl_nokia-stp-common;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-interfaces-l2cp {
+    prefix srl_nokia-if-l2cp;
+  }
+  import srl_nokia-interfaces-vlans {
+    prefix srl_nokia-if-vlan;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file provides Stp configuration under interface's bridge table.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping interface-stp-counters {
+    container statistics {
+      description
+        "Packet transmition statistics";
+      leaf bad-bpdus-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of Invalid BPDUs received";
+      }
+      leaf cfg-bpdus-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of configuration BPDUs received on this interface";
+      }
+      leaf cfg-bpdus-transmitted {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of configuration BPDUs sent on this interface";
+      }
+      leaf tcn-bpdus-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of topology change notification BPDUs received on this interface";
+      }
+      leaf tcn-bpdus-transmitted {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of topology change notification BPDUs sent on this interface";
+      }
+      leaf tc-bit-bpdus-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of BPDUs received on this interface with the Topology Change bit set";
+      }
+      leaf tc-bit-bpdus-transmitted {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of BPDUs sent on this interface with the Topology Change bit set";
+      }
+      leaf rst-bpdus-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of RST BPDUs received on this interface";
+      }
+      leaf rst-bpdus-transmitted {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of RST BPDUs sent on this interface";
+      }
+      leaf mst-bpdus-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of MST BPDUs received on this interface";
+      }
+      leaf mst-bpdus-transmitted {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of MST BPDUs sent on this interface";
+      }
+    }
+  }
+
+  grouping interface-stp-state {
+    uses srl_nokia-stp-common:stp-port-state;
+    uses srl_nokia-stp-common:stp-port-num;
+    uses srl_nokia-stp-common:stp-port-role;
+    uses srl_nokia-stp-common:stp-oper-state;
+    uses srl_nokia-stp-common:stp-designated-bridge;
+    uses srl_nokia-stp-common:stp-designated-bridge-priority;
+    uses srl_nokia-stp-common:stp-designated-port;
+    uses srl_nokia-stp-common:stp-designated-port-priority;
+    uses srl_nokia-stp-common:stp-designated-port-num;
+    uses srl_nokia-stp-common:stp-forward-transitions;
+  }
+
+  grouping interface-bridge-table-stp-top {
+    description
+      "Top level grouping for STP configuration under interface's bridge table";
+    container stp {
+      description
+        "Configuration and state of the STP protocol";
+      presence "Configure Interface STP";
+      uses interface-stp-state;
+      uses interface-stp-counters;
+      leaf admin-state {
+        must ". = 'disable' or not(/srl_nokia-if:interface[srl_nokia-if:name=current()/../../../../srl_nokia-if:name]/srl_nokia-if:ethernet/srl_nokia-if:l2cp-transparency/srl_nokia-if-l2cp:tunnel-all-l2cp)" {
+          error-message "STP cannot be enabled on interfaces that are configured with tunnel-all-l2cp";
+        }
+        must ". = 'disable' or not(/srl_nokia-if:interface[srl_nokia-if:name=current()/../../../../srl_nokia-if:name]/srl_nokia-if:ethernet/srl_nokia-if:l2cp-transparency/srl_nokia-if-l2cp:xstp/srl_nokia-if-l2cp:tunnel)" {
+          error-message "STP cannot be enabled on interfaces that are configured with xSTP tunnel";
+        }
+        must ". = 'disable' or not(../../../srl_nokia-if-vlan:vlan/srl_nokia-if-vlan:encap/srl_nokia-if-vlan:single-tagged-range)" {
+          error-message "STP cannot be enabled on sub-interface with encap vlan-range enabled";
+        }
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Administratively enable or disable the STP protocol for interface
+
+           When STP on the network instance is administratively disabled,
+           any BPDUs are forwarded transparently.
+           When STP on the network instance is administratively enabled,
+           but the administrative state on a sub-interface is disabled,
+           BPDUs received on such a subinterface are discarded.";
+      }
+      leaf port-number {
+        type srl_nokia-stp-types:port-num-type;
+        description
+          "Port Number associated with this interface";
+      }
+      leaf priority {
+        type srl_nokia-stp-types:port-priority-type;
+        default "128";
+        description
+          "Priority value coupled with port number forms 16-bit port-identifier field";
+      }
+      leaf path-cost {
+        type srl_nokia-stp-types:path-cost-type;
+        default "10";
+        description
+          "The interface path-cost is used by STP to calculate the path cost to the root bridge";
+      }
+      uses srl_nokia-stp-types:stp-edge-port;
+      leaf link-type {
+        type srl_nokia-stp-types:link-type-type;
+        default "P2P";
+        description
+          "Indicates the number of bridges behind the subinterface";
+      }
+      leaf guard {
+        type srl_nokia-stp-types:guard-type;
+        default "NONE";
+        description
+          "Enable Guard";
+      }
+      uses srl_nokia-stp-common:stp-bpdu-config;
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:bridge-table" {
+    uses interface-bridge-table-stp-top {
+      if-feature "srl_nokia-feat:stp";
+    }
+  }
+
+  grouping interface-stp-state-top {
+    container stp {
+      presence "Interface STP state";
+      config false;
+      uses interface-stp-state;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:interface/srl_nokia-netinst:bridge-table" {
+    uses interface-stp-state-top {
+      if-feature "srl_nokia-feat:stp";
+    }
+  }
+}

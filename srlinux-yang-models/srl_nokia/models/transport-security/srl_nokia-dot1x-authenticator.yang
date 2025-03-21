@@ -1,0 +1,448 @@
+module srl_nokia-dot1x-authenticator {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:dot1x-authenticator";
+  prefix srl_nokia-dot1x-athenticator;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-aaa {
+    prefix srl_nokia-aaa;
+  }
+  import srl_nokia-dot1x {
+    prefix srl_nokia-dot1x;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module models dot1x configuration under a interface or a sub-interface";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  typedef interface-access-entity-interface-control {
+    description
+      "Specifies if the interface is forced authorized or it is authorized via IEEE802.1x procedures";
+    type enumeration {
+      enum force-unauthorized {
+        description
+          "Force the interface into unauthorized state so no host can be allowed";
+      }
+      enum auto {
+        description
+          "The interface is authorized via IEEE802.1x procedures
+
+           Auto means the interface is unauthorized until it get authenticated via Radius server.";
+      }
+      enum force-authorized {
+        description
+          "Force to interface into authorized state so it will allow all hosts";
+      }
+    }
+  }
+
+  typedef controlled-interface-status {
+    type enumeration {
+      enum authorized {
+        value 1;
+      }
+      enum unauthorized {
+        value 2;
+      }
+    }
+    description
+      "Specifies the status values of the Authenticator
+
+       Even if a single host is authenticated on the interface, the
+       interface status should be authorized.";
+  }
+
+  grouping dot1x-interface-config {
+    description
+      "IEEE802.1x interface based configuration";
+    leaf authenticate-interface {
+      type boolean;
+      default "true";
+      description
+        "Enable IEEE802.1X interface control on an interface";
+    }
+    leaf interface {
+      description
+        "IEEE802.1x authentication mode";
+      type interface-access-entity-interface-control;
+      default "force-authorized";
+    }
+    leaf authenticator-initiated {
+      description
+        "When true the authenticator sends an EAP-Request/EAP-Identity to the Supplicant";
+      type boolean;
+      default "true";
+    }
+    leaf host-mode {
+      description
+        "Allow for single or multiple hosts to communicate through an IEEE802.1X controlled interface";
+      type enumeration {
+        enum single-host-authenticates-interface {
+          value 1;
+          description
+            "Multiple hosts can communicate over a single interface
+
+             Only the first supplicant is authenticated while
+             subsequent hosts have network access without having to
+             authenticate.";
+        }
+        enum multi-host-authentication {
+          value 2;
+          if-feature "srl_nokia-feat:dot1x-authenticator-multi-host-auth";
+          description
+            "Allows for authentication of multiple clients individually on one authenticator interface
+
+             By default all source MAC addresses are disallowed on the interface.
+             When a host is authenticated the host's source mac address is allowed on the interface.";
+        }
+      }
+      default "single-host-authenticates-interface";
+    }
+    leaf reauthenticate-interval {
+      type uint16;
+      units "seconds";
+      default "0";
+      description
+        "Enable periodic re-authentication of the device connected to this interface
+
+         Send out a identity request once every unit seconds.
+         Setting a value of 0 disables re-authentication on this interface.";
+    }
+    leaf retransmit-interval {
+      type uint16;
+      units "seconds";
+      default "30";
+      description
+        "How long the interface waits for a response before restarting authentication
+
+         How long the interface waits for a response from an EAPoL Start before restarting 802.1X authentication on the interface.";
+    }
+    leaf quiet-period {
+      type uint16 {
+        range "1..3600";
+      }
+      units "seconds";
+      default "60";
+      description
+        "Time to wait after a failed session when no EAPoL frames are processed";
+    }
+    leaf supplicant-timeout {
+      type uint16 {
+        range "1..300";
+      }
+      units "seconds";
+      default "30";
+      description
+        "Time to wait for a response from the supplicant before restarting the authentication process";
+    }
+    leaf max-requests {
+      type uint16 {
+        range "1..10";
+      }
+      default "2";
+      description
+        "Maximum number of times an EAPoL request packet is retransmitted to the supplicant before the authentication session fails";
+    }
+    leaf max-authentication-requests {
+      type uint16 {
+        range "1..10";
+      }
+      default "2";
+      description
+        "Maximum number of RADIUS retries before the authentication fails
+
+         In the case of challenge response, if the supplicant does not respond
+         the authenticator will retransmit the challenge without going to the radius server.
+         This parameter will be used toward supplicant as well when the challenge respond is
+         dropped.";
+    }
+    container multi-host-authentication {
+      if-feature "srl_nokia-feat:dot1x-authenticator-multi-host-auth";
+      description
+        "Enter the multi-host authentication container
+
+         This command is only relevant only to per-host mode of multi-domain mode.
+         The source mac under this list will be allowed in any interface state,
+         even if the interface is forced unauthorized or interface is set to auto
+
+         and the host with this source mac address is not authorized.";
+      presence "dot1x authenticator multi-host-authentication";
+      must "../host-mode = 'multi-host-authentication'" {
+        error-message "only supported when host-mode is set to multi-host-authentication";
+      }
+      leaf mac-based-authentication {
+        if-feature "srl_nokia-feat:dot1x-authenticator-mac-based-authentication";
+        type boolean;
+        default "false";
+        description
+          "Enable mac based authentication (MBA)
+
+           MBA can be used to authenticate hosts that do not support dot1x.
+           MBA uses the source mac of the packet to authenticate the host via Radius server.";
+      }
+      list allowed-mac-address {
+        key "mac";
+        description
+          "Add a list entry for source mac-address";
+        leaf mac {
+          type srl_nokia-comm:mac-address;
+          description
+            "Source MAC address of a host that is authorized to use this interface";
+        }
+      }
+    }
+  }
+
+  grouping dot1x-interface-state {
+    description
+      "Enter the dot1x context";
+    leaf authenticator-pae-state {
+      config false;
+      type enumeration {
+        enum initialize {
+          value 1;
+        }
+        enum disconnected {
+          value 2;
+        }
+        enum connecting {
+          value 3;
+        }
+        enum authenticating {
+          value 4;
+        }
+        enum authenticated {
+          value 5;
+        }
+        enum aborting {
+          value 6;
+        }
+        enum held {
+          value 7;
+        }
+        enum force-authorized {
+          value 8;
+        }
+        enum force-unauthorized {
+          value 9;
+        }
+      }
+      description
+        "Indicates the current value of the Authenticator PAE state
+         machine.";
+    }
+    leaf backend-authentication-state {
+      config false;
+      type enumeration {
+        enum request {
+          value 1;
+        }
+        enum response {
+          value 2;
+        }
+        enum success {
+          value 3;
+        }
+        enum fail {
+          value 4;
+        }
+        enum timeout {
+          value 5;
+        }
+        enum idle {
+          value 6;
+        }
+        enum initialize {
+          value 7;
+        }
+      }
+      description
+        "Indicates the current state of the Backend Authentication
+         state machine.";
+    }
+    leaf interface-status {
+      config false;
+      type controlled-interface-status;
+      description
+        "Indicates the current status of the controlled interface
+
+         Even if a single host is authenticated under the interface, the
+         interface status should be set to authorized.";
+    }
+    container statistics {
+      description
+        "Enter the statistics context";
+      config false;
+      container received {
+        description
+          "Enter the received context";
+        leaf bad-eap-length-frames {
+          type uint32;
+          description
+            "Indicates the number of invalid EAPoL frames that have been received
+
+             An invalid EAPoL is a packet which the Packet Body Length field is invalid.";
+        }
+        leaf last-source-mac-address {
+          type srl_nokia-comm:mac-address;
+          description
+            "Indicates the source MAC address of the most recently received EAPoL frame";
+        }
+        leaf last-version {
+          type uint32;
+          description
+            "Indicates the protocol version number carried in the most recently received EAPoL frame";
+        }
+        leaf logoff-frames {
+          type uint32;
+          description
+            "Indicates the number of EAPoL Logoff frames that have been received by this Authenticator";
+        }
+        leaf response-frames {
+          type uint32;
+          description
+            "Indicates the number of valid EAP Response frames that have been received by this Authenticator";
+        }
+        leaf response-id-frames {
+          type uint32;
+          description
+            "Indicates the number of EAP Resp/Id frames that have been received by this Authenticator";
+        }
+        leaf start-frames {
+          type uint32;
+          description
+            "Indicates the number of EAPoOL Start frames that have been received by this Authenticator";
+        }
+        leaf valid-frames {
+          type uint32;
+          description
+            "Indicates the number of valid EAPoL frames of any type that have been received by this Authenticator";
+        }
+        leaf unknown-frames {
+          type uint32;
+          description
+            "Indicates the number of EAPoL frames that have been received by this Authenticator in which the frame type is not recognized";
+        }
+      }
+      container transmitted {
+        description
+          "Enter the transmitted context";
+        leaf request-frames {
+          type uint32;
+          description
+            "Indicates the number of EAP Request frames that have been transmitted by this Authenticator";
+        }
+        leaf request-id-frames {
+          type uint32;
+          description
+            "Indicates the number of EAP Req/Id frames that have been transmitted by this Authenticator";
+        }
+        leaf total-frames {
+          type uint32;
+          description
+            "Indicates the number of EAPoL frames of any type that have been transmitted by this Authenticator";
+        }
+      }
+    }
+  }
+
+  grouping radius-config {
+    leaf radius-policy {
+      type leafref {
+        path "/srl_nokia-system:system/srl_nokia-aaa:aaa/srl_nokia-aaa:server-group/srl_nokia-aaa:name";
+      }
+      must '/srl_nokia-system:system/srl_nokia-aaa:aaa/srl_nokia-aaa:server-group[name=current()]/srl_nokia-aaa:type = "radius"';
+      description
+        "RADIUS policy used for 802.1x authentication";
+    }
+  }
+
+  grouping dot1x-sessions-state {
+    description
+      "Grouping for IEEE802.1X sessions state data";
+    leaf status {
+      description
+        "The status of the 802.1X session for a device";
+      type enumeration {
+        enum AUTHENTICATED {
+          description
+            "The session has succesfully completed one of the authentication methods allowed on the interface";
+        }
+        enum AUTHENTICATING {
+          description
+            "The session is in the process of authenticating";
+        }
+        enum FAILED_AUTHENTICATION {
+          description
+            "An authentication has been attempted for this session, and has failed";
+        }
+        enum SUPPLICANT_TIMEOUT {
+          description
+            "An authentication has been attempted for this session with out a supplicant response";
+        }
+      }
+    }
+  }
+
+  grouping dot1x-sessions-top {
+    description
+      "Top-level grouping for 802.1X sessions.";
+    container authenticated-sessions {
+      presence "dot1x authenticated sessions";
+      description
+        "Top level container for authenticated sessions state data";
+      list authenticated-session {
+        key "mac";
+        config false;
+        description
+          "The list of authenticated sessions on this device";
+        leaf mac {
+          type srl_nokia-comm:mac-address;
+          description
+            "Host MAC address";
+        }
+        uses dot1x-sessions-state;
+      }
+    }
+  }
+
+  grouping dot1x-authenticator {
+    container authenticator {
+      description
+        "configure dot1x for an authenticator";
+      if-feature "srl_nokia-feat:dot1x-authenticator";
+      uses dot1x-interface-config;
+      uses dot1x-interface-state;
+      uses radius-config;
+      uses dot1x-sessions-top;
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:ethernet/srl_nokia-dot1x:dot1x" {
+    if-feature "srl_nokia-feat:dot1x-authenticator";
+    uses dot1x-authenticator;
+  }
+}

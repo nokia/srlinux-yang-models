@@ -1,0 +1,70 @@
+module srl_nokia-dot1x {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:dot1x";
+  prefix srl_nokia-dot1x;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module models dot1x configuration under a interface or a sub-interface";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping dot1x-top {
+    description
+      "Top-level grouping for dot1x";
+    container dot1x {
+      description
+        "Enclosing container for dot1x";
+      if-feature "srl_nokia-feat:dot1x-tunnel or srl_nokia-feat:dot1x-authenticator";
+      presence "Configures the dot1x parameters";
+      must "starts-with(../../srl_nokia-if:name, 'ethernet')" {
+        error-message "dot1x not supported on this interface";
+      }
+      must 'not(../../srl_nokia-if:breakout-mode)' {
+        error-message "dot1x not configurable when breakout-mode is enabled";
+      }
+    }
+  }
+
+  grouping system-dot1x-top {
+    description
+      "Top-level grouping for system dot1x";
+    container dot1x {
+      description
+        "Enclosing container for system dot1x";
+      if-feature "srl_nokia-feat:dot1x-tunnel";
+      config false;
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:ethernet" {
+    if-feature "srl_nokia-feat:dot1x-tunnel or srl_nokia-feat:dot1x-authenticator";
+    uses dot1x-top;
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl_nokia-feat:dot1x-tunnel";
+    uses system-dot1x-top;
+  }
+}

@@ -1,0 +1,144 @@
+module srl_nokia-ip-mac-binding {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:fhs:ip-mac-binding";
+  prefix srl_nokia-ip-mac-binding;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-interfaces-vlans {
+    prefix srl_nokia-if-vlan;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_rpol;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of FHS
+           configuration.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping fhs-policy {
+    list fhs-policy {
+      max-elements 64;
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+      }
+      leaf-list protocols {
+        type enumeration {
+          enum dhcp;
+          enum dhcp-pd;
+          enum nd;
+          enum static;
+        }
+      }
+      leaf limit-entries {
+        type uint32;
+      }
+      leaf device-role {
+        type enumeration {
+          enum endpoint;
+          enum switch;
+        }
+      }
+    }
+  }
+
+  grouping fhs-config {
+    container fhs {
+      must "(starts-with(../../srl_nokia-if:name, 'ethernet') or starts-with(../../srl_nokia-if:name, 'lag') or starts-with(../../srl_nokia-if:name, 'irb') or starts-with(../../srl_nokia-if:name, 'mgmt'))" {
+        error-message "FHS Policy not supported on the subinterface of this interface.";
+      }
+      presence "Context to configure FHS Policy subinterface parameters";
+      leaf policy {
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-ip-mac-binding:fhs-policy/name";
+        }
+        description
+          "Reference to FHS Policy Policy to apply to the associated subinterface";
+      }
+      container static {
+        presence "Context to configure static binding subinterface parameters";
+        list entry {
+          key "id";
+          leaf id {
+            type uint32;
+          }
+          choice address {
+            case ipv4 {
+              leaf ipv4-address {
+                type srl_nokia-comm:ipv4-address;
+                when 'mac-address';
+              }
+            }
+            case ipv6 {
+              leaf ipv6-address {
+                type srl_nokia-comm:ipv6-address;
+                when 'mac-address';
+              }
+            }
+          }
+          leaf mac-address {
+            type srl_nokia-comm:mac-address;
+            mandatory true;
+          }
+          leaf action {
+            type enumeration {
+              enum enable;
+              enum disable;
+            }
+          }
+        }
+        description
+          "static binding entries to be applied to the associated subinterface";
+      }
+      leaf ip-source-guard {
+        type enumeration {
+          enum enable;
+          enum disable;
+        }
+      }
+      leaf dynamic-arp-inspection {
+        type enumeration {
+          enum enable;
+          enum disable;
+        }
+      }
+      leaf clear-binding-table {
+        type empty;
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl-feat:ip-mac-binding";
+    uses fhs-policy;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface" {
+    if-feature "srl-feat:ip-mac-binding";
+    uses fhs-config;
+  }
+}

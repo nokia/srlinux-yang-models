@@ -1,0 +1,67 @@
+module srl_nokia-network-instance-leaking {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:net-inst:network-instance-leaking";
+  prefix srl_nokia-netinst-leak;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl-rpol;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "YANG model for inter-network-instance route leaking";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping inter-instance-policies-top {
+    container inter-instance-policies {
+      description
+        "Policies for leaking routes between this network instance and other network instances";
+      container apply-policy {
+        description
+          "Container for specifying route leaking import and export policies";
+        leaf import-policy {
+          description
+            "Policy used to specify the routes leaked by other NIs that should be imported into this NI";
+          type leafref {
+            path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+          }
+          must "../../../srl_nokia-netinst:type = 'ip-vrf' or ../../../srl_nokia-netinst:type = 'default'" {
+            error-message "Route leaking is only suported in the default and ip-vrf network-instances";
+          }
+        }
+        leaf export-policy {
+          description
+            "Policy used to specify the routes of this NI that should be made available for leaking to other NIs";
+          type leafref {
+            path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+          }
+          must "../../../srl_nokia-netinst:type = 'ip-vrf' or ../../../srl_nokia-netinst:type = 'default'" {
+            error-message "Route leaking is only suported in the default and ip-vrf network-instances";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    if-feature "srl_nokia-feat:route-leaking";
+    uses inter-instance-policies-top;
+  }
+}

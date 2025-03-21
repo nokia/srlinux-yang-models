@@ -1,0 +1,157 @@
+module srl_nokia-system-utilization {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:system-utilization";
+  prefix srl_nokia-sys-util;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+
+  identity system-resources {
+    description
+      "Base type for system-wide resources managed by control plane applications";
+  }
+
+  identity mpls-next-hops {
+    base system-resources;
+    if-feature "srl_nokia-feat:system-resource-mpls-next-hops";
+    description
+      "MPLS next hop label forwarding entry resources
+
+       Each MPLS next-hop that pushes an outgoing label stack uses one of these resources";
+  }
+
+  identity tunnels {
+    base system-resources;
+    if-feature "srl_nokia-feat:system-resource-tunnels";
+    description
+      "Tunnel resources
+
+       Each IP-in-IP, GRE or MPLS tunnel uses one of these resources";
+  }
+
+  identity ip-in-ip-tunnels {
+    base system-resources;
+    if-feature "srl_nokia-feat:system-resource-ip-in-ip-tunnels";
+    description
+      "IP-in-IP tunnel resources
+
+       Each originating IP-in-IP tunnel uses one of these resources";
+  }
+
+  identity ip-gre-tunnels {
+    base system-resources;
+    if-feature "srl_nokia-feat:system-resource-ip-gre-tunnels";
+    description
+      "IP-over-GRE tunnel resources
+
+       Each originating IP-over-GRE tunnel uses one of these resources";
+  }
+
+  identity vp-lag-groups {
+    base system-resources;
+    if-feature "srl_nokia-feat:system-resource-vp-lag-groups";
+    description
+      "VP LAG group resources
+
+       VP LAGs are needed by a NHG when it supports EVPN multi-homing";
+  }
+
+  identity protect-groups {
+    base system-resources;
+    if-feature "srl_nokia-feat:system-resource-pg-groups";
+    description
+      "Protect group IDs
+
+       Each primary next-hop that needs fast failover to a backup next-hop needs a protect-group ID";
+  }
+
+  grouping system-resource-utilization {
+    container utilization {
+      description
+        "Configuration and state for each system resource";
+      list resource {
+        description
+          "List of system-wide resources";
+        key "name";
+        leaf name {
+          type identityref {
+            base system-resources;
+          }
+          description
+            "The name of the resource";
+        }
+        leaf upper-threshold-set {
+          type srl_nokia-comm:percentage;
+          default "90";
+          description
+            "Sets the threshold that triggers the generation of a WARNING log and the setting of 'used-upper-threshold-exceeded' to 'true' whenever the utilization of the resource reaches this value in a rising direction";
+        }
+        leaf upper-threshold-clear {
+          type srl_nokia-comm:percentage;
+          default "70";
+          description
+            "Sets the threshold that triggers the generation of a NOTICE log and the setting of 'used-upper-threshold-exceeded' to 'false' whenever the utilization of the resource reaches this value in a falling direction";
+        }
+        leaf used-percent {
+          config false;
+          type srl_nokia-comm:percentage;
+          description
+            "The percentage of the resource that is currently used";
+        }
+        leaf used-entries {
+          config false;
+          type uint32;
+          description
+            "The number of entries that are currently used";
+        }
+        leaf free-entries {
+          config false;
+          type uint32;
+          description
+            "The number of entries that are currently free";
+        }
+        leaf used-high-watermark {
+          config false;
+          type uint32;
+          description
+            "A watermark of highest number of entries used for this resource";
+        }
+        leaf used-last-high-watermark-time {
+          config false;
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "The timestamp when the high-watermark was last updated";
+        }
+        leaf used-upper-threshold-exceeded {
+          config false;
+          type boolean;
+          description
+            "This value is set to true when the used percentage value (used / (used + free) * 100) has reached (in a rising direction) the configured upper-threshold-set for this resource and false when the used percentage value has reached (in a falling direction) the configured upper-threshold-clear for this resource";
+        }
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl_nokia-feat:system-resource-utilization";
+    uses system-resource-utilization;
+  }
+}

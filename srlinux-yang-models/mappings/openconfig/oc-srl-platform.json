@@ -1,0 +1,2404 @@
+{
+  "mapping": [
+    {
+      "oc": "/components",
+      "pretranslate-transform":"srl-components-transform"
+    },
+    {
+      "oc": "/components/component",
+      "pretranslate-transform":"oc-components-transform"
+      // The custom pretranslate-transform logic implements the following logic:
+      //  - Merge the chassis container into the list
+      //      - from /platform/chassis
+      //      - key/name of Chassis
+      //      - description of platform type (e.g. 7250 IXR-6e (we don't have a software name for chassis yet..))
+      //      - type of CHASSIS
+      //  - Merge each linecard into the list
+      //      - from /platform/linecard{}
+      //      - key/name of LinecardN (e.g. Linecard8)
+      //      - description of linecard type (e.g. imm32-100g-qsfp28+4-400g-qsfpdd)
+      //      - type of LINECARD
+      //  - Merge forwarding complexes into the list
+      //      - from /platform/linecard{}/forwarding-complex{}
+      //      - key/name of SwitchChipN/M (e.g. SwitchChip1/1)
+      //      - type of INTEGRATED_CIRCUIT
+      //  - Merge each SFM into the list
+      //      - from /platform/fabric{}
+      //      - key/name of FabricN (e.g. Fabric8)
+      //      - description of fabric type (e.g. sfm2-ixr-6)
+      //      - type of FABRIC
+      //  - Merge PSUs into the list
+      //      - from /platform/power-supply{}
+      //      - key/name of PowerSupplyN (e.g. PowerSupply8)
+      //      - description of PSU type (e.g. psu-ixr-ac-hvdc-3000)
+      //      - type of POWER_SUPPLY
+      //  - Merge fan-trays into the list
+      //      - from /platform/fan-tray{}
+      //      - key/name of FanN (e.g. Fan8)
+      //      - description of fan type (e.g. fan-ixr-6)
+      //      - type of FAN
+      //  - Merge CPMs into the list
+      //      - from /platform/control{}
+      //      - key/name of SupervisorN (e.g. Supervisor1)
+      //      - note a = 1 and b = 2
+      //      - description of CPM type (e.g. cpm2-ixr)
+      //      - type of CONTROLLER_CARD
+      //  - Merge interfaces into the list
+      //      - from /interface{}
+      //      - key/name of the interface without - and in CamelCase (e.g. Ethernet1/1-Port)
+      //      - only include physical interfaces, no LAGs, loopbacks, etc.
+      //      - mgmt0 should be included - with name ManagementN-Port (e.g. Management0-Port)
+      //      - mgmt0-standby should be included - with name ManagementN-Standby-Port (e.g. Management0-Standby-Port)
+      //      - type of PORT
+      //      - "/interfaces/interface/state/hardware-port" set with component name
+      //  - Merge transceivers into the list
+      //      - from /interface{}/transceiver
+      //      - key/name of <interface-name>-transceiver (e.g. Ethernet1/1-transceiver)
+      //      - description of transceiver type (taken from .ethernet-pmd) (e.g. 100GBASE-SR4)
+      //      - type of TRANSCEIVER
+      //  - Merge transceiver optical channels into the list
+      //      - from /interface{}/transceiver/optical-channel
+      //      - key/name of <interface-name>-och (e.g. Ethernet1/1-och)
+      //      - type of OPTICAL_CHANNEL
+      //  - Merge CPUs into the list
+      //      - from /platform/control{}/cpu
+      //      - key/name of CPUN-SupervisorM (e.g. CPU1-Supervisor1)
+      //      - the index from the CPU is optional, when not present it matches the 'all' index in our model
+      //      - type of CPU
+      //  - Merge disks into the list
+      //      - from /platform/control{}/disk{}
+      //      - key/name of Storage-<partition>-SupervisorN (e.g. Storage-sda1-Supervisor1)
+      //      - type of STORAGE
+      //  - Merge software modules into the list
+      //      - from /system/app-management/application{}
+      //      - key/name of SoftwareModule-<app-name> (e.g. SoftwareModule-app_mgr)
+      //      - type of SOFTWARE_MODULE
+      //  - Merge temperature sensors into the list
+      //      - from /platform/<module-type>/temperature OR /interface{}/transceiver/temperature
+      //      - build list of sensors for support modules - valid modules are Supervisor, Linecard, Fabric, Transceiver
+      //      - key/name of TempSensor-<module> (e.g. TempSensor-Supervisor1)
+      //      - type of SENSOR
+
+      // This handles:
+      // {
+      //   "oc": "/components/component/name",
+      //   "srlinux": "",
+      //   "special-handling": "set-based-on-pretranslate-mapping"
+      // },
+    },
+    {
+      "oc": "/components/component/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/state/type",
+      //   "srlinux": "",
+      //   "special-handling": "key-of-list-plus-type",
+      //   "mapping": [
+      //       {"CHASSIS":"chassis"},
+      //       {"BACKPLANE":""},
+      //       {"FABRIC":"fabric"},
+      //       {"POWER_SUPPLY":"power-supply"},
+      //       {"FAN":"fan-tray"},
+      //       {"SENSOR":""},
+      //       {"FRU":""},
+      //       {"LINECARD":"linecard"},
+      //       {"CONTROLLER_CARD":"control"},
+      //       {"PORT":"interface"},
+      //       {"TRANSCEIVER":"interface/transceiver"},
+      //       {"OPTICAL_CHANNEL":"interface/transceiver/optical-channel"}
+      //       {"CPU":""},
+      //       {"STORAGE":""},
+      //       {"INTEGRATED_CIRCUIT":"linecard/forwarding-complex"}
+      //   ]
+      // },
+      // {
+      //   "oc": "/components/component/state/id",
+      //   "special-handling": "same-value-as-name"
+      // },
+      // {
+      //   "oc": "/components/component/state/description",
+      //   "special-handling": "populate-based-on-type"
+      // // },
+      // {
+      //   "oc": "/components/component/state/location",
+      //   "special-handling": "populated-based-on-loction-in-chassis"
+      // },
+      // {
+      //   "oc": "/components/component/state/mfg-name",
+      //   "special-handling": "populate-based-on-mfg"
+      // },
+      // {
+      //   "oc": "/components/component/state/mfg-date",
+      //   "srlinux": "/platform/*/manufactured-date"
+      // },
+      // {
+      //   "oc": "/components/component/state/hardware-version",
+      //   "special-handling": "hardcode to 1.0"
+      // },
+      // {
+      //   "oc": "/components/component/state/firmware-version",
+      //   "special-handling": "hardcode to 1.0"
+      // },
+      // {
+      //   "oc": "/components/component/state/software-version",
+      //   "srlinux": "/platform/{control,linecard}/software-version"
+      // },
+      // {
+      //   "oc": "/components/component/state/serial-no",
+      //   "srlinux": "/platform/*/serial-number"
+      // },
+      // {
+      //   "oc": "/components/component/state/part-no",
+      //   "srlinux": "/platform/*/part-number"
+      // },
+      // {
+      //   "oc": "/components/component/state/removable",
+      //   "srlinux": "/platform/*/removable"
+      // },
+      // {
+      //   "oc": "/components/component/state/oper-status",
+      //   "srlinux": "/platform/*/oper-state",
+      //   "special-handling": "look-at-admin-state-for-disabled",
+      //   "mapping": [
+      //       {"ACTIVE":"up,degraded,synchronizing"},
+      //       {"INACTIVE":"downloading,booting,warm-reboot,low-power,upgrading,failed,starting"},
+      //       {"DISABLED":"down"}
+      //   ]
+      // },
+      // {
+      //   "oc": "/components/component/state/empty",
+      //   "special-handling": "true-if-oper-state-empty"
+      // },
+      // {
+      //   "oc": "/components/component/state/parent",
+      //   Parent relationships are based on the following heirachy:
+      //      Chassis
+      //       | LinecardN
+      //          | TempSensor-LinecardN
+      //          | SwitchChipN
+      //            | Ethernet*-Port
+      //              | Ethernet*-transceiver
+      //                | Ethernet*-och
+      //                | TempSensor-Ethernet*-transceiver
+      //          | FabricN
+      //            | TempSensor-FabricN
+      //       | PowerSupplyN
+      //         | TempSensor-PowerSupplyN
+      //       | FanN
+      //       | SupervisorN
+      //         | TempSensor-SupervisorN
+      //         | Storage-*-SupervisorN
+      //         | CPUN-SupervisorN
+      //         | CPU-SupervisorN
+      //         | SoftwareModule-*
+      // },
+      // {
+      //   "oc": "/components/component/state/redundant-role",
+      //   "srlinux": "/platform/control/role"
+      // },
+      // {
+      //   "oc": "/components/component/state/last-switchover-time",
+      //   "srlinux": "/platform/redundancy/last-switchover-time",
+      //   "special-handling": "populate only for controller card"
+      // },
+      // {
+      //   "oc": "/components/component/state/last-reboot-reason",
+      //   "srlinux": "/platform/*/last-booted"
+      // },
+      // {
+      //   "oc": "/components/component/state/last-reboot-time",
+      //   "srlinux": "/platform/*/last-booted-reason"
+      //   "mapping": [
+      //     {"REBOOT_USER_INITIATED":"user-initiated-reboot"},
+      //     {"REBOOT_POWER_FAILURE":"power-failure""},
+      //     {"REBOOT_CRITICAL_ERROR":"critical-error"}
+      // ]
+      // },
+      // {
+      //   "oc": "/components/component/state/switchover-ready",
+      //   "srl": "/platform/redundancy/control-plane/synchronization/state"
+      //   "special-handling": "populate only for controller card"
+      // },
+      // {
+      //   "oc": "/components/component/state/base-mac-address",
+      //   "srl": "/platform/chassis/mac-address"
+      // },
+    },
+    {
+      "oc": "/components/component/state/base-mac-address",
+      "type": "srl_nokia-common:mac-address"
+    },
+    {
+      "oc": "/components/component/{config,state}/name",
+      "srlinux": "",
+      "type": "srl_nokia-common:component-name"
+    },
+    {
+      "oc": "/components/component/state/install-position",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/install-component",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/clei-code",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/model-name",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/last-poweroff-reason",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/last-poweroff-reason/trigger",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/last-poweroff-reason/details",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/last-poweroff-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/last-switchover-reason",
+      "pretranslate-transform":"oc-components-transform"
+      // "srlinux": "/platform/control/last-switchover-reason"
+      // This handles:
+      // {
+      //   "oc": "/components/component/state/last-switchover-reason/trigger",
+      //   "srlinux": "/platform/control/last-switchover-reason/trigger"
+      // },
+      // {
+      //   "oc": "/components/component/state/last-switchover-reason/details",
+      //   "srlinux": "/platform/control/last-switchover-reason/details"
+      // },
+    },
+    {
+      "oc": "/components/component/state/temperature",
+      "pretranslate-transform":"oc-components-transform"
+      // "srlinux": "/platform/*/temperature",
+      // "special-handling": "populate-for-transceiver-control-fabric-linecard-power-supply"
+      // This handles:
+      // {
+      //   "oc": "/components/component/state/temperature/instant",
+      //   "srlinux": "/platform/*/temperature/instant,/interface/transceiver/temperature/latest-value"
+      // },
+      // {
+      //   "oc": "/components/component/state/temperature/max",
+      //   "srlinux": "/platform/*/temperature/maximum,/interface/transceiver/temperature/maximum"
+      // },
+      // {
+      //   "oc": "/components/component/state/temperature/max-time",
+      //   "srlinux": "/platform/*/temperature/maximum-time,/interface/transceiver/temperature/maximum-time"
+      // },
+      // {
+      //   "oc": "/components/component/state/temperature/alarm-status",
+      //   "srlinux": "/platform/*/temperature/alarm-status,/interface/transceiver/temperature/low-warning-condition"
+      // },
+      // {
+      //   "oc": "/components/component/state/temperature/alarm-severity",
+      //   "special-handling": "set-to-warning-if-alarm-status-true"
+      // },
+    },
+    {
+      "oc": "/components/component/state/temperature/avg",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/temperature/min",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/temperature/interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/temperature/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/temperature/alarm-threshold",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/memory",
+      "pretranslate-transform":"oc-components-transform"
+    // "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-memory:memory",
+    // "special-handling": "populate-for-control-type-only"
+    // This handles:
+    // {
+    //   "oc": "/components/component/state/memory/available",
+    //   "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-memory:memory/srl_nokia-platform-memory:physical",
+    //   "special-handling": "populate-for-control-type-only"
+    // },
+    // {
+    //   "oc": "/components/component/state/memory/utilized",
+    //   "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-memory:memory/srl_nokia-platform-memory:reserved",
+    //   "special-handling": "populate-for-control-type-only"
+    // },
+    },
+    // {
+    //   "oc": "/components/component/state/allocated-power",
+    //   "srlinux": "/platform/*/power/allocated-power",
+    //   "special-handling": "populate-for-control-fabric-fan-tray-linecard-types-only"
+    // },
+    // {
+    //   "oc": "/components/component/state/used-power",
+    //   "srlinux": "/platform/*/power/used-power",
+    //   "special-handling": "populate-for-control-fabric-fan-tray-linecard-types-only"
+    // },
+    {
+      "oc": "/components/component/state/oc-platform-ext:entity-id",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/properties",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/subcomponents",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/subcomponents/subcomponent",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles: mapping the subcomponents based on parent child relationships
+    },
+    {
+      "oc": "/components/component/subcomponents/subcomponent/name",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/subcomponents/subcomponent/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/subcomponents/subcomponent/{config,state}/name",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/healthz",
+      "pretranslate-transform":"oc-components-transform",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/healthz/state",
+      "pretranslate-transform":"oc-components-transform",
+      "feature-flagged": true
+      // This handles:
+      // {
+      //   "oc": "/components/component/healthz/state/status",
+      //   "srl": "*/healthz/status"
+      // },
+      // {
+      //   "oc": "/components/component/healthz/state/last-unhealthy",
+      //   "srl": "*/healthz/last-unhealthy"
+      // },
+      // {
+      //   "oc": "/components/component/healthz/state/unhealthy-count",
+      //   "srl": "*/healthz/unhealthy-count"
+      // },
+    },
+    {
+      "oc": "/components/component/chassis",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/chassis/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/chassis/{config,state}/id",
+      //   "srl": "/platform/chassis/id"
+      // },
+    },
+    {
+      "oc": "/components/component/chassis/utilization",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/port",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/port/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group",
+      "srlinux": "/interface/breakout-mode",
+      "ancestor-key-override-transform": "breakout-mode-ancestor-key-override",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:index",
+      "srlinux": "",
+      "transform": "null-key-transform",
+      "feature-flagged": true
+
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}",
+      "srlinux": "",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:index",
+      "srlinux": "",
+      "feature-flagged": true,
+      "deviations": {
+        "add": {
+            "must": [
+              {
+                  "expression": ". = 1",
+                  "error-message": "only single group with index 1 is supported"
+              }
+            ]
+        }
+      }
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:num-breakouts",
+      "srlinux": "/interface/breakout-mode/num-breakout-ports",
+      "feature-flagged": true,
+      "mapping": [
+        {"1":"1"},
+        {"2":"2"},
+        {"3":"3"},
+        {"4":"4"},
+        {"8":"8"}
+      ]
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:breakout-speed",
+      "srlinux": "/interface/breakout-mode/breakout-port-speed",
+      "feature-flagged": true,
+      "mapping": [
+        {"SPEED_10MB":""},
+        {"SPEED_100MB":""},
+        {"SPEED_1GB":"1G"},
+        {"SPEED_2500MB":""},
+        {"SPEED_5GB":""},
+        {"SPEED_10GB":"10G"},
+        {"SPEED_25GB":"25G"},
+        {"SPEED_40GB":""},
+        {"SPEED_50GB":"50G"},
+        {"SPEED_100GB":"100G"},
+        {"SPEED_200GB":"200G"},
+        {"SPEED_400GB":"400G"},
+        {"SPEED_600GB":""},
+        {"SPEED_800GB":""},
+        {"SPEED_UNKNOWN":""}
+      ]
+    },
+    {
+      "oc": "/components/component/port/oc-port:breakout-mode/oc-port:groups/oc-port:group/oc-port:{config,state}/oc-port:num-physical-channels",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/power-supply",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/power-supply/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/power-supply/state/oc-platform-psu:capacity",
+      //   "srlinux": "/platform/power-supply/capacity"
+      // },
+      // {
+      //   "oc": "/components/component/power-supply/state/oc-platform-psu:input-current",
+      //   "srlinux": "/platform/power-supply/input/current"
+      // },
+      // {
+      //   "oc": "/components/component/power-supply/state/oc-platform-psu:input-voltage",
+      //   "srlinux": "/platform/power-supply/input/voltage"
+      // },
+      // {
+      //   "oc": "/components/component/power-supply/state/oc-platform-psu:output-current",
+      //   "srlinux": "/platform/power-supply/output/current"
+      // },
+      // {
+      //   "oc": "/components/component/power-supply/state/oc-platform-psu:output-voltage",
+      //   "srlinux": "/platform/power-supply/output/voltage"
+      // },
+      // {
+      //   "oc": "/components/component/power-supply/state/oc-platform-psu:output-power",
+      //   "srlinux": "/platform/power-supply/output/power"
+      // },
+    },
+    {
+      "oc": "/components/component/power-supply/{config,state}/oc-platform-psu:enabled",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/fan",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/fan/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/fan/state/oc-fan:speed",
+      //   "srlinux": "/platform/srl_nokia-platform-fan:fan-tray/srl_nokia-platform-fan:speed-rpm"
+      // },
+    },
+    {
+      "oc": "/components/component/fabric",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/fabric/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/oc-fabric:fabric/oc-fabric:{config,state}/oc-fabric:power-admin-state",
+      //   "srlinux": "/platform/fabric/admin-state"
+      // },
+    },
+    {
+      "oc": "/components/component/storage",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/storage/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/cpu",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/cpu/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/cpu/utilization",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/cpu/utilization/state",
+      "pretranslate-transform":"oc-components-transform"
+      // "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:total",
+      // This handles:
+      // {
+      //   "oc": "/components/component/cpu/utilization/state/instant",
+      //   "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:total/srl_nokia-platform-cpu:instant"
+      // },
+      // {
+      //   "oc": "/components/component/cpu/utilization/state/avg",
+      //   "srlinux": "/platform/srl_nokia-platform-control:control/srl_nokia-platform-cpu:cpu/srl_nokia-platform-cpu:total/srl_nokia-platform-cpu:average-1"
+      // },
+      // {
+      //   "oc": "/components/component/cpu/utilization/state/interval",
+      //   "special-handling": "hardcode-to-1-min-as-60000000000-nanoseconds)"
+      // },
+    },
+    {
+      "oc": "/components/component/integrated-circuit",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/integrated-circuit/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/integrated-circuit/{config,state}/node-id",
+      //   "srlinux": "/platform/linecard/forwarding-complex/p4rt/id"
+      // },
+    },
+    {
+      "oc": "/components/component/integrated-circuit/backplane-facing-capacity",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/integrated-circuit/backplane-facing-capacity/state",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/integrated-circuit/backplane-facing-capacity/total",
+      //   "srlinux": "/platform/linecard/forwarding-complex/fabric/total-capacity"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/backplane-facing-capacity/total-operational-capacity",
+      //   "srlinux": "/platform/linecard/forwarding-complex/fabric/operational-capacity"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/backplane-facing-capacity/consumed-capacity",
+      //   "srlinux": "/platform/linecard/forwarding-complex/fabric/consumed-capacity"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/backplane-facing-capacity/available-pct",
+      //   "srlinux": "/platform/linecard/forwarding-complex/fabric/availability"
+      // },
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/packet",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/state",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/drop/state/adverse-aggregate",
+      //   "srlinux": "/platform/linecard/forwarding-complex/drop-counters/adverse-aggregate"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/drop/state/congestion-aggregate",
+      //   "srlinux": "/platform/linecard/forwarding-complex/drop-counters/congestion-aggregate"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/drop/state/packet-processing-aggregate",
+      //   "srlinux": "/platform/linecard/forwarding-complex/drop-counters/packet-processing-aggregate"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/drop/state/no-route",
+      //   "srlinux": "/platform/linecard/forwarding-complex/drop-counters/no-route"
+      // },
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/state/urpf-aggregate",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/interface-block",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/lookup-block",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/queueing-block",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/fabric-block",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/host-interface-block",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/drop/vendor",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/errors",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/control-plane-traffic",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/control-plane-traffic/state",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/control-plane-traffic/state/queued-aggregate",
+      //   "srlinux": "/platform/linecard/forwarding-complex/control-plane-traffic/queued-aggregate"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/control-plane-traffic/state/queued-bytes-aggregate,
+      //   "srlinux": "/platform/linecard/forwarding-complex/control-plane-traffic/queued-bytes-aggregate"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/control-plane-traffic/state/dropped-aggregate",
+      //   "srlinux": "/platform/linecard/forwarding-complex/control-plane-traffic/dropped-aggregate"
+      // },
+      // {
+      //   "oc": "/components/component/integrated-circuit/pipeline-counters/control-plane-traffic/state/dropped-bytes-aggregate",
+      //   "srlinux": "/platform/linecard/forwarding-complex/control-plane-traffic/dropped-bytes-aggregate"
+      // },
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/control-plane-traffic/vendor",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/pipeline-counters/vendor",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/memory",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/backplane",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-linecard:linecard",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/oc-linecard:linecard/oc-linecard:{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/oc-linecard:linecard/oc-linecard:{config,state}/oc-linecard:power-admin-state",
+      //   "srlinux": "/platform/linecard/admin-state"
+      // },
+      // {
+      //   "oc": "/components/component/oc-linecard:linecard/oc-linecard:state/oc-linecard:slot-id",
+      //   "special-handling": "linecard-index"
+      // },
+    },
+    {
+      "oc": "/components/component/linecard/utilization",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/controller-card",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/controller-card/{config,state}",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/controller-card/{config,state}/power-admin-state",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver",
+      "pretranslate-transform": "oc-components-transform"
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:{config,state}",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   {
+      //   "oc": "/components/component/oc-transceiver:transceiver/{oc-transceiver:{config,state}/oc-transceiver:module-functional-type",
+      //   "srlinux": "/interface/transceiver/functional-type",
+      //   "mapping": [
+      //     {"TYPE_STANDARD_OPTIC":"standard"},
+      //     {"TYPE_DIGITAL_COHERENT_OPTIC":"digital-coherent-optics"}
+      //   ]
+      // },
+      // {
+      //   "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:form-factor",
+      //   "srlinux": "/interface/transceiver/form-factor",
+      //   "mapping": [
+      //     {"CFP":""},
+      //     {"CFP2":"CFP2"},
+      //     {"CFP2_ACO":"CFP2-ACO"},
+      //     {"CFP4":"CFP4"},
+      //     {"QSFP":"QSFP"},
+      //     {"QSFP_PLUS":"QSFPplus"},
+      //     {"QSFP28":"QSFP28"},
+      //     {"QSFP56_DD_TYPE1":"QSFPDD"}, // this is 8x56G lanes
+      //     {"QSFP56_DD_TYPE2":""}, // this is 4x112G lanes
+      //     {"CPAK":""},
+      //     {"SFP":"SFP"},
+      //     {"SFP_PLUS":"SFPplus"},
+      //     {"XFP":""},
+      //     {"X2":""},
+      //     {"OSFP":""},
+      //     {"NON_PLUGGABLE":"Non-pluggable"},
+      //     {"OTHER":"Other"}
+      //   ]
+      // },
+      // {
+      //   "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:firmware-version",
+      //   "srlinux": "/interface/transceiver/firmware-version",
+      // },
+      // {
+      //   "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:hardware-version",
+      //   "srlinux": "/interface/transceiver/vendor-revision",
+      // },
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:{config,state}/oc-transceiver:enabled",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:{config,state}/oc-transceiver:form-factor-preconf",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:{config,state}/oc-transceiver:ethernet-pmd-preconf",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:{config,state}/oc-transceiver:fec-mode",
+      "supported": false
+    //   "srlinux": "/interface/transceiver/forward-error-correction",
+    //   "special-handling": "auto-configure-correct-fec-for-enabled-and-auto",
+    //   "mapping": [
+    //     {"FEC_ENABLED":""},
+    //     {"FEC_DISABLED":"disabled"},
+    //     {"FEC_AUTO":""}
+    //   ]
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:present",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:connector-type",
+      "supported": false
+    //   "srlinux": "/interface/transceiver/connector-type",
+    //   "mapping": [
+    //     {"SC_CONNECTOR":"SC"},
+    //     {"LC_CONNECTOR":"LC"},
+    //     {"MPO_CONNECTOR":"MPO-1x12"},
+    //     {"MPO_CONNECTOR":"MPO-2x16"},
+    //     {"MPO_CONNECTOR":"MPO-2x12"},
+    //     {"MPO_CONNECTOR":"MPO-1x16"},
+    //     {"AOC_CONNECTOR":""},
+    //     {"DAC_CONNECTOR":""}
+    //   ]
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:vendor-rev",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:ethernet-pmd",
+      "supported": false
+    //   "srlinux": "/interface/transceiver/ethernet-pmd",
+    //   "special-handling": "need-valid-srlinux-values",
+    //   "mapping": [
+    //     {"ETH_10GBASE_LRM":""},
+    //     {"ETH_10GBASE_LR":""},
+    //     {"ETH_10GBASE_ZR":""},
+    //     {"ETH_10GBASE_ER":""},
+    //     {"ETH_10GBASE_SR":""},
+    //     {"ETH_40GBASE_CR4":""},
+    //     {"ETH_40GBASE_SR4":""},
+    //     {"ETH_40GBASE_LR4":""},
+    //     {"ETH_40GBASE_ER4":""},
+    //     {"ETH_40GBASE_PSM4":""},
+    //     {"ETH_4X10GBASE_LR":""},
+    //     {"ETH_4X10GBASE_SR":""},
+    //     {"ETH_100GBASE_AOC":""},
+    //     {"ETH_100GBASE_ACC":""},
+    //     {"ETH_100GBASE_SR10":""},
+    //     {"ETH_100GBASE_SR4":""},
+    //     {"ETH_100GBASE_LR4":""},
+    //     {"ETH_100GBASE_ER4":""},
+    //     {"ETH_100GBASE_CWDM4":""},
+    //     {"ETH_100GBASE_CLR4":""},
+    //     {"ETH_100GBASE_PSM4":""},
+    //     {"ETH_100GBASE_CR4":""},
+    //     {"ETH_100GBASE_FR":""},
+    //     {"ETH_400GBASE_ZR":""},
+    //     {"ETH_400GBASE_LR4":""},
+    //     {"ETH_400GBASE_FR4":""},
+    //     {"ETH_400GBASE_LR8":""},
+    //     {"ETH_400GBASE_DR4":""},
+    //     {"ETH_UNDEFINED":""}
+    //   ]
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:sonet-sdh-compliance-code",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:otn-compliance-code",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:fault-condition",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:fec-status",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:fec-uncorrectable-blocks",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:fec-uncorrectable-words",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:fec-corrected-bytes",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:fec-corrected-bits",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:pre-fec-ber",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:post-fec-ber",
+      "supported": false
+    },
+    {
+        "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:supply-voltage",
+        "pretranslate-transform": "oc-components-transform"
+        // This handles:
+        // {
+        //   "oc": "/components/component/transceiver/state/supply-voltage/instant",
+        //   "srlinux": "/interface/transceiver/voltage/latest-value",
+        //   "transform": "mismatched-decimal-digits"
+        // }
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:supply-voltage/avg",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:supply-voltage/min",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:supply-voltage/max",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:supply-voltage/interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:supply-voltage/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:supply-voltage/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:output-power",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:input-power",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:state/oc-transceiver:laser-bias-current",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel",
+      "srlinux": "/interface/transceiver/channel",
+      "ancestor-key-override-transform": "transceiver-ancestor-key-override",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:index",
+      "srlinux": "/interface/transceiver/channel/index",
+      "transform": "0-to-1-based",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:{config,state}",
+      "srlinux": "",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:{config,state}/oc-transceiver:index",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:config/oc-transceiver:associated-optical-channel",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:associated-optical-channel",
+      "finalize-transform": "oc-transceiver-set-och",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:{config,state}/oc-transceiver:description",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:{config,state}/oc-transceiver:tx-laser",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:{config,state}/oc-transceiver:target-output-power",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-age",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-temperature",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:target-frequency-deviation",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:tec-current",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-frequency",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power",
+      "srlinux": "/interface/transceiver/channel/output-power",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power/oc-transceiver:instant",
+      "srlinux": "/interface/transceiver/channel/output-power/latest-value",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power/oc-transceiver:avg",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power/oc-transceiver:min",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power/oc-transceiver:max",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power/oc-transceiver:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power/oc-transceiver:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:output-power/oc-transceiver:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:input-power",
+      "pretranslate-transform": "oc-transceiver-phys-channel-input-power",
+      "state-request-from-here": true
+    },
+    // This handles:
+    // {
+    //   "oc":"/components/component/transceiver/physical-channels/channel[index=n]/state/input-power/instant",
+    //   "srlinux": "/interface/transceiver/channel[index=n+1]/input-power/latest-value"
+    // }
+    {
+      "srlinux": "/interface/transceiver/channel/input-power",
+      "pretranslate-transform": "srl-transceiver-channel-input-power",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/optical-channel/index",
+      "transform": "null-key-transform"
+    },
+    // This handles:
+    // {
+    //   "oc":"/components/component/transceiver/physical-channels/channel[=index=0]/state/input-power/avg",
+    //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/total-power/average"
+    // },
+    // {
+    //   "oc":"/components/component/transceiver/physical-channels/channel[index=0]/state/input-power/min",
+    //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/total-power/minimum"
+    // },
+    // {
+    //   "oc":"/components/component/transceiver/physical-channels/channel[index=0]/state/input-power/max",
+    //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/total-power/maximum"
+    // }
+    {
+      "srlinux": "/interface/transceiver/optical-channel/statistics/received/total-power",
+      "pretranslate-transform": "srl-transceiver-channel-input-power"
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:input-power/oc-transceiver:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:input-power/oc-transceiver:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:input-power/oc-transceiver:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current",
+      "srlinux": "/interface/transceiver/channel/laser-bias-current",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current/oc-transceiver:instant",
+      "srlinux": "/interface/transceiver/channel/laser-bias-current/latest-value",
+      "transform":"mismatched-decimal-digits",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current/oc-transceiver:avg",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current/oc-transceiver:min",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current/oc-transceiver:max",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current/oc-transceiver:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current/oc-transceiver:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:physical-channels/oc-transceiver:channel/oc-transceiver:state/oc-transceiver:laser-bias-current/oc-transceiver:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:thresholds",
+      "srlinux": ""
+    },
+    // This handles:
+    // {
+    //   "oc": "/components/component/transceiver/thresholds/threshold",
+    //   "srlinux": "/interface/transceiver",
+    //   "special-handling": "returns all children as leaves within both input/output-power and temperature are needed"
+    // }
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:thresholds/oc-transceiver:threshold",
+      "pretranslate-transform": "oc-component-transceiver-threshold-transform"
+    },
+    {
+      "oc": "/components/component/oc-transceiver:transceiver/oc-transceiver:thresholds/oc-transceiver:threshold/state",
+      "pretranslate-transform": "oc-component-transceiver-threshold-transform"
+    },
+    // This handles:
+    // {
+    //   "srlinux": "/interface/transceiver/input-power/low-warning-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==WARNING]/state/input-power-lower"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/input-power/high-warning-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==WARNING]/state/input-power-upper"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/input-power/low-alarm-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==CRITICAL]/state/input-power-lower"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/input-power/high-alarm-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==CRITICAL]/state/input-power-upper"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/output-power/low-warning-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==WARNING]/state/output-power-lower"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/output-power/upper-warning-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==WARNING]/state/output-power-upper"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/output-power/low-alarm-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==CRITICAL]/state/output-power-lower"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/output-power/upper-alarm-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==CRITICAL]/state/output-power-upper"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/temperature/low-warning-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==WARNING]/state/module-temperature-lower"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/temperature/high-warning-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==WARNING]/state/module-temperature-upper"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/temperature/low-alarm-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==CRITICAL]/state/module-temperature-lower"
+    // },
+    // {
+    //   "srlinux": "/interface/transceiver/temperature/high-alarm-threshold",
+    //   "oc": "/components/component/transceiver/thresholds/threshold[severity==CRITICAL]/state/module-temperature-upper"
+    // }
+    {
+      "srlinux": "/interface/transceiver/input-power/low-warning-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/input-power/high-warning-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/input-power/low-alarm-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/input-power/high-alarm-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/output-power/low-warning-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/output-power/high-warning-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/output-power/low-alarm-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/output-power/high-alarm-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/temperature/low-warning-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/temperature/high-warning-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/temperature/low-alarm-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "srlinux": "/interface/transceiver/temperature/high-alarm-threshold",
+      "pretranslate-transform": "srl-interface-transceiver-threshold-leaf-transform",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel",
+      "pretranslate-transform": "oc-components-transform"
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:{config,state}",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/optical-channel/{config,state}/frequency",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/frequency"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/{config,state}/operational-mode",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/operational-mode"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/{config,state}/target-output-power",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/target-power"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/line-port",
+      //   "special-handling": "Hard coded to associated pot component"
+      // }
+    },
+    {
+      "oc": "/components/component/optical-channel/config/line-port",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:group-id",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:logical-channel-assignment",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:output-power",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/optical-channel/state/output-power/instant",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/transmitted/power/current"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/output-power/avg",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/transmitted/power/average"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/output-power/min",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/transmitted/power/minimum"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/output-power/max",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/transmitted/power/maximum"
+      // }
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:output-power/oc-opt-term:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:output-power/oc-opt-term:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:output-power/oc-opt-term:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:input-power",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/optical-channel/state/input-power/instant",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/power/current"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/input-power/avg",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/power/average"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/input-power/min",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/power/minimum"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/input-power/max",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/power/maximum"
+      // }
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:input-power/oc-opt-term:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:input-power/oc-opt-term:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:input-power/oc-opt-term:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:laser-bias-current",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/optical-channel/state/laser-bias-current/instant",
+      //   "srlinux": "/interface/transceiver/laser-bias-current/latest-value"
+      // },
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:laser-bias-current/avg",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:laser-bias-current/min",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:laser-bias-current/max",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:laser-bias-current/interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:laser-bias-current/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:laser-bias-current/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:chromatic-dispersion",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/optical-channel/state/chromatic-dispersion/instant",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/chromatic-dispersion/current"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/chromatic-dispersion/avg",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/chromatic-dispersion/average"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/chromatic-dispersion/min",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/chromatic-dispersion/minimum"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/chromatic-dispersion/max",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/chromatic-dispersion/maximum"
+      // }
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:chromatic-dispersion/oc-opt-term:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:chromatic-dispersion/oc-opt-term:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:chromatic-dispersion/oc-opt-term:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:polarization-mode-dispersion",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:second-order-polarization-mode-dispersion",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:polarization-dependent-loss",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:modulator-bias-xi",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:modulator-bias-xq",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:modulator-bias-yi",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:modulator-bias-yq",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/state/oc-opt-term:modulator-bias-x-phase",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/optical-channel/oc-opt-term:state/oc-opt-term:modulator-bias-y-phase",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:osnr",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/optical-channel/state/osnr/instant",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/optical-signal-to-noise-ratio/current"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/osnr/avg",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/optical-signal-to-noise-ratio/average"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/osnr/min",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/optical-signal-to-noise-ratio/minimum"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/osnr/max",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/optical-signal-to-noise-ratio/maximum"
+      // }
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:osnr/oc-opt-term:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:osnr/oc-opt-term:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:osnr/oc-opt-term:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:carrier-frequency-offset",
+      "pretranslate-transform": "oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/optical-channel/state/carrier-frequency-offset/instant",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/frequency-offset/current"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/carrier-frequency/avg",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/frequency-offset/average"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/carrier-frequency/min",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/frequency-offset/minimum"
+      // },
+      // {
+      //   "oc": "/components/component/optical-channel/state/carrier-frequency/max",
+      //   "srlinux": "/interface/transceiver/optical-channel[index=1]/statistics/received/frequency-offset/maximum"
+      // }
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:carrier-frequency-offset/oc-opt-term:interval",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:carrier-frequency-offset/oc-opt-term:min-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:carrier-frequency-offset/oc-opt-term:max-time",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:sop-roc",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/state/modulation-error-ratio",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/optical-channel/oc-opt-term:state/oc-opt-term:terminal-phy-protocol-stats",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:fec-uncorrectable-blocks",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:pre-fec-ber",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:post-fec-ber",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:q-value",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/oc-opt-term:optical-channel/oc-opt-term:state/oc-opt-term:esnr",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/software-module",
+      "pretranslate-transform":"oc-components-transform"
+    },
+    {
+      "oc": "/components/component/software-module/{state,config}",
+      "pretranslate-transform":"oc-components-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/software-module/state/module-type",
+      //   "special-handling": "set-to-userspace-package"
+      // },
+    },
+    {
+      "oc": "/interfaces/interface/state/transceiver",
+      "finalize-transform": "oc-interface-set-transceiver"
+    },
+    {
+      "oc": "/interfaces/interface/state/hardware-port",
+      "finalize-transform": "oc-interface-set-hardware-port",
+      "special-handling": "populate-based-on-port-component-name"
+    },
+    {
+      "oc": "/components/component/state/pcie",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/allocated-power",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/state/used-power",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/utilization",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/integrated-circuit/utilization/resources",
+      "srlinux": ""
+    },
+    {
+      "oc": "/components/component/integrated-circuit/utilization/resources/resource",
+      "pretranslate-transform": "oc-component-ic-utilization-resource-transform"
+      // This handles:
+      // {
+      //   "oc": "/components/component/integrated-circuit/utilization/resources/resource"
+      //   "srlinux": "/platform/linecard/forwarding-complex/datapath{asic,xdp}/resource",
+      // }
+      // The asic or xdp container depends on the resource name
+    },
+    {
+      "oc": "/components/component/integrated-circuit/utilization/resources/resource/{config,state}",
+      "pretranslate-transform": "oc-component-ic-utilization-resource-transform"
+    },
+    {
+      "oc": "/components/component/integrated-circuit/utilization/resources/resource/config/used-threshold-upper",
+      "supported": false
+    },
+    {
+      "oc": "/components/component/integrated-circuit/utilization/resources/resource/config/used-threshold-upper-clear",
+      "supported": false
+    },
+    {
+      "srlinux": "/platform/linecard/slot",
+      "transform": "null-key-transform"
+    },
+    {
+      "srlinux": "/platform/linecard/forwarding-complex/name",
+      "transform": "null-key-transform"
+    },
+    {
+      "srlinux": "/platform/linecard/forwarding-complex/datapath/asic/resource",
+      "pretranslate-transform": "srl-platform-lc-resource-transform"
+      // This handles:
+      // {
+      //   "srlinux": "/platform/linecard/forwarding-complex/datapath{asic,xdp}/resource",
+      //   "oc": "/components/component/integrated-circuit/utilization/resources/resource"
+      // }
+    },
+    {
+      "srlinux": "/platform/linecard/forwarding-complex/datapath/xdp/resource",
+      "pretranslate-transform": "srl-platform-lc-resource-transform"
+    },
+    {
+      "oc": "/terminal-device",
+      "srlinux": "/terminal-device",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/{config,state}",
+      "supported": false
+      // Both containers are currently empty
+    },
+    {
+      "oc": "/terminal-device/logical-channels",
+      "srlinux": "/terminal-device/logical-channels",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel",
+      "srlinux": "/terminal-device/logical-channels/channel",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/index",
+      "srlinux": "/terminal-device/logical-channels/channel/index",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/index",
+      "srlinux": ""
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/description",
+      "srlinux": "/terminal-device/logical-channels/channel/description",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/admin-state",
+      "srlinux": "/terminal-device/logical-channels/channel/admin-state",
+      "mapping": [
+        {
+          "ENABLED": "enable"
+        },
+        {
+          "DISABLED": "disable"
+        },
+        {
+          "MAINT": "maintenance"
+        }
+      ],
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/rate-class",
+      "srlinux": "/terminal-device/logical-channels/channel/rate-class",
+      "mapping": [
+        {
+          "TRIB_RATE_1G": ""
+        },
+        {
+          "TRIB_RATE_2.5G": ""
+        },
+        {
+          "TRIB_RATE_10G": ""
+        },
+        {
+          "TRIB_RATE_40G": ""
+        },
+        {
+          "TRIB_RATE_100G": "trib-rate-100G"
+        },
+        {
+          "TRIB_RATE_150G": ""
+        },
+        {
+          "TRIB_RATE_200G": "trib-rate-200G"
+        },
+        {
+          "TRIB_RATE_250G": ""
+        },
+        {
+          "TRIB_RATE_300G": "trib-rate-300G"
+        },
+        {
+          "TRIB_RATE_350G": ""
+        },
+        {
+          "TRIB_RATE_400G": "trib-rate-400G"
+        },
+        {
+          "TRIB_RATE_450G": ""
+        },
+        {
+          "TRIB_RATE_500G": ""
+        },
+        {
+          "TRIB_RATE_550G": ""
+        },
+        {
+          "TRIB_RATE_600G": ""
+        },
+        {
+          "TRIB_RATE_650G": ""
+        },
+        {
+          "TRIB_RATE_800G": ""
+        },
+        {
+          "TRIB_RATE_850G": ""
+        },
+        {
+          "TRIB_RATE_900G": ""
+        },
+        {
+          "TRIB_RATE_950G": ""
+        },
+        {
+          "TRIB_RATE_1000G": ""
+        },
+        {
+          "TRIB_RATE_1050G": ""
+        },
+        {
+          "TRIB_RATE_1100G": ""
+        },
+        {
+          "TRIB_RATE_1150G": ""
+        },
+        {
+          "TRIB_RATE_1200G": ""
+        },
+        {
+          "TRIB_RATE_1250G": ""
+        },
+        {
+          "TRIB_RATE_1300G": ""
+        },
+        {
+          "TRIB_RATE_1350G": ""
+        },
+        {
+          "TRIB_RATE_1400G": ""
+        },
+        {
+          "TRIB_RATE_1450G": ""
+        },
+        {
+          "TRIB_RATE_1500G": ""
+        },
+        {
+          "TRIB_RATE_1550G": ""
+        },
+        {
+          "TRIB_RATE_1600G": ""
+        },
+        {
+          "TRIB_RATE_1650G": ""
+        },
+        {
+          "TRIB_RATE_1700G": ""
+        },
+        {
+          "TRIB_RATE_1750G": ""
+        },
+        {
+          "TRIB_RATE_1800G": ""
+        },
+        {
+          "TRIB_RATE_1850G": ""
+        },
+        {
+          "TRIB_RATE_1900G": ""
+        },
+        {
+          "TRIB_RATE_1950G": ""
+        },
+        {
+          "TRIB_RATE_2000G": ""
+        },
+        {
+          "TRIB_RATE_2050G": ""
+        },
+        {
+          "TRIB_RATE_2100G": ""
+        },
+        {
+          "TRIB_RATE_2150G": ""
+        },
+        {
+          "TRIB_RATE_2200G": ""
+        },
+        {
+          "TRIB_RATE_2250G": ""
+        },
+        {
+          "TRIB_RATE_2300G": ""
+        },
+        {
+          "TRIB_RATE_2350G": ""
+        },
+        {
+          "TRIB_RATE_2300G": ""
+        },
+        {
+          "TRIB_RATE_2350G": ""
+        },
+        {
+          "TRIB_RATE_2400G": ""
+        },
+        {
+          "TRIB_RATE_2450G": ""
+        },
+        {
+          "TRIB_RATE_2500G": ""
+        },
+        {
+          "TRIB_RATE_2550G": ""
+        },
+        {
+          "TRIB_RATE_2600G": ""
+        },
+        {
+          "TRIB_RATE_2650G": ""
+        },
+        {
+          "TRIB_RATE_2700G": ""
+        },
+        {
+          "TRIB_RATE_2750G": ""
+        },
+        {
+          "TRIB_RATE_2800G": ""
+        },
+        {
+          "TRIB_RATE_2850G": ""
+        },
+        {
+          "TRIB_RATE_2900G": ""
+        },
+        {
+          "TRIB_RATE_2950G": ""
+        },
+        {
+          "TRIB_RATE_3000G": ""
+        },
+        {
+          "TRIB_RATE_3050G": ""
+        },
+        {
+          "TRIB_RATE_3100G": ""
+        },
+        {
+          "TRIB_RATE_3150G": ""
+        },
+        {
+          "TRIB_RATE_3200G": ""
+        }
+      ],
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/trib-protocol",
+      "srlinux": "/terminal-device/logical-channels/channel/trib-protocol",
+      "mapping": [
+        {
+          "PROT_1GE": ""
+        },
+        {
+          "PROT_OC48": ""
+        },
+        {
+          "PROT_STM16": ""
+        },
+        {
+          "PROT_10GE_LAN": ""
+        },
+        {
+          "PROT_10GE_WAN": ""
+        },
+        {
+          "PROT_OC192": ""
+        },
+        {
+          "PROT_STM64": ""
+        },
+        {
+          "PROT_OTU2": ""
+        },
+        {
+          "PROT_OTU2E": ""
+        },
+        {
+          "PROT_OTU1E": ""
+        },
+        {
+          "PROT_ODU2": ""
+        },
+        {
+          "PROT_ODU2E": ""
+        },
+        {
+          "PROT_40GE": ""
+        },
+        {
+          "PROT_OC768": ""
+        },
+        {
+          "PROT_STM256": ""
+        },
+        {
+          "PROT_OTU3": ""
+        },
+        {
+          "PROT_ODU3": ""
+        },
+        {
+          "PROT_100GE": "trib-protocol-100GE"
+        },
+        {
+          "PROT_100G_MLG": ""
+        },
+        {
+          "PROT_OTU4": ""
+        },
+        {
+          "PROT_OTUCN": ""
+        },
+        {
+          "PROT_ODUCN": ""
+        },
+        {
+          "PROT_ODU4": ""
+        },
+        {
+          "PROT_400GE": "trib-protocol-400GE"
+        },
+        {
+          "PROT_800GE": ""
+        },
+        {
+          "PROT_OTSIG": ""
+        },
+        {
+          "PROT_ODUFLEX_CBR": ""
+        },
+        {
+          "PROT_FLEXO": ""
+        },
+        {
+          "PROT_ODUFLEX_GFP": ""
+        }
+      ],
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/logical-channel-type",
+      "srlinux": "/terminal-device/logical-channels/channel/logical-channel-type",
+      "mapping": [
+        {
+          "PROT_ETHERNET": "protocol-ethernet"
+        },
+        {
+          "PROT_OTN": "protocol-otn"
+        }
+      ],
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/loopback-mode",
+      "srlinux": "/terminal-device/logical-channels/channel/loopback-mode",
+      "mapping": [
+        {
+          "NONE": "none"
+        },
+        {
+          "FACILITY": "facility"
+        },
+        {
+          "TERMINAL": "terminal"
+        },
+        {
+          "ASIC_PHY_LOCAL": ""
+        },
+        {
+          "ASIC_PHY_REMOTE": ""
+        },
+        {
+          "ASIC_MAC_LOCAL": ""
+        },
+        {
+          "ASIC_MAC_REMOTE": ""
+        }
+      ],
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/test-signal",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/{config,state}/client-mapping-mode",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/state/link-state",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn",
+      "srlinux": "/terminal-device/logical-channels/channel/otn",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/config",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state",
+      "srlinux": ""
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/tti-msg-transmit",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/tti-msg-expected",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/tti-msg-auto",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/tributary-slot-granularity",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/tti-msg-recv",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/rdi-msg",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/errored-seconds",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/severely-errored-seconds",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/unavailable-seconds",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/code-violations",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/errored-blocks",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/fec-uncorrectable-words",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/fec-corrected-bytes",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/fec-corrected-bits",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/background-block-errors",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/fec-uncorrectable-blocks",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/fec-uncorrectable-blocks",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/pre-fec-ber",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber/instant",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/pre-fec-ber/current",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber/avg",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/pre-fec-ber/average",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber/min",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/pre-fec-ber/minimum",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber/max",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/pre-fec-ber/maximum",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber/interval",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/pre-fec-ber/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/post-fec-ber",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/q-value",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value/instant",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/q-value/current",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value/avg",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/q-value/average",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value/min",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/q-value/minimum",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value/max",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/q-value/maximum",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value/interval",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/q-value/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/electrical-signal-to-noise-ratio",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr/instant",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/electrical-signal-to-noise-ratio/current",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr/avg",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/electrical-signal-to-noise-ratio/average",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr/min",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/electrical-signal-to-noise-ratio/minimum",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr/max",
+      "srlinux": "/terminal-device/logical-channels/channel/otn/electrical-signal-to-noise-ratio/maximum",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr/interval",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr/min-time",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/otn/state/esnr/max-time",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/ethernet",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/ingress",
+      "srlinux": "/terminal-device/logical-channels/channel/ingress",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/ingress/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/ingress/{config,state}/transceiver",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/ingress/{config,state}/physical-channel",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/ingress/{config,state}/interface",
+      "srlinux": "/terminal-device/logical-channels/channel/ingress/interface",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments",
+      "srlinux": ""
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment",
+      "srlinux": "/terminal-device/logical-channels/channel/assignment",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/index",
+      "srlinux": "/terminal-device/logical-channels/channel/assignment/index",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}",
+      "srlinux": ""
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/index",
+      "srlinux": ""
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/description",
+      "srlinux": "/terminal-device/logical-channels/channel/assignment/description",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/assignment-type",
+      "srlinux": "/terminal-device/logical-channels/channel/assignment/assignment-type",
+      "mapping": [
+        {
+          "LOGICAL_CHANNEL": "logical-channel"
+        },
+        {
+          "OPTICAL_CHANNEL": "optical-channel"
+        }
+      ],
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/logical-channel",
+      "srlinux": "/terminal-device/logical-channels/channel/assignment/logical-channel",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/optical-channel",
+      "srlinux": "/terminal-device/logical-channels/channel/assignment/optical-channel",
+      "transform": "component-och-to-interface",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/allocation",
+      "srlinux": "/terminal-device/logical-channels/channel/assignment/allocation",
+      "feature-flagged": true
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/tributary-slot-index",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/logical-channels/channel/logical-channel-assignments/assignment/{config,state}/mapping",
+      "supported": false
+    },
+    {
+      "oc": "/terminal-device/operational-modes",
+      "supported": false
+    }
+  ]
+}

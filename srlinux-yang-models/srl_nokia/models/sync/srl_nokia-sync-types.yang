@@ -1,0 +1,310 @@
+module srl_nokia-sync-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:time:sync-types";
+  prefix srl_nokia-sync-types;
+
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines derived types for configuration and operational state data for sync
+     They are related to frequency and time management.";
+
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  typedef time-interval-type {
+    type int64;
+    description
+      "Time interval, expressed in nanoseconds, multiplied by 2^16";
+  }
+
+  typedef clock-identity-type {
+    type binary {
+      length "8";
+      srl_nokia-ext:output-flavor "hex";
+    }
+    description
+      "Identifies unique entities within a PTP Network
+       The identity is an 8-octet array, constructed according
+       to specifications in IEEE Std 1588";
+    reference
+      "IEEE Std 1588-2019: 5.3.4, 7.5.2.2";
+  }
+
+  typedef time-seconds-type {
+    type uint64 {
+      srl_nokia-ext:output-flavor "hex";
+    }
+    units "seconds";
+    description
+      "Identifies seconds number of the time";
+  }
+
+  typedef time-nanoseconds-type {
+    type uint32 {
+      srl_nokia-ext:output-flavor "hex";
+    }
+    units "nanoseconds";
+    description
+      "Identifies nanoseconds number of the time";
+  }
+
+  typedef port-state {
+    type enumeration {
+      enum initializing {
+        value 1;
+        description
+          "The port is initializing its data sets, hardware, and communication facilities";
+      }
+      enum faulty {
+        value 2;
+        description
+          "The port is in the fault state";
+      }
+      enum disabled {
+        value 3;
+        description
+          "The port is disabled and is not communicating PTP messages";
+      }
+      enum listening {
+        value 4;
+        description
+          "The port is listening for an Announce message";
+      }
+      enum pre-master {
+        value 5;
+        description
+          "The port is in the pre-master state";
+      }
+      enum master {
+        value 6;
+        description
+          "The port is behaving as a master port";
+      }
+      enum passive {
+        value 7;
+        description
+          "The port is in the passive state";
+      }
+      enum uncalibrated {
+        value 8;
+        description
+          "A master port has been selected, but the port is still in the uncalibrated state";
+      }
+      enum slave {
+        value 9;
+        description
+          "The port is synchronizing to the selected master port";
+      }
+    }
+    description
+      "The current state of the protocol engine associated with the port
+       Values for this enumeration are specified by the IEEE Std 1588 standard exclusively.";
+    reference
+      "IEEE Std 1588-2008: 8.2.5.3.1, 9.2.5";
+  }
+
+  typedef possible-ql-values {
+    type enumeration {
+      enum unknown {
+        value 0;
+        description
+          "Unknown";
+      }
+      enum prs {
+        value 1;
+        description
+          "QL of PRS";
+      }
+      enum stu {
+        value 2;
+        description
+          "QL of STU";
+      }
+      enum st2 {
+        value 3;
+        description
+          "QL of Stratum 2";
+      }
+      enum tnc {
+        value 4;
+        description
+          "QL of TNC";
+      }
+      enum st3e {
+        value 5;
+        description
+          "QL of Stratum 3E";
+      }
+      enum st3 {
+        value 6;
+        description
+          "QL of Stratum 3";
+      }
+      enum smc {
+        value 7;
+        description
+          "QL of SMC";
+      }
+      enum st4 {
+        value 8;
+        description
+          "QL of Stratum 4";
+      }
+      enum dus {
+        value 9;
+        description
+          "QL of DNU";
+      }
+      enum prc {
+        value 10;
+        description
+          "QL of PRC";
+      }
+      enum ssua {
+        value 11;
+        description
+          "QL of SSU-A";
+      }
+      enum ssub {
+        value 12;
+        description
+          "QL of SSU-B";
+      }
+      enum sec {
+        value 13;
+        description
+          "QL of SEC";
+      }
+      enum dnu {
+        value 14;
+        description
+          "QL of DNU";
+      }
+      enum inv {
+        value 15;
+        description
+          "QL of INV";
+      }
+      enum pno {
+        value 16;
+        description
+          "QL of PNO";
+      }
+      enum eec1 {
+        value 17;
+        description
+          "QL of EEC-1";
+      }
+      enum eec2 {
+        value 18;
+        description
+          "QL of EEC-2";
+      }
+      enum failed {
+        value 19;
+        description
+          "Failed";
+      }
+    }
+  }
+
+  typedef settable-ql-values {
+    type enumeration {
+      enum unused {
+        value 0;
+        description
+          "No override or minimum QL level selected";
+      }
+      enum prs {
+        value 1;
+        description
+          "QL of PRS";
+      }
+      enum stu {
+        value 2;
+        description
+          "QL of STU";
+      }
+      enum st2 {
+        value 3;
+        description
+          "QL of Stratum 2";
+      }
+      enum tnc {
+        value 4;
+        description
+          "QL of TNC";
+      }
+      enum st3e {
+        value 5;
+        description
+          "QL of Stratum 3E";
+      }
+      enum st3 {
+        value 6;
+        description
+          "QL of Stratum 3";
+      }
+      enum prc {
+        value 10;
+        description
+          "QL of PRC";
+      }
+      enum ssua {
+        value 11;
+        description
+          "QL of SSU-A";
+      }
+      enum ssub {
+        value 12;
+        description
+          "QL of SSU-B";
+      }
+      enum sec {
+        value 13;
+        description
+          "QL of SEC";
+      }
+      enum eec1 {
+        value 17;
+        description
+          "QL of EEC-1";
+      }
+      enum eec2 {
+        value 18;
+        description
+          "QL of EEC-2";
+      }
+    }
+  }
+}

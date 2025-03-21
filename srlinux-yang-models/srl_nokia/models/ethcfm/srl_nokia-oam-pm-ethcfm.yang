@@ -1,0 +1,198 @@
+module srl_nokia-oam-pm-ethcfm {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:ethcfm:oam-pm-ethcfm";
+  prefix srl_nokia-oam-pm-ethcfm;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+  import srl_nokia-oam-pm {
+    prefix srl_nokia-oam-pm;
+  }
+  import srl_nokia-oam-pm-types {
+    prefix srl_nokia-pm-types;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-ethcfm {
+    prefix srl_nokia-ethcfm;
+  }
+  import srl_nokia-ethcfm-types {
+    prefix srl_nokia-ethcfm-types;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG module contains the management data definitions for the
+     Ethernet CFM Performance Monitoring.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+
+  augment "/srl_nokia-oam:oam/srl_nokia-oam:performance-monitoring" {
+    if-feature "srl_nokia-feat:oam-pm and srl_nokia-feat:oam-pm-ethcfm";
+    container ethcfm {
+      presence "OAM Performance Monitoring using Ethernet CFM";
+      uses srl_nokia-oam-pm:oam-pm-resources;
+      container delay {
+        uses srl_nokia-oam-pm:bin-group;
+      }
+      list session {
+        key "session-name";
+        description
+          "Enter the session list instance which contains the test session configuration";
+        uses srl_nokia-oam-pm:session;
+        uses srl_nokia-oam-pm:measurement-interval;
+        container source {
+          leaf domain-id {
+            mandatory true;
+            type leafref {
+              path "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain/srl_nokia-ethcfm:domain-id";
+            }
+            description
+              "The maintenance domain identifier";
+          }
+          leaf association-id {
+            mandatory true;
+            type leafref {
+              path "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain[srl_nokia-ethcfm:domain-id=current()/../domain-id]/srl_nokia-ethcfm:association/srl_nokia-ethcfm:association-id";
+            }
+            description
+              "The maintenance association identifier specific to the domain identifier";
+          }
+          leaf mep-id {
+            mandatory true;
+            type leafref {
+              path "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain[srl_nokia-ethcfm:domain-id=current()/../domain-id]/srl_nokia-ethcfm:association[srl_nokia-ethcfm:association-id=current()/../association-id]/srl_nokia-ethcfm:mep/srl_nokia-ethcfm:mep-id";
+            }
+            description
+              "The MEP identifier specific to the domain and association identifier";
+          }
+        }
+        leaf target {
+          mandatory true;
+          type union {
+            type srl_nokia-comm:unicast-mac-address;
+            type srl_nokia-ethcfm-types:mep-id-type;
+          }
+          description
+            "Target MAC address or remote MEP ID for the test";
+        }
+        leaf priority {
+          type srl_nokia-ethcfm-types:priority-type;
+          default "7";
+          description
+            "The priority used when generating CFM test frames";
+        }
+        leaf forwarding-class {
+          if-feature "srl_nokia-feat:qos";
+          type leafref {
+            path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+          }
+          description
+            "The forwarding class
+
+             When value not specified, the sgt-qos value will be used";
+        }
+        leaf profile {
+          if-feature "srl_nokia-feat:qos";
+          type srl_nokia-comm:rewrite-profile;
+          description
+            "The profile or drop precedence
+
+             When value not specified, the sgt-qos value will be used";
+        }
+        container eth-cfm-single-ended-dmm-test {
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            srl_nokia-ext:show-importance "high";
+            default "disable";
+            description
+              "Administrative state of the single ended test";
+          }
+          uses srl_nokia-oam-pm:operational-states-errors;
+          uses srl_nokia-oam-pm:test-session;
+          leaf data-tlv-size {
+            type srl_nokia-pm-types:data-tlv-size;
+            default "0";
+            description
+              "The Data TLV byte count used to increase the size of the base CFM PDU
+
+               A value '0' means no Data TLV is added.  Any other value represents the size of the Data TLV.";
+          }
+          leaf interval {
+            type srl_nokia-pm-types:oam-pm-interval;
+            default "1s";
+            description
+              "The transmission rate of the CFM packets";
+          }
+          leaf bin-group {
+            srl_nokia-ext:show-importance "high";
+            type leafref {
+              path "../../../delay/bin-group/bin-group-name";
+            }
+            default "default";
+            description
+              "Reference the bin group to be used for this session
+
+               If not specified the 'default' bin-group will be used";
+          }
+          uses srl_nokia-oam-pm:bin-group-state;
+          list measurement-result {
+            config false;
+            description
+              "The test statistics for a delay measurement";
+            key "mi-ro-type";
+            leaf mi-ro-type {
+              type srl_nokia-pm-types:measurement-interval-ro-duration-type;
+              description
+                "The duration of the measurement interval";
+            }
+            uses srl_nokia-oam-pm:measurement-interval-index-tracking;
+            list index {
+              key "index";
+              leaf index {
+                type uint32;
+                description
+                  "Measurement interval unique identifier";
+              }
+              uses srl_nokia-oam-pm:mi-common-state;
+              container statistics {
+                uses srl_nokia-oam-pm:mi-delay-statistics;
+              }
+            }
+          }
+          uses srl_nokia-oam-pm:delay-events-state;
+        }
+      }
+    }
+  }
+}

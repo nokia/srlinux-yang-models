@@ -1,0 +1,444 @@
+module srl_nokia-terminal-device {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:terminal-device";
+  prefix srl_nokia-term-dev;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for tracking logical channels constructs from openconfig
+
+     This model exists solely to support the logical channels model from openconfig and how it relates to the interfaces transceiver and dco attributes.
+     The important part of this model is the association of the logical channels to the correct interface attributes.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+
+  typedef transceiver-admin-state {
+    type enumeration {
+      enum enable {
+        description
+          "Sets the channel admin state to enabled";
+      }
+      enum disable {
+        description
+          "Sets the channel admin state to disabled";
+      }
+      enum maintenance {
+        description
+          "Sets the channel to maintenance / diagnostic mode";
+      }
+    }
+    description
+      "Administrative state modes for logical channels in the transceiver model.";
+  }
+
+  typedef terminal-dev-loopback-mode-type {
+    type enumeration {
+      enum none {
+        description
+          "No loopback is applied";
+      }
+      enum facility {
+        description
+          "A loopback which directs traffic normally transmitted
+           on the port back to the device as if received on the same
+           port from an external source.";
+      }
+      enum terminal {
+        description
+          "A loopback which directs traffic received from an external
+           source on the port back out the transmit side of the same
+           port.";
+      }
+    }
+    default "none";
+    description
+      "Loopback modes for transponder logical channels";
+  }
+
+  identity tributary-rate-class-type {
+    description
+      "Rate of tributary signal _- identities will typically reflect rounded bit rate.";
+  }
+
+  identity trib-rate-100G {
+    base tributary-rate-class-type;
+    description
+      "100G tributary signal rate";
+  }
+
+  identity trib-rate-200G {
+    base tributary-rate-class-type;
+    description
+      "200G tributary signal rate";
+  }
+
+  identity trib-rate-300G {
+    base tributary-rate-class-type;
+    description
+      "300G tributary signal rate";
+  }
+
+  identity trib-rate-400G {
+    base tributary-rate-class-type;
+    description
+      "400G tributary signal rate";
+  }
+
+  identity tributary-protocol-type {
+    description
+      "Base identity for protocol framing used by tributary signals";
+  }
+
+  identity trib-protocol-100GE {
+    base tributary-protocol-type;
+    description
+      "100G Ethernet protocol";
+  }
+
+  identity trib-protocol-400GE {
+    base tributary-protocol-type;
+    description
+      "400G Ethernet protocol";
+  }
+
+  identity logical-element-protocol-type {
+    description
+      "Type of protocol framing used on the logical channel or
+       tributary";
+  }
+
+  identity protocol-ethernet {
+    base logical-element-protocol-type;
+    description
+      "Ethernet protocol framing";
+  }
+
+  identity protocol-otn {
+    base logical-element-protocol-type;
+    description
+      "OTN protocol framing
+
+       Used for the media side of 400G ZR / ZR+ optics even though they are not OTN structure";
+  }
+
+  grouping logical-channel-stats {
+    srl_nokia-ext:stream-mode "sample=5";
+    description
+      "Statistics related to OTN logical channel";
+    leaf fec-uncorrectable-blocks {
+      type srl_nokia-comm:counter64;
+      description
+        "The number of blocks or frames that were uncorrectable by the FEC";
+    }
+    container pre-fec-ber {
+      description
+        "Bit error rate before forward error correction
+
+         Note that decimal64 supports values as small as i x 10^-18 where i is an
+         integer. Values smaller than this should be reported as 0
+         to indicate error free or near error free performance.";
+      leaf current {
+        type decimal64 {
+          fraction-digits 18;
+        }
+        description
+          "Current BER received on the optical channel";
+      }
+      leaf average {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 18;
+        }
+        description
+          "Average BER received on the optical channel";
+      }
+      leaf minimum {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 18;
+        }
+        description
+          "Minimum BER received on the optical channel";
+      }
+      leaf maximum {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 18;
+        }
+        description
+          "Maximum BER received on the optical channel";
+      }
+    }
+    container q-value {
+      description
+        "Quality value (factor) in dB of a channel";
+      leaf current {
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Current q-value";
+      }
+      leaf average {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Average q-value since the last port statistics clear";
+      }
+      leaf minimum {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Minimum q-value since the last port statistics clear";
+      }
+      leaf maximum {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Maximum q-value since the last port statistics clear";
+      }
+    }
+    container electrical-signal-to-noise-ratio {
+      description
+        "Electrical signal to noise ratio";
+      leaf current {
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Current esnr";
+      }
+      leaf average {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Average esnr since the last port statistics clear";
+      }
+      leaf minimum {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Minimum esnr since the last port statistics clear";
+      }
+      leaf maximum {
+        if-feature "srl_nokia-feat:dco-stats-avg-min-max";
+        type decimal64 {
+          fraction-digits 2;
+        }
+        units "decibel";
+        description
+          "Maximum esnr since the last port statistics clear";
+      }
+    }
+  }
+
+  grouping terminal-logical-channel-top {
+    description
+      "Top-level grouping for logical channels
+
+       Logical channels were created within the openconfig model the complexities of multiplexing client signals into optical channels across an optical switch.
+       This could include many layers of lower level ODU containers mapping into higher level ODU containers and then eventually into an OTU and then an optical channel
+       As the industry was familiar with using these logical channels for optics, the logical channels were applied to the management of digital-coherent-optic transceivers inside routers even though there is a much more straightforward mapping involved.
+       This logical channel model is included in Nokia SRL YANG to facilitate support of the openconfig management";
+    container logical-channels {
+      description
+        "Enclosing container for the list of logical channels";
+      list channel {
+        key "index";
+        description
+          "List of logical channels";
+        leaf index {
+          type uint32;
+          description
+            "Index of the current logical channel";
+        }
+        leaf description {
+          type string;
+          description
+            "Description of the logical channel";
+        }
+        leaf admin-state {
+          type transceiver-admin-state;
+          description
+            "Sets the admin state of the logical channel";
+        }
+        leaf rate-class {
+          type identityref {
+            base tributary-rate-class-type;
+          }
+          description
+            "Rounded bit rate of the tributary signal";
+        }
+        leaf trib-protocol {
+          type identityref {
+            base tributary-protocol-type;
+          }
+          description
+            "Protocol framing of the tributary signal
+
+             Only 100G and 400G are supported.";
+        }
+        leaf logical-channel-type {
+          type identityref {
+            base logical-element-protocol-type;
+          }
+          description
+            "OTN (media if) or ethernet (host if)";
+        }
+        leaf loopback-mode {
+          if-feature "srl_nokia-feat:dco-loopback";
+          type terminal-dev-loopback-mode-type;
+          description
+            "Sets the loopback type on the logical channel
+
+             Setting the mode to something besides NONE activates the loopback in the specified mode.";
+        }
+        container ingress {
+          leaf interface {
+            must '(../../logical-channel-type = "protocol-ethernet")' {
+              error-message "Ingress interface only valid for Ethernet logical channels";
+            }
+            type leafref {
+              path "/srl_nokia-if:interface/srl_nokia-if:name";
+            }
+            description
+              "Reference to the interface carrying the input signal
+               for the logical channel. The ingress will specify an interface
+               in the case of a transceiver being utilized directly in a
+               router and bypassing a dedicated terminal device. When
+               specified, the other leaves in the ingress config must be
+               empty.";
+          }
+        }
+        list assignment {
+          key "index";
+          max-elements 5;
+          description
+            "Logical channel assignments
+
+             Within an optical switch of an optical network, there can be quite complex associations between logical channels at various stages of the multiplexing.
+             However, within SRLinux, logical channels are only used for digital-coherent-optic transceivers that have a much simpler mapping
+             This list is mainly for a mapping of the chain of logical elements from the host Ethernet interfaces across the transceiver to the media interface.
+             Linkage may be specified in both the output (host interface to media interface) and input (media interface to host interface) directions.
+             For logical channels of type Ethernet, this assignment allows the configuration of the mapping to an interface and to the OTN logical channel on the media side of the transceiver.
+             For logical channels of type OTN, this assignment allows the configuration of the mapping to an optical channel and to ethernet logical channels.";
+          leaf index {
+            type uint32;
+            description
+              "Index of the current logical client channel to tributary mapping
+
+               Up to five assignments can be applied to one logical-channel";
+          }
+          leaf description {
+            type string;
+            description
+              "Name assigned to the logical client channel";
+          }
+          leaf assignment-type {
+            type enumeration {
+              enum logical-channel {
+                description
+                  "Subsequent channel is a logical channel";
+              }
+              enum optical-channel {
+                description
+                  "Subsequent channel is a optical channel / carrier";
+              }
+            }
+            description
+              "Indicates what type of assignment is applied to the logical channel";
+          }
+          leaf logical-channel {
+            type leafref {
+              path "/terminal-device/logical-channels/channel/index";
+            }
+            must "../assignment-type = 'logical-channel'" {
+              error-message "assignment-type must be set to logical-channel";
+            }
+            description
+              "Reference to another stage of logical channel elements.";
+          }
+          leaf optical-channel {
+            type leafref {
+              path "/srl_nokia-if:interface/srl_nokia-if:name";
+            }
+            must "../assignment-type = 'optical-channel'" {
+              error-message "assignment-type must be set to optical-channel";
+            }
+            must '/srl_nokia-if:interface[srl_nokia-if:name=current()]/srl_nokia-if:transceiver/optical-channel[index=1] = true()' {
+              error-message "interface must have transceiver optical-channel configured";
+            }
+            description
+              "Reference to the line-side optical channel that carries the current logical channel element
+
+               Configuring this leaf also populates the interface/transceiver/optical-channel/logical-channel for reverse reference.";
+          }
+          leaf allocation {
+            type decimal64 {
+              fraction-digits 3;
+            }
+            units "Gbps";
+            description
+              "Allocation of the logical client channel to the tributary or sub-channel, expressed in Gbps";
+          }
+        }
+        container otn {
+          config false;
+          uses logical-channel-stats;
+        }
+      }
+    }
+  }
+
+  grouping terminal-device-top {
+    container terminal-device {
+      if-feature "srl_nokia-feat:dco-logical-channels";
+      description
+        "Top-level container for the terminal device";
+      uses terminal-logical-channel-top;
+    }
+  }
+
+  uses terminal-device-top;
+}

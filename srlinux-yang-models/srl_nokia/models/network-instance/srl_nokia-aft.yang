@@ -1,0 +1,283 @@
+module srl_nokia-aft {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:fib:aft";
+  prefix srl_nokia-aft;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-ip-route-tables {
+    prefix srl_nokia-rt;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "A telemetry optimized model of forwarding table objects.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  typedef encapsulation-header-type {
+    type enumeration {
+      enum none {
+        description
+          "There is no encapsulation header";
+      }
+      enum gre {
+        description
+          "The encapsulation header is a Generic Routing Encapsulation header";
+      }
+      enum ipv4 {
+        description
+          "The encapsulation header is an IPv4 packet header";
+      }
+      enum ipv6 {
+        description
+          "The encapsulation header is an IPv6 packet header";
+      }
+      enum mpls {
+        description
+          "The encapsulation header is one or more MPLS labels";
+      }
+      enum vxlan {
+        description
+          "The encapsulation header is a VXLAN packet header";
+      }
+    }
+    description
+      "Types of tunnel encapsulation that are supported by systems as either head- or tail-end";
+  }
+
+  grouping traffic-statistics {
+    container counters {
+      srl_nokia-ext:telemetry-atomic "false";
+      description
+        "Packet forwarding counters";
+      leaf resource-allocation-failed {
+        type boolean;
+        description
+          "True when an available statistics resource was not available for this forwarding object";
+      }
+      leaf packets-forwarded {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of packets forwarded";
+      }
+      leaf octets-forwarded {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "The number of octets in the packets that were forwarded";
+      }
+    }
+  }
+
+  grouping aft-ipv4-unicast {
+    container ipv4-unicast {
+      description
+        "The abstract forwarding table for IPv4 unicast
+
+         Entries within this table are uniquely keyed on the IPv4 unicast destination prefix which is matched by ingress
+         packets. The data set represented by the IPv4 Unicast AFT is the set of entries from the IPv4 unicast RIB that
+         have been selected for installation into the FIB of the device exporting the data structure.";
+      list ipv4-entry {
+        srl_nokia-ext:telemetry-atomic "true";
+        key "prefix";
+        description
+          "List of the IPv4 unicast entries within the abstract forwarding table";
+        leaf prefix {
+          type srl_nokia-comm:ipv4-prefix;
+          description
+            "The IPv4 destination prefix that should be matched to utilise the AFT entry";
+        }
+        leaf entry-metadata {
+          type binary {
+            length "0..8";
+          }
+          description
+            "Metadata persistently stored with the entry";
+        }
+        leaf origin-protocol {
+          type identityref {
+            base srl_nokia-comm:ip-route-type;
+          }
+          description
+            "The protocol that submitted the route for the IPv4 prefix";
+        }
+        leaf next-hop-group {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table/srl_nokia-rt:next-hop-group/srl_nokia-rt:index";
+          }
+          description
+            "A reference to the next-hop-group that is used for the entry";
+        }
+        leaf next-hop-group-network-instance {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "The network instance associated with the next-hop-group
+
+             If unspecified, the next hop group is in the local network instance.";
+        }
+        leaf origin-network-instance {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "The network-instance from which the IPv4 entry was learned if it was leaked from another network-instance
+
+             If unspecified, the IPv4 entry was not leaked";
+        }
+        uses traffic-statistics;
+      }
+    }
+  }
+
+  grouping aft-ipv6-unicast {
+    container ipv6-unicast {
+      description
+        "The abstract forwarding table for IPv6 unicast
+
+         Entries within this table are uniquely keyed on the IPv6 unicast destination prefix which is matched by ingress
+         packets. The data set represented by the IPv6 Unicast AFT is the set of entries from the IPv6 unicast RIB that
+         have been selected for installation into the FIB of the device exporting the data structure.";
+      list ipv6-entry {
+        srl_nokia-ext:telemetry-atomic "true";
+        key "prefix";
+        description
+          "List of the IPv6 unicast entries within the abstract forwarding table";
+        leaf prefix {
+          type srl_nokia-comm:ipv6-prefix;
+          description
+            "The IPv6 destination prefix that should be matched to utilise the AFT entry";
+        }
+        leaf entry-metadata {
+          type binary {
+            length "0..8";
+          }
+          description
+            "Metadata persistently stored with the entry";
+        }
+        leaf origin-protocol {
+          type identityref {
+            base srl_nokia-comm:ip-route-type;
+          }
+          description
+            "The protocol that submitted the route for the IPv6 prefix";
+        }
+        leaf next-hop-group {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table/srl_nokia-rt:next-hop-group/srl_nokia-rt:index";
+          }
+          description
+            "A reference to the next-hop-group that is used for the entry";
+        }
+        leaf next-hop-group-network-instance {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "The network instance associated with the next-hop-group
+
+             If unspecified, the next hop group is in the local network instance.";
+        }
+        leaf origin-network-instance {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "The network-instance from which the IPv6 entry was learned if it was leaked from another network-instance
+
+             If unspecified, the IPv6 entry was not leaked";
+        }
+      }
+    }
+  }
+
+  grouping aft-next-hop-groups {
+    list next-hop-group {
+      srl_nokia-ext:telemetry-atomic "true";
+      key "id";
+      description
+        "An individual set of next-hops grouped into a common group
+
+         Each entry within an abstract forwarding table points to a next-hop-group. Traffic is forwarded to the
+         next-hops in the next-hop-group according to the weights specified.";
+      leaf id {
+        type uint64;
+        description
+          "A unique identifier for the next-hop-group
+
+           This index is not expected to be consistent across reboots, or reprogramming of the next-hop-group.";
+      }
+      leaf programmed-id {
+        type uint64;
+        description
+          "The ID of the next-hop group as provided by the original programming mechanism (for example gRIBI)";
+      }
+      leaf backup-next-hop-group {
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table/srl_nokia-rt:next-hop-group/srl_nokia-rt:index";
+        }
+        description
+          "The backup next-hop-group for the current group";
+      }
+      list next-hop {
+        key "index";
+        description
+          "An individual next-hop within the next-hop-group
+
+           Each next-hop is a reference to an entry within the next-hop list.";
+        leaf index {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:route-table/srl_nokia-rt:next-hop/srl_nokia-rt:index";
+          }
+          description
+            "A reference to the identifier for the next-hop to which the entry in the next-hop group corresponds";
+        }
+        leaf weight {
+          type uint64;
+          description
+            "The weight applied to the next-hop within the group";
+        }
+      }
+    }
+  }
+
+  grouping aft-top {
+    description
+      "Top-level grouping";
+    container afts {
+      config false;
+      description
+        "The abstract forwarding tables (AFTs) that are associated with the network instance";
+      uses aft-next-hop-groups;
+      uses aft-ipv4-unicast;
+      uses aft-ipv6-unicast;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses aft-top;
+  }
+}

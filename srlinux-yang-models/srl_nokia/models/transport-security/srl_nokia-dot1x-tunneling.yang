@@ -1,0 +1,160 @@
+module srl_nokia-dot1x-tunneling {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:dot1x-tunneling";
+  prefix srl_nokia-dot1x-tunneling;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-dot1x {
+    prefix srl_nokia-dot1x;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module models dot1x tunneling under an interface";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping dot1x-tunneling-statistics {
+    description
+      "Grouping for dot1x tunneling statistics";
+    leaf in-tunneled-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "System or interface level incoming 802.1x tunneled frames
+
+         Cumulative of all Ethernet interfaces including all the tunneled 802.1x frames.
+         802.1x frames are identified by a destination MAC value of 01:80:c2:00:00:03 and EtherType value of 0x888e.";
+    }
+    leaf in-trap-to-cpu-packets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "System or interface level incoming 802.1x frames copied to CPU
+
+         Cumulative of all Ethernet interfaces including all the copy-to-cpu 802.1x frames.
+         802.1x frames are identified by a destination MAC value of 01:80:c2:00:00:03 and EtherType value of 0x888e.";
+    }
+    leaf last-clear {
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Timestamp of the last time the 802.1x counters were cleared";
+    }
+  }
+
+  grouping dot1x-tunneling-interface-statistics {
+    description
+      "Grouping for interface dot1x tunneling statistics";
+    container statistics {
+      description
+        "Enclosing container for interface dot1x tunneling statistics";
+      if-feature "srl_nokia-feat:dot1x-interface-stats";
+      config false;
+      uses dot1x-tunneling-statistics;
+    }
+  }
+
+  grouping dot1x-tunneling-top {
+    description
+      "Grouping for dot1x tunneling
+
+       By default all dot1x packets on this interface is extracted to CPM.
+       Note this configuration can be overwritten by l2cp-transparency.
+       If l2cp-transparency tunnel-all-l2cp is enabled setting the dot1x-tunneling to false will be overwritten.";
+    container tunnel {
+      description
+        "Enclosing container for dot1x tunneling";
+      if-feature "srl_nokia-feat:dot1x-tunnel";
+      leaf tunnel-all {
+        if-feature "not srl_nokia-feat:dot1x-tunnel-detail";
+        description
+          "tunnel all dot1x PDUs through the interface
+
+           tunnel untagged and tagged dot1x PDUs.";
+        type boolean;
+        default "false";
+      }
+      leaf untagged {
+        if-feature "srl_nokia-feat:dot1x-tunnel-detail";
+        description
+          "tunnel untagged dot1x PDUs through the interface";
+        type boolean;
+        default "false";
+      }
+      leaf single-tagged {
+        if-feature "srl_nokia-feat:dot1x-tunnel-detail";
+        description
+          "tunnel single tagged dot1x PDUs through the interface";
+        type boolean;
+        default "true";
+      }
+      leaf double-tagged {
+        if-feature "srl_nokia-feat:dot1x-tunnel-detail";
+        description
+          "tunnel double tagged dot1x PDUs through the interface";
+        type boolean;
+        default "true";
+      }
+      leaf oper-rule {
+        description
+          "The operational state of the TCAM rule applied to ingress dot1x frames";
+        config false;
+        srl_nokia-ext:show-importance "high";
+        type srl_nokia-comm:l2cp-oper-rule-state;
+      }
+      uses dot1x-tunneling-interface-statistics;
+    }
+  }
+
+  grouping system-dot1x-tunnel-statistics {
+    description
+      "Grouping for system dot1x tunneling statistics";
+    container statistics {
+      if-feature "srl_nokia-feat:dot1x-tunnel-system-stats";
+      description
+        "Enclosing container for system dot1x tunneling statistics";
+      config false;
+      uses dot1x-tunneling-statistics;
+    }
+  }
+
+  grouping system-dot1x-tunnel {
+    description
+      "Grouping for system dot1x tunneling";
+    container tunnel {
+      description
+        "Enclosing container for system dot1x tunneling";
+      config false;
+      uses system-dot1x-tunnel-statistics;
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:ethernet/srl_nokia-dot1x:dot1x" {
+    if-feature "srl_nokia-feat:dot1x-tunnel";
+    uses dot1x-tunneling-top;
+  }
+
+  augment "/srl_nokia-system:system/srl_nokia-dot1x:dot1x" {
+    if-feature "srl_nokia-feat:dot1x-tunnel";
+    uses system-dot1x-tunnel;
+  }
+}

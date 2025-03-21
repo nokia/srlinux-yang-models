@@ -1,0 +1,88 @@
+module srl_nokia-interfaces-ip-dhcp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:interfaces-ip-dhcp";
+  prefix srl_nokia-if-ip-dhcp;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing DHCP and DHCPv6 on IP subinterfaces";
+
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping subinterface-dhcpv4 {
+    container dhcp-client {
+      presence "The subinterface attempts to obtain its IPv4 address and prefix using DHCP";
+      description
+        "Container for options related to DHCP";
+      must "(../../../srl_nokia-if:name = 'mgmt0' and ../../srl_nokia-if:index = 0) or starts-with(../../../srl_nokia-if:name, 'ethernet')" {
+        error-message "dhcp-client not configurable on this subinterface";
+      }
+      container trace-options {
+        description
+          "Container for tracing DHCPv4 operations on the subinterface";
+        leaf-list trace {
+          type enumeration {
+            enum messages {
+              description
+                "Capture all DHCPv4 messages sent and received by the subinterface";
+            }
+          }
+          description
+            "List of events to trace";
+        }
+      }
+    }
+  }
+
+  grouping subinterface-dhcpv6 {
+    container dhcp-client {
+      presence "The subinterface attempts to obtain its IPv6 address using DHCPv6";
+      description
+        "Container for options related to DHCPv6";
+      must "(../../../srl_nokia-if:name = 'mgmt0' and ../../srl_nokia-if:index = 0) or starts-with(../../../srl_nokia-if:name, 'ethernet')" {
+        error-message "dhcp-client not configurable on this subinterface";
+      }
+      container trace-options {
+        description
+          "Container for tracing DHCPv6 operations on the subinterface";
+        leaf-list trace {
+          type enumeration {
+            enum messages {
+              description
+                "Capture all DHCPv6 messages sent and received by the subinterface";
+            }
+          }
+          description
+            "List of events to trace";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv4" {
+    uses subinterface-dhcpv4;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv6" {
+    uses subinterface-dhcpv6;
+  }
+}

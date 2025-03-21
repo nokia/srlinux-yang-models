@@ -1,0 +1,142 @@
+module srl_nokia-stp-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:stp:stp-types";
+  prefix srl_nokia-stp-types;
+
+  import openconfig-spanning-tree-types {
+    prefix oc-stp-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file contains common STP and MLD types and identities";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  typedef bridge-priority-type {
+    type oc-stp-types:stp-bridge-priority-type;
+    description
+      "Priority component of the Bridge Identifier
+
+       The bridge-priority command is used to populate the priority portion
+       of the bridge ID field within outbound BPDUs (the most significant 4
+       bits of the bridge ID). It is also used as part of the decision process
+       when determining the best BPDU between messages received and sent.
+       When running MSTP, this is the bridge priority used for the CIST.
+
+       All values are truncated to multiples of 4096";
+  }
+
+  typedef protocol-mode-type {
+    type enumeration {
+      enum rstp;
+      enum mstp;
+    }
+    description
+      "Protocol Mode defined by standard
+
+       Following variants of the Spanning Tree protocol are supported:
+       rstp
+       Rapid Spanning Tree Protocol (RSTP) compliant with IEEE 802.1D-2004.
+       mstp
+       Compliant with the Multiple Spanning Tree Protocol specified in
+       IEEE 802.1Q REV/D5.0-09/2005.";
+  }
+
+  typedef path-cost-type {
+    type uint32 {
+      range "1..65535";
+    }
+    description
+      "The interface path-cost is used by STP to calculate the path cost to the root bridge
+
+       STP defined this as a function of link bandwidth
+       but this configuration is static.";
+  }
+
+  typedef port-priority-type {
+    type oc-stp-types:stp-port-priority-type;
+    description
+      "The priority portion of the port identifier within outbound BPDUs
+
+       It is the most significant 4 bits of the bridge ID. It is used as part of the decision process
+       when determining the best BPDU between messages received and sent.
+       When running MSTP, this is the bridge priority used for the CIST.
+       All values are truncated to multiples of 4096, conforming with
+       IEEE 802.1t and 802.1D-2004.";
+  }
+
+  typedef port-num-type {
+    type uint32 {
+      range "1..2047";
+    }
+    description
+      "The virtual port number uniquely identifies subinterface within configuration BPDUs
+
+       The internal representation is unique to a system
+       and has a reference space much bigger than the 12 bits definable in a
+       configuration BPDU. STP takes the internal representation value and
+       identifies it with its own virtual port number that is unique to every
+       other subinterface defined on the Mac-Vrf. The virtual port number is
+       assigned at the time that the subinterface is added to the Mac-Vrf.
+       The virtual port number can be specified explicitly or system generated";
+  }
+
+  grouping stp-edge-port {
+    leaf edge-port {
+      type identityref {
+        base oc-stp-types:STP_EDGE_PORT;
+      }
+      default "oc-stp-types:EDGE_DISABLE";
+      description
+        "Modes of Edge-Port";
+    }
+  }
+
+  typedef link-type-type {
+    type oc-stp-types:stp-link-type;
+    description
+      "Interface's link type";
+  }
+
+  typedef guard-type {
+    type oc-stp-types:stp-guard-type;
+    description
+      "Type of Guard either Root or Loop";
+  }
+
+  identity DISCARDING {
+    base oc-stp-types:STP_PORT_STATE;
+    description
+      "Receiving and discarding data";
+  }
+
+  typedef port-state-type {
+    type identityref {
+      base oc-stp-types:STP_PORT_STATE;
+    }
+    description
+      "Stp state of Port";
+  }
+
+  identity DISABLED {
+    base oc-stp-types:STP_PORT_ROLE;
+    description
+      "Disabled Port";
+  }
+
+  typedef port-role-type {
+    type identityref {
+      base oc-stp-types:STP_PORT_ROLE;
+    }
+    description
+      "Stp port role";
+  }
+}

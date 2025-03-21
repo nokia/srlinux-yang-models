@@ -1,0 +1,1863 @@
+module srl_nokia-acl {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:acl:acl";
+  prefix srl_nokia-acl;
+
+  import srl_nokia-packet-match-types {
+    prefix srl_nokia-pkt-match-types;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data for access control lists (ACLs) and related objects.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping interface-filter-entry-tcam {
+    container tcam-entries {
+      description
+        "Information about the TCAM entries used to implement the ACL entry";
+      config false;
+      list forwarding-complex {
+        description
+          "List of forwarding complexes in the system";
+        key "complex-identifier";
+        leaf complex-identifier {
+          description
+            "A forwarding complex in the format (slot-number,complex-number).";
+          type string;
+        }
+        leaf single-instance {
+          type uint16;
+          description
+            "The number of TCAM entries required to implement this entry if it is applied to only one subinterface and one traffic direction specific to this slot.
+
+             This is non-zero even if the filter is not applied to any subinterfaces of this complex. It captures the effect of TCAM entry expansion to deal with L4 port or VLAN ranges, for example.";
+        }
+        leaf input-total {
+          if-feature "not srl_nokia-feat:fpcx";
+          type uint16;
+          description
+            "The number of TCAM entries required to implement this entry on all subinterfaces of this complex where the filter is applied to ingress traffic.
+
+             For example, if a single-instance of the entry takes 2 TCAM entries and the filter is an output-only subinterface-specific filter and the filter is applied to 5 subinterfaces on output and to 5 subinterfaces on input then input-total=2. If the entry is not applied to ingress traffic on any subinterfaces of this complex then input-total=0.";
+        }
+        leaf output-total {
+          if-feature "not srl_nokia-feat:fpcx";
+          type uint16;
+          description
+            "The number of TCAM entries required to implement this entry on all subinterfaces of this complex where the filter is applied to egress traffic.
+
+             For example, if a single-instance of the entry takes 2 TCAM entries and the filter is an output-only subinterface-specific filter and the filter is applied to 5 subinterfaces on output and to 5 subinterfaces on input then output-total=10. If the entry is not applied to egress traffic on any subinterfaces of this complex then output-total=0.";
+        }
+      }
+    }
+  }
+
+  grouping policer-stats {
+    leaf conforming-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered conforming by the policer";
+    }
+    leaf conforming-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered conforming by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+    leaf exceeding-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered exceeding by the policer";
+    }
+    leaf exceeding-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered exceeding by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+  }
+
+  grouping policer-stats-input-output {
+    leaf in-conforming-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered conforming by the policer";
+    }
+    leaf in-conforming-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered conforming by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+    leaf in-exceeding-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered exceeding by the policer";
+    }
+    leaf in-exceeding-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered exceeding by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+    leaf out-conforming-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered conforming by the policer";
+    }
+    leaf out-conforming-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered conforming by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+    leaf out-exceeding-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered exceeding by the policer";
+    }
+    leaf out-exceeding-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered exceeding by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+  }
+
+  grouping acl-policers-top {
+    container policers {
+      description
+        "Container for policer definitions used by ACL entries";
+      list system-cpu-policer {
+        description
+          "List of system CPU policer templates. For each policer in this list one or more policer instances are implemented in the XDP-CPM software and these policer instances process the aggregate of terminating traffic received from all linecards.";
+        key "name";
+        leaf name {
+          description
+            "User-defined name of the policer";
+          type srl_nokia-comm:name;
+        }
+        leaf entry-specific {
+          description
+            "If set to false, only one policer instance is created from this template and it is shared by all entries of all cpm-filter ACLs that refer to this policer.
+
+             If set to true, multiple policer instances are created from this template, one for each cpm-filter entry that refers to the policer template.";
+          type boolean;
+          default "false";
+        }
+        leaf peak-rate-pps {
+          type uint32 {
+            range "1.. 4000000";
+          }
+          description
+            "The maximum number of packets per second (bucket empty/fill rate)";
+        }
+        leaf maximum-burst-packet {
+          type uint32 {
+            range "16.. 4000000";
+          }
+          default "16";
+          description
+            "The maximum depth of the policer bucket in number of packets";
+        }
+        container statistics {
+          srl_nokia-ext:delivery-node-override "true";
+          config false;
+          description
+            "Container for system CPU policer statistics
+
+             None of these statistics are populated if the policer is configured as entry-specific=true.";
+          uses policer-stats;
+          leaf last-clear {
+            type srl_nokia-comm:date-and-time-delta;
+            description
+              "Time of the last clear command that applied to these statistics";
+          }
+        }
+      }
+      list policer {
+        if-feature "srl_nokia-feat:acl-policer";
+        description
+          "List of policer templates used in subintreface and CPM Filter ACL.";
+        key "name";
+        leaf name {
+          description
+            "User-defined name of the policer";
+          type srl_nokia-comm:name;
+        }
+        leaf entry-specific {
+          if-feature "not srl_nokia-feat:fpcx";
+          type boolean;
+          default "false";
+          description
+            "Controls the instantiation of the policer between filter entries
+
+             false: one policer instance is created from this template and it is shared by all entries of in the same ACL filter that refer to this policer
+
+             true: multiple policer instances are created from this template, one for each ACL filter entry that refers to this policer";
+        }
+        leaf scope {
+          if-feature "srl_nokia-feat:subif-acl-policer";
+          type enumeration {
+            enum global {
+              value 1;
+            }
+            enum subinterface {
+              value 2;
+            }
+          }
+          default "global";
+          description
+            "Controls the instantiation of the policer between subinterfaces
+
+             global: policer is instantiated per direction and shared between ACL, requires filter subinterface-specific disabled
+
+             subinterface: policer is instantiated per subinterface and per direction, requires filter subinterface-specific input-and-ouput";
+        }
+        choice rate-parameters {
+          description
+            "Select between bit rate and packet rate policers.";
+          case rate-bps {
+            description
+              "Rate-based rate limit configuration.";
+            leaf peak-rate-kbps {
+              type uint32 {
+                range "1..800000000";
+              }
+              units "kbps";
+              description
+                "The peak information rate (PIR) in kbps (bucket empty/fill rate).";
+            }
+            leaf maximum-burst-size {
+              type uint32 {
+                range "1..125000000";
+              }
+              units "bytes";
+              description
+                "The MBS bucket depth in bytes";
+            }
+          }
+          case rate-pps {
+            if-feature "srl_nokia-feat:acl-pps-policer";
+            description
+              "Packet-based rate limit configuration.";
+            leaf peak-rate-pps {
+              type uint32 {
+                range "1.. 4000000";
+              }
+              description
+                "The maximum number of packets per second (bucket empty/fill rate)";
+            }
+            leaf maximum-burst-packet {
+              type uint32 {
+                range "16.. 4000000";
+              }
+              default "16";
+              description
+                "The maximum depth of the policer bucket in number of packets";
+            }
+            leaf committed-rate-pps {
+              type uint32 {
+                range "1.. 4000000";
+              }
+              description
+                "The committed number of packets per second";
+            }
+            leaf committed-burst-packet {
+              type uint32 {
+                range "16.. 4000000";
+              }
+              default "16";
+              description
+                "The committed depth of the policer bucket in number of packets";
+            }
+          }
+        }
+        container statistics {
+          config false;
+          description
+            "Container for linecard policer statistics.";
+          container aggregate {
+            srl_nokia-ext:delivery-node-override "true";
+            leaf last-clear {
+              type srl_nokia-comm:date-and-time-delta;
+              description
+                "Time of the last clear command that applied to these statistics";
+            }
+            description
+              "None of these statistics are populated if the policer is configured as entry-specific=true.
+
+                   If entry-specific=false and subinterface-specific=true, this is sum of all the entries and all the policer templates instantiated for all subintrefaces.
+
+                   If entry-specific=false and subinterface-specific=false, this is sum of all the entries using this policer template.";
+            uses policer-stats;
+          }
+        }
+      }
+    }
+  }
+
+  grouping datapath-programming {
+    container datapath-programming {
+      config false;
+      description
+        "Container to represent the progress of ACL datapath programming";
+      list forwarding-complex {
+        description
+          "List of forwarding complexes that are currently installed and online";
+        key "slot-id complex-id";
+        leaf slot-id {
+          description
+            "The slot id";
+          type uint8;
+        }
+        leaf complex-id {
+          description
+            "The complex id";
+          type uint8 {
+            range "0..1";
+          }
+        }
+        leaf programming-complete {
+          description
+            "Reads false when there are still pending entries to program from prior configuration transactions
+
+             Reads true when all datapath programming related to all prior ACL configuration changes is complete";
+          type boolean;
+        }
+        leaf last-completed-timestamp {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "The date and time when the forwarding complex last completed all datapath programming related to prior ACL configuration changes.";
+        }
+      }
+    }
+  }
+
+  grouping ipv4-prefix-list {
+    description
+      "Configuration of IPv4 Prefix List";
+    list ipv4-prefix-list {
+      key "name";
+      max-elements 2048;
+      description
+        "A user defined IPv4 prefix list description";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Reference to the name of the IPv4 prefix list";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the prefix list";
+      }
+      list prefix {
+        key "ipv4-prefix";
+        min-elements 1;
+        max-elements 8192;
+        description
+          "List of IPv4 prefixes";
+        leaf ipv4-prefix {
+          type srl_nokia-comm:ipv4-prefix;
+          description
+            "A user defined IPv4 prefix";
+        }
+      }
+    }
+  }
+
+  grouping ipv6-prefix-list {
+    description
+      "Configuration of IPv6 Prefix List";
+    list ipv6-prefix-list {
+      key "name";
+      max-elements 2048;
+      description
+        "A user defined IPv6 prefix list description";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Reference to the name of the IPv6 prefix list";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the prefix list";
+      }
+      list prefix {
+        key "ipv6-prefix";
+        min-elements 1;
+        max-elements 8192;
+        description
+          "List of IPv6 prefixes";
+        leaf ipv6-prefix {
+          type srl_nokia-comm:ipv6-prefix;
+          description
+            "A user defined IPv6 prefix";
+        }
+      }
+    }
+  }
+
+  grouping match-list-top {
+    description
+      "Top level grouping for match-list";
+    container match-list {
+      if-feature "srl_nokia-feat:acl-ip-prefix-list";
+      description
+        "Top level container for match list model config and operational state data";
+      uses ipv4-prefix-list;
+      uses ipv6-prefix-list;
+    }
+  }
+
+  grouping common-acl-filter-entry-match-l2-config {
+    srl_nokia-ext:delivery-node-override "false";
+    description
+      "Container for the conditions that determine whether an Ethernet frame matches this entry";
+    container destination-mac {
+      description
+        "Ethernet frame matching criteria based on destination MAC address";
+      leaf address {
+        description
+          "Match an Ethernet frame if its destination MAC address logically anded with the mask equals this MAC address.";
+        type srl_nokia-comm:mac-address;
+        must "../mask >= ''" {
+          error-message "A mask must be configured to use with the address";
+        }
+        must "string(../../../../../type) = 'mac'" {
+          error-message "The acl-filter must be of type mac";
+        }
+      }
+      leaf mask {
+        description
+          "Match an Ethernet frame if its destination MAC address logically anded with the mask equals the configured MAC address.";
+        type srl_nokia-comm:mac-address;
+        must "../address >= ''" {
+          error-message "An address must be configured to use with the mask";
+        }
+        must "string(../../../../../type) = 'mac'" {
+          error-message "The acl-filter must be of type mac";
+        }
+      }
+    }
+    leaf ethertype {
+      description
+        "An Ethernet frame matches this condition if its ethertype value (after 802.1Q VLAN tags) matches the specified value";
+      type srl_nokia-pkt-match-types:ethertype;
+      must "string(../../../../type) = 'mac'" {
+        error-message "The acl-filter must be of type mac";
+      }
+    }
+    container source-mac {
+      description
+        "Ethernet frame matching criteria based on source MAC address";
+      leaf address {
+        description
+          "Match an Ethernet frame if its source MAC address logically anded with the mask equals this MAC address.";
+        type srl_nokia-comm:mac-address;
+        must "../mask >= ''" {
+          error-message "A mask must be configured to use with the address";
+        }
+        must "string(../../../../../type) = 'mac'" {
+          error-message "The acl-filter must be of type mac";
+        }
+      }
+      leaf mask {
+        description
+          "Match an Ethernet frame if its source MAC address logically anded with the mask equals the configured MAC address.";
+        type srl_nokia-comm:mac-address;
+        must "../address >= ''" {
+          error-message "An address must be configured to use with the mask";
+        }
+        must "string(../../../../../type) = 'mac'" {
+          error-message "The acl-filter must be of type mac";
+        }
+      }
+    }
+    container vlan {
+      description
+        "Ethernet frame matching criteria based on VLAN tags";
+      container outermost-vlan-id {
+        description
+          "Ethernet frame matching criteria based on the outermost VLAN ID found before the subinterface-defining VLAN tag (if any) is removed.";
+        choice vlan-matching-type {
+          case range-with-one-value {
+            leaf operator {
+              description
+                "Comparison operator
+
+                 eq = equal
+                 ge = greater than or equal to
+                 le = less than or equal to";
+              type srl_nokia-pkt-match-types:operator;
+              must "string(../../../../../../type) = 'mac'" {
+                error-message "The acl-filter must be of type mac";
+              }
+            }
+            leaf value {
+              description
+                "A VLAN ID number
+
+                 A value of zero is used to match priority-tagged 802.1Q frames.";
+              type srl_nokia-pkt-match-types:vlan-id-type;
+              must "string(../../../../../../type) = 'mac'" {
+                error-message "The acl-filter must be of type mac";
+              }
+            }
+          }
+          case range-with-two-values {
+            container range {
+              description
+                "Container used to specify a contiguous range of VLAN IDs. Matched values include the start and end values.";
+              leaf start {
+                type srl_nokia-pkt-match-types:vlan-id-type;
+                description
+                  "The starting VLAN ID to include in the range";
+                must '../end >= .' {
+                  error-message "The end must be greater than start";
+                }
+                must "string(../../../../../../../type) = 'mac'" {
+                  error-message "The acl-filter must be of type mac";
+                }
+              }
+              leaf end {
+                type srl_nokia-pkt-match-types:vlan-id-type;
+                description
+                  "The ending VLAN ID to include in the range";
+                must '../start <= .' {
+                  error-message "The end must be greater than start";
+                }
+                must "string(../../../../../../../type) = 'mac'" {
+                  error-message "The acl-filter must be of type mac";
+                }
+              }
+            }
+          }
+          case special-value-none-to-match-untagged {
+            leaf none {
+              type empty;
+              description
+                "When configured, only untagged frames are matched.";
+              must "string(../../../../../../type) = 'mac'" {
+                error-message "The acl-filter must be of type mac";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping common-acl-filter-entry-match-layer4-config {
+    description
+      "ACL entry common layer 4 fields";
+    container destination-port {
+      description
+        "A packet matches this condition if its destination TCP or UDP port number matches the value or range that is specified
+
+         The rule should also have a condition that the IP protocol equals 6 (TCP) or 17 (UDP) in order for this to be interpreted correctly.";
+      leaf operator {
+        description
+          "Comparison operator
+
+           eq = equal
+           ge = greater than or equal to
+           le = less than or equal to";
+        type srl_nokia-pkt-match-types:operator;
+        must "string(../value) != ''" {
+          error-message "The destination port value must be specified along with operator";
+        }
+        must "string(../../../../../type) = 'ipv4' or string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv4 or ipv6";
+        }
+      }
+      leaf value {
+        description
+          "A destination port number";
+        type srl_nokia-pkt-match-types:l4-port-type;
+        must "string(../../../ipv4/protocol) = '6' or string(../../../ipv6/next-header) = '6' or string(../../../ipv4/protocol) = '17' or
+              string(../../../ipv6/next-header) = '17' or string(../../../ipv4/protocol) = 'tcp' or string(../../../ipv6/next-header) = 'tcp' or
+              string(../../../ipv4/protocol) = 'udp' or string(../../../ipv6/next-header) = 'udp'" {
+          error-message "The protocol or next-header must be TCP or UDP to use port value";
+        }
+        must "string(../../../ipv4/fragment) = '' or string(../../../ipv4/first-fragment = true())" {
+          error-message "The first-fragment must be true to use port value with fragment";
+        }
+        must "string(../../../../../type) = 'ipv4' or string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv4 or ipv6";
+        }
+      }
+      container range {
+        description
+          "Container used to specify a contiguous range of TCP/UDP port numbers";
+        leaf start {
+          type srl_nokia-pkt-match-types:l4-port-type;
+          description
+            "The starting port number to include in the range";
+          must "not(../../operator >= '')" {
+            error-message "The destination port operator must be empty to use range";
+          }
+          must "string(../../value) = ''" {
+            error-message "The destination port value must be empty to use range";
+          }
+          must "string(../../../../ipv4/protocol) = '6' or string(../../../../ipv6/next-header) = '6' or string(../../../../ipv4/protocol) = '17' or
+                string(../../../../ipv6/next-header) = '17' or string(../../../../ipv4/protocol) = 'tcp' or string(../../../../ipv6/next-header) = 'tcp' or
+                string(../../../../ipv4/protocol) = 'udp' or string(../../../../ipv6/next-header) = 'udp'" {
+            error-message "The protocol or next-header must be TCP or UDP to use port value";
+          }
+          must "string(../../../../ipv4/fragment) = '' or string(../../../../ipv4/first-fragment = true())" {
+            error-message "The first-fragment must be true to use port value with fragment";
+          }
+          must "string(../../../../../../type) = 'ipv4' or string(../../../../../../type) = 'ipv6'" {
+            error-message "The acl-filter must be of type ipv4 or ipv6";
+          }
+        }
+        leaf end {
+          type srl_nokia-pkt-match-types:l4-port-type;
+          description
+            "The ending port number to include in the range";
+          must "not(../../operator >= '')" {
+            error-message "The destination port operator must be empty to use range";
+          }
+          must "string(../../value) = ''" {
+            error-message "The destination port value must be empty to use range";
+          }
+          must "string(../../../../ipv4/protocol) = '6' or string(../../../../ipv6/next-header) = '6' or string(../../../../ipv4/protocol) = '17' or
+                string(../../../../ipv6/next-header) = '17' or string(../../../../ipv4/protocol) = 'tcp' or string(../../../../ipv6/next-header) = 'tcp' or
+                string(../../../../ipv4/protocol) = 'udp' or string(../../../../ipv6/next-header) = 'udp'" {
+            error-message "The protocol or next-header must be TCP or UDP to use port value";
+          }
+          must "string(../../../../ipv4/fragment) = '' or string(../../../../ipv4/first-fragment = true())" {
+            error-message "The first-fragment must be true to use port value with fragment";
+          }
+          must "string(../../../../../../type) = 'ipv4' or string(../../../../../../type) = 'ipv6'" {
+            error-message "The acl-filter must be of type ipv4 or ipv6";
+          }
+        }
+      }
+    }
+    container source-port {
+      description
+        "A packet matches this condition if its source TCP or UDP port number matches the value or range that is specified
+
+         The rule should also have a condition that the IP protocol equals 6 (TCP) or 17 (UDP) in order for this to be interpreted correctly.";
+      leaf operator {
+        description
+          "Comparison operator
+
+           eq = equal
+           ge = greater than or equal to
+           le = less than or equal to";
+        type srl_nokia-pkt-match-types:operator;
+        must "string(../value) != ''" {
+          error-message "The source port value must be specified along with operator";
+        }
+        must "string(../../../../../type) = 'ipv4' or string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv4 or ipv6";
+        }
+      }
+      leaf value {
+        description
+          "A source port number";
+        type srl_nokia-pkt-match-types:l4-port-type;
+        must "string(../../../ipv4/protocol) = '6' or string(../../../ipv6/next-header) = '6' or string(../../../ipv4/protocol) = '17' or
+              string(../../../ipv6/next-header) = '17' or string(../../../ipv4/protocol) = 'tcp' or string(../../../ipv6/next-header) = 'tcp' or
+              string(../../../ipv4/protocol) = 'udp' or string(../../../ipv6/next-header) = 'udp'" {
+          error-message "The protocol or next-header must be TCP or UDP to use port value";
+        }
+        must "string(../../../ipv4/fragment) = '' or string(../../../ipv4/first-fragment = true())" {
+          error-message "The first-fragment must be true to use port value with fragment";
+        }
+        must "string(../../../../../type) = 'ipv4' or string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv4 or ipv6";
+        }
+      }
+      container range {
+        description
+          "Container used to specify a contiguous range of TCP/UDP port numbers";
+        leaf start {
+          type srl_nokia-pkt-match-types:l4-port-type;
+          description
+            "The starting port number to include in the range";
+          must "string(../../value) = ''" {
+            error-message "The source port value must not be set to use range";
+          }
+          must "not(../../operator >= '')" {
+            error-message "The source port operator must be empty to use range";
+          }
+          must "string(../../../../ipv4/protocol) = '6' or string(../../../../ipv6/next-header) = '6' or string(../../../../ipv4/protocol) = '17' or
+                string(../../../../ipv6/next-header) = '17' or string(../../../../ipv4/protocol) = 'tcp' or string(../../../../ipv6/next-header) = 'tcp' or
+                string(../../../../ipv4/protocol) = 'udp' or string(../../../../ipv6/next-header) = 'udp'" {
+            error-message "The protocol or next-header must be TCP or UDP to use port value";
+          }
+          must "string(../../../../ipv4/fragment) = '' or string(../../../../ipv4/first-fragment = true())" {
+            error-message "The first-fragment must be true to use port value with fragment";
+          }
+          must "string(../../../../../../type) = 'ipv4' or string(../../../../../../type) = 'ipv6'" {
+            error-message "The acl-filter must be of type ipv4 or ipv6";
+          }
+        }
+        leaf end {
+          type srl_nokia-pkt-match-types:l4-port-type;
+          description
+            "The ending port number to include in the range";
+          must "string(../../value) = ''" {
+            error-message "The source port value must not be set to use range";
+          }
+          must "not(../../operator >= '')" {
+            error-message "The source port operator must be empty to use range";
+          }
+          must "string(../../../../ipv4/protocol) = '6' or string(../../../../ipv6/next-header) = '6' or string(../../../../ipv4/protocol) = '17' or
+                string(../../../../ipv6/next-header) = '17' or string(../../../../ipv4/protocol) = 'tcp' or string(../../../../ipv6/next-header) = 'tcp' or
+                string(../../../../ipv4/protocol) = 'udp' or string(../../../../ipv6/next-header) = 'udp'" {
+            error-message "The protocol or next-header must be TCP or UDP to use port value";
+          }
+          must "string(../../../../ipv4/fragment) = '' or string(../../../../ipv4/first-fragment = true())" {
+            error-message "The first-fragment must be true to use port value with fragment";
+          }
+          must "string(../../../../../../type) = 'ipv4' or string(../../../../../../type) = 'ipv6'" {
+            error-message "The acl-filter must be of type ipv4 or ipv6";
+          }
+        }
+      }
+    }
+    leaf tcp-flags {
+      type string {
+        pattern '(\(|\)|&|\||!|ack|rst|syn)+';
+        length "1..255";
+      }
+      must "string(../../ipv4/protocol) = '6' or string(../../ipv4/protocol) = 'tcp' or string(../../ipv6/next-header) = '6' or string(../../ipv6/next-header) = 'tcp'" {
+        error-message "A protocol or next-header must be TCP to use with tcp flags";
+      }
+      must "(string(../../ipv4/fragment) = '' and string(../../ipv4/first-fragment) = '') or (../../ipv4/first-fragment = true()) or string(../../ipv6/next-header) != ''" {
+        error-message "The first-fragment must be true to use tcp-flags with fragment";
+      }
+      must "string(../../../../type) = 'ipv4' or string(../../../../type) = 'ipv6'" {
+        error-message "The acl-filter must be of type ipv4 or ipv6";
+      }
+      description
+        "A logical expression using the &, | and ! logical operators and the TCP flag names: rst, syn and ack.";
+    }
+  }
+
+  grouping common-acl-filter-entry-match-ipv4-config {
+    srl_nokia-ext:delivery-node-override "false";
+    description
+      "Container for the conditions that determine whether a packet matches this entry";
+    container destination-ip {
+      description
+        "Packet matching criteria based on destination IPv4 address";
+      leaf prefix {
+        description
+          "Match a packet if its destination IP address is within the specified IPv4 prefix.";
+        type srl_nokia-comm:ipv4-prefix;
+        must "not(../address >= '' or ../mask >= '')" {
+          error-message "An address and mask must be empty to use the address with prefix";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+      list prefix-list {
+        if-feature "srl_nokia-feat:acl-ip-prefix-list";
+        key "name";
+        max-elements 1;
+        description
+          "Match a packet if its destination IP address is within the specified IPv4 prefix list.";
+        leaf name {
+          type leafref {
+            path "/srl_nokia-acl:acl/srl_nokia-acl:match-list/srl_nokia-acl:ipv4-prefix-list/srl_nokia-acl:name";
+          }
+        }
+        must "not(../address >= '' or ../mask >= '' or ../prefix >= '')" {
+          error-message "An address, mask and prefix must be empty to use the address with prefix-list";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+      leaf address {
+        description
+          "Match a packet if its destination IP address logically anded with the inverse of the mask equals this IP address.";
+        type srl_nokia-comm:ipv4-address;
+        must "../mask >= ''" {
+          error-message "An inverse mask must be configured to use with the address";
+        }
+        must "not(../prefix >= '')" {
+          error-message "A prefix must be empty to use the address with mask";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+      leaf mask {
+        description
+          "Match a packet if its destination IP address logically anded with the inverse of this mask equals the configured IP address.";
+        type srl_nokia-comm:ipv4-address;
+        must "../address >= ''" {
+          error-message "An address must be configured to use with the mask";
+        }
+        must "not(../prefix = '')" {
+          error-message "A prefix must be empty to use the address with mask";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+    }
+    leaf-list dscp-set {
+      if-feature "srl_nokia-feat:ip-acl-dscp-set";
+      type srl_nokia-comm:dscp;
+      description
+        "A list of DSCP values to be matched for incoming packets. An OR match should be performed, such that a packet must match one of the values defined in this list. If the field is left empty then any DSCP value matches.";
+      must "string(../../../../type) = 'ipv4'" {
+        error-message "The acl-filter must be of type ipv4";
+      }
+    }
+    leaf fragment {
+      type boolean;
+      description
+        "Match an IPv4 fragment
+
+         A packet matches the true condition if the IPv4 header indicates that the fragment-offset is zero and and the more-fragments bit is 1 or if the IPv4 header indicates that the fragment-offset is greater than 0. A packet matches the false condition if it is unfragmented.";
+      must "string(../../../../type) = 'ipv4'" {
+        error-message "The acl-filter must be of type ipv4";
+      }
+    }
+    leaf first-fragment {
+      type boolean;
+      description
+        "Match the first fragment of an IPv4 datagram
+
+         A packet matches the true condition if the IPv4 header indicates that the fragment-offset is zero
+         and and the more-fragments bit is 1. It is not valid to configure this leaf without configuring a
+         match value for the fragment leaf.";
+      must '../fragment = true()' {
+        error-message "When the first-fragment is configured, fragment should be configured";
+      }
+      must "string(../../../../type) = 'ipv4'" {
+        error-message "The acl-filter must be of type ipv4";
+      }
+    }
+    container icmp {
+      description
+        "A packet matches this condition if its ICMP type and code matches one of the specified combinations
+
+         The rule should also have a condition that the IP protocol equals 1 (ICMP) in order for this to be interpreted correctly.";
+      leaf type {
+        description
+          "Match a single ICMP type value.";
+        type srl_nokia-pkt-match-types:icmp-type;
+        must "string(../../protocol) = '1' or string(../../protocol) = 'icmp'" {
+          error-message "The protocol should be 1 or ICMP to use ICMP type";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+      leaf-list code {
+        description
+          "Match if the ICMP code value is any value in the list
+
+           Requires ICMP type to be specified because codes are type dependent.";
+        type uint8;
+        must "string(../../protocol) = '1' or string(../../protocol) = 'icmp'" {
+          error-message "The protocol should be 1 or ICMP to use ICMP type";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+    }
+    leaf protocol {
+      description
+        "An IPv4 packet matches this condition if its IP protocol type field matches the specified value";
+      type srl_nokia-pkt-match-types:ip-protocol-type;
+      must "string(../../../../type) = 'ipv4'" {
+        error-message "The acl-filter must be of type ipv4";
+      }
+    }
+    container source-ip {
+      description
+        "Packet matching criteria based on source IPv4 address";
+      leaf prefix {
+        description
+          "Match a packet if its source IP address is within the specified IPv4 prefix.";
+        type srl_nokia-comm:ipv4-prefix;
+        must "not(../address >= '' or ../mask >= '')" {
+          error-message "An address and mask must be empty to use the address with prefix";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+      list prefix-list {
+        if-feature "srl_nokia-feat:acl-ip-prefix-list";
+        key "name";
+        max-elements 1;
+        description
+          "Match a packet if its source IP address is within the specified IPv4 prefix list.";
+        leaf name {
+          type leafref {
+            path "/srl_nokia-acl:acl/srl_nokia-acl:match-list/srl_nokia-acl:ipv4-prefix-list/srl_nokia-acl:name";
+          }
+        }
+        must "not(../address >= '' or ../mask >= '' or ../prefix >= '')" {
+          error-message "An address, mask and prefix must be empty to use the address with prefix-list";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+      leaf address {
+        description
+          "Match a packet if its source IP address logically anded with the inverse of the mask equals this IP address.";
+        type srl_nokia-comm:ipv4-address;
+        must "../mask >= ''" {
+          error-message "An inverse mask must be configured to use with the address";
+        }
+        must "not(../prefix >= '')" {
+          error-message "A prefix must be empty to use the address with mask";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+      leaf mask {
+        description
+          "Match a packet if its source IP address logically anded with the inverse of this mask equals the configured IP address.";
+        type srl_nokia-comm:ipv4-address;
+        must "../address >= ''" {
+          error-message "An address must be configured to use with the mask";
+        }
+        must "not(../prefix >= '')" {
+          error-message "A prefix must be empty to use the address with mask";
+        }
+        must "string(../../../../../type) = 'ipv4'" {
+          error-message "The acl-filter must be of type ipv4";
+        }
+      }
+    }
+  }
+
+  grouping common-acl-filter-entry-match-ipv6-config {
+    srl_nokia-ext:delivery-node-override "false";
+    description
+      "Container for the conditions that determine whether a packet matches this entry";
+    container destination-ip {
+      description
+        "Packet matching criteria based on destination IPv6 address";
+      leaf prefix {
+        description
+          "Match a packet if its destination IP address is within the specified IPv6 prefix.";
+        type srl_nokia-comm:ipv6-prefix;
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+      list prefix-list {
+        if-feature "srl_nokia-feat:acl-ip-prefix-list";
+        key "name";
+        max-elements 1;
+        description
+          "Match a packet if its destination IP address is within the specified IPv6 prefix list.";
+        leaf name {
+          type leafref {
+            path "/srl_nokia-acl:acl/srl_nokia-acl:match-list/srl_nokia-acl:ipv6-prefix-list/srl_nokia-acl:name";
+          }
+        }
+        must "not(../address >= '' or ../mask >= '' or ../prefix >= '')" {
+          error-message "An address, mask and prefix must be empty to use the address with prefix-list";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+      leaf address {
+        description
+          "Match a packet if its destination IP address logically anded with the inverse of the mask equals this IP address.";
+        type srl_nokia-comm:ipv6-address;
+        must "../mask >= ''" {
+          error-message "An inverse mask must be configured to use with the address";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+      leaf mask {
+        description
+          "Match a packet if its destination IP address logically anded with the inverse of this mask equals the configured IP address.";
+        type srl_nokia-comm:ipv6-address;
+        must "string(../prefix) = ''" {
+          error-message "A prefix must be empty to use the address with mask";
+        }
+        must "../address >= ''" {
+          error-message "An address must be configured to use with the mask";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+    }
+    leaf-list dscp-set {
+      if-feature "srl_nokia-feat:ip-acl-dscp-set";
+      type srl_nokia-comm:dscp;
+      description
+        "A list of DSCP values to be matched for incoming packets. An OR match should be performed, such that a packet must match one of the values defined in this list. If the field is left empty then any DSCP value matches.";
+      must "string(../../../../type) = 'ipv6'" {
+        error-message "The acl-filter must be of type ipv6";
+      }
+    }
+    container icmp6 {
+      description
+        "A packet matches this condition if its ICMPv6 type and code matches one of the specified combinations
+
+         The rule should also have a condition that the next-header value equals 58 (ICMPv6) in order for this to be interpreted correctly.";
+      leaf type {
+        description
+          "Match a single ICMPv6 type value";
+        type srl_nokia-pkt-match-types:icmp6-type;
+        must "string(../../next-header) = '58' or string(../../next-header) = 'icmp6'" {
+          error-message "The next-header should be 58 or icmp6 to use icmp6 type";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+      leaf-list code {
+        description
+          "Match if the ICMPv6 code value is any value in the list
+
+           Requires ICMPv6 type to be specified because codes are type dependent.";
+        type uint8;
+        must "string(../../next-header) = '58' or string(../../next-header) = 'icmp6'" {
+          error-message "The next-header should be 58 or icmp6 to use icmp6 code";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+    }
+    leaf next-header {
+      description
+        "An IPv6 packet matches this condition if its first next-header field (in the IPv6 fixed header) contains the specified value";
+      type srl_nokia-pkt-match-types:ip-protocol-type;
+      must "string(../../../../type) = 'ipv6'" {
+        error-message "The acl-filter must be of type ipv6";
+      }
+    }
+    container source-ip {
+      description
+        "Packet matching criteria based on source IPv6 address";
+      leaf prefix {
+        description
+          "Match a packet if its source IP address is within the specified IPv6 prefix.";
+        type srl_nokia-comm:ipv6-prefix;
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+      list prefix-list {
+        if-feature "srl_nokia-feat:acl-ip-prefix-list";
+        key "name";
+        max-elements 1;
+        description
+          "Match a packet if its source IP address is within the specified IPv6 prefix list.";
+        leaf name {
+          type leafref {
+            path "/srl_nokia-acl:acl/srl_nokia-acl:match-list/srl_nokia-acl:ipv6-prefix-list/srl_nokia-acl:name";
+          }
+        }
+        must "not(../address >= '' or ../mask >= '' or ../prefix >= '')" {
+          error-message "An address, mask and prefix must be empty to use the address with prefix-list";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+      leaf address {
+        description
+          "Match a packet if its source IP address logically anded with the inverse of the mask equals this IP address.";
+        type srl_nokia-comm:ipv6-address;
+        must "../mask >= ''" {
+          error-message "An inverse mask must be configured to use with the address";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+      leaf mask {
+        description
+          "Match a packet if its source IP address logically anded with the inverse of this mask equals the configured IP address.";
+        type srl_nokia-comm:ipv6-address;
+        must "../address >= ''" {
+          error-message "An address must be configured to use with the mask";
+        }
+        must "string(../../../../../type) = 'ipv6'" {
+          error-message "The acl-filter must be of type ipv6";
+        }
+      }
+    }
+  }
+
+  grouping match-network-instance {
+    leaf network-instance {
+      if-feature "srl_nokia-feat:acl-cpm-filter-match-network-instance";
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+      }
+      must 'not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+        error-message "The network-instance cannot be of type 'mac-vrf' for IPv4/IPv6 cpm-filter";
+      }
+      description
+        "Reference to a configured network-instance";
+    }
+  }
+
+  grouping ipv4-policy-forwarding-address {
+    leaf ipv4-address {
+      mandatory true;
+      description
+        "IPv4 address to use for route lookup";
+      type srl_nokia-comm:ipv4-address;
+    }
+  }
+
+  grouping ipv6-policy-forwarding-address {
+    leaf ipv6-address {
+      mandatory true;
+      description
+        "IPv6 address to use for route lookup";
+      type srl_nokia-comm:ipv6-address;
+    }
+  }
+
+  grouping ip-policy-fowarding-filter-entry-action-config {
+    container forward {
+      if-feature "srl_nokia-feat:acl-filter-redirect-to-next-hop";
+      presence "Enable the next-hop context";
+      description
+        "Enable the next-hop context";
+      choice forward-action {
+        container next-hop {
+          leaf address {
+            description
+              "IP address of next hop to forward matching packets.";
+            type srl_nokia-comm:ip-address;
+          }
+        }
+      }
+    }
+  }
+
+  grouping common-filter-entry-action-config {
+    container action {
+      description
+        "Container for the actions to be applied to packets matching the filter entry.";
+      choice action {
+        container accept {
+          presence "Accept matching packets and forward them towards their normal destination";
+          description
+            "Accept matching packets and forward them towards their normal destination";
+          leaf forwarding-class {
+            if-feature "srl_nokia-feat:qos and srl_nokia-feat:acl-filter-qos-forwarding-class";
+            must "not (string(../../../../name) = 'system' or string(../../../../name) = 'capture')" {
+              error-message "The acl-filter name must not be system or capture";
+            }
+            type leafref {
+              path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+            }
+            description
+              "The QoS forwarding class to which the packet is mapped";
+          }
+          leaf profile {
+            if-feature "srl_nokia-feat:acl-filter-qos-profile";
+            must "not (string(../../../../name) = 'system' or string(../../../../name) = 'capture')" {
+              error-message "The acl-filter name must not be system or capture";
+            }
+            type srl_nokia-comm:classify-profile;
+            description
+              "The QoS profile to which the packet is mapped";
+          }
+          container rate-limit {
+            description
+              "Rate-limit accepted packets";
+            leaf system-cpu-policer {
+              type leafref {
+                path "/acl/policers/system-cpu-policer/name";
+              }
+              description
+                "Reference to a system-cpu-policer.";
+              must "not (string(../../../../../name) = 'system' or string(../../../../../name) = 'capture')" {
+                error-message "The acl-filter name must not be system or capture";
+              }
+            }
+            leaf policer {
+              if-feature "srl_nokia-feat:acl-policer";
+              type leafref {
+                path "/acl/policers/policer/name";
+              }
+              description
+                "Reference to a policer";
+              must "not (string(../../../../../name) = 'system' or string(../../../../../name) = 'capture')" {
+                error-message "The acl-filter name must not be system or capture";
+              }
+            }
+          }
+          uses ip-policy-fowarding-filter-entry-action-config;
+        }
+        container drop {
+          must "not (string(../../../name) = 'capture')" {
+            error-message "The acl-filter name must not be capture";
+          }
+          presence "Drop matching packets";
+          description
+            "Drop matching packets.
+
+             Dropped IP packets do not result in sending ICMP messages back to the source";
+        }
+        container copy {
+          if-feature "not srl_nokia-feat:fpcx";
+          must "string(../../../name) = 'capture'" {
+            error-message "The acl-filter name must be capture";
+          }
+          presence "Create a copy of matching packets extract them to the CPM and deliver them to the designated veth interface";
+          description
+            "Create a copy of matching packets extract them to the CPM and deliver them to the designated veth interface";
+        }
+      }
+      leaf collect-stats {
+        if-feature "srl_nokia-feat:fpcx";
+        must "not (string(../../../name) = 'system' or string(../../../name) = 'capture') or . = false()" {
+          error-message "The acl-filter name must not be system or capture";
+        }
+        type boolean;
+        default "false";
+        description
+          "Collect statistics for each entry of the ACL. If this is set to false no hardware resources are allocated to collecting statistics for this ACL entry.";
+      }
+      leaf log {
+        if-feature "not srl_nokia-feat:fpcx";
+        must "not (string(../../../name) = 'capture') or . = false()" {
+          error-message "The acl-filter name must not be system or capture";
+        }
+        must 'not (. = true() and ../../action/accept)' {
+          error-message "Logging is not supported with action accept";
+          srl_nokia-ext:if-feature "not srl_nokia-feat:acl-action-accept-with-log";
+        }
+        must 'not (. = true() and ../../action/accept/rate-limit/system-cpu-policer)' {
+          error-message "Invalid action (log & policer) specified";
+        }
+        default "false";
+        type boolean;
+        description
+          "When this is true, a log is created for each packet matching the entry
+
+           For IP packets matched by an IP filter entry the log entry contains the following information:
+           - timestamp
+           - filter name
+           - filter entry sequence-id
+           - incoming subinterface name
+           - action: drop
+           - IP protocol
+           - packet-length
+           - source IP address
+           - source L4 port number (TCP/UDP packets)
+           - destination IP address
+           - destination L4 port number (TCP/UDP packets)
+           - icmp-type (ICMP packets)
+           - icmp-code (ICMP packets)";
+      }
+    }
+  }
+
+  grouping acl-policer-statistics {
+    description
+      "ACL policer statistics";
+    leaf conforming-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered conforming by the policer";
+    }
+    leaf conforming-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered conforming by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+    leaf exceeding-packets {
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of packets (actually Ethernet frames) that were considered exceeding by the policer";
+    }
+    leaf exceeding-octets {
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of bytes that were considered exceeding by the policer. The byte count includes 18 bytes of Ethernet overhead for every IP packet.";
+    }
+  }
+
+  grouping acl-filter-entry-statistics {
+    description
+      "ACL entry statistics";
+    container statistics {
+      description
+        "Container for per-entry statistics";
+      config false;
+      srl_nokia-ext:delivery-node-override "true";
+      leaf last-clear {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time of the last clear command performed by the user at this level or a higher level";
+      }
+      leaf incomplete {
+        if-feature "not srl_nokia-feat:fpcx";
+        type boolean;
+        description
+          "Returns true when at least one linecard had insufficient stats resources to ensure an accurate set of values for the number of matched packets.";
+      }
+      leaf matched-packets {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The number of packets matching the entry since it was programmed or since the last clear, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+      leaf matched-octets {
+        srl_nokia-ext:show-importance "high";
+        if-feature "srl_nokia-feat:fpcx";
+        description
+          "The number of octets packets matching the entry since it was programmed or since the last clear, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+      leaf last-match {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The elapsed time since a packet last matched the entry, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+        type srl_nokia-comm:date-and-time-delta;
+      }
+      container policer {
+        srl_nokia-ext:delivery-node-override "true";
+        if-feature "srl_nokia-feat:acl-policer and not srl_nokia-feat:platform-vsrl";
+        description
+          "Policer stats for traffic matching the entry:
+
+           Statistics for policer configured with scope=global and entry-specific=true, and acl configured with subinterface-specific=false.";
+        uses acl-policer-statistics;
+      }
+      container system-cpu-policer {
+        srl_nokia-ext:delivery-node-override "true";
+        description
+          "System CPU policer stats for traffic matching the entry:
+
+           Statistics for system cpu policer configured with scope=global and entry-specific=true, and acl configured with subinterface-specific=false.";
+        uses acl-policer-statistics;
+      }
+    }
+  }
+
+  grouping acl-subinterface-entry-match-statistics {
+    srl_nokia-ext:delivery-node-override "true";
+    leaf last-clear {
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time of the last clear command performed by the user at this level or a higher level";
+    }
+    leaf incomplete {
+      if-feature "not srl_nokia-feat:fpcx";
+      type boolean;
+      description
+        "Returns true when at least one linecard had insufficient stats resources to ensure an accurate set of values for the number of matched packets.";
+    }
+    leaf matched-packets {
+      srl_nokia-ext:show-importance "high";
+      description
+        "The number of packets matching the entry since it was programmed or since the last clear, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+      type srl_nokia-comm:zero-based-counter64;
+    }
+    leaf matched-octets {
+      srl_nokia-ext:show-importance "high";
+      if-feature "srl_nokia-feat:fpcx";
+      description
+        "The number of octets packets matching the entry since it was programmed or since the last clear, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+      type srl_nokia-comm:zero-based-counter64;
+    }
+    leaf last-match {
+      srl_nokia-ext:show-importance "high";
+      description
+        "The elapsed time since a packet last matched the entry, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+  }
+
+  grouping acl-subinterface-entry-statistics {
+    list entry {
+      config false;
+      key "sequence-id";
+      description
+        "ACL Filter statistics per entry and per subinterface";
+      leaf sequence-id {
+        type leafref {
+          path "/acl/acl-filter[name=current()/../../name]"
+             + "[type=current()/../../type]/"
+             + "entry/sequence-id";
+        }
+        description
+          "Reference to type entry ID key";
+      }
+      container statistics {
+        if-feature "srl_nokia-feat:acl-subinterface-entry-statistics";
+        description
+          "Container for per-entry statistics";
+        config false;
+        uses acl-subinterface-entry-match-statistics;
+      }
+      container policer {
+        if-feature "srl_nokia-feat:subif-acl-policer";
+        description
+          "Policer stats for traffic matching the entry:
+
+           Statistics under /acl/interfaces for policer configured with scope=subinterface and entry-specific=true, and acl configured with subinterface-specific=input-and-output.";
+        uses acl-policer-statistics;
+      }
+    }
+  }
+
+  grouping acl-subinterface-policer-statistics {
+    container policer {
+      srl_nokia-ext:delivery-node-override "true";
+      if-feature "srl_nokia-feat:subif-acl-policer";
+      description
+        "Policer stats for traffic matching one or multiple entries:
+
+         List of ACL policer statistics of scope=subinterface and per-entry-statistics=false, and acl configured with subinterface-specific=false.";
+      uses acl-policer-statistics;
+    }
+  }
+
+  grouping acl-filter-entry-top {
+    list entry {
+      key "sequence-id";
+      description
+        "List of ACL entries comprising an ACL Filter";
+      leaf sequence-id {
+        type uint32 {
+          range "0..65535";
+        }
+        description
+          "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the filter entry";
+      }
+      leaf last-clear {
+        config false;
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time of the last clear command performed by the user at this level";
+      }
+      container match {
+        description
+          "Container for the conditions that determine whether a packet matches this entry";
+        container l2 {
+          if-feature "not srl_nokia-feat:fpcx";
+          description
+            "Container for the common layer-2 match criteria";
+          uses common-acl-filter-entry-match-l2-config;
+        }
+        container ipv4 {
+          description
+            "Container for the common layer-3 IPv4 match criteria";
+          uses common-acl-filter-entry-match-ipv4-config;
+        }
+        container ipv6 {
+          description
+            "Container for the common layer-3 IPv6 match criteria";
+          uses common-acl-filter-entry-match-ipv6-config;
+        }
+        container transport {
+          description
+            "Container for the common layer-4 transport match criteria";
+          uses common-acl-filter-entry-match-layer4-config;
+        }
+        uses match-network-instance;
+      }
+      uses common-filter-entry-action-config;
+      uses acl-filter-entry-statistics;
+      uses interface-filter-entry-tcam;
+    }
+  }
+
+  grouping acl-interfaces-top {
+    list interface {
+      key "interface-id";
+      max-elements 16383;
+      description
+        "List of interfaces and subinterfaces referencing ACL filters.";
+      leaf interface-id {
+        type srl_nokia-comm:name;
+        description
+          "Identifier for the interface or subinterface.";
+      }
+      container interface-ref {
+        description
+          "Reference to an interface or subinterface";
+        leaf interface {
+          type leafref {
+            path "/srl_nokia-if:interface/srl_nokia-if:name";
+          }
+          description
+            "Reference to a base interface, for example a port or LAG";
+        }
+        leaf subinterface {
+          type leafref {
+            path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+          }
+          description
+            "Reference to a subinterface
+
+             This requires the base interface to be specified using the interface leaf in this container.";
+          must '../interface' {
+            error-message "interface must be configured when subinterface is set";
+          }
+          must "/srl_nokia-if:interface[srl_nokia-if:name=current()/../../interface-ref/interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()/../../interface-ref/subinterface]/srl_nokia-if:type = 'srl_nokia-if:bridged' or
+                /srl_nokia-if:interface[srl_nokia-if:name=current()/../../interface-ref/interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()/../../interface-ref/subinterface]/srl_nokia-if:type = 'srl_nokia-if:routed' or
+                string(/srl_nokia-if:interface[srl_nokia-if:name=current()/../../interface-ref/interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()/../../interface-ref/subinterface]/srl_nokia-if:type) = '' " {
+            error-message "ACL allowed with subinterface type bridged or routed";
+          }
+          must "not(starts-with(../interface,'lo'))" {
+            error-message "IP ACLs not allowed on loopback subinterface";
+          }
+        }
+      }
+      container input {
+        description
+          "Container for ACL filters that apply to ingress traffic on the subinterface";
+        list acl-filter {
+          key "name type";
+          max-elements 4;
+          ordered-by user;
+          description
+            "MAC, IPv4, IPv6 ACL filter(s) to be applied on this subinterface direction
+
+             On 7220 and 7250 IXR platforms only a single MAC, IPv4 or IPv6 filter is supported.";
+          leaf name {
+            type leafref {
+              path "/acl/acl-filter/name";
+            }
+            must "not (. = 'system' or . = 'capture')" {
+              error-message "The acl-filter name must not be system or capture";
+            }
+          }
+          leaf type {
+            type leafref {
+              path "/acl/acl-filter[name=current()/../name]"
+                 + "/type";
+            }
+          }
+          uses acl-subinterface-entry-statistics;
+        }
+        container statistics {
+          srl_nokia-ext:delivery-node-override "true";
+          if-feature "srl_nokia-feat:subif-acl-policer";
+          description
+            "Container for policer scope=subinterface and per-entry-statistics=false statistics";
+          config false;
+          leaf last-clear {
+            config false;
+            type srl_nokia-comm:date-and-time-delta;
+            description
+              "Time of the last clear command performed by the user at this level";
+          }
+          uses acl-subinterface-policer-statistics;
+        }
+      }
+      container output {
+        if-feature "not srl_nokia-feat:platform-7215-a1";
+        description
+          "Container for ACL filters that apply to egress traffic on the subinterface";
+        list acl-filter {
+          key "name type";
+          max-elements 4;
+          ordered-by user;
+          description
+            "MAC, IPv4, IPv6 ACL filter(s) to be applied on this subinterface direction
+
+             On 7220 and 7250 IXR platforms only a single MAC, IPv4 or IPv6 filter is supported.";
+          leaf name {
+            type leafref {
+              path "/acl/acl-filter/name";
+            }
+            must "not (. = 'system' or . = 'capture')" {
+              error-message "The acl-filter name must not be system or capture";
+            }
+          }
+          leaf type {
+            type leafref {
+              path "/acl/acl-filter[name=current()/../name]"
+                 + "/type";
+            }
+          }
+          uses acl-subinterface-entry-statistics;
+        }
+        container statistics {
+          srl_nokia-ext:delivery-node-override "true";
+          if-feature "srl_nokia-feat:subif-acl-policer";
+          description
+            "Container for policer scope=subinterface and per-entry-statistics=false statistics";
+          config false;
+          leaf last-clear {
+            config false;
+            type srl_nokia-comm:date-and-time-delta;
+            description
+              "Time of the last clear command performed by the user at this level";
+          }
+          uses acl-subinterface-policer-statistics;
+        }
+      }
+    }
+  }
+
+  grouping acl-filter-top {
+    list acl-filter {
+      key "name type";
+      description
+        "List of MAC, IPv4, IPv6 filter policies";
+      leaf name {
+        description
+          "ACL Filter policy name";
+        type srl_nokia-comm:name;
+      }
+      leaf type {
+        description
+          "Defines the type of ACL filter:
+           ipv4: IPv4 ACL filter
+           ipv6: IPv6 ACL filter
+           mac: MAC ACL filter";
+        type enumeration {
+          enum ipv4 {
+            value 1;
+          }
+          enum ipv6 {
+            value 2;
+          }
+          enum mac {
+            if-feature "srl_nokia-feat:platform-7215-a1 or srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:future-0-0";
+            value 3;
+          }
+        }
+        must "not (../name = 'system' or ../name = 'capture') or . = 'ipv4' or . = 'ipv6'" {
+          error-message "The acl-filter name must not be system or capture";
+        }
+      }
+      leaf description {
+        type srl_nokia-comm:description;
+        description
+          "Description string for the filter policy";
+      }
+      leaf subinterface-specific {
+        if-feature "not srl_nokia-feat:fpcx";
+        type enumeration {
+          enum disabled {
+            value 1;
+          }
+          enum input-only {
+            value 2;
+          }
+          enum output-only {
+            value 3;
+          }
+          enum input-and-output {
+            value 4;
+          }
+        }
+        must "not (../name = 'system' or ../name = 'capture') or . = 'disabled'" {
+          error-message "The acl-filter name must not be system or capture";
+        }
+        default "disabled";
+        description
+          "Controls the instantiation of the filter when it is applied as an input or output ACL
+
+           disabled: all subinterfaces on a single linecard that reference the ACL as an input ACL use a shared filter instance, and all subinterfaces on a single linecard that reference the ACL as an output ACL use a shared filter instance
+
+           input-only: all subinterfaces on a single linecard that reference the ACL as an output ACL use a shared filter instance, but each subinterface that references the ACL as an input ACL uses its own separate instance of the filter
+
+           output-only: all subinterfaces on a single linecard that reference the ACL as an input ACL use a shared filter instance, but each subinterface that references the ACL as an output ACL uses its own separate instance of the filter
+
+           input-and-output: each subinterface that references the ACL as either an input ACL or an output ACL uses its own separate instance of the filter";
+      }
+      leaf statistics-per-entry {
+        if-feature "not srl_nokia-feat:fpcx";
+        type boolean;
+        must "not (../name = 'system' or ../name = 'capture')" {
+          error-message "The acl-filter name must not be system or capture";
+        }
+        description
+          "Collect statistics for each entry of the ACL. If this is set to false no hardware resources are allocated to collecting statistics for this ACL policy.
+
+           The exact set of statistics depend on the subinterface-specific mode";
+      }
+      leaf last-clear {
+        config false;
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time of the last clear command performed by the user at this level";
+      }
+      uses acl-filter-entry-top;
+    }
+  }
+
+  grouping acl-top {
+    container acl {
+      description
+        "Top level container for configuration and operational state related to access control lists (ACLs)";
+      uses acl-filter-top;
+      uses acl-interfaces-top;
+      uses acl-policers-top;
+      uses datapath-programming;
+      uses match-list-top;
+      leaf egress-mac-filtering {
+        if-feature "srl_nokia-feat:platform-7220-d2 or srl_nokia-feat:platform-7220-d3 or srl_nokia-feat:platform-7220-d4 or srl_nokia-feat:platform-7220-d5 or srl_nokia-feat:future-0-0";
+        type boolean;
+        default "false";
+        description
+          "Must be set to true in order to apply any MAC ACLs to any subinterface in the egress traffic direction.
+
+           Internally this sets the following limits:
+           - maximum number of IPv4 ACL instances that can be created to process egress traffic = 32
+           - maximum number of IPv6 ACL instances that can be created to process egress traffic = 32
+           - maximum number of MAC ACL instances that can be created to process egress traffic = 32
+
+           Remember that the number of ACL instances per ACL policy is greater than one if subinterface-specific is set to input-and-output or output-only.
+
+           A setting of true is blocked if the number of IPv4 ACL instances applied to egress traffic is already greater than 32, or if the number of IPv6 ACL instances applied to egress traffic is already greater than 32.";
+      }
+    }
+  }
+
+  grouping control-plane-binding {
+    container acl {
+      description
+        "Container for ACL.";
+      list acl-filter {
+        key "name type";
+        description
+          "List MAC, IPv4, IPv6 ACL filter(s) to be applied on this subinterface direction";
+        leaf name {
+          type leafref {
+            path "/srl_nokia-acl:acl/acl-filter/name";
+          }
+          must "not (. = 'system' or . = 'capture')" {
+            error-message "The acl-filter name must not be system or capture";
+          }
+          description
+            "Referencence to the ACL Filter policy name";
+        }
+        leaf type {
+          type leafref {
+            path "/acl/acl-filter[name=current()/../name]"
+               + "/type";
+          }
+          must "not (. = 'mac')" {
+            srl_nokia-ext:if-feature "not srl_nokia-feat:acl-cpm-filter-type-mac";
+            error-message "Control Plane acl-filter type mac is not supported on 7215 IXS-A1";
+          }
+          description
+            "Referencence to the ACL Filter policy type";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system/srl_nokia-system:control-plane-traffic/srl_nokia-system:input" {
+    uses control-plane-binding;
+  }
+
+  uses acl-top;
+}

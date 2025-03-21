@@ -1,0 +1,69 @@
+module srl_nokia-platform-icm {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-icm";
+  prefix srl_nokia-platform-icm;
+
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to InterConnect Module (ICM).";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping icm-state-top {
+    description
+      "Grouping for icm module state";
+    leaf id {
+      type uint8 {
+        range "1..255";
+      }
+      description
+        "Numeric identifier for the icm tray";
+    }
+    leaf type {
+      type string;
+      srl-ext:show-importance "high";
+      description
+        "ICM tray type";
+    }
+  }
+
+  grouping icm-top {
+    description
+      "Grouping for ICM module state";
+    list icm {
+      config false;
+      key "id";
+      description
+        "Top-level container for icm module state";
+      uses icm-state-top;
+      uses srl-platform:component-common-state-top;
+      uses srl-platform:component-common-eeprom;
+    }
+  }
+
+  augment "/srl-platform:platform" {
+    uses icm-top {
+      if-feature "srl-feat:platform-7250-ixr-18e";
+    }
+  }
+}

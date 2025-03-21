@@ -1,0 +1,398 @@
+module srl_nokia-stp-common {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:stp:stp-common";
+  prefix srl_nokia-stp-common;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-stp-types {
+    prefix srl_nokia-stp-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of the stp protocol";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping stp-oper-state {
+    leaf oper-state {
+      config false;
+      type srl_nokia-comm:oper-state;
+      description
+        "Stp Operational status";
+    }
+  }
+
+  grouping stp-port-state {
+    leaf port-state {
+      config false;
+      type srl_nokia-stp-types:port-state-type;
+      description
+        "Interface Stp Port state";
+    }
+  }
+
+  grouping stp-port-num {
+    leaf port-num {
+      config false;
+      type int32 {
+        range "0..4094";
+      }
+      description
+        "Interface Stp Port Number";
+    }
+  }
+
+  grouping stp-port-role {
+    leaf port-role {
+      config false;
+      type srl_nokia-stp-types:port-role-type;
+      description
+        "Interface Stp Port role";
+    }
+  }
+
+  grouping stp-designated-bridge {
+    leaf designated-bridge {
+      config false;
+      type srl_nokia-comm:mac-address;
+      description
+        "The identifier of the designated bridge of the interface
+
+         The bridge address of the bridge recorded as the
+         root in the configuration BPDUs transmitted by the designated
+         bridge for the segment to which the port is attached";
+    }
+  }
+
+  grouping stp-designated-bridge-priority {
+    leaf designated-bridge-priority {
+      config false;
+      type srl_nokia-stp-types:bridge-priority-type;
+      description
+        "The bridge priority of the bridge that this port considers to be the designated bridge for this port's segment.";
+    }
+  }
+
+  grouping stp-designated-port {
+    leaf designated-port {
+      config false;
+      type int32;
+      description
+        "The identifier of the port on the designated bridge";
+    }
+  }
+
+  grouping stp-designated-port-priority {
+    leaf designated-port-priority {
+      config false;
+      type srl_nokia-stp-types:port-priority-type;
+      description
+        "The Port priority of the port on the Designated Bridge for this port's segment";
+    }
+  }
+
+  grouping stp-designated-port-num {
+    leaf designated-port-num {
+      config false;
+      type int32 {
+        range "0..4094";
+      }
+      description
+        "The Port number of the port on the Designated Bridge for this port's segment";
+    }
+  }
+
+  grouping stp-forward-transitions {
+    leaf forward-transitions {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The number of times this port has transitioned from the Learning state to the Forwarding state";
+    }
+  }
+
+  grouping stp-oper-protocol {
+    leaf oper-protocol {
+      config false;
+      type srl_nokia-stp-types:protocol-mode-type;
+      description
+        "The protocol running on this interface";
+    }
+  }
+
+  grouping stp-common-state {
+    description
+      "Grouping for common STP operation data";
+    uses stp-oper-state;
+    leaf bridge-id {
+      config false;
+      type string;
+      description
+        "Bridge Identifier";
+    }
+    leaf designated-root {
+      config false;
+      type srl_nokia-comm:mac-address;
+      description
+        "The identifier of the designated bridge of the interface
+
+         The bridge address of the bridge recorded as the
+         root in the configuration BPDUs transmitted by the designated
+         bridge for the segment to which the port is attached";
+    }
+    leaf designated-root-priority {
+      config false;
+      type srl_nokia-stp-types:bridge-priority-type;
+      description
+        "The bridge priority of the root of the spanning tree, as determined by STP, as executed by this node";
+    }
+    leaf root-port {
+      config false;
+      type uint32;
+      description
+        "The port number of the port which offers the lowest cost path from this bridge to the root bridge";
+    }
+    leaf root-cost {
+      config false;
+      type int32;
+      description
+        "The cost of the path to the root as seen from this bridge";
+    }
+    leaf hold-time {
+      config false;
+      type uint8;
+      description
+        "This time value determines the interval length during which no more than two Configuration bridge PDUs shall be transmitted by this node";
+    }
+    leaf topology-changes {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "The total number of topology changes detected by this bridge since the management entity was last reset or initialized";
+    }
+    leaf topology-change-active {
+      config false;
+      type boolean;
+      description
+        "Indication topology change is currently in progress";
+    }
+    leaf time-since-topology-change {
+      config false;
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time since last topology change was detected by bridge entity";
+    }
+    leaf oper-max-age {
+      config false;
+      type uint8;
+      description
+        "The maximum age of the stp information learned";
+    }
+    leaf oper-hello-time {
+      config false;
+      type uint8;
+      description
+        "The amount of time between the transmission of Configuration BPDUs";
+    }
+    leaf oper-forward-delay {
+      config false;
+      type int32;
+      description
+        "The amount of time it takes to change its state when moving towards the forwarding state";
+    }
+    leaf cist-regional-root {
+      config false;
+      type string;
+      description
+        "The bridge ID of the regional root of the CIST spanning tree";
+    }
+    leaf cist-internal-root-cost {
+      config false;
+      type int32;
+      description
+        "The cost of the path to the CIST regional root bridge";
+    }
+    leaf cist-remaining-hop-count {
+      config false;
+      type int32;
+      description
+        "The remaining number of hops";
+    }
+    leaf cist-regional-root-port {
+      config false;
+      type int32;
+      description
+        "The port number of the port with the lowest cost path";
+    }
+  }
+
+  grouping stp-common-config {
+    description
+      "stp specific configuration";
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Administratively enable or disable the stp instance
+
+         When STP on the network instance is administratively disabled,
+         any BPDUs are forwarded transparently.
+         When STP on the network instance is administratively enabled,
+         but the administrative state on a sub-interface is disabled,
+         BPDUs received on such a subinterface are discarded.";
+    }
+    leaf mode {
+      type srl_nokia-stp-types:protocol-mode-type;
+      default "rstp";
+      description
+        "Protocol Mode Supported";
+    }
+    leaf bridge-priority {
+      type srl_nokia-stp-types:bridge-priority-type;
+      default "32768";
+      description
+        "Priority component of the Bridge Identifier";
+    }
+    leaf bridge-address {
+      type srl_nokia-comm:unicast-mac-address;
+      description
+        "A 48-bit administered MAC Address assigned to the bridge
+
+         The bridge mac address cannot be a broadcast or multicast address. The default is
+         the base mac address of the switch.";
+    }
+    leaf forward-delay {
+      type uint8 {
+        range "4..30";
+      }
+      units "seconds";
+      default "15";
+      description
+        "The delay used by STP bridges to transition root and designated ports to forwarding";
+    }
+    leaf hello-time {
+      type uint8 {
+        range "1..10";
+      }
+      units "seconds";
+      default "2";
+      description
+        "The interval between periodic transmissions of configuration messages by designated ports";
+    }
+    leaf hold-count {
+      type uint8 {
+        range "1..10";
+      }
+      default "6";
+      description
+        "The maximum number of BPDUs per second that the switch can send from an interface";
+    }
+    leaf max-age {
+      type uint8 {
+        range "6..40";
+      }
+      units "seconds";
+      default "20";
+      description
+        "The maximum age of the information transmitted by the bridge when it is the root bridge";
+    }
+  }
+
+  grouping stp-bpdu-config {
+    description
+      "Grouping for STP BPDU configuration";
+    leaf bpdu-guard {
+      type boolean;
+      description
+        "Enable edge port BPDU guard";
+    }
+    leaf bpdu-filter {
+      type boolean;
+      description
+        "Enable edge port BPDU filter";
+    }
+  }
+
+  grouping stp-common-events {
+    container trace-options {
+      description
+        "Interface Stp debug trace options";
+      leaf-list trace {
+        description
+          "List of tracing options";
+        type enumeration {
+          enum all {
+            description
+              "Trace all events and packets";
+          }
+          enum bpdu {
+            description
+              "Trace stp rcvd/txmitted BPDU events";
+          }
+          enum connectivity {
+            description
+              "Trace stp core-connectivity events";
+          }
+          enum exception {
+            description
+              "Trace stp exception events";
+          }
+          enum fsm-state {
+            description
+              "Trace stp fsm-state-changes events";
+          }
+          enum fsm-timers {
+            description
+              "Trace stp fsm-timer events";
+          }
+          enum port-role {
+            description
+              "Trace stp port-role events";
+          }
+          enum port-state {
+            description
+              "Trace stp port-state events";
+          }
+        }
+      }
+    }
+  }
+
+  grouping stp-common-top {
+    description
+      "Top level grouping for STP";
+    container stp {
+      presence "Configure STP";
+      must "(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
+        error-message "STP can only be configured on network-instances of type mac-vrf";
+      }
+      description
+        "Configuration and state of the STP protocol";
+      uses stp-common-config;
+      uses stp-common-state;
+      uses stp-common-events;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses stp-common-top {
+      if-feature "srl_nokia-feat:stp";
+    }
+  }
+}

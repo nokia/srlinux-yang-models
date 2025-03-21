@@ -1,0 +1,274 @@
+module srl_nokia-next-hop-groups {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:static-route:next-hop-groups";
+  prefix srl_nokia-next-hop-groups;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-if-ip {
+    prefix srl_nokia-if-ip;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of next-hop-groups configuration.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  typedef encapsulation-header-type {
+    type enumeration {
+      enum gre {
+        description
+          "The encapsulation header is a Generic Routing Encapsulation header";
+      }
+    }
+    description
+      "Types of tunnel encapsulation used when forwarding to a next-hop";
+  }
+
+  grouping next-hop-group-top {
+    container next-hop-groups {
+      presence "Configure Nexthop Groups";
+      list group {
+        key "name";
+        description
+          "Specifies the next hop group.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "Specifies the next hop group name";
+        }
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default "enable";
+          description
+            "Administratively enable or disable this next-hop-group.";
+        }
+        container blackhole {
+          presence "Specifies that the next-hop-group performs a blackhole discard action.";
+          leaf generate-icmp {
+            type boolean;
+            default "false";
+            description
+              "When set to true the router generates ICMP unreachable messages for the dropped packets";
+          }
+        }
+        list nexthop {
+          max-elements 128;
+          key "index";
+          must 'not(../blackhole)' {
+            error-message "Blackhole and nexthop cannot co-exist within a group";
+          }
+          leaf index {
+            type uint16;
+            description
+              "Numerical index of the next-hop member";
+          }
+          leaf ip-address {
+            type srl_nokia-comm:ip-address-with-zone;
+            description
+              "The next-hop IPv4 or IPv6 address
+
+               If the IPv6 address is a link-local address then the zoned format must be used";
+          }
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            default "enable";
+            description
+              "Administratively enable or disable this next-hop.";
+          }
+          leaf resolve {
+            type boolean;
+            default "true";
+            must 'not(. and (re-match(../ip-address, "[^%]+%[^%]+") or ../interface-ref/interface))' {
+              error-message "resolve should be set to false for link-local or unnumbered IP nexthops.";
+            }
+            description
+              "When set to true, the router is allowed to use any route to resolve the nexthop address to an outgoing interface
+
+               When set to false the router is only allowed to use a local route to resolve the next-hop address.";
+          }
+          leaf-list pushed-mpls-label-stack {
+            if-feature "srl-feat:mpls";
+            must '(../resolve != true())' {
+              error-message "resolve should be set to false for pushed-mpls-label-stack";
+            }
+            must 'not(../encapsulate-header = "gre")' {
+              error-message "MPLS not supported for next-hops with GRE encapsulation";
+            }
+            must 'not(../interface-ref/interface)' {
+              error-message "MPLS not supported for unnumbered IP next-hops";
+            }
+            type srl_nokia-comm:mpls-label-with-implicit-and-explicit-null;
+            max-elements 1;
+            description
+              "A list of MPLS labels to push onto the packet when forwarding to this particular next-hop
+
+               Default is none/empty. Pushing an MPLS label stack is not supported unless the resolve flag is set to false.";
+          }
+          container interface-ref {
+            if-feature "srl-feat:static-next-hop-unnumbered-interface";
+            description
+              "Reference to the subinterface used for an unnumbered IP next-hop";
+            leaf interface {
+              type leafref {
+                path "/srl_nokia-if:interface/srl_nokia-if:name";
+              }
+              description
+                "Reference to a base interface, for example a port or LAG";
+              must '../subinterface >= 0' {
+                error-message "subinterface must be configured when interface is set";
+              }
+              must "not(starts-with(.,'lo'))" {
+                error-message "Loopback interfaces cannot be configured as a next-hop";
+              }
+              must "not(starts-with(.,'system'))" {
+                error-message "System interfaces cannot be configured as a next-hop";
+              }
+              must 'not (boolean(../../ip-address))' {
+                error-message "Either interface-ref or ip-address can be configured for next-hop resolution";
+              }
+            }
+            leaf subinterface {
+              type leafref {
+                path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+              }
+              description
+                "Reference to a subinterface
+
+                 This requires the base interface to be specified using the interface leaf in this container.";
+              must '../interface' {
+                error-message "interface must be configured when subinterface is set";
+              }
+              must '/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()]/srl_nokia-if-ip:ipv4/srl_nokia-if-ip:unnumbered/srl_nokia-if-ip:admin-state = "enable"' {
+                error-message "subinterface must be configured to operate in unnumbered mode for IPv4";
+              }
+            }
+          }
+          container failure-detection {
+            if-feature "srl-feat:bfd";
+            container enable-bfd {
+              presence "Configure BFD within this Next Hop";
+              must "not(../../encapsulate-header = 'gre')" {
+                error-message "BFD not supported for next-hops with GRE encapsulation";
+              }
+              leaf local-address {
+                type srl_nokia-comm:ip-address;
+                description
+                  "The local address to be used for the associated BFD session";
+                mandatory true;
+              }
+              leaf local-discriminator {
+                type uint32 {
+                  range "1..16384";
+                }
+                must '../remote-discriminator' {
+                  error-message "Cannot configure local-discriminator without remote-discriminator";
+                }
+                description
+                  "The local discriminator to be used for the associated BFD session";
+              }
+              leaf remote-discriminator {
+                type uint32 {
+                  range "1..16384";
+                }
+                must '../local-discriminator' {
+                  error-message "Cannot configure remote-discriminator without local-discriminator";
+                }
+                description
+                  "The remote discriminator to be used for the associated BFD session";
+              }
+            }
+          }
+          leaf encapsulate-header {
+            if-feature "srl-feat:static-next-hop-group-gre-tunnel";
+            type encapsulation-header-type;
+            description
+              "When forwarding a packet to the specified next-hop the local system performs an encapsulation of the packet, adding the specified header type";
+            must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+              error-message "Encapsulation only supported on default network instance";
+            }
+          }
+          container gre {
+            must 'not((../ip-address or ../interface-ref/interface) and ./destination-ip)' {
+              error-message "Next-hop cannot have both ip-address or interface-ref and GRE destination-ip configured";
+            }
+            must '(current()/../encapsulate-header = "gre" and current()/destination-ip and current()/source-ip) or (current()/../encapsulate-header != "gre" and not(current()/destination-ip) and not(current()/source-ip))' {
+              error-message "To enable GRE tunnel next-hop, ../encapsulate-header must be set to \"gre\" and both GRE source-ip and GRE destination-ip must be configured";
+            }
+            if-feature "srl-feat:static-next-hop-group-gre-tunnel";
+            description
+              "Parameters relating to GRE encapsulation";
+            leaf source-ip {
+              type srl_nokia-comm:ip-address-unicast;
+              description
+                "Source IP address to use for the encapsulated packet.";
+            }
+            leaf destination-ip {
+              type srl_nokia-comm:ip-address-unicast;
+              description
+                "Destination IP address to use for the encapsulated packet.";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses next-hop-group-top;
+  }
+}

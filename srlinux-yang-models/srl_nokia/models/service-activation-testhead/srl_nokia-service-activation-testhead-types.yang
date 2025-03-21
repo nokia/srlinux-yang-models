@@ -1,0 +1,137 @@
+module srl_nokia-service-activation-testhead-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:sath:service-activation-testhead-types";
+  prefix srl_nokia-service-activation-testhead-types;
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module contains type definitions used primarily by service activation testead (SAT)";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  typedef sath-mm-ss-string {
+    type string {
+      length "5";
+      pattern '[0-5][0-9]:[0-5][0-9]';
+    }
+    description
+      "String used to represent minutes and seconds in format 'mm:ss'
+          minutes range: 00..59
+          seconds range: 00..59";
+  }
+
+  typedef sath-hh-mm-ss-string {
+    type string {
+      length "8";
+      pattern '([2][0-4]|[0-1][0-9]):[0-5][0-9]:[0-5][0-9]';
+    }
+    description
+      "String used to represent hours, minutes, and seconds in format 'hh:mm:ss'
+          hours range:   00..24
+          minutes range: 00..59
+          seconds range: 00..59";
+  }
+
+  typedef sath-statistics-test-run-oper-state {
+    type enumeration {
+      enum none {
+        value 1;
+        description
+          "Not started";
+      }
+      enum running {
+        value 2;
+        description
+          "In progress";
+      }
+      enum stopped-by-user {
+        value 3;
+        description
+          "Test run halted by administrative action";
+      }
+      enum passed {
+        value 4;
+        description
+          "All tests with the run completed meeting acceptance criteria";
+      }
+      enum failed {
+        value 5;
+        description
+          "Some test within the run completed not meeting acceptance criteria";
+      }
+      enum stopped-by-fault {
+        value 6;
+        description
+          "Test run halted by fatal error, exmample resource availability";
+      }
+    }
+    description
+      "Overall state of the service activation test";
+  }
+
+  typedef sath-statistics-test-oper-state {
+    type enumeration {
+      enum unknown {
+        value 1;
+        description
+          "Test has not completed and has not been compared to acceptance criteria";
+      }
+      enum pass {
+        value 2;
+        description
+          "Test completed meeting acceptance criteria";
+      }
+      enum fail {
+        value 3;
+        description
+          "Test completed not meeting acceptance criteria";
+      }
+    }
+    description
+      "Operational state of a test with respect to a particular acceptance criteria";
+  }
+
+  typedef sath-loss-percent-decimal64 {
+    type decimal64 {
+      range "0.0000..100.0000";
+      fraction-digits 4;
+    }
+    units "percent";
+    description
+      "A percentage with four decimal places of specificity";
+  }
+
+  typedef sath-positive-percent-four-decimal-places {
+    type decimal64 {
+      range "0.0000..100.0000";
+      fraction-digits 4;
+    }
+    units "percent";
+    default "0.0000";
+    description
+      "A percentage with four decimal places of precision";
+  }
+
+  typedef sath-loss-percent-union {
+    type union {
+      type sath-positive-percent-four-decimal-places;
+      type enumeration {
+        enum none {
+          value -1;
+        }
+      }
+    }
+    description
+      "A union of a decimal64 percentage that has four decimal places of specificity and an
+       enumeration, 'none'
+
+       Assumes -1 is used to indicate no percentage and will be mapped to the enumeration.";
+  }
+}

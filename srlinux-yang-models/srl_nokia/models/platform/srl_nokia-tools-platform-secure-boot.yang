@@ -1,0 +1,97 @@
+module srl_nokia-tools-platform-secure-boot {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:tools-platform-secure-boot";
+  prefix srl_nokia-tools-platform-secure-boot;
+
+  import srl_nokia-tools-platform {
+    prefix srl-tools-platform;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands for Platform Trust: Secure Boot.";
+
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping tools-secure-boot-top {
+    container secure-boot {
+      if-feature "srl-feat:secure-boot";
+      description
+        "Secure Boot operational commands";
+      list control {
+        description
+          "Operational commands related Secure Boot for control modules";
+        key "slot";
+        leaf slot {
+          type string;
+          description
+            "Slot identifier for the control module";
+        }
+        container activate {
+          description
+            "Activate Secure Boot";
+          leaf serial-number {
+            type string;
+            description
+              "Indicates the serial-number of the control module";
+          }
+          leaf confirmation-code {
+            type string;
+            description
+              "Indicates the secure-boot command confirmation-code";
+          }
+        }
+        container update {
+          description
+            "Update UEFI Secure Boot authorized database (db), Key Exchange Key (KEK), Platform Key (PK)";
+          leaf serial-number {
+            type string;
+            description
+              "Indicates the serial-number of the control module";
+          }
+          leaf confirmation-code {
+            type string;
+            description
+              "Indicates the secure-boot command confirmation-code";
+          }
+        }
+        container revoke {
+          description
+            "Update UEFI Secure Boot forbidden database (dbx), Key Exchange Key (KEK), Platform Key (PK)";
+          leaf serial-number {
+            type string;
+            description
+              "Indicates the serial-number of the control module";
+          }
+          leaf confirmation-code {
+            type string;
+            description
+              "Indicates the secure-boot command confirmation-code";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-platform:platform/srl-tools-platform:trust" {
+    uses tools-secure-boot-top;
+  }
+}

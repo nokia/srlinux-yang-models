@@ -1,0 +1,77 @@
+module srl_nokia-tools-service-activation-testhead {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mplsoam:tools-service-activation-testhead";
+  prefix srl_nokia-tools-service-activation-testhead;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-tools-oam {
+    prefix srl_nokia-tools-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping sath-oam-top {
+    container service-activation-testhead {
+      presence "Tools commands for Service Activation Testhead";
+      list service-test {
+        key "test-name";
+        description
+          "List of service tests";
+        leaf test-name {
+          description
+            "Service activation test name";
+          type srl_nokia-comm:restricted-name {
+            length "1..64";
+          }
+        }
+        leaf start {
+          type empty;
+          must 'not(../stop)' {
+            error-message "start and stop are mutually exclusive";
+          }
+          description
+            "Start new run of the service test with given test name";
+        }
+        leaf stop {
+          type empty;
+          must 'not(../start)' {
+            error-message "start and stop are mutually exclusive";
+          }
+          description
+            "Stop current run of the service test with given test name";
+        }
+        container clear {
+          presence "Tools to clear past Service Activation Testhead result";
+          description
+            "Clear all or specific service test run results
+
+             When run number omitted all run results are cleared.";
+          leaf run {
+            type uint32;
+            description
+              "Clear a specific service test run result";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-oam:oam" {
+    if-feature "srl_nokia-feat:service-activation-testhead";
+    uses sath-oam-top;
+  }
+}

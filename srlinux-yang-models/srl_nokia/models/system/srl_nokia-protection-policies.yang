@@ -1,0 +1,160 @@
+module srl_nokia-protection-policies {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:tepolicy:protection-policies";
+  prefix srl_nokia-protection-policies;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Configuration related to protection policies ";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping protection-policies-top {
+    description
+      "protection policy grouping";
+    container protection-policies {
+      if-feature "srl_nokia-feat:protection-policies";
+      presence "Configure protection policies";
+      description
+        "Container with protection policies";
+      list policy {
+        key "protection-policy-name";
+        leaf protection-policy-name {
+          type srl_nokia-comm:name;
+          description
+            "A unique identifying name for the protection policy";
+        }
+        leaf revert-timer {
+          type union {
+            type uint32 {
+              range "0..4320";
+            }
+            type enumeration {
+              enum disable {
+                value -1;
+              }
+            }
+          }
+          units "seconds";
+          default "disable";
+          description
+            "Revert timer for the segment-list.
+
+             Timer till a revert to primary/best path after it is recovered from a failure. In case of uncolored te-policy, applies to primary segment-list and in case of colored te-policy applies to best candidate path.
+
+             The default is 0 seconds.";
+        }
+        container seamless-bfd {
+          presence "Enable Seamless BFD within protection policy";
+          description
+            "When present, this node attempts to setup a seamless BFD session on every segment-list of every SR policy that uses protection-policy, but only if that SR policy is a primary or standby (secondary) candidate path. The transition of an SBFD session from up to down is a trigger for rerouting traffic around a failed primary path.";
+          leaf detection-multiplier {
+            type uint8 {
+              range "3..20";
+            }
+            default "3";
+            description
+              "The number of packets that must be missed to declare this session as down
+
+               The detection interval for the BFD session is calculated by multiplying the
+               value of the negotiated transmission interval by this value.";
+          }
+          leaf desired-minimum-transmit-interval {
+            type uint32 {
+              range "10000..100000000";
+            }
+            default "1000000";
+            units "microseconds";
+            description
+              "The minimum interval between transmission of BFD control packets
+
+               This value is advertised to the peer, however the actual interval used is specified
+               by taking the maximum of desired-minimum-transmit-interval and the value of the remote
+               required-minimum-receive interval value.
+               This value is specified as an integer number of microseconds.";
+          }
+          leaf hold-down-timer {
+            type union {
+              type uint16 {
+                range "1..500";
+              }
+              type enumeration {
+                enum disable {
+                  value -1;
+                }
+              }
+            }
+            units "seconds";
+            default "4";
+            description
+              "Specifies a hold-down timer value when seamless-bfd is enabled
+
+               The timer is started when the number of S-BFD sessions that are up drops below the threshold. The TE-policy path is not considered to be up again until the hold-down timer has expired and the number of S-BFD sessions that are up equals or exceeds the threshold.
+               A grace preiod after session down such that sBFD session flaps does not impact active path.
+
+               The default is 4 seconds.";
+          }
+          leaf wait-for-up-timer {
+            type uint16 {
+              range "1..1800";
+            }
+            units "seconds";
+            default "4";
+            description
+              "Specifies a wait-for-up timer value when seamless-bfd is enabled
+
+               This timer takes effect if BFD does not come up, or BFD goes from up to down. The timer is started when BFD is first enabled on a segment-list or BFD transitions from up to down. When the timer expires if BFD is not yet come up, then the path is torn down by removing it from the TTM and the PI and the retry timer is started.
+
+               The default is 4 seconds.";
+          }
+          leaf mode {
+            type enumeration {
+              enum monitored;
+              enum ecmp-protected;
+              enum linear;
+            }
+            default "monitored";
+            description
+              "Specifies requested protection method
+
+               ecmp-protected is valid for colored te-policies and programs all the valid segment lists and manages their availability using seamless-BFD for each segment list. Switchover between candidate paths is triggered by the node if number of segment-lists up is less than the threshold on the active policy.ecmp-protected is not valid for uncolored sr-policies.
+
+               linear is valid for uncolored te-policies and triggers fail-over among active segment-lists, primary to standby / secondary.";
+          }
+          leaf threshold {
+            type uint32 {
+              range "1..32";
+            }
+            default "1";
+            description
+              "Minimum number of up seamless-BFD sessions for up te-policy";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system" {
+    uses protection-policies-top;
+  }
+}

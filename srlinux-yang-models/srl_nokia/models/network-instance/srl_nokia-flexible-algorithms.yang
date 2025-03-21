@@ -1,0 +1,336 @@
+module srl_nokia-flexible-algorithms {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:flexible-algorithms";
+  prefix srl_nokia-flexible-algorithms;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-flexible-algorithms-types {
+    prefix srl_flex-algo-types;
+  }
+  import srl_nokia-isis-types {
+    prefix srl_nokia-isis-types;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of Segment Routing Flexible Algorithms";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping flex-algo-definition-top {
+    list flexible-algorithm-definition {
+      description
+        "Enter the flex-algo list instance";
+      key "flex-algo-id";
+      max-elements 128;
+      leaf flex-algo-id {
+        description
+          "Flexible Algorithm Identifier";
+        type srl_flex-algo-types:flex-algo-id;
+      }
+      leaf admin-state {
+        description
+          "Administrative state of the FAD";
+        type srl_nokia-comm:admin-state;
+        default "disable";
+      }
+      leaf name {
+        description
+          "Flexible Algorithm name";
+        type srl_nokia-comm:restricted-name;
+        config false;
+      }
+      leaf description {
+        description
+          "Description of this flex-algo";
+        type srl_nokia-comm:description;
+      }
+      leaf metric-type {
+        description
+          "The metric type used by this flexible Algorithm
+
+           Indicates which is the corresponding metric type for
+           this algorithm";
+        type srl_flex-algo-types:flex-algo-metric-type;
+        default "igp";
+      }
+      leaf calc-type {
+        description
+          "Indicates the calculation type, if advertised";
+        type srl_flex-algo-types:flex-algo-calc-type;
+        config false;
+      }
+      leaf priority {
+        description
+          "Indicates the priority for this algorithm";
+        type uint8;
+        default "237";
+      }
+      leaf-list exclude {
+        description
+          "Extended administrative groups to exclude in path calculation.";
+        type leafref {
+          path "../../../../flexible-algorithm/global-attributes/extended-admin-groups/group/name";
+        }
+        max-elements 256;
+      }
+      leaf-list include-all {
+        description
+          "Extended administrative groups for which all must be included";
+        type leafref {
+          path "../../../../flexible-algorithm/global-attributes/extended-admin-groups/group/name";
+        }
+        max-elements 256;
+      }
+      leaf-list include-any {
+        description
+          "Extended administrative groups for which at least one omust be included";
+        type leafref {
+          path "../../../../flexible-algorithm/global-attributes/extended-admin-groups/group/name";
+        }
+        max-elements 256;
+      }
+      leaf flags-tlv {
+        description
+          "Advertise flex-algo definition flags";
+        type boolean;
+        default "false";
+      }
+    }
+  }
+
+  grouping flex-algo-admin-groups-top {
+    description
+      "Top grouping for configuring admin groups";
+    container extended-admin-groups {
+      description
+        "Container for configuring admin groups";
+      list group {
+        description
+          "List of admin groups defined for this network instance";
+        key "name";
+        max-elements 256;
+        leaf name {
+          description
+            "The name of the admin group";
+          type srl_nokia-comm:restricted-name;
+        }
+        leaf bit-position {
+          mandatory true;
+          type uint32 {
+            range "0..255";
+          }
+          description
+            "The bit-position value for the admin-group
+
+             The value for the admin group is an integer that represents one of the bit positions in the admin-group bitmask.";
+        }
+      }
+    }
+  }
+
+  grouping flex-algo-interface-key {
+    leaf interface-name {
+      must "not(starts-with(., 'system0.0') or (starts-with(., 'lo')))" {
+        error-message "Flexible algorithm attributes can not be associated with the system0.0 or loopback subinterface";
+      }
+      description
+        "Name of the flex-algo interface";
+      type srl_nokia-netinst:network-instance-subintf-name;
+    }
+  }
+
+  grouping flex-algo-interface-attributes {
+    description
+      "Grouping for the flexible algorithms interface attributes";
+    container interface-ref {
+      description
+        "Reference to a subinterface";
+      leaf interface {
+        type leafref {
+          path "/srl_nokia-if:interface/srl_nokia-if:name";
+        }
+        description
+          "Reference to a base interface, for example a port or LAG";
+        must '../subinterface' {
+          error-message "subinterface must be configured when interface is set";
+        }
+      }
+      leaf subinterface {
+        description
+          "Reference to a subinterface
+
+           This requires the base interface to be specified using the interface leaf in this container.";
+        type leafref {
+          path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+        }
+        must '../interface' {
+          error-message "Interface must be configured when subinterface is set";
+        }
+      }
+    }
+    leaf te-metric {
+      description
+        "The TE metric associated with the interface for Flexible Algorithms";
+      type uint32 {
+        range "1..16777215";
+      }
+    }
+    leaf-list extended-admin-group {
+      description
+        "list of admin groups (by name) on the interface";
+      type leafref {
+        path "../../../../flexible-algorithm/global-attributes/extended-admin-groups/group/name";
+      }
+      max-elements 256;
+    }
+  }
+
+  grouping fad-info {
+    description
+      "Flexible Algorithm Definition information.";
+    leaf fad-owner {
+      description
+        "Owner of the Flexible Algorithm Definition.";
+      type srl_nokia-comm:isis-system-id;
+      config false;
+    }
+    leaf supported {
+      description
+        "Indicates if this FAD is supported.";
+      type boolean;
+      config false;
+    }
+    leaf priority {
+      description
+        "Priority of the FAD.";
+      type uint8;
+      config false;
+    }
+    leaf metric-type {
+      description
+        "Type of metric used by Flexible Algorithms.";
+      type srl_flex-algo-types:flex-algo-metric-type;
+      config false;
+    }
+    leaf calculation-type {
+      description
+        "Type of calculation (e.g., SPF).";
+      type srl_flex-algo-types:flex-algo-calc-type;
+      config false;
+    }
+    leaf-list exclude {
+      description
+        "Extended Admin Groups Bitmask to display the Exclude fad tlv.";
+      type uint32;
+      config false;
+    }
+    leaf-list include-any {
+      description
+        "Extended Admin Groups Bitmask to display the Include-any fad tlv.";
+      type uint32;
+      config false;
+    }
+    leaf-list include-all {
+      description
+        "Extended Admin Groups Bitmask to display the Include-all fad tlv.";
+      type uint32;
+      config false;
+    }
+    leaf-list fad-flags {
+      description
+        "Flags associated with the FAD.";
+      type srl_flex-algo-types:fad-flags;
+      config false;
+    }
+    leaf level {
+      description
+        "IS-IS level (e.g., L1 or L2).";
+      type srl_nokia-isis-types:isis-level-number;
+      config false;
+    }
+  }
+
+  grouping flex-algo-isis-level-state {
+    leaf fad-count {
+      description
+        "Number of FADs at this ISIS Level.";
+      type uint8;
+      config false;
+    }
+    container selected-fad {
+      description
+        "Information about the selected FAD for this ISIS Level.";
+      uses fad-info;
+    }
+    list other-fads {
+      description
+        "Information about other FADs advertised at this ISIS Level.";
+      config false;
+      uses fad-info;
+    }
+  }
+
+  grouping flex-algo-interface-attributes-top {
+    description
+      "Top level grouping for flex Algorithm attributes for interfaces";
+    list interface {
+      description
+        "List of Flexible Algorithm interfaces";
+      key "interface-name";
+      uses flex-algo-interface-key;
+      uses flex-algo-interface-attributes;
+    }
+  }
+
+  grouping flex-algo-top {
+    description
+      "Grouping for Flex Algorithms definitions and associated attributes";
+    container flexible-algorithm {
+      presence "Flex Algorithms definitions and the attributes";
+      must "(../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+        error-message "Flex Algorithm is not supported in network-instances of types other than default";
+      }
+      description
+        "Flex Algorithms definitions and the attributes";
+      container flexible-algorithm-definitions {
+        description
+          "Flexible Algorithms and their definitions";
+        uses flex-algo-definition-top;
+      }
+      container global-attributes {
+        description
+          "Flexible Algorithm global attributes";
+        uses flex-algo-admin-groups-top;
+      }
+      container interface-attributes {
+        description
+          "Flexible Algorithm interface attributes";
+        uses flex-algo-interface-attributes-top;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    if-feature "srl_nokia-feat:flex-algo-common";
+    uses flex-algo-top;
+  }
+}

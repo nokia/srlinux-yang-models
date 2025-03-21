@@ -1,0 +1,1110 @@
+module srl_nokia-igmp-snooping {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:igmp:igmp-snooping";
+  prefix srl_nokia-igmp-snooping;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl-rpol;
+  }
+  import srl_nokia-igmp-types {
+    prefix srl_nokia-igmp-types;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of the igmp snooping protocol on mac-vrf";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+
+  typedef igmp-version {
+    type uint8 {
+      range "1..3";
+    }
+    description
+      "IGMP Version.";
+    reference
+      "v1 = RFC1112, v2 = RFC2236, v3 = RFC3376";
+  }
+
+  typedef igmp-interval-type {
+    type uint32;
+    units "seconds";
+    description
+      "Interval at which the router sends the IGMP query message toward
+       the upstream neighbor.";
+    reference
+      "RFC3376 8.2 Page 40";
+  }
+
+  grouping igmp-interface-key {
+    leaf interface-name {
+      description
+        "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+      type srl_nokia-comm:subinterface-all;
+    }
+  }
+
+  grouping igmp-group-key {
+    leaf group {
+      type srl_nokia-comm:ipv4-address;
+      description
+        "group address.";
+      must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*'))" {
+        error-message "Not a valid IPv4 multicast address";
+      }
+      must "not ((. >= '224.0.0.0') and (. <= '224.0.0.255'))" {
+        error-message "Must not be in the reserved multicast address range 224.0.0.0 to 224.0.0.255";
+      }
+    }
+  }
+
+  grouping igmp-snooping-global-trace-options {
+    container trace-options {
+      description
+        "Enter the trace-options context";
+      container trace {
+        description
+          "Tracing parameter flags";
+        container packet {
+          presence "Enable the tracing of IGMP packets";
+          description
+            "Trace IGMP Packet types";
+          list interface {
+            description
+              "List of interfaces to trace";
+            key "interface-name";
+            leaf interface-name {
+              description
+                "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+              type srl_nokia-comm:subinterface-all;
+            }
+            max-elements 8;
+          }
+          list source-mac {
+            description
+              "List of source mac addresses to trace";
+            key "source-mac";
+            leaf source-mac {
+              type srl_nokia-comm:mac-address;
+            }
+            max-elements 8;
+          }
+          leaf modifier {
+            type enumeration {
+              enum dropped {
+                value 0;
+                description
+                  "Enable tracing for the packets which are dropped";
+              }
+              enum ingress-and-dropped {
+                value 1;
+                description
+                  "Enable tracing for the packets which are sent or received";
+              }
+              enum egress-ingress-and-dropped {
+                value 2;
+                description
+                  "Enable tracing for the packets which are sent, received or dropped";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-mrouter-state {
+    leaf address {
+      config false;
+      description
+        "The source IP address used by queries sent out by this multicast router";
+      type srl_nokia-comm:ipv4-address;
+    }
+    leaf version {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The version of the protocol that is sent by this multicast router";
+      type igmp-version;
+    }
+    leaf up-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time since this multicast router has been known in this service";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf expiry-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time remaining before this multicast router is aged out";
+      type uint32;
+      units "seconds";
+    }
+    container igmp-v3-states {
+      config false;
+      description
+        "Enter the igmp-v3-states context";
+      leaf general-query-interval {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The General Query Interval used by this multicast router";
+        type uint32;
+        units "seconds";
+      }
+      leaf general-response-interval {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The General Query Response interval used by this multicast router";
+        type uint32;
+        units "seconds";
+      }
+      leaf robust-count {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The Robust Count value used by this multicast router";
+        type uint32;
+      }
+    }
+    leaf interface {
+      config false;
+      description
+        "Interface behind which this multicast router is located";
+      type srl_nokia-comm:subinterface-all;
+    }
+  }
+
+  grouping igmp-snooping-global-config {
+    description
+      "IGMP specific configuration";
+    leaf admin-state {
+      description
+        "Administratively enable or disable the IGMP instance";
+      type srl_nokia-comm:admin-state;
+      default "disable";
+    }
+    leaf query-interval {
+      description
+        "Interval at which the router sends the IGMP membership queries";
+      type igmp-interval-type {
+        range "1..65535";
+      }
+      default "125";
+    }
+    leaf robust-count {
+      description
+        "Configures the IGMP robustness to allow for the expected IGMP packet loss
+
+         The robust-count variable allows tuning for the expected packet
+         loss on a subnet. If a subnet anticipates losses, the robust-count
+         variable can be increased.";
+      type uint32 {
+        range "1..255";
+      }
+      default "2";
+    }
+    leaf query-source-address {
+      type srl_nokia-comm:ipv4-address;
+      description
+        "Source IP address used when generating IGMP queries";
+      must "not(starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
+        error-message "Not a valid IPv4 unicast address";
+      }
+    }
+    leaf report-source-address {
+      type srl_nokia-comm:ipv4-address;
+      description
+        "Source IP address used when generating IGMP reports";
+      must "not(starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
+        error-message "Not a valid IPv4 unicast address";
+      }
+    }
+  }
+
+  grouping igmp-snooping-global-state {
+    leaf oper-state {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Used to report operational state of the IGMP instance.";
+      type srl_nokia-comm:oper-state;
+    }
+    leaf transmitted-bgp-smet-routes {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Transmitted BGP SMET routes";
+      type srl_nokia-comm:counter32;
+    }
+    container querier {
+      config false;
+      description
+        "Enter the querier context";
+      uses igmp-snooping-mrouter-state;
+    }
+    list multicast-routers {
+      config false;
+      description
+        "Enter the multicast-router list instance";
+      key "address";
+      uses igmp-snooping-mrouter-state;
+    }
+    leaf proxy-membership-group-count {
+      config false;
+      description
+        "The number of multicast groups which have been learned";
+      type uint32;
+    }
+    leaf proxy-evpn-membership-group-count {
+      config false;
+      description
+        "The number of multicast groups proxy-evpn-membership-groups";
+      type uint32;
+    }
+    container proxy-membership-groups {
+      config false;
+      description
+        "Proxy Database created for the network-instance
+
+         The content of this table is used by the router to proxy the
+         reports towards the Querier, when the Querier is attached to a
+         sub-interface.";
+      list group {
+        key "group";
+        config false;
+        description
+          "Multicast group membership";
+        leaf group {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "Multicast address";
+        }
+        leaf filter-mode {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          type srl_nokia-igmp-types:filter-mode;
+        }
+        leaf up-time {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The time elapsed since this entry was created";
+          type srl_nokia-comm:date-and-time-delta;
+        }
+        list source {
+          config false;
+          key "source";
+          description
+            "Source addresses of multicast";
+          leaf source {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Source address of multicast";
+          }
+          leaf up-time {
+            config false;
+            srl_nokia-ext:show-importance "high";
+            description
+              "The time elapsed since this entry was created";
+            type srl_nokia-comm:date-and-time-delta;
+          }
+        }
+      }
+    }
+    container proxy-evpn-membership-groups {
+      config false;
+      description
+        "EVPN Proxy Database created for the network-instance
+
+         The content of this table is used by the router to proxy the
+         reports towards the remote PEs via BGP EVPN SMET (Selective
+         Multicast Ethernet Tag) routes .";
+      list group {
+        key "group";
+        config false;
+        description
+          "Multicast group membership";
+        leaf group {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "Multicast address";
+        }
+        leaf filter-mode {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          type srl_nokia-igmp-types:filter-mode;
+        }
+        leaf up-time {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          description
+            "The time elapsed since this entry was created";
+          type srl_nokia-comm:date-and-time-delta;
+        }
+        leaf v1-support {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          description
+            "IGMP Version 1 is supported";
+          type boolean;
+        }
+        leaf v2-support {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          description
+            "IGMP Version 2 is supported";
+          type boolean;
+        }
+        leaf v3-support {
+          config false;
+          srl_nokia-ext:show-importance "high";
+          description
+            "IGMP Version 3 is supported";
+          type boolean;
+        }
+        list source {
+          config false;
+          key "source";
+          description
+            "Source addresses of multicast";
+          leaf source {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Source address of multicast";
+          }
+          leaf up-time {
+            config false;
+            srl_nokia-ext:show-importance "high";
+            description
+              "The time elapsed since this entry was created";
+            type srl_nokia-comm:date-and-time-delta;
+          }
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-interface-config {
+    leaf router-alert-check {
+      description
+        "Enable or disable router alert checking for IGMP messages received on this interface";
+      type boolean;
+      default "true";
+    }
+    leaf version {
+      description
+        "IGMP Version";
+      type igmp-version;
+      default "3";
+    }
+    leaf maximum-number-groups {
+      description
+        "Maximum number of IGMP Groups for this interface";
+      type uint32 {
+        range "1..4096";
+      }
+    }
+    leaf maximum-number-sources {
+      description
+        "Maximum number of IGMP sources per group for this interface";
+      type uint32 {
+        range "1..512";
+      }
+    }
+    leaf maximum-number-group-sources {
+      description
+        "Maximum number of IGMP group/source combinations for this interface";
+      type uint32 {
+        range "1..4096";
+      }
+    }
+    leaf query-interval {
+      description
+        "Interval at which the router sends the IGMP membership queries";
+      type igmp-interval-type {
+        range "2..1024";
+      }
+      must '. > ../query-response-interval' {
+        error-message "query-response-interval must be less than query-interval";
+      }
+      must '. > ../query-last-member-interval' {
+        error-message "query-last-member-interval must be less than query-interval";
+      }
+      default "125";
+    }
+    leaf query-last-member-interval {
+      description
+        "Interval at which Group-Specific-Query packets are transmitted
+
+         When used along with EVPN multi-homing, the result of this value multipled
+         by the interface robust-count must be a value equal to or less than 25.5 seconds.
+         This is due to the fact that the maximum response time field in the EVPN Multicast
+         Leave Synch route has a limit of 255 units of 1/10 second, and this field encodes
+         the result of [(query-last-member-interval* 10) * robust-count].
+
+         If the result of that operation is greater than 255, the maximum response time
+         in the EVPN Multicast Leave Synch route is still 255.";
+      type igmp-interval-type {
+        range "1..5";
+      }
+      default "1";
+    }
+    leaf query-response-interval {
+      description
+        "Time to wait to receive a response to the IGMP membership query from the host";
+      type igmp-interval-type {
+        range "1..1023";
+      }
+      default "10";
+    }
+    leaf robust-count {
+      description
+        "Tune IGMP robustness to allow for expected packet loss
+
+         The robust-count variable allows tuning for the expected packet
+         loss on a subnet. If a subnet anticipates losses, the robust-count
+         variable can be increased.
+
+         When used along with EVPN multi-homing, the result of this value multipled
+         by the interface query-last-member-interval must be a value equal to or less
+         than 25.5 seconds. This is due to the fact that the maximum response time
+         field in the EVPN Multicast Leave Synch route has a limit of 255 units of
+         1/10 second, and this field encodes the result of
+         [(query-last-member-interval* 10) * robust-count].
+
+         If the result of that operation is greater than 255, the maximum response time
+         in the EVPN Multicast Leave Synch route is still 255.";
+      type uint32 {
+        range "2..10";
+      }
+      default "2";
+    }
+    leaf fast-leave {
+      description
+        "Allow IGMP fast leave processing
+
+         When enabled, the multicast state is removed immediately upon receiving an IGMP
+         leave message.";
+      type boolean;
+      default "false";
+    }
+    leaf mrouter-port {
+      description
+        "Operate port as a multicast router port";
+      type boolean;
+      default "false";
+    }
+    leaf send-queries {
+      description
+        "Generate IGMP general queries";
+      type boolean;
+      must 'not(. = true() and ../mrouter-port = true())' {
+        error-message "mrouter-port and send-queries are mutually exclusive";
+      }
+      default "false";
+    }
+    leaf import-policy {
+      if-feature "srl_nokia-feat:mcast-route-policy";
+      description
+        "Apply an import policy. The lenght of the policy name should not exceed 32 charachters.";
+      type leafref {
+        path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+      }
+    }
+    container static-membership-groups {
+      description
+        "Container to configure static <S,G>s for this interface.";
+      list group {
+        key "group";
+        uses igmp-group-key;
+        choice source-or-starg {
+          mandatory true;
+          case source {
+            list source {
+              description
+                "Multicast source address list";
+              key "source";
+              leaf source {
+                type srl_nokia-comm:ipv4-address;
+                description
+                  "Multicast source address.";
+                must "not(starts-with(.,'0.') or starts-with(.,'127.') or re-match(.,'22[4-9]\\..*') or re-match(.,'2[3-5][0-9]\\..*'))" {
+                  error-message "Not a valid IPv4 unicast address";
+                }
+              }
+            }
+          }
+          case starg {
+            leaf starg {
+              description
+                "any source address (*,G)";
+              type empty;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-msg-stats {
+    leaf general-queries {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "General Queries";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf group-queries {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Group Specific Queries";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf group-source-queries {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Group and Source Specific Queries";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf v1-reports {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "V1 Reports";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf v2-reports {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "V2 Reports";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf v3-reports {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "V3 Reports";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf leave-messages {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Leave messages";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-msg-rx-stats {
+    uses igmp-snooping-msg-stats;
+    leaf discarded-packets {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Total number of discarded IGMP packets";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf bgp-join-sync {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Bgp join sync routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf bgp-leave-sync {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Bgp leave sync routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-msg-tx-stats {
+    uses igmp-snooping-msg-stats;
+    leaf error-packets {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Transmission error IGMP packets";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf bgp-join-sync {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Bgp join sync routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf bgp-leave-sync {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Bgp leave sync routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-msg-fwd-stats {
+    uses igmp-snooping-msg-stats;
+    leaf unknown-type {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Unknown IGMP types";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf error-packets {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Forwarding Errors";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-msg-error-stats {
+    leaf bad-length {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Bad length";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf unknown-type {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Unknown type";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf wrong-version {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Wrong version";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf import-policy-drops {
+      if-feature "srl_nokia-feat:mcast-route-policy";
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times the host IP address or group or
+         source IP addresses specified in the import policy are matched";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf missing-router-alert {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Router alert flag is not set";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf bad-encoding {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Badly encoded packets";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf local-scope {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Link-local scope multicast group address";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf reached-maximum-number-groups {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times a join is discarded because the maximum number of
+         groups is reached";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf reached-maximum-number-group-sources {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times a join is discarded because the maximum number of
+         group-source combinations is reached";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf reached-maximum-number-sources {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times a join is discarded because the maximum number of
+         sources per group is reached";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf out-of-memory-discarded-packets {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times a join is discarded because the router ran out of memory";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf bad-igmp-checksum {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times a packet is discarded because of a bad IGMP header checksum";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf zero-source-ip-address {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times a packet is discarded because it has a zero source IP address";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf send-query-configured-discarded-packets {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Number of times a query is discarded because send-queries is configured in the
+         sub-interface";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf discarded-bgp-join-sync {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Bgp join sync routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf discarded-bgp-leave-sync {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Bgp leave sync routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-multicast-state {
+    leaf star-group-entries {
+      config false;
+      description
+        "The number of (*,G)s";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf source-group-entries {
+      config false;
+      description
+        "The number of (S,G)s";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-statistics-state {
+    container received {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Received message statistics";
+      uses igmp-snooping-msg-rx-stats;
+    }
+    container transmitted {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Transmit message statistics";
+      uses igmp-snooping-msg-tx-stats;
+    }
+    container forwarded {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Forward message statistics";
+      uses igmp-snooping-msg-fwd-stats;
+    }
+    container error {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Error message statistics";
+      uses igmp-snooping-msg-error-stats;
+    }
+    container multicast-states {
+      config false;
+      description
+        "Multicast state count for this network instance";
+      uses igmp-snooping-multicast-state;
+    }
+  }
+
+  grouping igmp-snooping-interface-group-source-state {
+    leaf source-type {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-igmp-types:learn-type;
+    }
+    leaf forwarding-state {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Traffic forwardeding state on this port";
+      type srl_nokia-igmp-types:forwarding-state;
+    }
+    leaf up-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time elapsed since this entry was created";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf expiry-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time left before multicast group timeout";
+      type uint32;
+      units "seconds";
+    }
+  }
+
+  grouping igmp-snooping-interface-group-state {
+    description
+      "IGMP membership state";
+    leaf group-type {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-igmp-types:learn-type;
+    }
+    leaf filter-mode {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      type srl_nokia-igmp-types:filter-mode;
+    }
+    leaf expiry-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time left before multicast group timeout";
+      type uint32;
+      units "seconds";
+    }
+    leaf up-time {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "The time elapsed since this entry was created";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf v1-host-timer {
+      config false;
+      description
+        "The time remaining until the local router will assume that
+         there are no longer any version 1 members";
+      type uint32;
+      units "seconds";
+    }
+    leaf v2-host-timer {
+      config false;
+      description
+        "The time remaining until the local router will assume that
+         there are no longer any version 2 members";
+      type uint32;
+      units "seconds";
+    }
+    leaf igmp-compatibility-mode {
+      config false;
+      description
+        "Compatibility with older version routers";
+      type srl_nokia-igmp-types:igmp-version;
+    }
+  }
+
+  grouping igmp-snooping-interface-membership {
+    description
+      "IGMP membership information";
+    leaf membership-group-count {
+      config false;
+      description
+        "The number of multicast groups which have been learned";
+      type uint32;
+    }
+    container membership-groups {
+      config false;
+      description
+        "List of IGMP Membership information";
+      list group {
+        key "group";
+        config false;
+        description
+          "Multicast group membership";
+        leaf group {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "Multicast address.";
+        }
+        uses igmp-snooping-interface-group-state;
+        list source {
+          config false;
+          key "source";
+          description
+            "Source addresses of multicast";
+          leaf source {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "Source address of multicast";
+          }
+          uses igmp-snooping-interface-group-source-state;
+        }
+      }
+    }
+  }
+
+  grouping igmp-snooping-interface-state {
+    uses igmp-snooping-interface-membership;
+    container statistics {
+      config false;
+      description
+        "IGMP sub-interface statistics";
+      uses igmp-snooping-statistics-state;
+    }
+    leaf is-mrouter-port {
+      config false;
+      description
+        "Interface is a multicast router port";
+      type boolean;
+    }
+  }
+
+  grouping igmp-snooping-bgp-smet-route-stats {
+    leaf received-smet {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Total number of received smet routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf discarded-smet {
+      config false;
+      srl_nokia-ext:show-importance "high";
+      description
+        "Total number of discarded smet routes";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping igmp-snooping-evpn-interface-state {
+    leaf is-mrouter-port {
+      config false;
+      description
+        "vxlan-interface is a multicast router port";
+      type boolean;
+    }
+    leaf is-evpn-proxy {
+      config false;
+      description
+        "vxlan-interface supports evpn-proxy";
+      type boolean;
+    }
+    leaf is-sbd {
+      config false;
+      description
+        "vxlan-interface is a supplementary broadcast domain";
+      type boolean;
+    }
+    uses igmp-snooping-interface-membership;
+    container statistics {
+      config false;
+      description
+        "vxlan-interface statistics";
+      uses igmp-snooping-bgp-smet-route-stats;
+    }
+  }
+
+  grouping igmp-snooping-top {
+    container igmp-snooping {
+      if-feature "srl_nokia-feat:igmp-snooping";
+      presence "Configure IGMP snooping";
+      must "(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
+        error-message "igmp-snooping configuration is only possible on a network-instance of type mac-vrf";
+      }
+      uses igmp-snooping-global-config;
+      uses igmp-snooping-global-trace-options;
+      uses igmp-snooping-global-state;
+      list interface {
+        description
+          "List of IGMP interfaces";
+        key "interface-name";
+        uses igmp-interface-key;
+        uses igmp-snooping-interface-config;
+        uses igmp-snooping-interface-state;
+      }
+      list vxlan-destination {
+        config false;
+        key "vtep vni";
+        leaf vtep {
+          srl_nokia-ext:show-importance "high";
+          type srl_nokia-comm:ip-address;
+          description
+            "The IP address that identifies the remote VXLAN Termination Endpoint (VTEP).";
+        }
+        leaf vni {
+          type uint32 {
+            range "1..16777215";
+          }
+          srl_nokia-ext:show-importance "high";
+          description
+            "VXLAN Network Identifier of the destination.";
+        }
+        leaf index {
+          srl_nokia-ext:show-importance "high";
+          type uint64;
+          description
+            "the next-hop-group-id (system allocated) for resolving the VXLAN termination endpoint";
+        }
+        uses igmp-snooping-evpn-interface-state;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses igmp-snooping-top;
+  }
+}

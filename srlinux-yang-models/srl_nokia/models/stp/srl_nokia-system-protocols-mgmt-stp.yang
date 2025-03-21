@@ -1,0 +1,178 @@
+module srl_nokia-system-protocols-mgmt-stp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:stp:system-protocols-mgmt-stp";
+  prefix srl_nokia-system-protocols-mgmt-stp;
+
+  import srl_nokia-stp-types {
+    prefix srl_nokia-stp-types;
+  }
+  import srl_nokia-stp-common {
+    prefix srl_nokia-stp-common;
+  }
+  import openconfig-vlan-types {
+    prefix oc-vlan-types;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-system-network-instance {
+    prefix srl_nokia-system-network-instance;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file provides Mgmt-Stp configuration under system protocols";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping mst-instance-config {
+    description
+      "Top level grouping for mstp instances";
+    list mst-instance {
+      key "mst-id";
+      description
+        "List of the mstp instances";
+      leaf mst-id {
+        type uint8 {
+          range "1..15";
+        }
+        description
+          "In an MSTP Bridge, an MSTID, is used to identify a multiple-spanning-tree-instance.";
+      }
+      leaf mst-priority {
+        type srl_nokia-stp-types:bridge-priority-type;
+        description
+          "Priority component of the Bridge Identifier";
+      }
+      leaf-list vlan-range {
+        type oc-vlan-types:vlan-range;
+        description
+          "List of vlans mapped to the MST instance";
+      }
+    }
+  }
+
+  grouping mgmt-stp-interfaces-config {
+    description
+      "Grouping containing configuration and state for interfaces managed by Mgmt-Stp";
+    list interface {
+      key "interface-name";
+      description
+        "List of Interfaces to be managed by Mgmt-Stp";
+      leaf interface-name {
+        type string {
+          length "1..255";
+        }
+        description
+          "Name of the MSTP interface";
+      }
+      container interface-ref {
+        if-feature "srl_nokia-feat:interface-references";
+        description
+          "Reference to an interface";
+        leaf interface {
+          type leafref {
+            path "/srl_nokia-if:interface/srl_nokia-if:name";
+          }
+          description
+            "Reference to a base interface";
+        }
+      }
+      uses srl_nokia-stp-types:stp-edge-port;
+      leaf link-type {
+        type srl_nokia-stp-types:link-type-type;
+        description
+          "Indicates the link type of the interface";
+      }
+      leaf guard {
+        type srl_nokia-stp-types:guard-type;
+        description
+          "Indicates the guard type of the interface";
+      }
+      uses srl_nokia-stp-common:stp-bpdu-config;
+      list mst-instance {
+        key "mst-id";
+        description
+          "List of the mstp instances";
+        leaf mst-id {
+          type uint8 {
+            range "1..15";
+          }
+          description
+            "In an MSTP Bridge, an MST-ID, is used to identify a multiple-spanning-tree-instance";
+        }
+        leaf mst-path-cost {
+          type srl_nokia-stp-types:path-cost-type;
+          description
+            "Indicates the path cost of the interface";
+        }
+        leaf mst-port-priority {
+          type srl_nokia-stp-types:port-priority-type;
+          description
+            "Indicates the port priority of the interface";
+        }
+      }
+    }
+  }
+
+  grouping system-protocols-mgmt-stp-top {
+    description
+      "Top-level grouping containing a list of management Stp instances.";
+    list mgmt-stp {
+      key "name";
+      description
+        "Management Stp Instance configured on the local system";
+      leaf name {
+        type srl_nokia-comm:restricted-name;
+        description
+          "A unique name identifying the mgmt-stp-instance";
+      }
+      uses srl_nokia-stp-common:stp-common-config;
+      leaf mst-name {
+        type string {
+          length "1..32";
+        }
+        description
+          "The Configuration Name in the MST Configuration Identifier";
+      }
+      leaf mst-revision {
+        type uint32;
+        default "0";
+        description
+          "The Revision Level in the MST Configuration Identifier";
+      }
+      leaf mst-max-hops {
+        type uint8 {
+          range "1..255";
+        }
+        default "20";
+        description
+          "The max hop determines the number of bridges in an MST region that a BPDU can traverse before it is discarded";
+      }
+      uses mst-instance-config;
+      uses mgmt-stp-interfaces-config;
+    }
+  }
+
+  augment "/srl_nokia-system:system/srl_nokia-system-network-instance:network-instance/srl_nokia-system-network-instance:protocols" {
+    uses system-protocols-mgmt-stp-top {
+      if-feature "srl_nokia-feat:stp";
+    }
+  }
+}

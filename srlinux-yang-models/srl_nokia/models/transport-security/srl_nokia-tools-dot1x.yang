@@ -1,0 +1,39 @@
+module srl_nokia-tools-dot1x {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:dot1x:tools-dot1x";
+  prefix srl-tools-dot1x;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands for dot1x.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping dot1x-tools-top {
+    container dot1x {
+      description
+        "Enclosing container for tools system dot1x";
+      if-feature "srl-feat:dot1x-tunnel";
+      presence "Configure tools system dot1x";
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    if-feature "srl-feat:dot1x-tunnel";
+    uses dot1x-tools-top;
+  }
+}

@@ -1,0 +1,1167 @@
+module srl_nokia-service-activation-testhead {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:sath:service-activation-testhead";
+  prefix srl_nokia-service-activation-testhead;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-ethcfm {
+    prefix srl_nokia-ethcfm;
+  }
+  import srl_nokia-ethcfm-types {
+    prefix srl_nokia-ethcfm-types;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-net-inst;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+  import srl_nokia-service-activation-testhead-types {
+    prefix srl_nokia-sath-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module contains configuration and state data definitions for service activation testead (SAT)";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+
+  grouping state-service-activation-testhead {
+    description
+      "Grouping of test elements and results for SAT test";
+    container results {
+      description
+        "Context for service activation testhead";
+      list service-test {
+        key "test-name";
+        description
+          "List of service tests";
+        leaf test-name {
+          type srl_nokia-comm:restricted-name {
+            length "1..64";
+          }
+          description
+            "Service activation test name";
+        }
+      }
+      container statistics {
+        config false;
+        description
+          "Context for statistics";
+        list service-test {
+          key "test-name test-run";
+          description
+            "List of service tests";
+          leaf test-name {
+            type srl_nokia-comm:restricted-name {
+              length "1..64";
+            }
+            description
+              "Name of the service activation test";
+          }
+          leaf test-run {
+            type uint32 {
+              range "1..4294967295";
+            }
+            description
+              "Run number of the service activation service-test";
+          }
+          leaf description {
+            type srl_nokia-comm:description;
+            description
+              "Text description for the service test";
+          }
+          leaf oper-state {
+            type srl_nokia-sath-types:sath-statistics-test-run-oper-state;
+            description
+              "Operational state of the service-test run";
+          }
+          leaf time-start {
+            type union {
+              type srl_nokia-comm:date-and-time;
+              type enumeration {
+                enum not-started {
+                  value -1;
+                }
+              }
+            }
+            description
+              "Start time of the specified service-test run";
+          }
+          leaf time-end {
+            type union {
+              type srl_nokia-comm:date-and-time;
+              type enumeration {
+                enum n/a {
+                  value -1;
+                }
+              }
+            }
+            description
+              "End time of the specified service-test run";
+          }
+          leaf stream-run-type {
+            type enumeration {
+              enum sequential {
+                value 1;
+                description
+                  "Same test types are sent sequentially";
+              }
+              enum parallel {
+                value 2;
+                description
+                  "Same test types are sent at the same time";
+              }
+            }
+            description
+              "Service stream run order";
+          }
+          container test-duration {
+            description
+              "Context for test duration";
+            container cir {
+              description
+                "Context for the comitted information rate test";
+              leaf minutes-seconds {
+                type srl_nokia-sath-types:sath-mm-ss-string;
+                description
+                  "Duration of the CIR service test";
+              }
+            }
+            container cir-pir {
+              description
+                "Context for the combined comitted information rate and the peak information rate test";
+              leaf minutes-seconds {
+                type srl_nokia-sath-types:sath-mm-ss-string;
+                description
+                  "Duration of the CIR-PIR service test";
+              }
+            }
+            container policing {
+              description
+                "Context for policing test
+
+                 The test tansmits as 125% of the configured PIR rate, testing policing";
+              leaf minutes-seconds {
+                type srl_nokia-sath-types:sath-mm-ss-string;
+                description
+                  "Duration of the policing service test";
+              }
+            }
+            container performance {
+              description
+                "Context for performance test";
+              leaf hours-minutes-seconds {
+                type srl_nokia-sath-types:sath-hh-mm-ss-string;
+                description
+                  "Duration of the performance service test";
+              }
+            }
+          }
+          list service-stream {
+            key "stream-id";
+            description
+              "List of service streams";
+            leaf stream-id {
+              type uint32 {
+                range "1..8";
+              }
+              description
+                "Number of the service stream to be configured or read";
+            }
+            leaf description {
+              type srl_nokia-comm:description;
+              description
+                "Text description for the service stream";
+            }
+            leaf oper-state {
+              type srl_nokia-sath-types:sath-statistics-test-run-oper-state;
+              description
+                "Operational state of the service stream run";
+            }
+            leaf network-instance {
+              type leafref {
+                path "/srl_nokia-net-inst:network-instance/srl_nokia-net-inst:name";
+              }
+              description
+                "The network-instance which hosts the ETH-CFM MEP";
+            }
+            leaf interface {
+              type srl_nokia-net-inst:network-instance-subintf-name;
+              description
+                "The interface name";
+            }
+            container interface-ref {
+              if-feature "srl_nokia-feat:interface-references";
+              description
+                "Reference to interface subinterface when symbolic alias is configured";
+              leaf interface {
+                type leafref {
+                  path "/srl_nokia-if:interface/srl_nokia-if:name";
+                }
+                description
+                  "Reference to a base interface";
+              }
+              leaf subinterface {
+                type leafref {
+                  path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+                }
+                description
+                  "Reference to the associated subinterface in network-instance";
+              }
+            }
+            leaf source-mac-address {
+              type srl_nokia-comm:unicast-mac-address;
+              description
+                "Indicates the source MAC address for the service stream
+
+                 00:00:00:00:00:00 is returned if a source MAC address is not available";
+            }
+            leaf acceptance-criteria-template {
+              type srl_nokia-comm:restricted-name {
+                length "1..64";
+              }
+              description
+                "Acceptance criteria template for the service stream";
+            }
+            leaf rate-cir {
+              type uint32 {
+                range "0..400000000";
+              }
+              units "kilobps";
+              description
+                "CIR packet transmit rate for the service stream";
+            }
+            leaf rate-pir {
+              type uint32 {
+                range "0..400000000";
+              }
+              units "kilobps";
+              description
+                "PIR packet transmit rate for the service stream";
+            }
+            leaf size-a {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-a";
+            }
+            leaf size-b {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-b";
+            }
+            leaf size-c {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-c";
+            }
+            leaf size-d {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-d";
+            }
+            leaf size-e {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-e";
+            }
+            leaf size-f {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-f";
+            }
+            leaf size-g {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-g";
+            }
+            leaf size-h {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-h";
+            }
+            leaf size-u {
+              type uint32 {
+                range "64..9212";
+              }
+              units "bytes";
+              description
+                "Size-u";
+            }
+            leaf cir-threshold {
+              type uint32 {
+                range "0..400000000";
+              }
+              units "kilobps";
+              description
+                "Value of /oam/service-activation-testhead/acceptance-criteria-template/cir-threshold when the test run started";
+            }
+            leaf pir-threshold {
+              type uint32 {
+                range "0..400000000";
+              }
+              units "kilobps";
+              description
+                "Value of /oam/service-activation-testhead/acceptance-criteria-template/pir-threshold when the test run started";
+            }
+            leaf loss-threshold {
+              type srl_nokia-sath-types:sath-loss-percent-union;
+              description
+                "Value of /oam/service-activation-testhead/acceptance-criteria-template/loss-threshold when the test run started";
+            }
+            leaf loss-threshold-policing {
+              type srl_nokia-sath-types:sath-loss-percent-union;
+              description
+                "Value of /oam/service-activation-testhead/acceptance-criteria-template/loss-threshold-policing when the test run started";
+            }
+            leaf delay-threshold {
+              type uint32 {
+                range "0..100000000";
+              }
+              units "microseconds";
+              description
+                "Value of /oam/service-activation-testhead/acceptance-criteria-template/delay-threshold when the test run started";
+            }
+            leaf delay-var-threshold {
+              type uint32 {
+                range "0..100000000";
+              }
+              units "microseconds";
+              description
+                "Value of /oam/service-activation-testhead/acceptance-criteria-template/delay-var-threshold when the test run started";
+            }
+            leaf m-factor {
+              type uint32 {
+                range "0..400000000";
+              }
+              units "kilobps";
+              description
+                "Value of /oam/service-activation-testhead/acceptance-criteria-template/m-factor when the test run started";
+            }
+            container frame-mix {
+              description
+                "Context for frame-mix";
+              leaf frame-size-template {
+                type srl_nokia-comm:restricted-name {
+                  length "1..64";
+                }
+                description
+                  "Name of frame-mix template configured for the service stream";
+              }
+              leaf sequence {
+                type string {
+                  length "1..16";
+                }
+                description
+                  "Sequence of frame sizes for the service stream";
+              }
+            }
+            container test-types {
+              description
+                "Context for test-types";
+              leaf cir {
+                type boolean;
+                description
+                  "CIR test for the service stream";
+              }
+              leaf cir-pir {
+                type boolean;
+                description
+                  "CIR-PIR test for the service stream";
+              }
+              leaf policing {
+                type boolean;
+                description
+                  "Policing test for the service stream";
+              }
+              leaf performance {
+                type boolean;
+                description
+                  "Performance test for the service stream";
+              }
+            }
+            container frame-payload {
+              description
+                "Context for frame-payload";
+              container data-pattern {
+                description
+                  "Context for data-pattern";
+                leaf repeat {
+                  type union {
+                    type srl_nokia-comm:hex-string;
+                    type uint16;
+                  }
+                  description
+                    "Repeated 4-byte pattern to pad each packet sent";
+                }
+              }
+              container ethernet {
+                description
+                  "Enter the ethernet context";
+                leaf destination-mac-address {
+                  type srl_nokia-comm:unicast-mac-address;
+                  description
+                    "Destination MAC address of Ethernet frames";
+                }
+                container eth-cfm {
+                  description
+                    "Context for ETH-CFM";
+                  container source {
+                    description
+                      "Context for source";
+                    leaf mep-id {
+                      type srl_nokia-ethcfm-types:mep-id-type;
+                      description
+                        "Source ETH-CFM maintenance association end point identifier";
+                    }
+                    leaf domain-id {
+                      type string;
+                      description
+                        "Source ETH-CFM maintenance domain name identifier";
+                    }
+                    leaf association-id {
+                      type string;
+                      description
+                        "Source ETH-CFM maintenance association name identifier";
+                    }
+                  }
+                }
+                container s-tag {
+                  description
+                    "Context for s-tag VLAN";
+                  leaf dot1p {
+                    type uint32 {
+                      range "0..7";
+                    }
+                    description
+                      "Priority code point of Ethernet frames for service stream s-tag
+
+                       Dot1p bits sent on the wire for outer double-tagged subinterfaces.
+                       If the forwarding class and profile are not configured this value will drive those attributes
+                       for double tagged subinterfaces.";
+                  }
+                  leaf discard-eligible {
+                    type boolean;
+                    description
+                      "Marking of DEI bit in the VLAN header
+
+                       'true' means packet is diacard eligible
+                       'false' means packet is not dicard eligible";
+                  }
+                }
+                container c-tag {
+                  description
+                    "Context for c-tag VLAN";
+                  leaf dot1p {
+                    type uint32 {
+                      range "0..7";
+                    }
+                    description
+                      "Priority code point of Ethernet frames for service stream c-tag
+
+                       Dot1p bits sent on the wire for single tagged or inner double-tagged Ethernet frames.
+                       If the forwarding class and profile are not configured this value will drive those attributes
+                       for single tagged subinterfaces.";
+                  }
+                  leaf discard-eligible {
+                    type boolean;
+                    description
+                      "Marking of DEI bit in the VLAN header
+
+                       'true' means packet is diacard eligible
+                       'false' means packet is not dicard eligible";
+                  }
+                }
+              }
+            }
+            list test-results {
+              key "test-type";
+              description
+                "List test type";
+              leaf test-type {
+                type enumeration {
+                  enum cir {
+                    value 1;
+                  }
+                  enum cir-pir {
+                    value 2;
+                  }
+                  enum policing {
+                    value 3;
+                  }
+                  enum performance {
+                    value 4;
+                  }
+                }
+                description
+                  "The test type to be read";
+              }
+              leaf oper-state {
+                type srl_nokia-sath-types:sath-statistics-test-run-oper-state;
+                description
+                  "Indicates the operational state of the test run";
+              }
+              leaf time-start {
+                type union {
+                  type srl_nokia-comm:date-and-time;
+                  type enumeration {
+                    enum not-started {
+                      value -1;
+                    }
+                  }
+                }
+                description
+                  "Start time of the specified test run";
+              }
+              leaf time-end {
+                type union {
+                  type srl_nokia-comm:date-and-time;
+                  type enumeration {
+                    enum n/a {
+                      value -1;
+                    }
+                  }
+                }
+                description
+                  "End time time of the specified test run";
+              }
+              leaf time-left {
+                type uint32;
+                units "seconds";
+                description
+                  "Execution time remaining for the test run";
+              }
+              leaf oper-status-throughput {
+                type srl_nokia-sath-types:sath-statistics-test-oper-state;
+                description
+                  "Test run's operational status, with respect to the throughput acceptance criteria";
+              }
+              leaf oper-status-frame-loss-ratio {
+                type srl_nokia-sath-types:sath-statistics-test-oper-state;
+                description
+                  "Test run's operational status, with respect to the FLR acceptance criteria";
+              }
+              leaf oper-status-delay {
+                type srl_nokia-sath-types:sath-statistics-test-oper-state;
+                description
+                  "Test run's operational status, with respect to the delay acceptance criteria";
+              }
+              leaf oper-status-delay-var {
+                type srl_nokia-sath-types:sath-statistics-test-oper-state;
+                description
+                  "Test run's operational status, with respect to the delay variation acceptance criteria";
+              }
+              leaf measured-delay-min {
+                type int32;
+                units "microseconds";
+                description
+                  "Minimum delay measured for the test run";
+              }
+              leaf measured-delay-max {
+                type int32;
+                units "microseconds";
+                description
+                  "Maximum delay measured for the test run";
+              }
+              leaf measured-delay-avg {
+                type int32;
+                units "microseconds";
+                description
+                  "Average delay measured for the test run";
+              }
+              leaf measured-delay-var-min {
+                type int32;
+                units "microseconds";
+                description
+                  "Minimum delay variation measured for the test run";
+              }
+              leaf measured-delay-var-max {
+                type int32;
+                units "microseconds";
+                description
+                  "Maximum delay variation measured for the test run";
+              }
+              leaf measured-delay-var-avg {
+                type int32;
+                units "microseconds";
+                description
+                  "Average delay variation measured for the test run";
+              }
+              leaf measured-throughput {
+                type uint32;
+                units "kilobps";
+                description
+                  "Measured throughput for the test run";
+              }
+              leaf measured-frame-loss-ratio {
+                type srl_nokia-sath-types:sath-loss-percent-decimal64;
+                units "percent";
+                description
+                  "Measured FLR for the test run";
+              }
+              leaf measured-frame-tx {
+                type srl_nokia-comm:zero-based-counter64;
+                units "frames";
+                description
+                  "Number of frames transmitted during the test run";
+              }
+              leaf measured-frame-rx {
+                type srl_nokia-comm:zero-based-counter64;
+                units "frames";
+                description
+                  "Number of frames received during the test run";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping service-activation-testhead {
+    description
+      "Grouping configuration service activation testhead";
+    container service-activation-testhead {
+      presence "Service activation testhead service testing and reporting";
+      description
+        "Context service activation testhead";
+      list acceptance-criteria-template {
+        key "ac-template-name";
+        max-elements 100;
+        description
+          "List of acceptance criteria templates";
+        leaf ac-template-name {
+          type srl_nokia-comm:restricted-name {
+            length "1..64";
+          }
+          must "not(. = 'default')" {
+            error-message "default is a reserved acceptance criteria template name";
+          }
+          description
+            "Acceptance criteria template name";
+        }
+        leaf description {
+          type srl_nokia-comm:description;
+          description
+            "Text description for the acceptance criteria template";
+        }
+        leaf cir-threshold {
+          type uint32 {
+            range "1..400000000";
+          }
+          units "kilobps";
+          description
+            "CIR threshold";
+        }
+        leaf pir-threshold {
+          type uint32 {
+            range "1..400000000";
+          }
+          units "kilobps";
+          description
+            "PIR threshold";
+        }
+        leaf loss-threshold {
+          type srl_nokia-sath-types:sath-loss-percent-decimal64;
+          description
+            "Frame loss threshold for non-policing test";
+        }
+        leaf loss-threshold-policing {
+          type srl_nokia-sath-types:sath-loss-percent-decimal64;
+          description
+            "Frame loss threshold for policing test";
+        }
+        leaf delay-threshold {
+          type uint32 {
+            range "1..100000000";
+          }
+          units "microseconds";
+          description
+            "Delay threshold";
+        }
+        leaf delay-var-threshold {
+          type uint32 {
+            range "1..100000000";
+          }
+          units "microseconds";
+          description
+            "Delay variation threshold";
+        }
+        leaf m-factor {
+          type uint32 {
+            range "1..400000000";
+          }
+          units "kilobps";
+          description
+            "Throughput acceptable margin of error
+
+             Margin by which the observed throughput is off from the configured throughput to
+             determine whether a service test passes or fails.  The m-factor is used with
+             cir-threshold and pir-threshold values for the different test types to determine
+             whether a test passes or fails.";
+        }
+      }
+      list frame-size-template {
+        key "fs-template-name";
+        max-elements 100;
+        description
+          "List frame size template";
+        leaf fs-template-name {
+          type srl_nokia-comm:restricted-name {
+            length "1..64";
+          }
+          must "not(. = 'default')" {
+            error-message "default is a reserved accframe size template name";
+          }
+          description
+            "Frame size template name";
+        }
+        leaf size-a {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "64";
+          description
+            "Size-a";
+        }
+        leaf size-b {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "128";
+          description
+            "Size-b";
+        }
+        leaf size-c {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "256";
+          description
+            "Size-c";
+        }
+        leaf size-d {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "512";
+          description
+            "Size-d";
+        }
+        leaf size-e {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "1024";
+          description
+            "Size-e";
+        }
+        leaf size-f {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "1280";
+          description
+            "Size-f";
+        }
+        leaf size-g {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "1518";
+          description
+            "Size-g";
+        }
+        leaf size-h {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "9212";
+          description
+            "Size-h";
+        }
+        leaf size-u {
+          type uint32 {
+            range "64..9212";
+          }
+          units "bytes";
+          default "2000";
+          description
+            "Size-u for user configured value";
+        }
+      }
+      list service-test {
+        key "test-name";
+        max-elements 500;
+        description
+          "List service tests";
+        leaf test-name {
+          type srl_nokia-comm:restricted-name {
+            length "1..64";
+          }
+          description
+            "Service activation test name";
+        }
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default "disable";
+          description
+            "Administrative state of the service test";
+        }
+        leaf description {
+          type srl_nokia-comm:description;
+          description
+            "Text description for the service test";
+        }
+        leaf stream-run-type {
+          type enumeration {
+            enum sequential {
+              value 1;
+              description
+                "Same test types are sent sequentially";
+            }
+            enum parallel {
+              value 2;
+              description
+                "Same test types are sent at the same time";
+            }
+          }
+          default "parallel";
+          description
+            "Service stream run order";
+        }
+        container test-duration {
+          description
+            "Context for test duration";
+          container cir {
+            description
+              "Context for the comitted information rate test";
+            leaf minutes-seconds {
+              type srl_nokia-sath-types:sath-mm-ss-string;
+              default "05:00";
+              description
+                "Duration of the CIR service tests";
+            }
+          }
+          container cir-pir {
+            description
+              "Context for the combined comitted information rate and the peak information rate test";
+            leaf minutes-seconds {
+              type srl_nokia-sath-types:sath-mm-ss-string;
+              default "10:00";
+              description
+                "Duration of CIR-PIR service tests";
+            }
+          }
+          container policing {
+            description
+              "Context for policing test
+
+               The test tansmits as 125% of the configured PIR rate, testing policing";
+            leaf minutes-seconds {
+              type srl_nokia-sath-types:sath-mm-ss-string;
+              default "10:00";
+              description
+                "Duration of policing service test";
+            }
+          }
+          container performance {
+            description
+              "Context for performance test";
+            leaf hours-minutes-seconds {
+              type srl_nokia-sath-types:sath-hh-mm-ss-string;
+              default "00:15:00";
+              description
+                "Duration of performance service test";
+            }
+          }
+        }
+        list service-stream {
+          key "stream-id";
+          description
+            "List service streams";
+          leaf stream-id {
+            type uint32 {
+              range "1..8";
+            }
+            description
+              "Service stream identifier";
+          }
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            default "disable";
+            description
+              "Administrative state of the service stream";
+          }
+          leaf description {
+            type srl_nokia-comm:description;
+            description
+              "Text description for the service stream";
+          }
+          leaf acceptance-criteria-template {
+            type leafref {
+              path "../../../acceptance-criteria-template/ac-template-name";
+            }
+            description
+              "Acceptance criteria template association to a service stream";
+          }
+          leaf rate-cir {
+            type uint32 {
+              range "0..400000000";
+            }
+            units "kilobps";
+            default "0";
+            description
+              "CIR packet transmit rate for the service stream";
+          }
+          leaf rate-pir {
+            type uint32 {
+              range "0..400000000";
+            }
+            units "kilobps";
+            default "0";
+            must '(. = 0 or . > ../rate-cir)' {
+              error-message "Rate PIR must be higher than rate CIR when rate PIR is non-zero";
+            }
+            description
+              "PIR packet transmit rate for the service stream";
+          }
+          container frame-mix {
+            description
+              "Context frame mix";
+            leaf frame-size-template {
+              type leafref {
+                path "../../../../frame-size-template/fs-template-name";
+              }
+              description
+                "Frame size template association to a service stream";
+            }
+            leaf sequence {
+              type string {
+                length "1..16";
+                pattern '[a-hu]';
+              }
+              default "a";
+              description
+                "Sequence of frame sizes for the service stream";
+            }
+          }
+          container qos {
+            description
+              "Context for qos";
+            leaf forwarding-class {
+              if-feature "srl_nokia-feat:qos";
+              type leafref {
+                path "/srl_nokia-qos:qos/srl_nokia-qos:forwarding-classes/srl_nokia-qos:forwarding-class/srl_nokia-qos:name";
+              }
+              must '../profile' {
+                error-message "Profile must be configured when forwarding class is configured'";
+              }
+              description
+                "The forwarding class
+
+                 When value not specified, the appropriate s-tag or c-tag priorties with be used to derive.";
+            }
+            leaf profile {
+              if-feature "srl_nokia-feat:qos";
+              type srl_nokia-comm:rewrite-profile;
+              must '../forwarding-class' {
+                error-message "Forwarding class must be configured when profile is configured'";
+              }
+              description
+                "The profile or drop precedence
+
+                 When value not specified, the appropriate s-tag or c-tag priorties with be used to derive";
+            }
+          }
+          container test-types {
+            description
+              "Context for test types";
+            leaf cir {
+              type boolean;
+              default "false";
+              description
+                "CIR test for the service stream";
+            }
+            leaf cir-pir {
+              type boolean;
+              default "false";
+              description
+                "CIR-PIR test for the service stream";
+            }
+            leaf policing {
+              type boolean;
+              default "false";
+              description
+                "Policing test for the service stream";
+            }
+            leaf performance {
+              type boolean;
+              default "false";
+              description
+                "Performance test for the service stream";
+            }
+          }
+          container frame-payload {
+            description
+              "Context for frame payload";
+            container data-pattern {
+              description
+                "Context for data pattern";
+              leaf repeat {
+                type union {
+                  type srl_nokia-comm:hex-string;
+                  type uint16;
+                }
+                description
+                  "Repeated 4-byte pattern to pad each packet sent";
+              }
+            }
+            container ethernet {
+              description
+                "Context for Ethernet header";
+              leaf dst-mac {
+                type srl_nokia-comm:unicast-mac-address;
+                description
+                  "Destination MAC address of Ethernet frames";
+              }
+              container eth-cfm {
+                description
+                  "Enter the eth-cfm context";
+                container source {
+                  leaf domain-id {
+                    type leafref {
+                      path "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain/srl_nokia-ethcfm:domain-id";
+                    }
+                    description
+                      "ETH-CFM maintenance domain identifier";
+                  }
+                  leaf association-id {
+                    type leafref {
+                      path "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain[srl_nokia-ethcfm:domain-id=current()/../domain-id]/srl_nokia-ethcfm:association/srl_nokia-ethcfm:association-id";
+                    }
+                    description
+                      "ETH-CFM maintenance association identifier specific to the domain identifier";
+                  }
+                  leaf mep-id {
+                    type leafref {
+                      path "/srl_nokia-oam:oam/srl_nokia-ethcfm:ethcfm/srl_nokia-ethcfm:domain[srl_nokia-ethcfm:domain-id=current()/../domain-id]/srl_nokia-ethcfm:association[srl_nokia-ethcfm:association-id=current()/../association-id]/srl_nokia-ethcfm:mep/srl_nokia-ethcfm:mep-id";
+                    }
+                    description
+                      "The MEP identifier specific to the domain and association identifier";
+                  }
+                }
+              }
+              container s-tag {
+                description
+                  "Enter the s-tag context";
+                leaf dot1p {
+                  type uint32 {
+                    range "0..7";
+                  }
+                  default "7";
+                  description
+                    "Priority code point of Ethernet frames for service stream s-tag
+
+                     Dot1p bits sent on the wire for outer double-tagged subinterfaces.
+                     If the forwarding class and profile are not configured this value will drive those attributes
+                     for double tagged subinterfaces.";
+                }
+                leaf discard-eligible {
+                  type boolean;
+                  default "false";
+                  description
+                    "Marking of DEI bit in the outer VLAN header for double tagged packets
+
+                     'true' means packet is discard eligible
+                     'false' means packet is not dicard eligible";
+                }
+              }
+              container c-tag {
+                description
+                  "Context for c-tag";
+                leaf dot1p {
+                  type uint32 {
+                    range "0..7";
+                  }
+                  default "7";
+                  description
+                    "Priority code point of Ethernet frames for service stream c-tag
+
+                     Dot1p bits sent on the wire for single tagged or inner double-tagged Ethernet frames.
+                     If the forwarding class and profile are not configured this value will drive those attributes
+                     for single tagged subinterfaces.";
+                }
+                leaf discard-eligible {
+                  type boolean;
+                  default "false";
+                  description
+                    "Marking of DEI bit in the VLAN header for inner double tagged or only for single tagged packets
+
+                     'true' means packet is discard eligible
+                     'false' means packet is not dicard eligible";
+                }
+              }
+            }
+          }
+        }
+      }
+      uses state-service-activation-testhead;
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    if-feature "srl_nokia-feat:service-activation-testhead";
+    uses service-activation-testhead;
+  }
+}

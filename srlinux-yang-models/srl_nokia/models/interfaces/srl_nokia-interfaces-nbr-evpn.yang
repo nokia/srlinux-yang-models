@@ -1,0 +1,147 @@
+module srl_nokia-interfaces-nbr-evpn {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:evpn:interfaces-nbr-evpn";
+  prefix srl_nokia-if-ip-nbr-evpn;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-interfaces-nbr {
+    prefix srl_nokia-if-ip-nbr;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-routing-pol;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-bgp-vpn {
+    prefix srl_bgp-vpn;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing ARP and IPv6 neighbor discovery for on IP subinterfaces.";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 2025.3.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+
+  grouping evpn-interface-less-host-routing {
+    description
+      "Grouping containing the configuration of EVPN IFL symmetric IRB advertisement";
+    container interface-less-routing {
+      if-feature "srl-feat:evpn-ifl-host";
+      presence "Configuration of evpn interface-less-routing for entries derived from ARP/ND entries";
+      description
+        "Enables the advertisement of EVPN-IFL host routes for entries derived from ARP/ND entries
+
+         When configured, the ARP/ND entries indicated by the parent advertise command are
+         advertised in EVPN MAC/IP Advertisement routes that include not only the label1 and
+         route target of the MAC-VRF network-instance, but also the label2 value and route target
+         of the EVPN interface-less instance in the linked IP-VRF.";
+      leaf bgp-evpn-instance {
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_bgp-vpn:bgp-vpn/srl_bgp-vpn:bgp-instance/srl_bgp-vpn:id";
+        }
+        default "1";
+        description
+          "The bgp-evpn instance of the IP-VRF network-instance
+
+           It indicates from which EVPN interface-less bgp-instance the layer-3 label and route target
+           are taken when advertising the ARP/ND entry in an EVPN MAC/IP Advertisement route.";
+      }
+    }
+  }
+
+  grouping route-internal-tags {
+    description
+      "Grouping containing the configuration of internal tags";
+    container internal-tags {
+      if-feature "srl-feat:internal-tags";
+      description
+        "Configuration and state of internal tags";
+      leaf-list set-tag-set {
+        max-elements 1;
+        type leafref {
+          path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
+      }
+    }
+  }
+
+  grouping common-neighbor-discovery {
+    leaf route-type {
+      description
+        "Controls what type of ARP or ND entries to advertise.";
+      type enumeration {
+        enum static {
+          value 1;
+        }
+        enum dynamic {
+          value 2;
+        }
+      }
+    }
+    uses route-internal-tags;
+    uses evpn-interface-less-host-routing;
+  }
+
+  grouping evpn-top {
+    container evpn {
+      if-feature "srl-feat:evpn";
+      presence "Configure evpn parameters";
+      must "starts-with(../../../../srl_nokia-if:name,'irb')" {
+        error-message "Only supported on IRB subinterfaces";
+      }
+      description
+        "Configure which types of ARP or ND entries will be advertised in EVPN MAC/IP routes.";
+      list advertise {
+        key "route-type";
+        uses common-neighbor-discovery;
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv4/srl_nokia-if-ip-nbr:arp" {
+    description
+      "IPv4 addr family evpn configuration for interfaces";
+    uses evpn-top;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv6/srl_nokia-if-ip-nbr:neighbor-discovery" {
+    description
+      "IPv6 address family evpn onfiguration for interfaces";
+    uses evpn-top;
+  }
+}

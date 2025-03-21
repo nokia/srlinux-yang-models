@@ -1,0 +1,81 @@
+module srl_nokia-tools-interfaces-packet-link-qual {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:tools-interfaces-packet-link-qual";
+  prefix srl_nokia-tools-if-packet-link-qual;
+
+  import srl_nokia-tools-interfaces {
+    prefix srl-tools-if;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing gNOI Packet Link Qualification tests";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping tools-interface-packet-link-qual-top {
+    container packet-link-qualification {
+      if-feature "srl_nokia-feat:packet-link-qualification";
+      choice action {
+        case start {
+          container start {
+            must "starts-with(../../name,'ethernet') and not(re-match(../name,'.*\\..*'))" {
+              error-message "Must be used with an ethernet port which is not a subinterface";
+            }
+            description
+              "Start packet link qualification";
+            leaf id {
+              mandatory true;
+              description
+                "Packet link qualification test ID";
+              type srl-comm:packet-link-qualification-id;
+            }
+            leaf qualification-profile {
+              mandatory true;
+              description
+                "Packet link qualification profile name";
+              type srl-comm:packet-link-qualification-id;
+            }
+          }
+        }
+        case cancel {
+          container cancel {
+            description
+              "Cancel the packet link qualification and delete the results";
+            leaf id {
+              mandatory true;
+              description
+                "Packet link qualification test ID";
+              type srl-comm:packet-link-qualification-id;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-if:interface" {
+    uses tools-interface-packet-link-qual-top;
+  }
+}
