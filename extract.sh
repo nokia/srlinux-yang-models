@@ -60,7 +60,7 @@ EOF
 checkout_orphan_branch
 
 DIR_NAME="$(pwd)/srlinux-yang-models"
-# if pull is not successfull, assume that image is present locally
+# if pull is not successful, assume that image is present locally
 docker pull ghcr.io/nokia/srlinux:$1 || echo "using local image"
 id=$(docker create ghcr.io/nokia/srlinux:$SRL_VER foo)
 # remove prev yang files
@@ -69,6 +69,8 @@ mkdir -p $DIR_NAME
 docker cp $id:/opt/srlinux/models/. $DIR_NAME
 # copy mappings
 docker cp $id:/opt/srlinux/mappings $DIR_NAME
+# copy oc deviations
+docker cp $id:/opt/srlinux/deviations/openconfig/openconfig-srl-deviations.yang $DIR_NAME/openconfig
 
 # remove unused files
 rm -f $DIR_NAME/*.j2
