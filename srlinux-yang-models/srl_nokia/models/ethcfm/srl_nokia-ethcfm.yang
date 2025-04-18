@@ -1138,6 +1138,12 @@ module srl_nokia-ethcfm {
               type leafref {
                 path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
               }
+              must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type='mac-vrf' or
+                    /srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type='ip-vrf' or
+                    /srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type='default' or
+                    /srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type='vpws'" {
+                error-message "ETH-CFM MEP not supported on network-instance type";
+              }
               description
                 "The network instance to which the information in this maintenance-association applies";
             }
@@ -1279,6 +1285,12 @@ module srl_nokia-ethcfm {
                   "Reference to a subinterface
 
                    This requires the base interface to be specified using the interface leaf in this container.";
+                must "(/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()]/srl_nokia-if:type ='bridged') or ../../direction='down'" {
+                  error-message "Sub-interface's Network-instance type does not support MEP direction 'up'.";
+                }
+                must "../../../network-instance/name and not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()/../../../../srl_nokia-ethcfm:association[srl_nokia-ethcfm:association-id=current()/../../../srl_nokia-ethcfm:association-id]/srl_nokia-ethcfm:network-instance/srl_nokia-ethcfm:name]/srl_nokia-netinst:type = 'vpws')" {
+                  error-message "No network-instance configured or sub-interface's network-instance type does not support MEP.";
+                }
               }
             }
             leaf admin-state {

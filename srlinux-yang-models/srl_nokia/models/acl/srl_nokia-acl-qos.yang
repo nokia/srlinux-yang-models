@@ -27,6 +27,10 @@ module srl_nokia-acl-qos {
   description
     "This module defines configuration and operational state data for access control lists (ACL) support of QoS classification conditions and actions.";
 
+  revision 2025-01-10 {
+      description
+      "SRLinux 24.10.2";
+  }
   revision 2024-10-31 {
     description
       "SRLinux 24.10.1";
@@ -220,6 +224,11 @@ module srl_nokia-acl-qos {
            the interface";
         must '/srl_nokia-qos:qos/srl_nokia-qos:classifiers/srl_nokia-acl-qos:multifield-classifier[srl_nokia-acl-qos:name = current()]/srl_nokia-acl-qos:type = ../type' {
           error-message "qos classifier type should match with input classifier type";
+        }
+        must "/srl_nokia-if:interface[srl_nokia-if:name = current()/../../../../srl_nokia-qos:interface-ref/srl_nokia-qos:interface]/srl_nokia-if:subinterface[srl_nokia-if:index = current()/../../../../srl_nokia-qos:interface-ref/srl_nokia-qos:subinterface]/srl_nokia-if:type = 'routed' or
+              /srl_nokia-if:interface[srl_nokia-if:name = current()/../../../../srl_nokia-qos:interface-ref/srl_nokia-qos:interface]/srl_nokia-if:subinterface[srl_nokia-if:index = current()/../../../../srl_nokia-qos:interface-ref/srl_nokia-qos:subinterface]/srl_nokia-if:type = 'bridged' or
+              not(/srl_nokia-if:interface[srl_nokia-if:name = current()/../../../../srl_nokia-qos:interface-ref/srl_nokia-qos:interface]/srl_nokia-if:subinterface[srl_nokia-if:index = current()/../../../../srl_nokia-qos:interface-ref/srl_nokia-qos:subinterface]/srl_nokia-if:type)" {
+              error-message "QOS multifield classifier can only be applied on subinterfaces of type bridged or routed";
         }
       }
       leaf type {

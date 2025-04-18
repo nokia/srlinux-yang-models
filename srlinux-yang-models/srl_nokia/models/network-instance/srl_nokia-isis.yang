@@ -328,6 +328,9 @@ module srl_nokia-isis {
           must "(. = 'disable') or (../../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
             error-message "RLFA is supported only in the default network instance";
           }
+          must "not((. = 'enable') and (../../admin-state = 'disable'))" {
+            error-message "RLFA is supported only if loopfree-alternate is admin enabled";
+          }
         }
         leaf max-pq-cost {
           description
@@ -376,6 +379,9 @@ module srl_nokia-isis {
           must "(. = 'disable') or (../../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
             error-message "TI-LFA is supported only in the default network instance";
           }
+          must "not((. = 'enable') and (../../admin-state = 'disable'))" {
+            error-message "TI-LFA is supported only if loopfree-alternate is admin enabled";
+          }
         }
         leaf max-sr-policy-lfa-labels {
           description
@@ -387,6 +393,9 @@ module srl_nokia-isis {
           must '. <= 2' {
             error-message "Max SR-Policy LFA labels cannot be greater than 2 on IXR SRX platforms.";
             srl_nokia-ext:if-feature "srl_nokia-features:fpcx";
+          }
+          must "(. = 2) or (../admin-state = 'enable')" {
+            error-message "TI-LFA max-labels must be set to default value if it is disabled";
           }
         }
         container node-protect {
@@ -2215,6 +2224,11 @@ module srl_nokia-isis {
     leaf remaining-holdtime {
       description
         "The time remaining until the hold timer will expire.";
+      type uint16;
+      units "seconds";
+    }
+    leaf remaining-adj-sid-holdtime {
+      description "The remaining holding time for this adjacency-sid.";
       type uint16;
       units "seconds";
     }
