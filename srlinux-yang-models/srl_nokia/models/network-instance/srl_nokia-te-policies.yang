@@ -644,7 +644,7 @@ module srl_nokia-te-policies {
       must "boolean(./binding-sid/mpls-label or ./policy-type = 'sr-mpls-uncolored')" {
         error-message "binding-sid is mandatory for colored type policies";
       }
-      must "boolean(./color or ./policy-type = 'sr-mpls-uncolored')" {
+      must "boolean(./color = 0 or ./color or ./policy-type = 'sr-mpls-uncolored')" {
         error-message "color is mandatory for colored type policies";
       }
       must "boolean(./discriminator or ./policy-type = 'sr-mpls-uncolored')" {
@@ -769,10 +769,10 @@ module srl_nokia-te-policies {
         default "30";
       }
       container statistics {
+        if-feature "srl_nokia-feat:te-policy-statistics";
         description
           "Traffic Statistics";
         container ingress {
-          if-feature "srl_nokia-feat:te-policy-statistics";
           must "../../policy-type = 'sr-mpls-uncolored' or ./admin-state = 'disable'" {
             error-message "Statistics are supported only for uncolored type policies";
             srl_nokia-ext:if-feature "not srl_nokia-feat:te-policy-colored-statistics";
@@ -787,7 +787,6 @@ module srl_nokia-te-policies {
           }
         }
         container egress {
-          if-feature "srl_nokia-feat:te-policy-statistics";
           description
             "Egress-statistics context";
           must "../../policy-type = 'sr-mpls-uncolored' or ./admin-state = 'disable'" {

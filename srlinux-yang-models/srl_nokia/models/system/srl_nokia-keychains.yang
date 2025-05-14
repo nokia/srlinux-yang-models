@@ -177,8 +177,8 @@ module srl_nokia-keychains {
             "Tolerance for receive keys
 
              If tolerance is Z then all receive keys remain valid up to the configured/applicable end-time plus an additional Z seconds.";
-          must "(. = 0) or (../type = 'isis') or (../type = 'macsec')" {
-            error-message "Only ISIS or MACSec supports keychains with tolerance.";
+          must "(. = 0) or (../type = 'isis') or ((../type = 'macsec') and (. > 19))" {
+            error-message "Only ISIS or MACsec supports keychains with tolerance. Tolerance value for MACsec must be greater than or equal to 20 seconds ";
           }
         }
         leaf type {
@@ -246,6 +246,9 @@ module srl_nokia-keychains {
             type srl_nokia-comm:routing-password;
             description
               "The secret key to use for authentication";
+            must "(../../type != 'macsec')" {
+                 error-message "authentication-key is only valid for non macsec keychain type.";
+            }
           }
           container macsec {
             if-feature "srl-feat:macsec";
