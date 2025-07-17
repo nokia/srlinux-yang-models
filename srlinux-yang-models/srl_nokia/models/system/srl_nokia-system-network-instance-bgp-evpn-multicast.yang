@@ -1,0 +1,58 @@
+module srl_nokia-system-network-instance-bgp-evpn-multicast {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:igmp:system-network-instance-bgp-evpn-multicast";
+  prefix srl_nokia-system-bgp-evpn-multicast;
+
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-system-network-instance {
+    prefix srl_nokia-system-network-instance;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of the system network-instance bgp-evpn multicast protocols";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping evpn-multicast-top {
+    description
+      "Top-level grouping containing the system network-instance bgp-evpn multicast configuration and state";
+    container multicast {
+      if-feature "srl_nokia-feat:igmp-snooping or srl_nokia-feat:mld-snooping";
+      presence "Configure system level EVPN multicast parameters";
+      leaf leave-sync-propagation {
+        description
+          "This value is the delta time applied by a node sending the leave synch route before removing the multicast state
+
+           When EVPN multi-homing is used along with igmp/mld snooping, a node receiving a leave message from a receiver will
+           advertise an EVPN Multicast Leave Sync route to synchronize the leave state across all nodes attached to the
+           Ethernet Segment. This route encodes the maximum response time that the receiving node needs to apply for a given
+           (S,G) or (*,G) state before removing it. The leave-sync-propagation time accounts for the BGP propagation
+           time so that the local node minimizes the potential churn of removing the multicast state before the route made it
+           to the node receiving a join for the multicast group to be removed. The value must be adjusted to the estimated
+           BGP propagation time between the Ethernet Segment peers.";
+        type uint32 {
+          range "0..300";
+        }
+        units "seconds";
+        default "5";
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system/srl_nokia-system-network-instance:network-instance/srl_nokia-system-network-instance:protocols/srl_nokia-system-network-instance:evpn" {
+    uses evpn-multicast-top;
+  }
+}

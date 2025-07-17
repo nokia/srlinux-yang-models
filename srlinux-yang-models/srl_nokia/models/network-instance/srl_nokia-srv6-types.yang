@@ -1,0 +1,171 @@
+module srl_nokia-srv6-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:srv6:srv6-types";
+  prefix srl_nokia-srv6-types;
+
+  import srl_nokia-isis-lsdb-types {
+    prefix srl_nokia-isis-lsdb-types;
+  }
+  import srl_nokia-rib-bgp {
+    prefix srl_nokia-rib-bgp-routes;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG file covers segment routing v6 types";
+
+  revision 2025-03-31 {
+    description
+      "SRLinux 25.3.1";
+  }
+
+  //general types
+
+  typedef srv6-instance {
+    type int32 {
+      range "1..2";
+    }
+    description
+      "SRv6 instance range";
+  }
+
+  typedef srh-mode {
+    type enumeration {
+      enum psp {
+        value 1;
+      }
+      enum usp {
+        value 2;
+      }
+      enum psp-usd {
+        value 3;
+      }
+      enum usp-usd {
+        value 4;
+      }
+      enum psp-usp-usd {
+        value 5;
+      }
+    }
+    description
+      "Segment Routing Header (SRH) mode.
+
+       psp - Penultimate Segment Pop of the SRH.
+       usp - Ultimate Segment Pop of the SRH.
+       psp-usd - PSP Ultimate Segment Decapsulation.
+       usp-usd - USP Ultimate Segment Decapsulation.
+       psp-usp-usd - PSP USP Ultimate Segment Decapsulation";
+  }
+
+  //identities for isis lsdb
+  //TLV 27
+
+  identity srv6-locator {
+    base srl_nokia-isis-lsdb-types:isis-tlv-type;
+    description
+      "ISIS TLV 27. A locator is a covering prefix for all SIDs provisioned on that node that have the matching topology/algorithm";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  //sub-TLV 5 for TLV 27 only
+
+  identity srv6-end-sid {
+    base srl_nokia-isis-lsdb-types:ip-reachability-subtlvs-type;
+    description
+      "sub-TLV 5. SRv6 END SID";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  //sub-TLV 25 for TLV 242
+
+  identity router-capability-srv6-capabilities {
+    base srl_nokia-isis-lsdb-types:router-capability-subtlvs-type;
+    description
+      "sub-TLV 25. SRv6 Capabilities";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  //sub-TLVs 43 and 44 for TLVs 22, 23, (25, 141,) 222, 223
+
+  identity srv6-adj-sid {
+    base srl_nokia-isis-lsdb-types:is-reachability-subtlvs-type;
+    description
+      "sub-TLV 43. SRv6 END.X SID";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  identity srv6-adj-lan-sid {
+    base srl_nokia-isis-lsdb-types:is-reachability-subtlvs-type;
+    description
+      "sub-TLV 44. SRv6 LAN END.X SID";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  //sub-sub-TLV for sub-TLVs 5, 43, 44
+
+  identity srv6-sid-structure-isis {
+    base srl_nokia-isis-lsdb-types:isis-subsubtlv-type;
+    description
+      "sub-sub-TLV 1 for SRv6 SID sub-TLVs (END, END.X, LAN END.X)";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  //identities for bgp rib
+  //TLVs of BGP Prefix-SID attribute
+
+  identity srv6-l3-service {
+    base srl_nokia-rib-bgp-routes:prefix-sid-tlv-type;
+    description
+      "SRv6 L3 service (TLV 5)";
+    reference
+      "RFC9252: BGP Overlay Services Based on Segment Routing over IPv6 (SRv6)";
+  }
+
+  identity srv6-l2-service {
+    base srl_nokia-rib-bgp-routes:prefix-sid-tlv-type;
+    description
+      "SRv6 L2 service (TLV 6)";
+    reference
+      "RFC9252: BGP Overlay Services Based on Segment Routing over IPv6 (SRv6)";
+  }
+
+  //sub-TLV of TLVs 5 and 6
+
+  identity srv6-service-sub-tlv-type {
+    description
+      "Base identity for a SRv6 Service Sub-TLV type";
+  }
+
+  identity srv6-sid-information {
+    base srv6-service-sub-tlv-type;
+    description
+      "SRv6 Service SID information (sub-TLV 1)";
+    reference
+      "RFC9252: BGP Overlay Services Based on Segment Routing over IPv6 (SRv6)";
+  }
+
+  //sub-sub-TLV of sub-TLV 1
+
+  identity srv6-service-data-sub-sub-tlv-type {
+    description
+      "Base identity for a SRv6 Service Data Sub-Sub-TLV type";
+  }
+
+  identity srv6-sid-structure-bgp {
+    base srv6-service-data-sub-sub-tlv-type;
+    description
+      "SRv6 SID Structure (sub-sub-TLV 1)";
+    reference
+      "RFC9252: BGP Overlay Services Based on Segment Routing over IPv6 (SRv6)";
+  }
+}
