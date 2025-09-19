@@ -425,10 +425,10 @@ module srl_nokia-interfaces {
          7220 H3 ports 3-34: 4x10G, 2x100G/4x100G, and 2x200G
          7220 H4 ports 1-64: 4x100G and 2x200G
          7220 H4-32D ports 1-32: 2x100G/4x100G and 2x200G
-         7220 H5-32D Odd Ports 1-31: 2x50G, 2x100G, 4x100G, 2x400G, 8x100G
-         7220 H5-32D Even Ports 2-32: 2x50G, 2x100G, 2x400G
-         7220 H5-64D ports 1-32: 2x50G, 8x50G, 2x100G/4x100G/8x100G and 2x400G
-         7220 H5-64D ports 33-64: 2x50G, 2x100G and 2x400G
+         7220 H5-32D Odd Ports 1-31: 2x100G/4x100G/8x100G and 2x400G
+         7220 H5-32D Even Ports 2-32: 2x100G, 2x400G
+         7220 H5-64D ports 1-32: 2x100G/4x100G/8x100G and 2x400G
+         7220 H5-64D ports 33-64: 2x100G and 2x400G
          7220 H5-64O ports 1-32: 8x100G and 2x400G
          7220 H5-64O ports 33-64: 2x400G
          7220 D4 ports 29-32: 4x100G, 4x25G, and 4x10G
@@ -447,6 +447,7 @@ module srl_nokia-interfaces {
          7250 IXR-X3b QSFPDD all ports: 4x100G, 3x100G (Note 1), 2x100G (Note 1), 1x100G (Note 1), 4x25G, and 4x10G
          SSE-T8164 Odd Ports 1-63: 2x400G, 4x200G, 8x100G
          SSE-T8164 Even Ports 2-64: 2x400G
+
          Note 1: 3x100G, 2x100G, 1x100G is only supported for Digital Coherent Optic transceivers
 
          Note 2: For the following port groupings only the higher numbered port supports breakout-mode.
@@ -560,9 +561,9 @@ module srl_nokia-interfaces {
         "Port MTU in bytes including ethernet overhead but excluding 4-bytes FCS
 
          If a transmitted packet exceeds this size it is dropped.
-         The default value for ethernet-x interfaces is taken from /system/mtu/default-port-mtu. For the mgmt0 and mgmt0-standby interfaces the default is 1514 bytes, but the value can be changed for each interface individually.
+         The default value for ethernet-x interfaces is taken from /system/mtu/default-port-mtu. For the mgmt0 and mgmt0-standby interfaces the default is 1514 bytes, but the value can be changed for each interface individually. For the mgmtA and mgmtB interfaces the default value is derived from mgmt0 or mgmt0-standby configuration.
          Port MTU is not configurable for loopback interfaces or irb interfaces. For irb interfaces, if the size of the ip packets to be routed to a mac-vrf has to be restricted, the subinterface.ip-mtu should be configured instead.
-         The max mtu for the mgmt0 and mgmt0-standby interfaces is 9216.
+         The max mtu for the mgmt0, mgmt0-standby, mgmtA and mgmtB interfaces is 9216.
          The 7220 IXR systems support a maximum port MTU of 9412 bytes and minimum of 1500 bytes.
          The VSRL system supports a maximum port MTU of 9500 and minimum of 1450 bytes.
          The 7730 SXR systems support a maximum port MTU of 9408 bytes and minimum of 1500 bytes.
@@ -1128,6 +1129,8 @@ module srl_nokia-interfaces {
            lo<N>, N=0..255
            mgmt0
            mgmt0-standby
+           mgmtA
+           mgmtB
            ethernet-<slot>/<port>
            ethernet-<slot>/<connector>/<port>
            ethernet-<slot>/m<mda>/<port>
@@ -1149,15 +1152,17 @@ module srl_nokia-interfaces {
             H2-H3: 127 (N must be 1..127)
             H4-32D: 127 (N must be 1..127)
             H4: 255 (N must be 1..255)
-            H5-32D: 160 (N must be 1..160)
-            H5: 320 (N must be 1..320)
+            H5-32D: 127 (N must be 1..127)
+            H5-64D: 127 (N must be 1..127)
+            H5-64O: 127 (N must be 1..127)
             IXR: 512 (N must be 1..512)
             SXR-1d-32D: 128 (N must be 1..128)
             SXR-1x-44S: 128 (N must be 1..128)
             vSRL: 8 (N must be 1..8)
             A1: 10 (N must be 1..10)
             IXR-X1b: 512 (N must be 1..512)
-            IXR-X3b: 512 (N must be 1..512)";
+            IXR-X3b: 512 (N must be 1..512)
+            SSE-T8164: 127 (N must be 1..127)";
       }
       uses interface-phys-config;
       leaf ifindex {
@@ -2181,9 +2186,9 @@ module srl_nokia-interfaces {
              7220-H4 ports 65-66: 10G
              7220-H4-32D ports 1-32: 40G, 100G, 400G
              7220-H4-32D ports 33: 10G
-             7220-H5-32D ports 1-32: 50G, 100G, 200G, 400G, 800G
+             7220-H5-32D ports 1-32: 100G, 400G, 800G
              7220-H5-32D ports 33-34: 10G
-             7220-H5-64D ports 1-64: 50G, 100G, 200G, 400G, 800G
+             7220-H5-64D ports 1-64: 100G, 400G, 800G
              7220-H5-64D ports 65-66: 10G
              7220-H5-64O ports 1-64: 800G
              7220-H5-64O ports 65-66: 10G
@@ -2198,7 +2203,7 @@ module srl_nokia-interfaces {
              7730 SXR-1d-32D QSFPDD ports 17-20: 40G, 100G, 400G
              7730 SXR-1x-44S SFPDD ports 1-20,23-42: 10G, 25G, 100G
              7730 SXR-1x-44S QSFPDD ports 21,22,43,44: 40G, 100G, 400G
-             SSE-T8164 ports 1-64: 50G, 100G, 200G, 400G, 800G
+             SSE-T8164 ports 1-64: 200G, 800G
              SSE-T8164 ports 65-66: 10G, 25G
 
              Note 1:

@@ -30,6 +30,10 @@ module srl_nokia-policy-forwarding {
   description
     "This module defines configuration and operational state data for policy-forwarding related objects.";
 
+  revision 2024-11-10 {
+      description
+      "SRLinux 24.10.2";
+  }
   revision 2024-05-31 {
     description
       "SRLinux 24.7";
@@ -252,6 +256,11 @@ module srl_nokia-policy-forwarding {
                 string(../../ipv4/protocol) = 'udp' or string(../../ipv6/next-header) = 'udp'" {
             error-message "The protocol or next-header must be TCP or UDP to use source-port";
           }
+          must "not(contains(., '..')) or not(../../../action/network-instance) or
+                ../../../action/next-hop or not(../../../../type = 'vrf-selection-policy')" {
+            error-message "On the current platform, range for source-port cannot be used with action network-instance only";
+            srl_nokia-ext:if-feature "srl_nokia-feat:ixr-dnx";
+          }
         }
         leaf destination-port {
           type srl_nokia-pkt-match-types:port-range;
@@ -262,6 +271,11 @@ module srl_nokia-policy-forwarding {
                 string(../../ipv4/protocol) = 'tcp' or string(../../ipv6/next-header) = 'tcp' or
                 string(../../ipv4/protocol) = 'udp' or string(../../ipv6/next-header) = 'udp'" {
             error-message "The protocol or next-header must be TCP or UDP to use destination-port";
+          }
+          must "not(contains(., '..')) or not(../../../action/network-instance) or
+                ../../../action/next-hop or not(../../../../type = 'vrf-selection-policy')" {
+            error-message "On the current platform, range for destination-port cannot be used with action network-instance only";
+            srl_nokia-ext:if-feature "srl_nokia-feat:ixr-dnx";
           }
         }
       }
