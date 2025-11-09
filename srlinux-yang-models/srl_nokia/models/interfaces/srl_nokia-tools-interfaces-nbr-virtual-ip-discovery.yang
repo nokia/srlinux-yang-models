@@ -1,0 +1,107 @@
+module srl_nokia-tools-interfaces-nbr-virtual-ip-discovery {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:arp-nd:tools-interfaces-nbr-virtual-ip-discovery";
+  prefix srl_nokia-tools-if-nbr-virtual-ip-discovery;
+
+  import srl_nokia-tools-interfaces {
+    prefix srl_nokia-tools-if;
+  }
+  import srl_nokia-tools-interfaces-nbr {
+    prefix srl_nokia-tools-if-nbr;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for interface ip Virtual IP discovery operational commands";
+
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping tools-interfaces-nbr-virtual-ipv4-discovery-top {
+    container virtual-ipv4-discovery {
+      if-feature "srl_nokia-feat:virtual-ip-discovery";
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Clears the global statistics for all the Virtual IP addresses";
+        }
+      }
+      list address {
+        key "ipv4-address";
+        description
+          "The list of Virtual IP addresses";
+        leaf ipv4-address {
+          type srl_nokia-comm:ipv4-address;
+          description
+            "The virtual IPv4 address.";
+        }
+        container statistics {
+          leaf clear {
+            type empty;
+            description
+              "Clears the statistics for the Virtual IP addresses";
+          }
+        }
+      }
+    }
+  }
+
+  grouping tools-interfaces-nbr-virtual-ipv6-discovery-top {
+    container virtual-ipv6-discovery {
+      if-feature "srl_nokia-feat:virtual-ip-discovery";
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Clears the global statistics for all the Virtual IP addresses";
+        }
+      }
+      list address {
+        key "ipv6-address";
+        description
+          "The list of Virtual IP addresses";
+        leaf ipv6-address {
+          type srl_nokia-comm:ipv6-address;
+          description
+            "The virtual IPv6 address.";
+        }
+        container statistics {
+          leaf clear {
+            type empty;
+            description
+              "Clears the statistics for the Virtual IP addresses";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface/srl_nokia-tools-if:ipv4/srl_nokia-tools-if-nbr:arp" {
+    uses tools-interfaces-nbr-virtual-ipv4-discovery-top;
+  }
+
+  augment "/srl_nokia-tools-if:interface/srl_nokia-tools-if:subinterface/srl_nokia-tools-if:ipv6/srl_nokia-tools-if-nbr:neighbor-discovery" {
+    uses tools-interfaces-nbr-virtual-ipv6-discovery-top;
+  }
+}

@@ -1,0 +1,167 @@
+module srl_nokia-dhcp-server-guard {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:fhs:dhcp-server-guard";
+  prefix srl_nokia-dhcp-server-guard;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-interfaces-vlans {
+    prefix srl_nokia-if-vlan;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_rpol;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of DHCP server guard policy configuration";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  grouping dhcp-server-guard-top {
+    list dhcp-server-guard-policy {
+      if-feature "srl-feat:dhcp-server-guard";
+      description
+        "List containing DHCP server Guard Policy and parameters";
+      max-elements 64;
+      key "name";
+      leaf name {
+        type srl_nokia-comm:restricted-name;
+        description
+          "DHCP server guard policy name";
+      }
+      leaf action {
+        type enumeration {
+          enum accept;
+          enum discard;
+        }
+        default "discard";
+        description
+          "Describes the DHCP server guard policy action for DHCP server Messages matching specified attributes
+           DHCP server messages not matching the specified attributes will be handled in the opposite manner.";
+      }
+      leaf source-prefix-set {
+        type leafref {
+          path "/srl_rpol:routing-policy/srl_rpol:prefix-set/srl_rpol:name";
+        }
+        description
+          "Reference to a prefix set to match DHCP server source address
+           If not specified the verification is skipped.";
+      }
+      container server6-preference {
+        description
+          "Specifies value to be verified with the received DHCPv6 server preference option
+
+           Verifies that DHCPv6 server preference option value is in the range between min and max.
+           If DHCPv6 server preference option is not received then the preference value is set to zero.
+           If not specified then the verification is skipped.";
+        leaf min {
+          description
+            "Specifies the minimum value expected in DHCPv6 server preference option";
+          type uint8 {
+            range "0..255";
+          }
+          must '(../max >= 0 and . < ../max)' {
+            error-message "DHCPv6 server preference minimum value must be less than maximum value.";
+          }
+        }
+        leaf max {
+          description
+            "Specifies the maximum value expected in DHCPv6 server preference option";
+          type uint8 {
+            range "0..255";
+          }
+          must '(../min >= 0 and . > ../min)' {
+            error-message "DHCPv6 server preference maximum value must be greater than minimum value.";
+          }
+        }
+      }
+    }
+  }
+
+  grouping dhcp-server-guard-statistics-group {
+    container dhcp-server-guard-statistics {
+      config false;
+      description
+        "Dhcp server guard statistics.";
+      leaf total-dhcp-packets-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total DHCPv4/DHCPv6 server packets received.";
+      }
+      leaf dhcp-server-guard-packets-discarded {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total DHCPv4/DHCPv6 server messages discarded by policy.";
+      }
+      leaf dhcp-server-guard-packets-accepted {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total DHCPv4/DHCPv6 server messages accepted by policy.";
+      }
+      leaf dhcp-server-guard-packets-passthrough {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total DHCPv4/DHCPv6 messages forwarded without looking up policy (e.g. DHCP client messages).";
+      }
+    }
+  }
+
+  grouping interface-dhcp-server-guard-config {
+    container dhcp-server-guard {
+      if-feature "srl-feat:dhcp-server-guard";
+      must "(starts-with(../../srl_nokia-if:name, 'ethernet') or
+            starts-with(../../srl_nokia-if:name, 'lag') or
+            starts-with(../../srl_nokia-if:name, 'mgmt0'))" {
+        error-message "DHCP server guard not supported on the subinterface of this interface.";
+      }
+      presence "Context to configure DHCP server guard subinterface parameters";
+      leaf policy {
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-dhcp-server-guard:dhcp-server-guard-policy/name";
+        }
+        description
+          "Reference to DHCP server guard policy to apply to the associated subinterface";
+      }
+      list vlan-list {
+        description
+          "List of VLAN IDs that the DHCP server guard policy should be matched against";
+        key "vlan-id";
+        leaf vlan-id {
+          type uint16 {
+            range "0..4095";
+          }
+          must "string(../../../srl_nokia-if-vlan:vlan/srl_nokia-if-vlan:encap/srl_nokia-if-vlan:single-tagged/srl_nokia-if-vlan:vlan-id) = 'optional'" {
+            error-message "vlan-list not configurable when encap single-tagged optional not configured";
+          }
+        }
+      }
+      uses dhcp-server-guard-statistics-group;
+    }
+  }
+
+  augment "/srl_nokia-system:system" {
+    uses dhcp-server-guard-top;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface" {
+    uses interface-dhcp-server-guard-config;
+  }
+}

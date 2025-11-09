@@ -1,0 +1,1766 @@
+module srl_nokia-lldp-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:lldp:lldp-types";
+  prefix srl_nokia-lldp-types;
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines types related to the LLDP protocol model.";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  identity LLDP_SYSTEM_CAPABILITY {
+    description
+      "Base identity for standard LLDP system capabilities.
+       The system capabilities field contains a bit-map of the
+       capabilities that define the primary function(s) of
+       the system. A system may advertise more than one capability.";
+    reference
+      "Table 8-4 System Capabilities, IEEE 802.1AB-2009";
+  }
+
+  identity OTHER {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "Other capability not specified; bit position 1";
+  }
+
+  identity REPEATER {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "Repeater capability; bit position 2";
+    reference
+      "IETF RFC 2108";
+  }
+
+  identity MAC_BRIDGE {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "MAC bridge capability; bit position 3";
+    reference
+      "IEEE Std 802.1D";
+  }
+
+  identity WLAN_ACCESS_POINT {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "WLAN access point capability; bit position 4";
+    reference
+      "IEEE Std 802.11 MIB";
+  }
+
+  identity ROUTER {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "Router; bit position 5";
+    reference
+      "IETF RFC 1812";
+  }
+
+  identity TELEPHONE {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "Telephone capability; bit position 6";
+    reference
+      "IETF RFC 4293";
+  }
+
+  identity DOCSIS_CABLE_DEVICE {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "DOCSIS cable device; bit position 7";
+    reference
+      "IETF RFC 4639 and IETF RFC 4546";
+  }
+
+  identity STATION_ONLY {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "Station only capability, for devices that implement only an
+       end station capability, and for which none of the other
+       capabilities apply; bit position 8";
+    reference
+      "IETF RFC 4293";
+  }
+
+  identity C_VLAN {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "C-VLAN component of a VLAN Bridge; bit position 9";
+    reference
+      "IEEE Std 802.1Q";
+  }
+
+  identity S_VLAN {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "S-VLAN component of a VLAN Bridge; bit position 10";
+    reference
+      "IEEE Std 802.1Q";
+  }
+
+  identity TWO_PORT_MAC_RELAY {
+    base LLDP_SYSTEM_CAPABILITY;
+    description
+      "Two-port MAC Relay (TPMR) capability; bit position 11";
+    reference
+      "IEEE Std 802.1Q";
+  }
+
+  identity LLDP_TLV {
+    description
+      "A base identity which describes the TLVs in LLDP";
+  }
+
+  identity CHASSIS_ID {
+    base LLDP_TLV;
+    description
+      "The chassis identifier of the device associated with
+       the transmitting LLDP agent";
+    reference
+      "IEEE Std 802.1AB";
+  }
+
+  identity PORT_ID {
+    base LLDP_TLV;
+    description
+      "The port identifier associated with the interface
+       on with the LLDP agent is transmitting";
+    reference
+      "IEEE Std 802.1AB";
+  }
+
+  identity PORT_DESCRIPTION {
+    base LLDP_TLV;
+    description
+      "The description of the port that is associated with
+       the interface on which the LLDP agent is transmitting";
+    reference
+      "IEEE Std 802.1AB";
+  }
+
+  identity SYSTEM_NAME {
+    base LLDP_TLV;
+    description
+      "The assigned name (sysName or hostname) of the device
+       which is transmitting the LLDP PDU";
+    reference
+      "IEEE Std 802.1AB";
+  }
+
+  identity SYSTEM_DESCRIPTION {
+    base LLDP_TLV;
+    description
+      "The description (sysDescr) of the device which is
+       transmitting the LLDP PDU";
+    reference
+      "IEEE Std 802.1AB";
+  }
+
+  identity SYSTEM_CAPABILITIES {
+    base LLDP_TLV;
+    description
+      "The primary functions of the device transmitting the
+       LLDP PDU and their administrative status";
+    reference
+      "IEEE Std 802.1AB";
+  }
+
+  identity MANAGEMENT_ADDRESS {
+    base LLDP_TLV;
+    description
+      "The address associated with the device transmitting the
+       LLDP PDU which can be used for higher-layer network
+       management";
+    reference
+      "IEEE Std 802.1AB";
+  }
+
+  identity LLDP_MED_CAPABILITIES {
+    description
+      "Capabilities of the device";
+    reference
+      "TIA-1057-2006, Section 10.2.2";
+  }
+
+  identity CAPABILITIES {
+    base LLDP_MED_CAPABILITIES;
+    description
+      "Device support of LLDP-MED; bit 0";
+    reference
+      "TIA-1057-2006, Section 10.2.2";
+  }
+
+  identity NETWORK_POLICY {
+    base LLDP_MED_CAPABILITIES;
+    description
+      "Device support of network policy; bit 1";
+    reference
+      "TIA-1057-2006, Section 10.2.3";
+  }
+
+  identity LOCATION_IDENTIFICATION {
+    base LLDP_MED_CAPABILITIES;
+    description
+      "Device support of location identification; bit 2";
+    reference
+      "TIA-1057-2006, Section 10.2.4";
+  }
+
+  identity EXTENDED_POWER_VIA_MDI_PSE {
+    base LLDP_MED_CAPABILITIES;
+    description
+      "Advanced power management Power Sourcing Entity; bit 3";
+    reference
+      "TIA-1057-2006, Section 10.2.5";
+  }
+
+  identity EXTENDED_POWER_VIA_MDI_PD {
+    base LLDP_MED_CAPABILITIES;
+    description
+      "Advanced power management Power Device; bit 4";
+    reference
+      "TIA-1057-2006, Section 10.2.5";
+  }
+
+  identity INVENTORY {
+    base LLDP_MED_CAPABILITIES;
+    description
+      "Advanced power management Power Device; bit 5";
+    reference
+      "TIA-1057-2006, Section 10.2.6";
+  }
+
+  identity LLDP_MED_NETWORK_POLICY_APPLICATIONS {
+    description
+      "Application type carried in the network policy";
+    reference
+      "Section 10.2.3.1 Application Type, TIA-1057 April 2006";
+  }
+
+  identity UNKNOWN {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Unknown application type; value 0";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity VOICE {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Dedicated IP Telephony handset application type; value 1";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity VOICE_SIGNALING {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Voice signaling application type using a different policy than voice media; value 2";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity GUEST_VOICE {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Limited featureset voice service application type; value 3";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity GUEST_VOICE_SIGNALING {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Guest voice signaling application type using a different policy than guest voice media; value 4";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity SOFTPHONE_VOICE {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Softphone application type typically data devices like computers or laptops; value 5";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity VIDEO_CONFERENCING {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Realtime dedicated video conferencing equipment application type; value 6";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity STREAMING_VIDEO {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Broadcast or multicast based video content distibution application type; value 7";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity VIDEO_SIGNALING {
+    base LLDP_MED_NETWORK_POLICY_APPLICATIONS;
+    description
+      "Video signaling application type using a different policy than video streaming media; value 8";
+    reference
+      "TIA-1057 LLDP-MED MIB";
+  }
+
+  identity LLDP_MED_TLV {
+    description
+      "Base identity which describes the TLVs in LLDP-MED transmnitted to endpoint";
+    reference
+      "TIA-1057 LLDP-MED";
+  }
+
+  identity MAC_PHY_CONFIGURATION_STATUS_TLV {
+    base LLDP_MED_TLV;
+    description
+      "Auto-negotiation information configured, supported and recived capabilities";
+    reference
+      "IEEE Std 802.3 Section 79.3.1";
+  }
+
+  identity NETWORK_POLICY_TLV {
+    base LLDP_MED_TLV;
+    description
+      "Network policy TLV";
+    reference
+      "TIA-1057 Section 10.2.3 Network Policy TLV";
+  }
+
+  identity LOCATION_IDENTIFICATION_TLV {
+    base LLDP_MED_TLV;
+    description
+      "Location information TLV";
+    reference
+      "TIA-1057 Section 10.2.4 Location Identification TLV";
+  }
+
+  identity INVENTORY_TLV {
+    base LLDP_MED_TLV;
+    description
+      "Inventory information TLV";
+    reference
+      "TIA-1057 Section 10.2.6 Inventory Management TLV";
+  }
+
+  typedef chassis-id-type {
+    type enumeration {
+      enum CHASSIS_COMPONENT {
+        description
+          "Chassis identifier based on the value of entPhysicalAlias
+           object defined in IETF RFC 2737";
+      }
+      enum INTERFACE_ALIAS {
+        description
+          "Chassis identifier based on the value of ifAlias object
+           defined in IETF RFC 2863";
+      }
+      enum PORT_COMPONENT {
+        description
+          "Chassis identifier based on the value of entPhysicalAlias
+           object defined in IETF RFC 2737 for a port or backplane
+           component";
+      }
+      enum MAC_ADDRESS {
+        description
+          "Chassis identifier based on the value of a unicast source
+           address (encoded in network byte order and IEEE 802.3
+           canonical bit order), of a port on the containing chassis
+           as defined in IEEE Std 802-2001";
+      }
+      enum NETWORK_ADDRESS {
+        description
+          "Chassis identifier based on a network address,
+           associated with a particular chassis.  The encoded address
+           is composed of two fields.  The first field is a single
+           octet, representing the IANA AddressFamilyNumbers value
+           for the specific address type, and the second field is the
+           network address value";
+      }
+      enum INTERFACE_NAME {
+        description
+          "Chassis identifier based on the name of the interface,
+           e.g., the value of ifName object defined in IETF RFC 2863";
+      }
+      enum LOCAL {
+        description
+          "Chassis identifier based on a locally defined value";
+      }
+    }
+    description
+      "Type definition with enumerations describing the source of
+       the chassis identifier";
+    reference
+      "IEEE 802.1AB LLDP MIB";
+  }
+
+  typedef port-id-type {
+    type enumeration {
+      enum INTERFACE_ALIAS {
+        description
+          "Chassis identifier based on the value of ifAlias object
+           defined in IETF RFC 2863";
+      }
+      enum PORT_COMPONENT {
+        description
+          "Port identifier based on the value of entPhysicalAlias
+           object defined in IETF RFC 2737 for a port component";
+      }
+      enum MAC_ADDRESS {
+        description
+          "Port identifier based on the value of a unicast source
+           address (encoded in network byte order and IEEE 802.3
+           canonical bit order) associated with a port";
+      }
+      enum NETWORK_ADDRESS {
+        description
+          "Port identifier based on a network address,
+           associated with a particular port";
+      }
+      enum INTERFACE_NAME {
+        description
+          "Port identifier based on the name of the interface,
+           e.g., the value of ifName object defined in IETF RFC 2863";
+      }
+      enum AGENT_CIRCUIT_ID {
+        description
+          "Port identifer based on the circuit id in the DHCP
+           relay agent information option as defined in IETF
+           RFC 3046";
+      }
+      enum LOCAL {
+        description
+          "Port identifier based on a locally defined alphanumeric
+           string";
+      }
+    }
+    description
+      "Type definition with enumerations describing the basis of
+       the port identifier";
+    reference
+      "IEEE 802.1AB LLDP MIB";
+  }
+
+  typedef management-address-type {
+    type enumeration {
+      enum IPv4 {
+        description
+          "Use IPv4 address for management address type";
+      }
+      enum IPv6 {
+        description
+          "Use IPv6 address for management address type";
+      }
+    }
+    description
+      "Type definition with enumerations describing the source of
+       the management address type";
+    reference
+      "IEEE 802.1AB LLDP MIB";
+  }
+
+  typedef string-or-binary {
+    description
+      "Type definition for string or binary represenation";
+    type union {
+      type string;
+      type binary;
+    }
+  }
+
+  typedef auto-negotiation-support {
+    type enumeration {
+      enum unknown {
+        description
+          "MAC/PHY configuration/status is enabled and auto-negotiation support is unknown";
+      }
+      enum true {
+        description
+          "MAC/PHY configuration/status is enabled and auto-negotiation is supported";
+      }
+      enum false {
+        description
+          "MAC/PHY configuration/status is enabled and auto-negotiation is not supported";
+      }
+      enum tlv-not-enabled {
+        description
+          "MAC/PHY configuration/status is not enabled";
+      }
+    }
+  }
+
+  typedef auto-negotiation-enabled {
+    type enumeration {
+      enum unknown {
+        description
+          "MAC/PHY configuration/status is enabled and auto-negotiation support is unknown";
+      }
+      enum true {
+        description
+          "MAC/PHY configuration/status is enabled and auto-negotiation is enabled";
+      }
+      enum false {
+        description
+          "MAC/PHY configuration/status is enabled and auto-negotiation is not enabled";
+      }
+      enum tlv-not-enabled {
+        description
+          "MAC/PHY configuration/status is not enabled";
+      }
+    }
+  }
+
+  typedef auto-negotiation-capabilities {
+    type enumeration {
+      enum other {
+        value 0;
+        description
+          "Other or unknown, bit position 0";
+      }
+      enum 10baseT {
+        value 1;
+        description
+          "10BASE-T half duplex mode, bit position 1";
+      }
+      enum 10baseTFD {
+        value 2;
+        description
+          "10BASE-T full duplex mode, bit position 2";
+      }
+      enum 100baseT4 {
+        value 3;
+        description
+          "100BASE-T4, bit position 3";
+      }
+      enum 100baseTX {
+        value 4;
+        description
+          "100BASE-TX half duplex mode, bit position 4";
+      }
+      enum 100baseTXFD {
+        value 5;
+        description
+          "100BASE-TX full duplex mode, bit position 5";
+      }
+      enum 100baseT2 {
+        value 6;
+        description
+          "100BASE-T2 half duplex mode, bit position 6";
+      }
+      enum 100baseT2FD {
+        value 7;
+        description
+          "100BASE-T2 full duplex mode, bit position 7";
+      }
+      enum FdxPause {
+        value 8;
+        description
+          "PAUSE for full-duplex links, bit position 8";
+      }
+      enum FdxAPause {
+        value 9;
+        description
+          "Asymmetric PAUSE for full-duplex links, bit position 9";
+      }
+      enum FdxSPause {
+        value 10;
+        description
+          "Symmetric PAUSE for full-duplex links, bit position 10";
+      }
+      enum FdxBPause {
+        value 11;
+        description
+          "Asymmetric and Symmetric PAUSE for full-duplex links, bit position 11";
+      }
+      enum 1000baseX {
+        value 12;
+        description
+          "1000BASE-X, -LX, -SX, -CX half duplex mode, bit position 12";
+      }
+      enum 1000baseXFD {
+        value 13;
+        description
+          "1000BASE-X, -LX, -SX, -CX full duplex mode, bit position 13";
+      }
+      enum 1000baseT {
+        value 14;
+        description
+          "1000BASE-T half duplex mode, bit position 14";
+      }
+      enum 1000baseTFD {
+        value 15;
+        description
+          "1000BASE-T full duplex mode, bit position 15";
+      }
+    }
+    description
+      "PMD auto-negotitation advertised capabilities using bit-map";
+    reference
+      "IEEE802.3 Section 30.6.1.1.5
+
+       Registry www.iana.org/assignments/ianamau-mib/ianamau-mib revision 202404020000Z April 2, 2024 bits 0 to 15";
+  }
+
+  typedef interface-mau-type {
+    type enumeration {
+      enum Other {
+        value 0;
+        description
+          "other or unknown";
+      }
+      enum AUI {
+        value 1;
+        description
+          "AUI";
+      }
+      enum 10base5 {
+        value 2;
+        description
+          "10BASE-5";
+      }
+      enum Foirl {
+        value 3;
+        description
+          "FOIRL";
+      }
+      enum 10base2 {
+        value 4;
+        description
+          "10BASE-2";
+      }
+      enum 10baseT {
+        value 5;
+        description
+          "10BASE-T duplex mode unknown";
+      }
+      enum 10baseFP {
+        value 6;
+        description
+          "10BASE-FP";
+      }
+      enum 10baseFB {
+        value 7;
+        description
+          "10BASE-FB";
+      }
+      enum 10baseFL {
+        value 8;
+        description
+          "10BASE-FL duplex mode unknown";
+      }
+      enum 10broad36 {
+        value 9;
+        description
+          "10BROAD36";
+      }
+      enum 10baseTHD {
+        value 10;
+        description
+          "10BASE-T half duplex mode";
+      }
+      enum 10baseTFD {
+        value 11;
+        description
+          "10BASE-T full duplex mode";
+      }
+      enum 10baseFLHD {
+        value 12;
+        description
+          "10BASE-FL half duplex mode";
+      }
+      enum 10baseFLFD {
+        value 13;
+        description
+          "10BASE-FL full duplex mode";
+      }
+      enum 100baseT4 {
+        value 14;
+        description
+          "100BASE-T4";
+      }
+      enum 100baseTXHD {
+        value 15;
+        description
+          "100BASE-TX half duplex mode";
+      }
+      enum 100baseTXFD {
+        value 16;
+        description
+          "100BASE-TX full duplex mode";
+      }
+      enum 100baseFXHD {
+        value 17;
+        description
+          "100BASE-FX half duplex mode";
+      }
+      enum 100baseFXFD {
+        value 18;
+        description
+          "100BASE-FX full duplex mode";
+      }
+      enum 100baseT2HD {
+        value 19;
+        description
+          "100BASE-T2 half duplex mode";
+      }
+      enum 100baseT2FD {
+        value 20;
+        description
+          "100BASE-T2 full duplex mode";
+      }
+      enum 1000baseXHD {
+        value 21;
+        description
+          "1000BASE-X half duplex mode";
+      }
+      enum 1000baseXFD {
+        value 22;
+        description
+          "1000BASE-X full duplex mode";
+      }
+      enum 1000baseLXHD {
+        value 23;
+        description
+          "1000BASE-LX half duplex mode";
+      }
+      enum 1000baseLXFD {
+        value 24;
+        description
+          "1000BASE-LX full duplex mode";
+      }
+      enum 1000baseSXHD {
+        value 25;
+        description
+          "1000BASE-SX half duplex mode";
+      }
+      enum 1000baseSXFD {
+        value 26;
+        description
+          "1000BASE-SX full duplex mode";
+      }
+      enum 1000baseCXHD {
+        value 27;
+        description
+          "1000BASE-CX half duplex mode";
+      }
+      enum 1000baseCXFD {
+        value 28;
+        description
+          "1000BASE-CX full duplex mode";
+      }
+      enum 1000baseTHD {
+        value 29;
+        description
+          "1000BASE-T half duplex mode";
+      }
+      enum 1000baseTFD {
+        value 30;
+        description
+          "1000BASE-T full duplex mode";
+      }
+      enum 10GbaseX {
+        value 31;
+        description
+          "10GBASE-X";
+      }
+      enum 10GbaseLX4 {
+        value 32;
+        description
+          "10GBASE-LX4";
+      }
+      enum 10GbaseR {
+        value 33;
+        description
+          "10GBASE-R";
+      }
+      enum 10GbaseER {
+        value 34;
+        description
+          "10GBASE-ER";
+      }
+      enum 10GbaseLR {
+        value 35;
+        description
+          "10GBASE-LR";
+      }
+      enum 10GbaseSR {
+        value 36;
+        description
+          "10GBASE-SR";
+      }
+      enum 10GbaseW {
+        value 37;
+        description
+          "10GBASE-W";
+      }
+      enum 10GbaseEW {
+        value 38;
+        description
+          "10GBASE-EW";
+      }
+      enum 10GbaseLW {
+        value 39;
+        description
+          "10GBASE-LW";
+      }
+      enum 10GbaseSW {
+        value 40;
+        description
+          "10GBASE-SW";
+      }
+      enum 10GbaseCX4 {
+        value 41;
+        description
+          "10GBASE-CX4";
+      }
+      enum 2BaseTL {
+        value 42;
+        description
+          "2BASE-TL";
+      }
+      enum 10PassTS {
+        value 43;
+        description
+          "10PASS-TS";
+      }
+      enum 100BaseBX10D {
+        value 44;
+        description
+          "100BASE-BX10D";
+      }
+      enum 100BaseBX10U {
+        value 45;
+        description
+          "100BASE-BX10U";
+      }
+      enum 100BaseLX10 {
+        value 46;
+        description
+          "100BASE-LX10";
+      }
+      enum 1000BaseBX10D {
+        value 47;
+        description
+          "1000BASE-BX10D";
+      }
+      enum 1000BaseBX10U {
+        value 48;
+        description
+          "1000BASE-BX10U";
+      }
+      enum 1000BaseLX10 {
+        value 49;
+        description
+          "1000BASE-LX10";
+      }
+      enum 1000BasePX10D {
+        value 50;
+        description
+          "1000BASE-PX10D";
+      }
+      enum 1000BasePX10U {
+        value 51;
+        description
+          "1000BASE-PX10U";
+      }
+      enum 1000BasePX20D {
+        value 52;
+        description
+          "1000BASE-PX20D";
+      }
+      enum 1000BasePX20U {
+        value 53;
+        description
+          "1000BASE-PX20U";
+      }
+      enum 10GbaseT {
+        value 54;
+        description
+          "10GBASE-T";
+      }
+      enum 10GbaseLRM {
+        value 55;
+        description
+          "10GBASE-LRM";
+      }
+      enum 1000baseKX {
+        value 56;
+        description
+          "1000BASE-KX";
+      }
+      enum 10GbaseKX4 {
+        value 57;
+        description
+          "10GBASE-KX4";
+      }
+      enum 10GbaseKR {
+        value 58;
+        description
+          "10GBASE-KR";
+      }
+      enum 10G1GbasePRXD1 {
+        value 59;
+        description
+          "10/1GBASE-PRX-D1";
+      }
+      enum 10G1GbasePRXD2 {
+        value 60;
+        description
+          "10/1GBASE-PRX-D2";
+      }
+      enum 10G1GbasePRXD3 {
+        value 61;
+        description
+          "10/1GBASE-PRX-D3";
+      }
+      enum 10G1GbasePRXU1 {
+        value 62;
+        description
+          "10/1GBASE-PRX-U1";
+      }
+      enum 10G1GbasePRXU2 {
+        value 63;
+        description
+          "10/1GBASE-PRX-U2";
+      }
+      enum 10G1GbasePRXU3 {
+        value 64;
+        description
+          "10/1GBASE-PRX-U3";
+      }
+      enum 10GbasePRD1 {
+        value 65;
+        description
+          "10GBASE-PR-D1";
+      }
+      enum 10GbasePRD2 {
+        value 66;
+        description
+          "10GBASE-PR-D2";
+      }
+      enum 10GbasePRD3 {
+        value 67;
+        description
+          "10GBASE-PR-D3";
+      }
+      enum 10GbasePRU1 {
+        value 68;
+        description
+          "10GBASE-PR-U1";
+      }
+      enum 10GbasePRU3 {
+        value 69;
+        description
+          "10GBASE-PR-U3";
+      }
+      enum 40GbaseKR4 {
+        value 70;
+        description
+          "40GBASE-KR4";
+      }
+      enum 40GbaseCR4 {
+        value 71;
+        description
+          "40GBASE-CR4";
+      }
+      enum 40GbaseSR4 {
+        value 72;
+        description
+          "40GBASE-SR4";
+      }
+      enum 40GbaseFR {
+        value 73;
+        description
+          "40GBASE-FR";
+      }
+      enum 40GbaseLR4 {
+        value 74;
+        description
+          "40GBASE-LR4";
+      }
+      enum 100GbaseCR10 {
+        value 75;
+        description
+          "100GBASE-CR10";
+      }
+      enum 100GbaseSR10 {
+        value 76;
+        description
+          "100GBASE-SR10";
+      }
+      enum 100GbaseLR4 {
+        value 77;
+        description
+          "100GBASE-LR4";
+      }
+      enum 100GbaseER4 {
+        value 78;
+        description
+          "100GBASE-ER4";
+      }
+      enum 1000baseT1 {
+        value 79;
+        description
+          "1000BASE-T1";
+      }
+      enum 1000basePX30D {
+        value 80;
+        description
+          "1000BASE-PX30D";
+      }
+      enum 1000basePX30U {
+        value 81;
+        description
+          "1000BASE-PX30U";
+      }
+      enum 1000basePX40D {
+        value 82;
+        description
+          "1000BASE-PX40D";
+      }
+      enum 1000basePX40U {
+        value 83;
+        description
+          "1000BASE-PX40U";
+      }
+      enum 10G1GbasePRXD4 {
+        value 84;
+        description
+          "10/1GBASE-PRX-D4";
+      }
+      enum 10G1GbasePRXU4 {
+        value 85;
+        description
+          "10/1GBASE-PRX-U4";
+      }
+      enum 10GbasePRD4 {
+        value 86;
+        description
+          "10GBASE-PRD4";
+      }
+      enum 10GbasePRU4 {
+        value 87;
+        description
+          "10GBASE-PRU4";
+      }
+      enum 25GbaseCR {
+        value 88;
+        description
+          "25GBASE-CR";
+      }
+      enum 25GbaseCRS {
+        value 89;
+        description
+          "25GBASE-CR-S";
+      }
+      enum 25GbaseKR {
+        value 90;
+        description
+          "25GBASE-KR";
+      }
+      enum 25GbaseKRS {
+        value 91;
+        description
+          "25GBASE-KR-S";
+      }
+      enum 25GbaseR {
+        value 92;
+        description
+          "25GBASE-R";
+      }
+      enum 25GbaseSR {
+        value 93;
+        description
+          "25GBASE-SR";
+      }
+      enum 25GbaseT {
+        value 94;
+        description
+          "25GBASE-T";
+      }
+      enum 40GbaseER4 {
+        value 95;
+        description
+          "40GBASE-ER4";
+      }
+      enum 40GbaseR {
+        value 96;
+        description
+          "40GBASE-R";
+      }
+      enum 40GbaseT {
+        value 97;
+        description
+          "40GBASE-T";
+      }
+      enum 100GbaseCR4 {
+        value 98;
+        description
+          "100GBASE-CR4";
+      }
+      enum 100GbaseKR4 {
+        value 99;
+        description
+          "100GBASE-KR4";
+      }
+      enum 100GbaseKP4 {
+        value 100;
+        description
+          "100GBASE-KP4";
+      }
+      enum 100GbaseR {
+        value 101;
+        description
+          "100GBASE-R";
+      }
+      enum 100GbaseSR4 {
+        value 102;
+        description
+          "100GBASE-SR4";
+      }
+      enum 2p5GbaseT {
+        value 103;
+        description
+          "2.5GBASE-T";
+      }
+      enum 5GbaseT {
+        value 104;
+        description
+          "5GBASE-T";
+      }
+      enum 100baseT1 {
+        value 105;
+        description
+          "100BASE-T1";
+      }
+      enum 1000baseRHA {
+        value 106;
+        description
+          "1000BASE-RHA";
+      }
+      enum 1000baseRHB {
+        value 107;
+        description
+          "1000BASE-RHB";
+      }
+      enum 1000baseRHC {
+        value 108;
+        description
+          "1000BASE-RHC";
+      }
+      enum 2p5GbaseKX {
+        value 109;
+        description
+          "2.5GBASE-KX";
+      }
+      enum 2p5GbaseX {
+        value 110;
+        description
+          "2.5GBASE-X";
+      }
+      enum 5GbaseKR {
+        value 111;
+        description
+          "5GBASE-KR";
+      }
+      enum 5GbaseR {
+        value 112;
+        description
+          "5GBASE-R";
+      }
+      enum 10GpassXR {
+        value 113;
+        description
+          "10GPASS-XR";
+      }
+      enum 25GbaseLR {
+        value 114;
+        description
+          "25GBASE-LR";
+      }
+      enum 25GbaseER {
+        value 115;
+        description
+          "25GBASE-ER";
+      }
+      enum 50GbaseR {
+        value 116;
+        description
+          "50GBASE-R";
+      }
+      enum 50GbaseCR {
+        value 117;
+        description
+          "50GBASE-CR";
+      }
+      enum 50GbaseKR {
+        value 118;
+        description
+          "50GBASE-KR";
+      }
+      enum 50GbaseSR {
+        value 119;
+        description
+          "50GBASE-SR";
+      }
+      enum 50GbaseFR {
+        value 120;
+        description
+          "50GBASE-FR";
+      }
+      enum 50GbaseLR {
+        value 121;
+        description
+          "50GBASE-LR";
+      }
+      enum 50GbaseER {
+        value 122;
+        description
+          "50GBASE-ER";
+      }
+      enum 100GbaseCR2 {
+        value 123;
+        description
+          "100GBASE-CR2";
+      }
+      enum 100GbaseKR2 {
+        value 124;
+        description
+          "100GBASE-KR2";
+      }
+      enum 100GbaseSR2 {
+        value 125;
+        description
+          "100GBASE-SR2";
+      }
+      enum 100GbaseDR {
+        value 126;
+        description
+          "100GBASE-DR";
+      }
+      enum 200GbaseR {
+        value 127;
+        description
+          "200GBASE-R";
+      }
+      enum 200GbaseDR4 {
+        value 128;
+        description
+          "200GBASE-DR4";
+      }
+      enum 200GbaseFR4 {
+        value 129;
+        description
+          "200GBASE-FR4";
+      }
+      enum 200GbaseLR4 {
+        value 130;
+        description
+          "200GBASE-LR4";
+      }
+      enum 200GbaseCR4 {
+        value 131;
+        description
+          "200GBASE-CR4";
+      }
+      enum 200GbaseKR4 {
+        value 132;
+        description
+          "200GBASE-KR4";
+      }
+      enum 200GbaseSR4 {
+        value 133;
+        description
+          "200GBASE-SR4";
+      }
+      enum 200GbaseER4 {
+        value 134;
+        description
+          "200GBASE-ER4";
+      }
+      enum 400GbaseR {
+        value 135;
+        description
+          "400GBASE-R";
+      }
+      enum 400GbaseSR16 {
+        value 136;
+        description
+          "400GBASE-SR16";
+      }
+      enum 400GbaseDR4 {
+        value 137;
+        description
+          "400GBASE-DR4";
+      }
+      enum 400GbaseFR8 {
+        value 138;
+        description
+          "400GBASE-FR8";
+      }
+      enum 400GbaseLR8 {
+        value 139;
+        description
+          "400GBASE-LR8";
+      }
+      enum 400GbaseER8 {
+        value 140;
+        description
+          "400GBASE-ER8";
+      }
+      enum 10baseT1L {
+        value 141;
+        description
+          "10BASE-T1L";
+      }
+      enum 10baseT1SHD {
+        value 142;
+        description
+          "10BASE-T1S half duplex mode";
+      }
+      enum 10baseT1SMD {
+        value 143;
+        description
+          "10BASE-T1S multidrop mode";
+      }
+      enum 10baseT1SFD {
+        value 144;
+        description
+          "10BASE-T1S full duplex mode";
+      }
+      enum 100GbaseFR1 {
+        value 145;
+        description
+          "100GBASE-FR1";
+      }
+      enum 100GbaseLR1 {
+        value 146;
+        description
+          "100GBASE-LR1";
+      }
+      enum 400GbaseFR4 {
+        value 147;
+        description
+          "400GBASE-FR4";
+      }
+      enum 400GbaseLR46 {
+        value 148;
+        description
+          "400GBASE-LR4-6";
+      }
+      enum 400GbaseSR8 {
+        value 149;
+        description
+          "400GBASE-SR8";
+      }
+      enum 400GbaseSR4p2 {
+        value 150;
+        description
+          "400GBASE-SR4.2";
+      }
+      enum 2p5GbaseT1 {
+        value 151;
+        description
+          "2.5GBASE-T1";
+      }
+      enum 5GbaseT1 {
+        value 152;
+        description
+          "5GBASE-T1";
+      }
+      enum 10GbaseT1 {
+        value 153;
+        description
+          "10GBASE-T1";
+      }
+      enum 25G10GbasePQGD2 {
+        value 154;
+        description
+          "25/10GBASE-PQG-D2";
+      }
+      enum 25G10GbasePQGD3 {
+        value 155;
+        description
+          "25/10GBASE-PQG-D3";
+      }
+      enum 25G10GbasePQGU2 {
+        value 156;
+        description
+          "25/10GBASE-PQG-U2";
+      }
+      enum 25G10GbasePQGU3 {
+        value 157;
+        description
+          "25/10GBASE-PQG-U3";
+      }
+      enum 25G10GbasePQXD2 {
+        value 158;
+        description
+          "25/10GBASE-PQX-D2";
+      }
+      enum 25G10GbasePQXD3 {
+        value 159;
+        description
+          "25/10GBASE-PQX-D3";
+      }
+      enum 25G10GbasePQXU2 {
+        value 160;
+        description
+          "25/10GBASE-PQX-U2";
+      }
+      enum 25G10GbasePQXU3 {
+        value 161;
+        description
+          "25/10GBASE-PQX-U3";
+      }
+      enum 25GbasePQGD2 {
+        value 162;
+        description
+          "25GBASE-PQG-D2";
+      }
+      enum 25GbasePQGD3 {
+        value 163;
+        description
+          "25GBASE-PQG-D3";
+      }
+      enum 25GbasePQGU2 {
+        value 164;
+        description
+          "25GBASE-PQG-U2";
+      }
+      enum 25GbasePQGU3 {
+        value 165;
+        description
+          "25GBASE-PQG-U3";
+      }
+      enum 25GbasePQXD2 {
+        value 166;
+        description
+          "25GBASE-PQX-D2";
+      }
+      enum 25GbasePQXD3 {
+        value 167;
+        description
+          "25GBASE-PQX-D3";
+      }
+      enum 25GbasePQXU2 {
+        value 168;
+        description
+          "25GBASE-PQX-U2";
+      }
+      enum 25GbasePQXU3 {
+        value 169;
+        description
+          "25GBASE-PQX-U3";
+      }
+      enum 50G10GbasePQGD2 {
+        value 170;
+        description
+          "50/10GBASE-PQG-D2";
+      }
+      enum 50G10GbasePQGD3 {
+        value 171;
+        description
+          "50/10GBASE-PQG-D3";
+      }
+      enum 50G10GbasePQGU2 {
+        value 172;
+        description
+          "50/10GBASE-PQG-U2";
+      }
+      enum 50G10GbasePQGU3 {
+        value 173;
+        description
+          "50/10GBASE-PQG-U3";
+      }
+      enum 50G10GbasePQXD2 {
+        value 174;
+        description
+          "50/10GBASE-PQX-D2";
+      }
+      enum 50G10GbasePQXD3 {
+        value 175;
+        description
+          "50/10GBASE-PQX-D3";
+      }
+      enum 50G10GbasePQXU2 {
+        value 176;
+        description
+          "50/10GBASE-PQX-U2";
+      }
+      enum 50G10GbasePQXU3 {
+        value 177;
+        description
+          "50/10GBASE-PQX-U3";
+      }
+      enum 50G25GbasePQGD2 {
+        value 178;
+        description
+          "50/25GBASE-PQG-D2";
+      }
+      enum 50G25GbasePQGD3 {
+        value 179;
+        description
+          "50/25GBASE-PQG-D3";
+      }
+      enum 50G25GbasePQGU2 {
+        value 180;
+        description
+          "50/25GBASE-PQG-U2";
+      }
+      enum 50G25GbasePQGU3 {
+        value 181;
+        description
+          "50/25GBASE-PQG-U3";
+      }
+      enum 50G25GbasePQXD2 {
+        value 182;
+        description
+          "50/25GBASE-PQX-D2";
+      }
+      enum 50G25GbasePQXD3 {
+        value 183;
+        description
+          "50/25GBASE-PQX-D3";
+      }
+      enum 50G25GbasePQXU2 {
+        value 184;
+        description
+          "50/25GBASE-PQX-U2";
+      }
+      enum 50G25GbasePQXU3 {
+        value 185;
+        description
+          "50/25GBASE-PQX-U3";
+      }
+      enum 50GbasePQGD2 {
+        value 186;
+        description
+          "50GBASE-PQG-D2";
+      }
+      enum 50GbasePQGD3 {
+        value 187;
+        description
+          "50GBASE-PQG-D3";
+      }
+      enum 50GbasePQGU2 {
+        value 188;
+        description
+          "50GBASE-PQG-U2";
+      }
+      enum 50GbasePQGU3 {
+        value 189;
+        description
+          "50GBASE-PQG-U3";
+      }
+      enum 50GbasePQXD2 {
+        value 190;
+        description
+          "50GBASE-PQX-D2";
+      }
+      enum 50GbasePQXD3 {
+        value 191;
+        description
+          "50GBASE-PQX-D3";
+      }
+      enum 50GbasePQXU2 {
+        value 192;
+        description
+          "50GBASE-PQX-U2";
+      }
+      enum 50GbasePQXU3 {
+        value 193;
+        description
+          "50GBASE-PQX-U3";
+      }
+      enum 100GbaseZR {
+        value 194;
+        description
+          "100GBASE-ZR";
+      }
+      enum 10GbaseBR10D {
+        value 195;
+        description
+          "10GBASE-BR10-D";
+      }
+      enum 10GbaseBR10U {
+        value 196;
+        description
+          "10GBASE-BR10-U";
+      }
+      enum 10GbaseBR20D {
+        value 197;
+        description
+          "10GBASE-BR20-D";
+      }
+      enum 10GbaseBR20U {
+        value 198;
+        description
+          "10GBASE-BR20-U";
+      }
+      enum 10GbaseBR40D {
+        value 199;
+        description
+          "10GBASE-BR40-D";
+      }
+      enum 10GbaseBR40U {
+        value 200;
+        description
+          "10GBASE-BR40-U";
+      }
+      enum 25GbaseBR10D {
+        value 201;
+        description
+          "25GBASE-BR10-D";
+      }
+      enum 25GbaseBR10U {
+        value 202;
+        description
+          "25GBASE-BR10-U";
+      }
+      enum 25GbaseBR20D {
+        value 203;
+        description
+          "25GBASE-BR20-D";
+      }
+      enum 25GbaseBR20U {
+        value 204;
+        description
+          "25GBASE-BR20-U";
+      }
+      enum 25GbaseBR40D {
+        value 205;
+        description
+          "25GBASE-BR40-D";
+      }
+      enum 25GbaseBR40U {
+        value 206;
+        description
+          "25GBASE-BR40-U";
+      }
+      enum 50GbaseBR10D {
+        value 207;
+        description
+          "50GBASE-BR10-D";
+      }
+      enum 50GbaseBR10U {
+        value 208;
+        description
+          "50GBASE-BR10-U";
+      }
+      enum 50GbaseBR20D {
+        value 209;
+        description
+          "50GBASE-BR20-D";
+      }
+      enum 50GbaseBR20U {
+        value 210;
+        description
+          "50GBASE-BR20-U";
+      }
+      enum 50GbaseBR40D {
+        value 211;
+        description
+          "50GBASE-BR40-D";
+      }
+      enum 50GbaseBR40U {
+        value 212;
+        description
+          "50GBASE-BR40-U";
+      }
+      enum 2p5GbaseAU {
+        value 213;
+        description
+          "2.5GBASE-AU";
+      }
+      enum 5GbaseAU {
+        value 214;
+        description
+          "5GBASE-AU";
+      }
+      enum 10GbaseAU {
+        value 215;
+        description
+          "10GBASE-AU";
+      }
+      enum 25GbaseAU {
+        value 216;
+        description
+          "25GBASE-AU";
+      }
+      enum 50GbaseAU {
+        value 217;
+        description
+          "50GBASE-AU";
+      }
+      enum 25GbaseT1 {
+        value 218;
+        description
+          "25GBASE-T1";
+      }
+      enum 400GbaseDR42 {
+        value 219;
+        description
+          "400GBASE-DR4-2";
+      }
+      enum 800GbaseCR8 {
+        value 220;
+        description
+          "800GBASE-CR8";
+      }
+      enum 800GbaseDR8 {
+        value 221;
+        description
+          "800GBASE-DR8";
+      }
+      enum 800GbaseDR82 {
+        value 222;
+        description
+          "800GBASE-DR8-2";
+      }
+      enum 800GbaseKR8 {
+        value 223;
+        description
+          "800GBASE-KR8";
+      }
+      enum 800GbaseR {
+        value 224;
+        description
+          "800GBASE-R";
+      }
+      enum 800GbaseSR8 {
+        value 225;
+        description
+          "800GBASE-SR8";
+      }
+      enum 800GbaseVR8 {
+        value 226;
+        description
+          "800GBASE-VR8";
+      }
+    }
+    description
+      "Medium Attachment Unit (MAU) type";
+    reference
+      "IEEE802.3 Section 30.5.1.1.2
+
+       Registry www.iana.org/assignments/ianamau-mib/ianamau-mib revision 202404020000Z April 2, 2024";
+  }
+}

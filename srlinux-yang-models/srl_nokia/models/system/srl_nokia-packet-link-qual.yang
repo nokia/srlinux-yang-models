@@ -1,0 +1,319 @@
+module srl_nokia-packet-link-qual {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:packet-link-qual";
+  prefix srl_nokia-plq;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-interfaces {
+    prefix srl-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration elements related to the gNOI Packet Link Qualification service";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping packet-link-qualification-profile-top {
+    container packet-link-qualification {
+      description
+        "Top-level container for gNOI Packet Link Qualification profiles";
+      list profile {
+        description
+          "List of configured Packet Link Qualification profiles";
+        key "name";
+        leaf name {
+          srl-ext:show-importance "high";
+          type srl-comm:packet-link-qualification-id;
+          description
+            "Name of the Packet Link Qualification profile";
+        }
+        choice timing {
+          mandatory true;
+          case ntp {
+            if-feature "srl_nokia-feat:disabled";
+            container ntp {
+              leaf start-time {
+                mandatory true;
+                description
+                  "Start time of the test";
+                type srl-comm:date-and-time-delta;
+              }
+              leaf end-time {
+                mandatory true;
+                description
+                  "End time of the test";
+                type srl-comm:date-and-time-delta;
+              }
+              leaf teardown-time {
+                description
+                  "Time at which the test should be torn down";
+                type srl-comm:date-and-time-delta;
+              }
+            }
+          }
+          case rpc {
+            container rpc {
+              leaf pre-sync-duration {
+                mandatory true;
+                type uint32;
+                units "seconds";
+                description
+                  "Duration of the pre-sync phase";
+              }
+              leaf setup-duration {
+                mandatory true;
+                description
+                  "Duration of the setup phase";
+                type uint32 {
+                  range "20..max";
+                }
+                units "seconds";
+              }
+              leaf duration {
+                mandatory true;
+                description
+                  "Duration of the test";
+                type uint32 {
+                  range "1..max";
+                }
+                units "seconds";
+              }
+              leaf post-sync-duration {
+                mandatory true;
+                description
+                  "Duration of the post-sync phase";
+                type uint32;
+                units "seconds";
+              }
+              leaf teardown-duration {
+                mandatory true;
+                description
+                  "Duration of the teardown phase";
+                type uint32 {
+                  range "15..max";
+                }
+                units "seconds";
+              }
+            }
+          }
+        }
+        choice endpoint-type {
+          mandatory true;
+          case packet-generator {
+            container packet-generator {
+              description
+                "Packet generator endpoint";
+              leaf packet-rate {
+                mandatory true;
+                type uint32 {
+                  range "1..max";
+                }
+                units "packets per second";
+                description
+                  "Packet rate of the packet generator";
+              }
+              leaf packet-size {
+                mandatory true;
+                type uint32 {
+                  range "64..8184";
+                }
+                units "bytes";
+                description
+                  "Packet size (in bytes) of the packet generator";
+              }
+            }
+          }
+          case asic-loopback {
+            container asic-loopback {
+              presence "Enable ASIC loopback";
+              description
+                "ASIC loopback
+
+                 Use the ASIC loopback mode";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping packet-link-qualification-profile-results-top {
+    container packet-link-qualification {
+      description
+        "gNOI Packet Link Qualification results";
+      config false;
+      list result {
+        key "id";
+        leaf id {
+          type srl-comm:packet-link-qualification-id;
+          description
+            "Packet link qualification test ID";
+        }
+        leaf oper-state {
+          type enumeration {
+            enum unspecified {
+              description
+                "Unspecified state of the qualification";
+            }
+            enum error {
+              description
+                "The qualification has errored";
+            }
+            enum idle {
+              description
+                "Initial state for the qualification";
+            }
+            enum setup {
+              description
+                "Interface is being configured";
+            }
+            enum running {
+              description
+                "Qualification underway";
+            }
+            enum teardown {
+              description
+                "Interface is being reset";
+            }
+            enum completed {
+              description
+                "Qualification is complete";
+            }
+          }
+          description
+            "State of the qualification test";
+        }
+        leaf packets-sent {
+          type uint64;
+          units "packets";
+          description
+            "Number of packets sent";
+        }
+        leaf packets-received {
+          type uint64;
+          units "packets";
+          description
+            "Number of packets received";
+        }
+        leaf packets-error {
+          type uint64;
+          units "packets";
+          description
+            "Number of packets transmitted that experienced corruption";
+        }
+        leaf packets-dropped {
+          type uint64;
+          units "packets";
+          description
+            "Number of packets dropped";
+        }
+        leaf start-time {
+          type srl-comm:date-and-time-delta;
+          description
+            "Start time of the test";
+        }
+        leaf end-time {
+          type srl-comm:date-and-time-delta;
+          description
+            "End time of the test";
+        }
+        leaf expected-rate {
+          type uint64;
+          units "bytes per second";
+          description
+            "Expected rate of the test
+
+             This is the computed or
+             observed rate that the service expected to be maintained
+             throughout the qualification duration.";
+        }
+        leaf qualification-rate {
+          type uint64;
+          units "bytes per second";
+          description
+            "Observed rate of the test
+
+             This is the computed or
+             observed rate that the service expected to be maintained
+             throughout the qualification duration.";
+        }
+        leaf status {
+          type enumeration {
+            enum not-found {
+              description
+                "Request ID not found";
+            }
+            enum invalid-argument {
+              description
+                "Unsupported configuration parameter";
+            }
+            enum canceled {
+              description
+                "Test was canceled";
+            }
+            enum deadline-exceeded {
+              description
+                "A test stage took too long to complete";
+            }
+            enum failed-precondition {
+              description
+                "A test stage was not setup properly";
+            }
+            enum internal {
+              description
+                "A test stage had unexpected serious errors";
+            }
+          }
+          description
+            "Status of the test
+
+             Only set when the test is in the error state.";
+        }
+        leaf status-message {
+          type string;
+          description
+            "Status message of the test
+
+             Only set when the test is in the error state.";
+        }
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl_nokia-feat:packet-link-qualification";
+    uses packet-link-qualification-profile-top;
+  }
+
+  augment "/srl-if:interface" {
+    if-feature "srl_nokia-feat:packet-link-qualification";
+    uses packet-link-qualification-profile-results-top;
+  }
+}

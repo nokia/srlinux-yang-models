@@ -1,0 +1,79 @@
+module srl_nokia-tools-netconf-server {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:netconf:tools-netconf-server";
+  prefix srl-tools-netconf-server;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Tools related to the NETCONF server";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping tools-netconf-server-top {
+    list netconf-server {
+      key "name";
+      leaf name {
+        type srl-comm:restricted-name;
+        description
+          "NETCONF server instance name";
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Clear statistics information for the NETCONF server instance";
+        }
+      }
+      list session {
+        key "session-id";
+        leaf session-id {
+          type uint32 {
+            range "1..max";
+          }
+        }
+        leaf clear {
+          type empty;
+          description
+            "Clear the NETCONF server instance session";
+        }
+        container statistics {
+          leaf clear {
+            type empty;
+            description
+              "Clear statistics information for the NETCONF session";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    if-feature "srl-feat:netconf";
+    srl-ext:first-released "24.7.1";
+    uses tools-netconf-server-top;
+  }
+}

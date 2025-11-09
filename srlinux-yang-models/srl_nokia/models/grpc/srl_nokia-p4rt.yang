@@ -1,0 +1,61 @@
+module srl_nokia-p4rt {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:p4rt";
+  prefix srl-p4rt;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the P4RT service";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+
+  grouping p4rt-session-info {
+    container p4rt {
+      description
+        "Container for P4RT related session info";
+      leaf primary {
+        type boolean;
+        srl-ext:show-importance "high";
+        description
+          "Indicates if this client is the primary for the specified forwarding complex
+
+           Only a single primary per forwarding complex is supported";
+      }
+      container forwarding-complex {
+        leaf id {
+          type string;
+          description
+            "The normalized ID for this forwarding-complex
+
+             This is the slot number and complex number seperated by a '/', 0 indexed. For example '1/0', or '1/1' representing two forwarding complexes on slot 1.";
+        }
+        leaf device {
+          type uint64;
+          description
+            "The P4Runtime ID of the forwarding complex for which this client has established itself
+
+             This is the value configured at /platform/linecard/forwarding-complex/p4rt/id, or a system derived default.";
+        }
+        leaf slot {
+          type uint8;
+          description
+            "The linecard slot for which this forwarding complex resides on";
+        }
+      }
+    }
+  }
+}

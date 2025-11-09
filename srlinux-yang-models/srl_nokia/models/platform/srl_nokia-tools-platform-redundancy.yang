@@ -1,0 +1,86 @@
+module srl_nokia-tools-platform-redundancy {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:tools-platform-redundancy";
+  prefix srl_nokia-tools-platform-redundancy;
+
+  import srl_nokia-tools-platform {
+    prefix srl-tools-platform;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands for platform redundancy.";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping tools-redundancy-top {
+    container redundancy {
+      description
+        "Top-level container for redundancy operational commands";
+      container switchover {
+        if-feature "srl-feat:redundant-cpms";
+        presence "Trigger a switchover of the cpm";
+        description
+          "Trigger a redundancy switchover to the other control module";
+      }
+      container synchronize {
+        if-feature "srl-feat:redundant-cpms";
+        description
+          "Top-level container for manual synchronization activies";
+        leaf system {
+          type empty;
+          description
+            "Force a synchronization of the system-required data between the active control module and the standby
+
+             This synchronizes images, configuration, checkpoints, and other system-required data";
+        }
+        leaf overlay {
+          type empty;
+          description
+            "Force a synchronization of the overlay filesystem between the active control module and the standby
+
+             This synchronizes all non-excluded directories in the overlay filesystem";
+        }
+      }
+      container linecard {
+        if-feature "srl-feat:cpiom-linecard-redundancy";
+        description
+          "Top-level container for manual line card user-triggered redundancy operations";
+        leaf trigger-forwarding-takeover {
+          type empty;
+          description
+            "Force distribution of forwarding across two CPIOMs where all forwarding for all odd MDA slots are handled via CPIOM-A and forwarding for all even MDA slots are handled via CPIOM-B
+
+             Node triggers active / active mode, only when both CPIOMs are synchronized";
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-platform:platform" {
+    if-feature "srl-feat:redundant-cpms or srl-feat:cpiom-linecard-redundancy";
+    uses tools-redundancy-top;
+  }
+}

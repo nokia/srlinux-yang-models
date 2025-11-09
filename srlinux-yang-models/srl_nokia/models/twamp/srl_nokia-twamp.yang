@@ -1,0 +1,723 @@
+module srl_nokia-twamp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:twamp:twamp";
+  prefix srl_nokia-twamp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-oam {
+    prefix srl_nokia-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  typedef twamp-modes {
+    description
+      "Specifies the TWAMP-Modes during a TWAMP-Control Connection setup between a Control-Client and Server";
+    type enumeration {
+      enum unauthenticated {
+        value 0;
+        description
+          "No encryption or authentication is applied in TWAMP-Control and TWAMP-Test";
+        reference
+          "RFC 4656: A One-way Active Measurement Protocol (OWAMP)";
+      }
+      enum authenticated {
+        value 1;
+        description
+          "Control-Client and Server pass a shared secret for authentication";
+        reference
+          "RFC 4656: A One-way Active Measurement Protocol (OWAMP)";
+      }
+      enum encrypted {
+        value 2;
+        description
+          "Additional level of protection using encryption";
+        reference
+          "RFC 4656: A One-way Active Measurement Protocol (OWAMP)";
+      }
+      enum unauth-test-encrypt-control {
+        value 3;
+        description
+          "Mixed Security Mode, the TWAMP-Test uses unauthenticated mode and TWAMP-Control uses encrypted mode";
+        reference
+          "RFC 5618: Mixed Security Mode for the Two-Way Active Measurement Protocol (TWAMP)";
+      }
+      enum individual-session-control {
+        value 4;
+        description
+          "Individual TWAMP-Test sessions start and stop using individual session identifiers
+
+           This allows TWAMP-Test sessions using the same control channel to be started individually instead of using the bulk all sessions start.";
+        reference
+          "RFC 5938 Individual Session Control Feature for the TWAMP";
+      }
+      enum reflect-octets {
+        value 5;
+        description
+          "Reflect octets capability";
+        reference
+          "RFC 6038: TWAMP Reflect Octets and Symmetrical Size Features";
+      }
+      enum symmetrical-size {
+        value 6;
+        description
+          "Symmetrical size for test packets between Session-Sender and Session-Reflector";
+        reference
+          "RFC 6038: TWAMP Reflect Octets and Symmetrical Size Features";
+      }
+    }
+  }
+
+  typedef twamp-server-control-connection-state {
+    description
+      "Indicates the Server TWAMP-Control connection state";
+    type enumeration {
+      enum active {
+        description
+          "TWAMP-Control connection between the Server and the Control-Client is active
+
+           Packets are arriving on the TWAMP-Control channel or there are active TWAMP-Test sessions on the TWAMP-Control channel.";
+      }
+      enum servwait {
+        description
+          "TWAMP-Control connection between the Server and the Control-Client is in SERVWAIT
+
+           This state is entered when no there are no TWAMP-Control messages between the Control-Client and Server and all test
+           sessions on the TWAMP-Control channel have been stopped, and the REFWAIT (timeout following test session stop) has
+           expired.";
+      }
+    }
+  }
+
+  grouping twamp-control-connection-statistics {
+    description
+      "TWAMP-Control connections statistics";
+    leaf control-connections-active {
+      description
+        "Total number of active TWAMP-Control channels";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf control-connections-rejected {
+      description
+        "Total number of rejected TWAMP-Control channels";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping twamp-test-sessions-statistics {
+    srl_nokia-ext:delivery-node-override "true";
+    srl_nokia-ext:stream-mode "sample=2";
+    description
+      "Per reason code error statistics for connection drops.";
+    leaf test-sessions-active {
+      description
+        "Total number of active TWAMP-Test sessions relative to the context";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf test-sessions-completed {
+      description
+        "Total number of completed TWAMP-Test sessions relative to the context ";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf test-sessions-rejected {
+      description
+        "Total number of rejected TWAMP-Test sessions relative to the context";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf test-sessions-aborted {
+      description
+        "Total number of aborted TWAMP_test sessions relative to the context";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping twamp-test-session-packet-statistics {
+    srl_nokia-ext:delivery-node-override "true";
+    srl_nokia-ext:stream-mode "sample=2";
+    description
+      "TWAMP-Test packet statistics";
+    leaf test-packets-received {
+      description
+        "Total number of TWAMP-Test packets received relevant to the context";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf test-packets-transmitted {
+      description
+        "Total number of TWAMP-Test packets sent relevant to the context";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping twamp-server-error-statistics {
+    container dropped-connections {
+      config false;
+      description
+        "TWAMP-Control (TCP) dropped or closed connections";
+      leaf tcp-connection-closed {
+        description
+          "TCP connection closed";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf tcp-connection-fatal-error {
+        description
+          "TCP connection errors";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf tcp-unexpected-event {
+        description
+          "TCP connection failures because of unexpected protocol events";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf message-send-error {
+        description
+          "TCP connection failure because of server message send error (Greeting, Start or Accept)";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf memory-allocation-error {
+        description
+          "TCP connection failure because of memory allocation error";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf no-client-prefix-match {
+        description
+          "TCP connection failures because no prefix match for Client IP";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf maximum-global-limit-exceed {
+        description
+          "TCP connection failures because global connection limit exceeds";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf maximum-prefix-limit-exceed {
+        description
+          "TCP connection failures because per prefix connection limit exceeds";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf unspecified-mode {
+        description
+          "TCP connection failures because unspecified TWAMP mode received from Control-Client";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf unsupported-mode {
+        description
+          "TCP connection failures because unsupported TWAMP mode requested by Control-Client";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf control-command-not-valid {
+        description
+          "TCP connection failure because invalid TWAMP-Control command receievd from Control-Client";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf incorrect-stop-session-count {
+        description
+          "TCP connection failure because invalid session count was received in the Stop-Sessions message from the Control-Client";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf connection-timeout {
+        description
+          "TCP connection timeout";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf no-internal-resource {
+        description
+          "TCP connection failures because internal resource unavailable";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf non-zero-sid-in-client-control-message {
+        description
+          "TCP connection failure because of invalid non-zero SID received from Control-Client";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf invalid-invalid-hmac {
+        description
+          "Invalid Hash-based Message Authentication Code (HMAC)";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    container dropped-connection-states {
+      config false;
+      description
+        "The state of the TWAMP-Control channel when the failure occured";
+      leaf idle {
+        description
+          "Count of TWAMP-Control connection failures in idle state";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf setup-wait {
+        description
+          "Count of TWAMP-Control connection failures in set-up-wait state";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf started {
+        description
+          "Count of TWAMP-Control connection failures in server-started state";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf active {
+        description
+          "Count of TWAMP-Control connection failures in test active state";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf process-started {
+        description
+          "Count of TWAMP-Control connection failures in process-session-start state";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf process-stop {
+        description
+          "Count of TWAMP-Control connection failures in process-session-stop state";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf process-tw-session {
+        description
+          "Count of TWAMP-Control connection failures in process-session-request state";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    container rejected-session {
+      config false;
+      description
+        "Per reason code error statistics for test session rejection";
+      leaf invalid-ip-address-version {
+        description
+          "Sessions rejected because of bad IP version";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf non-local-ip-destination {
+        description
+          "Sessions rejected because destination IP in the TWAMP-Test packet from the Session-Sender was not local to the Session-Reflector";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf bad-type-p {
+        description
+          "Sessions rejected because of non-DSCP type-p";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf padding-too-big {
+        description
+          "Sessions rejected because padding length requested is too large";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf non-zero-mbz-value {
+        description
+          "Sessions rejected because Must Be Zero (MBZ) values in TWAMP-Test packet were not zero";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf non-zero-session-sender-sid {
+        description
+          "Sessions rejected because Session-Sender SID is not zero";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf timeout-too-large {
+        description
+          "Sessions rejected because timeout advertised is larger than reference wait (REFWAIT)";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf maximum-global-session-exceed {
+        description
+          "Sessions rejected because of global session limit exceeds";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf maximum-prefix-session-exceed {
+        description
+          "Sessions rejected because of prefix session limit exceeds";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf client-source-ip-unreachable {
+        description
+          "Session rejected because Control-Client IP is not reachable";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf udp-port-in-use {
+        description
+          "Sessions rejected because UDP Port is not available";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf duplicate-session {
+        description
+          "Sessions rejected because duplicate session already exists";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf no-internal-resource {
+        description
+          "Sessions rejected because internal resource is not available";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf refwait-timeout {
+        description
+          "Sessions dropped because Session-Reflector inactivity timer (REFWAIT) elapsed";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+    container dropped-test-packet {
+      config false;
+      description
+        "TWAMP-Test packet drop stats";
+      leaf incorrect-packet-size {
+        description
+          "Test packets dropped because of unexpected packet size";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf incorrect-source-address {
+        description
+          "Test packets dropped because incorrect source address";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf arrived-before-start-time {
+        description
+          "Test packets dropped because they arrived before start time
+
+           The TWAMP-Test packets arrived on the Session-Reflector before the indicated start-time in the Request-TW-Session.
+           This is likely caused by a difference in Time of Day (ToD) clocks used for timestaming the TWAMP-Test packet.  This
+           may occur when the Server/Session-Reflector clock is ahead of the ToD clock of the Control-Client/Session-Sender.";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf no-start-sessions {
+        description
+          "Test packets dropped because they arrived before Client-Control start-sessions message for the session";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf invalid-error-estimate {
+        description
+          "Test packets dropped because  invalid TWAMP-Test error estimate received from the Session-Sender";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf reply-error {
+        description
+          "Test reply send errors.";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf invalid-server-octets {
+        description
+          "Test packets dropped because of invalid server octets";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+      leaf invalid-symmetric-mbz {
+        description
+          "Test packets dropped because of invalid symmetric padding Must Be Zero (MBZ)";
+        type srl_nokia-comm:zero-based-counter32;
+      }
+    }
+  }
+
+  grouping twamp-server-common-config-and-state {
+    leaf description {
+      type srl_nokia-comm:description;
+      description
+        "TWAMP Server common configuration";
+    }
+    leaf admin-state {
+      description
+        "TWAMP Server administrative state
+
+         A value 'enable' administratively starts the Server and Session-Reflector.  A value 'disable'
+         administratively stops the Server and Session-Reflector, dropping any active TWAMP-Control channels
+         and terminating all TWAMP-Test sessions.";
+      type srl_nokia-comm:admin-state;
+      srl_nokia-ext:show-importance "high";
+      default "disable";
+    }
+    leaf oper-state {
+      description
+        "The operational state of the TWAMP Server and Session/Reflector";
+      config false;
+      type srl_nokia-comm:oper-state;
+      srl_nokia-ext:show-importance "high";
+    }
+    leaf servwait {
+      description
+        "TWAMP-Control (TCP) session timeout, in seconds
+
+         The length of time the Server maintains the TWAMP-Control channel in the absence of any activity for the channel.
+         This state is entered when there is no TWAMP-Control messages between the Control-Client and Server, and all test
+         sessions on the TWAMP-Control channel have been stopped, and the timeout following test session stop (REFWAIT) has
+         expired.";
+      type uint32 {
+        range "60..3600";
+      }
+      units "seconds";
+      default "900";
+    }
+    leaf control-packet-dscp {
+      description
+        "The DSCP to be placed in the IP header of TWAMP-Control (TCP) packets generated by the Server";
+      type srl_nokia-comm:dscp;
+      default "CS7";
+    }
+    leaf enforce-test-session-start-time {
+      type boolean;
+      default "true";
+      description
+        "Discard or process TWAMP-Test packets arriving before the negotiated session start time
+
+         A Request-TW-Session includes a start-time value for the test session.  A value 'true' enforces the server check
+         that will drop the TWAMP-Test packets if the test session start-time is before the Server time of day.  In
+         environments where the TWAMP Client and TWAMP Servers are not synchronized the value 'false' can be used to
+         skip this validation check and process TWAMP test packets that arrive before their indicated start time.";
+    }
+    leaf maximum-connections {
+      description
+        "The system wide maximum number of concurrent TWAMP-Control connections the Server supports";
+      type uint32 {
+        range "1..64";
+      }
+      default "32";
+    }
+    leaf maximum-sessions {
+      description
+        "The system wide maximum number of concurrent TWAMP-Test sessions the Server supports";
+      type uint32 {
+        range "1..128";
+      }
+      default "32";
+    }
+    leaf-list modes {
+      config false;
+      description
+        "The list of TWAMP Modes this Server supports";
+      type twamp-modes;
+    }
+    container statistics {
+      srl_nokia-ext:delivery-node-override "true";
+      srl_nokia-ext:stream-mode "sample=2";
+      config false;
+      uses twamp-test-sessions-statistics;
+      uses twamp-test-session-packet-statistics;
+      uses twamp-control-connection-statistics;
+    }
+  }
+
+  grouping twamp-server-prefix-config-and-state {
+    list client-connection {
+      description
+        "List of TWAMP Client IP prefixes that can establish TWAMP-Control connections with the Server";
+      key "prefix";
+      leaf prefix {
+        description
+          "A TWAMP Client IP prefix the Server will accept TWAMP-Control connections from";
+        type srl_nokia-comm:ip-prefix;
+      }
+      leaf maximum-connections {
+        description
+          "The per Control-Client IP prefix maximum number of concurrent TWAMP-Control connections the Server supports";
+        type uint16 {
+          range "1..64";
+        }
+        default "32";
+      }
+      leaf maximum-sessions {
+        description
+          "The per Control-Client IP prefix maximum number of oncurrent TWAMP-Test sessions the Server supports";
+        type uint16 {
+          range "1..128";
+        }
+        default "32";
+      }
+      container statistics {
+        srl_nokia-ext:delivery-node-override "true";
+        srl_nokia-ext:stream-mode "sample=2";
+        config false;
+        uses twamp-test-sessions-statistics;
+        uses twamp-test-session-packet-statistics;
+        uses twamp-control-connection-statistics;
+      }
+    }
+  }
+
+  grouping twamp-control-connection-state {
+    list control-connection {
+      config false;
+      description
+        "List TWAMP-Control (TCP) connections";
+      key "client-ip client-tcp-port server-ip server-tcp-port";
+      leaf client-ip {
+        description
+          "The IP address of the  Control-Client used in the TWAMP-Control (TCP) packets belonging to this control connection";
+        type srl_nokia-comm:ip-address;
+      }
+      leaf client-tcp-port {
+        description
+          "The source TCP port number of the Control-Client used in the TWAMP-Control (TCP) packets belonging to this control connection";
+        type srl_nokia-comm:port-number;
+      }
+      leaf server-ip {
+        description
+          "The destination IP address in the TWAMP Control message sent by the Control-Client targeting an IP address of the Server";
+        type srl_nokia-comm:ip-address;
+      }
+      leaf server-tcp-port {
+        description
+          "The destination TCP port the Server listens for TWAMP-Control messages";
+        type srl_nokia-comm:port-number;
+      }
+      leaf state {
+        description
+          "Indicates the Server TWAMP-Control connection state";
+        type twamp-server-control-connection-state;
+      }
+      leaf control-packet-dscp {
+        description
+          "The DSCP value used in the IP header of the TWAMP-Control (TCP) packets sent by the Server";
+        type srl_nokia-comm:dscp-value;
+      }
+      leaf selected-mode {
+        description
+          "The TWAMP Mode chosen in the Mode field of the TWAMP Set-Up-Response message";
+        type twamp-modes;
+      }
+      container statistics {
+        srl_nokia-ext:delivery-node-override "true";
+        srl_nokia-ext:stream-mode "sample=2";
+        uses twamp-test-sessions-statistics;
+        uses twamp-test-session-packet-statistics;
+      }
+    }
+  }
+
+  grouping twamp-test-session-state {
+    leaf sender-ip {
+      description
+        "The IP address of the TWAMP Session-Sender for the TWAMP test packets belonging to this test session";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf sender-udp-port {
+      description
+        "The source UDP port used by the TWAMP Session-Sender for the TWAMP test packets belonging to this test session";
+      type srl_nokia-comm:port-number;
+    }
+    leaf reflector-ip {
+      description
+        "The IP address of the TWAMP Session-Reflector, the destination IP address used in the TWAMP test packets belonging to this test";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf reflector-udp-port {
+      description
+        "The  UDP port number the TWAMP Session-Reflector listens on for TWAMP test packets belonging to this test session";
+      type srl_nokia-comm:port-number {
+        range "862 | 49152..65535";
+      }
+    }
+    leaf test-session-id {
+      description
+        "A TWAMP sever auto-allocated identifier for this TWAMP-Test session that is unique to the local Server
+
+         This value is communicated to the Control-Client requesting the test session using the SID field of the
+         Accept-Session message.";
+      type string;
+    }
+    leaf parent-connection-client-ip {
+      description
+        "The IP address of the Control-Client used in the TWAMP-Control (TCP) packets belonging to this control connection which negotiated the test session";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf parent-connection-client-tcp-port {
+      description
+        "The TCP port of the Control-Client used in the TWAMP-Control (TCP) packets belonging to this control connection which negotiated the test session";
+      type srl_nokia-comm:port-number;
+    }
+    leaf parent-connection-server-ip {
+      description
+        "The destination IP address in the TWAMP Control message sent by the Control-Client targeting the Server which negotiated this test session";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf parent-connection-server-tcp-port {
+      description
+        "The destination TCP Port (862) in the TWAMP Control message sent by the Control-Client targeting the server which negotiated this test session";
+      type srl_nokia-comm:port-number;
+    }
+    leaf test-packet-dscp {
+      description
+        "The DSCP value present in the IP header of TWAMP-Test packets belonging to this session";
+      type srl_nokia-comm:dscp-value;
+    }
+    leaf last-sequence-number-transmitted {
+      config false;
+      description
+        "The last sequence number in the TWAMP-Test packet sent by the Session-Reflector to the Session-Sender for this test session";
+      type uint32;
+    }
+    leaf last-sequence-number-received {
+      config false;
+      description
+        "The last sequence number in the TWAMP-Test packet sent by the Session-Sender to the Session-Reflector for this test session";
+      type uint32;
+    }
+    container statistics {
+      srl_nokia-ext:delivery-node-override "true";
+      srl_nokia-ext:stream-mode "sample=2";
+      config false;
+      uses twamp-test-session-packet-statistics;
+    }
+  }
+
+  grouping twamp-session-reflector-config-state {
+    container session-reflector {
+      config false;
+      description
+        "Configuration and state for the TWAMP Session-Reflector";
+      list test-session {
+        description
+          "TWAMP Session-Reflector test sessions.";
+        key "sender-ip sender-udp-port
+             reflector-ip reflector-udp-port";
+        uses twamp-test-session-state;
+      }
+    }
+  }
+
+  grouping twamp-top {
+    container twamp {
+      if-feature "srl_nokia-feat:twamp";
+      presence "Configure TWAMP";
+      container server {
+        description
+          "Configuration of the TWAMP Server logical entity";
+        list network-instance {
+          key "name";
+          leaf name {
+            description
+              "The name of the TWAMP Server network instance";
+            type leafref {
+              path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+            }
+            must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+              error-message "TWAMP server is only supported on default network instance";
+            }
+          }
+          uses twamp-server-common-config-and-state;
+          uses twamp-server-prefix-config-and-state;
+          uses twamp-control-connection-state;
+          uses twamp-session-reflector-config-state;
+        }
+      }
+      container statistics {
+        config false;
+        uses twamp-server-error-statistics;
+      }
+    }
+  }
+
+  augment "/srl_nokia-oam:oam" {
+    uses twamp-top;
+  }
+}

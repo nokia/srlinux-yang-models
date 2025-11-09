@@ -1,0 +1,130 @@
+module srl_nokia-platform-tpm {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-tpm";
+  prefix srl_nokia-platform-tpm;
+
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational state data related to TPMs";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  augment "/srl-platform:platform/srl-platform:trust" {
+    container tpm {
+      list control {
+        description
+          "TPM status, PCR indexes and certificates per control module";
+        config false;
+        key "slot";
+        leaf slot {
+          type string {
+            pattern 'A|B';
+          }
+          description
+            "Slot identifier for the control module.
+             The slot identifier is the system wide unique name for the module's TPM";
+        }
+        leaf oper-state {
+          type enumeration {
+            enum up {
+              value 0;
+              description
+                "The TPM currently is running normally and is ready to accept and process TPM quotes";
+              reference
+                "TPM2.0-Arch:
+                 https://trustedcomputinggroup.org/wp-content/uploads/TCG_TPM2_r1p59_Part1_Architecture_pub.pdf Section 12";
+            }
+            enum down {
+              value 1;
+              description
+                "TPM is in a state such as startup or shutdown which precludes the processing of TPM quotes";
+            }
+          }
+          description
+            "TPM chip self-test status";
+        }
+        list tpm20-pcr-bank {
+          key "tpm20-hash-algo";
+          description
+            "Specifies the list of PCRs that may be extracted for a specific Hash Algorithm
+             A TPM2.0 bank is a set of PCRs which are extended using a particular hash algorithm";
+          reference
+            "TPM2.0-Structures:
+             https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf  Section 10.9.7";
+          leaf tpm20-hash-algo {
+            description
+              "The hash algorithm that is used to hash TPM2.0 PCRs";
+            type string {
+              pattern 'sha1|sha256';
+            }
+          }
+          leaf-list pcr-index {
+            type srl-comm:pcr;
+            description
+              "List the TPM2.0 PCRs available to be extracted";
+          }
+        }
+        list certificates {
+          key "name";
+          description
+            "List of TPM certificates
+             Three main types of certificates can be accessed via this statement, including Endorsement Key Certificate (EK), Attestation Key Certificate (AK), Device ID key Certificate (DevID)";
+          leaf name {
+            type string;
+            description
+              "An arbitrary name uniquely identifying a certificate associated to a key within a TPM
+               Endorsement Key Certificate (EK): endorsement-certificate
+               Initial Device ID Certificate (IDevID): initial-device-id-certificate
+               Initial Attestation Key Certificate (IAK): initial-attestation-certificate";
+            reference
+              "TPM2.0-Key:
+               https://trustedcomputinggroup.org/wp-content/uploads/TPM-2p0-Keys-for-Device-Identity-and-Attestation_v1_r12_pub10082021.pdf Section 3.2, 3.11";
+          }
+          leaf nv-index {
+            type uint32;
+            description
+              "NV index for the certificate";
+          }
+          leaf data {
+            type binary;
+            description
+              "DER encoded X.509 certificate";
+          }
+        }
+      }
+    }
+  }
+}

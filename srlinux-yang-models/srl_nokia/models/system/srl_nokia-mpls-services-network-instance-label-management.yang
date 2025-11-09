@@ -1,0 +1,82 @@
+module srl_nokia-mpls-services-network-instance-label-management {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:net-inst:mpls-services-network-instance-label-management";
+  prefix srl_nokia-mplsserviceslbl;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-mpls-label-management {
+    prefix srl_nokia-mplslbl;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data for system wide MPLS label management for network-instances";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping mpls-services-network-instance-management-top {
+    container network-instance {
+      if-feature "srl_nokia-feat:network-instance-mpls";
+      presence "Configure the system wide Service Network Instances MPLS label management";
+      description
+        "Container for system wide Service Network Instance MPLS label management";
+      leaf dynamic-label-block {
+        mandatory true;
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:dynamic/srl_nokia-mplslbl:name";
+        }
+        description
+          "Reference to the dynamic label block used by network-instances
+
+           The label block is used by all the applications that require MPLS label allocation
+           in a network-instance. For example, EVPN-MPLS services, IP-VPN or Pseudowires.";
+      }
+      leaf dynamic-evpn-inclusive-multicast-label-block {
+        if-feature "srl_nokia-feat:evpn-iml-label-block";
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:dynamic/srl_nokia-mplslbl:name";
+        }
+        description
+          "Reference to the dynamic evpn inclusive multicast label block used by EVPN MAC-VRFs
+
+           The label block is used by EVPN-MPLS MAC-VRF services for the allocation of labels
+           that are advertised in EVPN Inclusive Multicast Ethernet Tag routes and that identify
+           incoming layer-2 Broadcast, Unknown unicast and Multicast traffic.";
+      }
+      leaf static-label-block {
+        if-feature "srl_nokia-feat:network-instance-static-mpls";
+        must '/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()]/srl_nokia-mplslbl:shared = false()' {
+          error-message "cannot be shared";
+        }
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static/srl_nokia-mplslbl:name";
+        }
+        description
+          "Reference to the static label block used by network-instances
+
+           The label block is used by all the applications that require static MPLS label allocation
+           in a network-instance. For example, Pseudowires with static vc labels.";
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:services" {
+    uses mpls-services-network-instance-management-top;
+  }
+}

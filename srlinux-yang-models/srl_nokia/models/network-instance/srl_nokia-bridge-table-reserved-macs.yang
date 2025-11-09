@@ -1,0 +1,55 @@
+module srl_nokia-bridge-table-reserved-macs {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:l2-mac:bridge-table-reserved-macs";
+  prefix srl_nokia-bridge-table-reserved-macs;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of bridge table configuration.";
+
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping bridge-table-reserved-macs-top {
+    container reserved-macs {
+      config false;
+      list mac {
+        key "address";
+        description
+          "reserved macs on the bridging instance";
+        leaf address {
+          type srl_nokia-comm:mac-address;
+        }
+        list users {
+          key "application";
+          description
+            "applications reserving this mac";
+          leaf application {
+            type string;
+            srl_nokia-ext:show-importance "high";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:bridge-table" {
+    uses bridge-table-reserved-macs-top;
+  }
+}

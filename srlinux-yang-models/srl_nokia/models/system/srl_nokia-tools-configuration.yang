@@ -1,0 +1,291 @@
+module srl_nokia-tools-configuration {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:tools-configuration";
+  prefix srl-tools-config;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-tools-gnsi-pathz {
+    prefix srl-tools-gnsi-pathz;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational commands related to the system configuration.";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping configuration-tools-candidates-top {
+    description
+      "Operational commands related to configuration candidates";
+    list candidate {
+      srl-ext:first-released "20.6.1";
+      description
+        "List of configuration candidates currently active";
+      key "name";
+      leaf name {
+        type srl-comm:name;
+        description
+          "The name of the candidate";
+      }
+      leaf clear {
+        type empty;
+        description
+          "Clear the candidate from the system, discarding any changes
+
+           This results in any users currently in the candidate being dropped back to running mode.";
+      }
+      leaf lock {
+        if-feature "srl-feat:future-0-0";
+        type empty;
+        description
+          "Lock the candidate
+
+           Prevents modifications from other configuration sessions.";
+      }
+      leaf unlock {
+        if-feature "srl-feat:future-0-0";
+        type empty;
+        description
+          "Unlock the candidate
+
+           Allows modifications from other configuration sessions.";
+      }
+    }
+  }
+
+  grouping configuration-tools-sessions-top {
+    description
+      "Operational commands related to configuration sessions";
+    list session {
+      description
+        "List of configuration sessions currently active";
+      key "id";
+      leaf id {
+        type uint32;
+        description
+          "System generated ID for the configuration session";
+      }
+      leaf clear {
+        type empty;
+        description
+          "Clear the session from the system, discarding any changes";
+      }
+    }
+  }
+
+  grouping configuration-tools-checkpoints-top {
+    description
+      "Operational commands related to checkpoints";
+    list checkpoint {
+      description
+        "List of current checkpoints present in the system";
+      key "id";
+      leaf id {
+        type union {
+          type uint8;
+          type srl-comm:checkpoint-name;
+        }
+        description
+          "System generated ID, or operator defined name for the checkpoint";
+      }
+      leaf clear {
+        type empty;
+        description
+          "Clear the checkpoint from the system";
+      }
+      leaf load {
+        type empty;
+        description
+          "Load candidate from saved checkpoint configuration";
+      }
+      leaf revert {
+        type empty;
+        description
+          "Revert running system configuration to the saved checkpoint configuration
+
+           This functions as a load and commit action.";
+      }
+    }
+    container generate-checkpoint {
+      presence "Generate checkpoint";
+      description
+        "Generate a checkpoint point based on the current running configuration";
+      leaf name {
+        type srl-comm:checkpoint-name;
+        description
+          "User provided name of the checkpoint";
+      }
+      leaf comment {
+        type string;
+        description
+          "User provided comment to associate with the checkpoint";
+      }
+    }
+    container confirmed-accept {
+      presence "Confirmed accept";
+      description
+        "Accepts an in progress commit and stops the confirmation timer";
+      leaf persist-id {
+        type string;
+        description
+          "Specifies the persist-id to which the commit confirmed accept applies";
+      }
+    }
+    container confirmed-reject {
+      presence "Confirmed accept";
+      description
+        "Rejects an in progress commit and stops the confirmation timer";
+      leaf persist-id {
+        type string;
+        description
+          "Specifies the persist-id to which the commit confirmed reject applies";
+      }
+    }
+  }
+
+  grouping configuration-tools-upgrade-top {
+    container upgrade {
+      presence "Upgrade configuration";
+      description
+        "Operational commands related to configuration upgrade";
+      list checkpoint {
+        description
+          "List of configuration checkpoints";
+        key "id";
+        leaf id {
+          type union {
+            type uint8;
+            type srl-comm:checkpoint-name;
+          }
+          description
+            "System generated ID, or operator defined name for the checkpoint";
+        }
+      }
+      leaf file {
+        type string;
+        description
+          "System file path to a json configuration file";
+      }
+      leaf startup {
+        type empty;
+        description
+          "Startup (initial) configuration";
+      }
+      leaf rescue {
+        type empty;
+        description
+          "Rescue configuration";
+      }
+      leaf validation-check {
+        type enumeration {
+          enum skip {
+            description
+              "Skip validation of the upgraded content";
+          }
+          enum merge {
+            description
+              "Validation is done as if the content was used in a load merge operation";
+          }
+          enum replace {
+            description
+              "Validation is done as if the content was used in a full config replace operation";
+          }
+        }
+        default "replace";
+        description
+          "Specifies the kind of validation that will be executed after the content is upgraded
+
+           If the validation fails the upgraded content will not be persisted.";
+      }
+    }
+  }
+
+  grouping configuration-top {
+    container configuration {
+      presence "Configure tools system configuration";
+      description
+        "Top-level container for operational commands related to the system configuration";
+      leaf save {
+        type empty;
+        description
+          "Save current running configuration as initial (startup) configuration - config.json";
+      }
+      leaf rescue-save {
+        type empty;
+        description
+          "Save current running configuration as rescue configuration - rescue-config.json";
+      }
+      leaf rescue-clear {
+        type empty;
+        description
+          "Remove rescue configuration";
+      }
+      leaf lock {
+        if-feature "srl-feat:future-0-0";
+        type empty;
+        description
+          "Lock the running configuration
+
+           Prevents commits from other configuration sessions.";
+      }
+      leaf unlock {
+        if-feature "srl-feat:future-0-0";
+        type empty;
+        description
+          "Unlock the running configuration
+
+           Allows commits from other configuration sessions.";
+      }
+      uses configuration-tools-checkpoints-top;
+      uses configuration-tools-sessions-top;
+      uses configuration-tools-candidates-top;
+      uses configuration-tools-upgrade-top;
+      uses srl-tools-gnsi-pathz:pathz-top {
+        if-feature "srl-feat:gnsi-pathz";
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    srl-ext:first-released "19.11.1";
+    uses configuration-top;
+  }
+}

@@ -1,0 +1,163 @@
+module srl_nokia-tools-mld {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:igmp:tools-mld";
+  prefix srl_nokia-tools-mld;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for MLD operational commands";
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping mld-tools-top {
+    container mld {
+      if-feature "srl_nokia-feat:mld";
+      presence "Send operational commands to IGMP manager";
+      container version {
+        leaf clear {
+          type empty;
+          description
+            "Reset the MLD operational version for all interfaces";
+        }
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Reset MLD statistics for all interfaces";
+        }
+      }
+      container membership-groups {
+        leaf clear {
+          type empty;
+          description
+            "Clear the MLD memberships for all interfaces";
+        }
+        list group {
+          key "group";
+          description
+            "Multicast group membership";
+          leaf group {
+            type srl_nokia-comm:ipv6-address;
+            description
+              "Multicast address";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear all MLD memberships for this group on all interfaces";
+          }
+          list source {
+            key "source";
+            description
+              "Source addresses of multicast";
+            leaf source {
+              type srl_nokia-comm:ipv6-address;
+              description
+                "Source address of multicast";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all MLD memberships for this group on all interfaces";
+            }
+          }
+        }
+      }
+      list interface {
+        description
+          "List of MLD interfaces";
+        key "interface-name";
+        leaf interface-name {
+          type srl_nokia-comm:subinterface-all;
+          description
+            "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+        }
+        container version {
+          leaf clear {
+            type empty;
+            description
+              "Reset the MLD operational version for this interface";
+          }
+        }
+        container statistics {
+          leaf clear {
+            type empty;
+            description
+              "Reset MLD statistics for this interface";
+          }
+        }
+        container membership-groups {
+          leaf clear {
+            type empty;
+            description
+              "Clear all MLD memberships for this interface";
+          }
+          list group {
+            key "group";
+            description
+              "Multicast group membership";
+            leaf group {
+              type srl_nokia-comm:ipv6-address;
+              description
+                "Multicast address";
+            }
+            leaf clear {
+              type empty;
+              description
+                "Clear all MLD memberships for this group on this interface";
+            }
+            list source {
+              key "source";
+              description
+                "Source addresses of multicast";
+              leaf source {
+                type srl_nokia-comm:ipv6-address;
+                description
+                  "Source address of multicast";
+              }
+              leaf clear {
+                type empty;
+                description
+                  "Clear all MLD memberships for this source on this interface";
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {
+    uses mld-tools-top;
+  }
+}

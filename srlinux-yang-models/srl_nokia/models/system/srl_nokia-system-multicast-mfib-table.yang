@@ -1,0 +1,88 @@
+module srl_nokia-system-multicast-mfib-table {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mfib:system-multicast-mfib-table";
+  prefix srl_nokia-system-multicast-mfib-table;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines system Multicast Forwarding Information Base (MFIB) operational
+     state data.";
+
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+
+  grouping system-mfib-table-top {
+    container multicast-forwarding-information-base {
+      config false;
+      description
+        "System Multicast Forwarding Information Base table";
+      list multicast-route {
+        description
+          "List of all the MFIB entries in the system";
+        key "network-instance source group";
+        leaf network-instance {
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "Indicates that the MFIB entry is associated to this network instance";
+        }
+        leaf source {
+          type srl_nokia-comm:ip-address;
+          description
+            "Source IP address of the MFIB entry";
+        }
+        leaf group {
+          type srl_nokia-comm:ip-address;
+          description
+            "Multicast group address of the MFIB entry";
+        }
+        leaf line-card-replication-index {
+          type uint64;
+          srl_nokia-ext:show-importance "high";
+          default "0";
+          description
+            "Line card Replication Index (LRID) allocated by mfib_mgr
+
+             Upon programming an MFIB entry, mfib_mgr requests a Multicast Identifier (MCID) to mcid_mgr
+             and based on the response with an allocated MCID, mfib_mgr allocates a LRID for the entry.
+             A value 0 indicates that no MCID was received for the entry, and therefore the MFIB entry
+             cannot forward multicast traffic.";
+        }
+        leaf last-update {
+          type srl_nokia-comm:date-and-time-delta;
+          srl_nokia-ext:show-importance "high";
+          description
+            "Last update of this MFIB entry";
+        }
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    srl_nokia-ext:first-released "23.3.1";
+    uses system-mfib-table-top;
+  }
+}
