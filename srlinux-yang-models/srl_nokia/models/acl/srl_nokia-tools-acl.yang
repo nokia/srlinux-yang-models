@@ -88,7 +88,9 @@ module srl_nokia-tools-acl {
         "List of filter rules.";
       key "sequence-id";
       leaf sequence-id {
-        type uint32;
+        type uint32 {
+          range "0..65535";
+        }
         description
           "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
       }
@@ -250,12 +252,21 @@ module srl_nokia-tools-acl {
 
   grouping gbp-tools-acl-top {
     container acl {
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Reset all statistics of all entries of the ACL filter to zero";
+        }
+      }
       list entry {
         description
           "List of filter rules.";
         key "sequence-id";
         leaf sequence-id {
-          type uint32;
+          type uint32 {
+            range "0..65535";
+          }
           description
             "A number to indicate the relative evaluation order of the different entries; lower numbered entries are evaluated before higher numbered entries";
         }

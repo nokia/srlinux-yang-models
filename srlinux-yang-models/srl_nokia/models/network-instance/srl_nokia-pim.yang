@@ -263,14 +263,11 @@ module srl_nokia-pim {
             leaf prefix {
               description
                 "IP prefix of the multicast group";
-              type srl_nokia-comm:ip-prefix;
-              must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*')) or starts-with(.,'ff')" {
-                error-message "Not a valid multicast IP address";
-              }
-              must "not((re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*')) and not(re-match(../../srl_nokia-pim:address,'.*\\..*')))" {
+              type srl_nokia-comm:ip-prefix-multicast;
+              must "not(not(re-match(.,'.*:.*')) and re-match(../../srl_nokia-pim:address,'.*:.*'))" {
                 error-message "RP address family 'IPv6' does not match group prefix family 'IPv4'";
               }
-              must "not(starts-with(.,'ff') and not(re-match(../../srl_nokia-pim:address,'.*:.*')))" {
+              must "not(re-match(.,'.*:.*') and not(re-match(../../srl_nokia-pim:address,'.*:.*')))" {
                 error-message "RP address family 'IPv4' does not match group prefix family 'IPv6'";
               }
             }
@@ -294,10 +291,7 @@ module srl_nokia-pim {
           leaf ip-prefix {
             description
               "A multicast IP prefix for SSM group range";
-            type srl_nokia-comm:ip-prefix;
-            must "re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*') or starts-with(.,'ff')" {
-              error-message "Not a valid multicast IP address";
-            }
+            type srl_nokia-comm:ip-prefix-multicast;
           }
         }
       }
@@ -316,10 +310,7 @@ module srl_nokia-pim {
         leaf prefix {
           description
             "IP prefix of the multicast group";
-          type srl_nokia-comm:ip-prefix;
-          must "(re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*')) or starts-with(.,'ff')" {
-            error-message "Not a valid multicast IP address";
-          }
+          type srl_nokia-comm:ip-prefix-multicast;
         }
         leaf threshold {
           description
@@ -823,6 +814,8 @@ module srl_nokia-pim {
       description
         "List of the PIM enabled interfaces for the Multicast entry <S,G>";
       key "name";
+      ordered-by user;
+      srl_nokia-ext:unordered-state-list "true";
       leaf name {
         config false;
         description

@@ -432,6 +432,16 @@ module srl_nokia-common {
       "A unicast IPv6 prefix represented in full, shortened, or mixed shortened format followed by a slash and CIDR mask (0 <= mask <= 128)";
   }
 
+  typedef ipv4-prefix-multicast {
+    type ipv4-prefix {
+      pattern '(22[4-9]|23[0-9])\..*/([4-9]|[1-3][0-9])' {
+        error-message "Not a valid multicast IPv4 prefix";
+      }
+    }
+    description
+      "A multicast IPv4 prefix represented in dotted quad notation followed by a slash and a CIDR mask (4 <= mask <= 32)";
+  }
+
   typedef ipv6-prefix-unicast-without-local {
     type ipv6-prefix-unicast {
       pattern '[fF][eE][89abAB][0-9a-fA-F].*/[1-9][0-9]+' {
@@ -440,6 +450,16 @@ module srl_nokia-common {
     }
     description
       "A unicast IPv6 prefix represented in full, shortened, or mixed shortened format followed by a slash and CIDR mask (0 <= mask <= 128). Link-local prefixes are not allowed.";
+  }
+
+  typedef ipv6-prefix-multicast {
+    type ipv6-prefix {
+      pattern '[fF][fF][0-9a-fA-F][0-9a-fA-F].*/([89]|[1-9][0-9]+)' {
+        error-message "Not a valid multicast IPv6 prefix";
+      }
+    }
+    description
+      "A multicast IPv6 prefix represented in full, shortened, or mixed shortened format followed by a slash and CIDR mask (8 <= mask <= 128)";
   }
 
   typedef ip-address {
@@ -524,6 +544,15 @@ module srl_nokia-common {
     }
     description
       "A unicast IPv4 or IPv6 prefix. Link-local prefixes are not allowed.";
+  }
+
+  typedef ip-prefix-multicast {
+    type union {
+      type ipv4-prefix-multicast;
+      type ipv6-prefix-multicast;
+    }
+    description
+      "A multicast IPv4 or IPv6 prefix";
   }
 
   typedef ipv4-prefix-with-host-bits {

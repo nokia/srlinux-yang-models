@@ -1061,7 +1061,26 @@ module srl_nokia-bgp {
             "Options related to the IPv4-unicast address family";
           uses rfc-8950-group-neighbor;
           uses afi-safi-prefix-limit-group;
-          uses link-bandwidth;
+          uses link-bandwidth {
+            refine "link-bandwidth/auto-from-interface-speed/hold-down-time" {
+              default 10;
+              must ". = 10 or (../../../../afi-safi-name = 'ipv4-unicast')" {
+                error-message "afi-safi-name must match the container name 'ipv4-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/transitive" {
+              default "false";
+              must ". = false() or (../../../../afi-safi-name = 'ipv4-unicast')" {
+                error-message "afi-safi-name must match the container name 'ipv4-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/admin-state" {
+              default "disable";
+              must ". = 'disable' or (../../../../afi-safi-name = 'ipv4-unicast')" {
+                error-message "afi-safi-name must match the container name 'ipv4-unicast'";
+              }
+            }
+          }
           uses srv6-group-neighbor-afi-safi {
             refine "srv6/strip-srv6-tlvs" {
               default "false";
@@ -1100,7 +1119,26 @@ module srl_nokia-bgp {
           description
             "Options related to the IPv6-unicast address family";
           uses afi-safi-prefix-limit-group;
-          uses link-bandwidth;
+          uses link-bandwidth {
+            refine "link-bandwidth/auto-from-interface-speed/hold-down-time" {
+              default 10;
+              must ". = 10 or (../../../../afi-safi-name = 'ipv6-unicast')" {
+                error-message "afi-safi-name must match the container name 'ipv6-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/transitive" {
+              default "false";
+              must ". = false() or (../../../../afi-safi-name = 'ipv6-unicast')" {
+                error-message "afi-safi-name must match the container name 'ipv6-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/admin-state" {
+              default "disable";
+              must ". = 'disable' or (../../../../afi-safi-name = 'ipv6-unicast')" {
+                error-message "afi-safi-name must match the container name 'ipv6-unicast'";
+              }
+            }
+          }
           uses srv6-group-neighbor-afi-safi {
             refine "srv6/strip-srv6-tlvs" {
               default "false";
@@ -2468,7 +2506,23 @@ module srl_nokia-bgp {
             "Options related to the IPv4-unicast address family";
           uses rfc-8950-group-neighbor;
           uses afi-safi-prefix-limit-neighbor;
-          uses link-bandwidth;
+          uses link-bandwidth {
+            refine "link-bandwidth/auto-from-interface-speed/hold-down-time" {
+              must "../../../../afi-safi-name = 'ipv4-unicast'" {
+                error-message "afi-safi-name must match the container name 'ipv4-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/transitive" {
+              must "../../../../afi-safi-name = 'ipv4-unicast'" {
+                error-message "afi-safi-name must match the container name 'ipv4-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/admin-state" {
+              must "../../../../afi-safi-name = 'ipv4-unicast'" {
+                error-message "afi-safi-name must match the container name 'ipv4-unicast'";
+              }
+            }
+          }
           must "((../afi-safi-name) = 'ipv4-unicast') or not (./prefix-limit-received/max-received-routes)" {
             error-message "ipv4-unicast/prefix-limit-received/max-received-route only allowed on afi-safi ipv4-unicast";
           }
@@ -2517,7 +2571,23 @@ module srl_nokia-bgp {
           description
             "Options related to the IPv6-unicast address family";
           uses afi-safi-prefix-limit-neighbor;
-          uses link-bandwidth;
+          uses link-bandwidth {
+            refine "link-bandwidth/auto-from-interface-speed/hold-down-time" {
+              must "../../../../afi-safi-name = 'ipv6-unicast'" {
+                error-message "afi-safi-name must match the container name 'ipv6-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/transitive" {
+              must "../../../../afi-safi-name = 'ipv6-unicast'" {
+                error-message "afi-safi-name must match the container name 'ipv6-unicast'";
+              }
+            }
+            refine "link-bandwidth/auto-from-interface-speed/admin-state" {
+              must "../../../../afi-safi-name = 'ipv6-unicast'" {
+                error-message "afi-safi-name must match the container name 'ipv6-unicast'";
+              }
+            }
+          }
           must "((../afi-safi-name) = 'ipv6-unicast') or not (./prefix-limit-received/max-received-routes)" {
             error-message "ipv6-unicast/prefix-limit-received/max-received-route only allowed on afi-safi ipv6-unicast";
           }
@@ -3414,7 +3484,31 @@ module srl_nokia-bgp {
     description
       "Grouping containing the configuration and state for unequal ECMP";
     container link-bandwidth {
-      if-feature "srl_nokia-feat:evpn-ifl-unequal-ecmp or srl_nokia-feat:bgp-weighted-ecmp";
+      if-feature "srl_nokia-feat:evpn-ifl-unequal-ecmp or srl_nokia-feat:bgp-weighted-ecmp or srl_nokia-feat:bgp-auto-link-bandwidth";
+      container auto-from-interface-speed {
+        if-feature "srl_nokia-feat:bgp-auto-link-bandwidth";
+        description
+          "Options for controlling the automatic generation of the link-bandwidth extended community based on underlaying interface speed
+
+          Applies only to BGP routes (a) received from single-hop BGP peers and (b) that do not already have a link-bandwidth extended-community that was encoded by the peer in its UPDATE message or added by a BGP import policy of this router.";
+        leaf admin-state {
+          description
+            "Enable to add a link-bandwidth extended community to received BGP routes that do not have link-bandwidth extended community";
+          type srl_nokia-comm:admin-state;
+        }
+        leaf hold-down-time {
+          description
+            "Suppress increases in the link-bandwidth value by the specified number of seconds";
+          type uint16;
+          units "seconds";
+        }
+        leaf transitive {
+          description
+            "When set to true, generate link-bandwidth extended community as a transitive type";
+          type boolean;
+        }
+      }
+
       leaf add-next-hop-count-to-received-bgp-routes {
         if-feature "srl_nokia-feat:evpn-ifl-unequal-ecmp";
         must "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:ip-vrf'" {
@@ -4302,6 +4396,9 @@ module srl_nokia-bgp {
             if-feature "srl_nokia-feat:bgp-backup-path-frr-ip";
           }
           uses convergence-for-family;
+          uses bgp-group-based-policy {
+            if-feature "srl_nokia-feat:bgp-group-based-policy";
+          }
           uses next-hop-resolution-unlabeled;
           uses srv6-afi-safi {
             refine "srv6/process-received-srv6-tlvs" {
@@ -4394,6 +4491,9 @@ module srl_nokia-bgp {
             if-feature "srl_nokia-feat:bgp-backup-path-frr-ip";
           }
           uses convergence-for-family;
+          uses bgp-group-based-policy {
+            if-feature "srl_nokia-feat:bgp-group-based-policy";
+          }
           uses next-hop-resolution-unlabeled;
           uses srv6-afi-safi {
             refine "srv6/process-received-srv6-tlvs" {

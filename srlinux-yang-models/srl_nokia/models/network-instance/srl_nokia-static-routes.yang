@@ -134,13 +134,27 @@ module srl_nokia-static-routes {
         container group-based-policy {
           description
             "Micro Segmentation Group Based Policy associations for the static route";
-          if-feature "srl_nokia-feat:group-based-policy";
+          if-feature "srl_nokia-feat:static-route-group-based-policy";
           leaf-list group {
             description
-              "List if groups associated to the the static route";
+              "List of groups associated to the the static route";
             max-elements 1;
             type leafref {
               path "../../../../srl_nokia-gbp:group-based-policy/srl_nokia-gbp:group/srl_nokia-gbp:name";
+            }
+          }
+        }
+        container follow {
+          if-feature "srl_nokia-feat:static-route-group-based-policy";
+          leaf next-longest {
+            description
+              "Let the static route inherit the forwarding behaviour of a parent route already present in the route-table of the same network-instance.
+
+               When set to true, the route-table of the same network instance gets searched for the longest‑matching route with a shorter prefix and the static-route gets installed with that route's forwarding information. If no such longest-matching route can be found, this static-route is not installed.";
+            type boolean;
+            default "false";
+            must 'not (. and ../../next-hop-group)' {
+              error-message "next-longest cannot be enabled with a next-hop-group";
             }
           }
         }

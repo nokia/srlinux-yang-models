@@ -234,6 +234,9 @@ module srl_nokia-ipfix {
       type uint32;
       units "packets";
       mandatory true;
+      must "(.>0)" {
+        error-message "packet-space 0 is not supported";
+      }
       srl_nokia-ext:show-importance "high";
       description
         "The number of unsampled packets between two
@@ -249,7 +252,9 @@ module srl_nokia-ipfix {
       "Configuration and state parameters of a Cache
        generating Flow Records.";
     leaf maximum-flows {
-      type uint32;
+      type uint32 {
+        range "1000..1000000";
+      }
       units "flows";
       default "250000";
       description
@@ -263,7 +268,9 @@ module srl_nokia-ipfix {
          and exported to available collectors.";
     }
     leaf active-timeout {
-      type uint32;
+      type uint32 {
+        range "30..36000";
+      }
       units "seconds";
       default "1800";
       description
@@ -273,11 +280,13 @@ module srl_nokia-ipfix {
          The parameter value zero indicates infinity, meaning that there is no active timeout.";
     }
     leaf idle-timeout {
-      type uint32;
+      type uint32 {
+        range "10..600";
+      }
       units "seconds";
       default "15";
       description
-        "This parameters specified the idle timeout for in-active flows within the cache.
+        "This parameters specified the idle timeout for inactive flows within the cache.
 
          This parameter configures the time in seconds after which a Flow is expired if no more packets matching this Flow are received by the Cache.
          The parameter value zero indicates infinity, meaning that there is no idle timeout.
@@ -455,6 +464,9 @@ module srl_nokia-ipfix {
     leaf destination-port {
       type srl_nokia-comm:port-number;
       default "4739";
+      must "(.>0)"{
+        error-message "port 0 is not a valid destination port";
+      }
       srl_nokia-ext:show-importance "high";
       description
         "If not configured by the user, the Monitoring
@@ -503,7 +515,9 @@ module srl_nokia-ipfix {
          the Monitoring Device.";
     }
     leaf template-refresh-timeout {
-      type uint32;
+      type uint32 {
+        range "10..600";
+      }
       units "seconds";
       default "600";
       description
@@ -850,6 +864,7 @@ module srl_nokia-ipfix {
         }
         uses observation-point-parameters;
         leaf-list selection-process {
+          max-elements 1;
           type leafref {
             path "/srl_nokia-system:system/ipfix/selection-process/name";
           }

@@ -99,12 +99,10 @@ module srl_nokia-sflow {
         if-feature "srl-feat:sflow-gnpsi-interface";
         type enumeration {
           enum collector {
-            value 1;
             description
               "sflow flow data is transported via configured collectors";
           }
           enum gnpsi {
-            value 2;
             description
               "sflow flow data is transported via established gNPSI connection";
           }
@@ -199,7 +197,7 @@ module srl_nokia-sflow {
         description
           "Specify sFlow DSCP value
 
-           This value specifies the DSCP value used in IP header of samples sent to the associated collectors.";
+            This value specifies the DSCP value used in IP header of samples sent to the associated collectors.";
       }
       leaf ipv6-udp-checksum {
         if-feature "srl-feat:sflow-ipv6-udp-cksum-knob";
@@ -220,6 +218,18 @@ module srl_nokia-sflow {
           "Value to be placed in the UDP transport checksum for IPv6 sFlow sample messages.
            zero    : The UDP checksum is set to 0x0
            all-ones: The UDP checksum is set to 0xFFFF";
+      }
+      leaf gnpsi-max-datagram-size {
+        srl_nokia-ext:show-importance "high";
+        if-feature "srl-feat:sflow-gnpsi-interface";
+        type uint16 {
+          range "576..9446";
+        }
+        default "1468";
+        description
+          "Specify maximum sFlow datagram size when using gNPSI as the transport
+
+           This value specifies the maximum size of the datagram used to send sFlow samples to collectors via gNPSI.";
       }
       container statistics {
         config false;

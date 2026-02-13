@@ -9,6 +9,9 @@ module srl_nokia-mvpn-l3 {
   import srl_nokia-network-instance {
     prefix srl_nokia-netinst;
   }
+  import srl_nokia-bgp-ipvpn {
+    prefix srl-bgp-ipvpn;
+  }
   import srl_nokia-routing-policy {
     prefix srl-rpol;
   }
@@ -97,6 +100,9 @@ module srl_nokia-mvpn-l3 {
       }
       description
         "unicast BGP instance used for default RD of this MVPN";
+      must "../../../srl_nokia-netinst:bgp-ipvpn/srl-bgp-ipvpn:bgp-instance[srl-bgp-ipvpn:id=current()]" {
+        error-message "the bgp-instance must refer to a bgp-ipvpn bgp-instance";
+      }
     }
     leaf participation {
       type mvpn-participation-type;
@@ -154,7 +160,7 @@ module srl_nokia-mvpn-l3 {
         leaf import-route-target {
           srl_nokia-ext:show-importance "high";
           type srl_nokia-pol-types:bgp-ext-community-type;
-          must "starts-with(.,'target*')";
+          must "starts-with(.,'target')";
           description
             "Import Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is
              auto-derived with the format <asn>:<evi> where 'asn' is the autonomous-system configured in the network-instance default.";
@@ -174,7 +180,7 @@ module srl_nokia-mvpn-l3 {
         leaf export-route-target {
           srl_nokia-ext:show-importance "high";
           type srl_nokia-pol-types:bgp-ext-community-type;
-          must "starts-with(.,'target*')";
+          must "starts-with(.,'target')";
           description
             "Export Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is auto-derived
 
@@ -200,6 +206,9 @@ module srl_nokia-mvpn-l3 {
         description
           "Administratively enable or disable mldp as a provider tunnel";
         default "disable";
+        must "(. = 'disable') or (../../../../../../srl_nokia-netinst:bgp-ipvpn/srl-bgp-ipvpn:bgp-instance[srl-bgp-ipvpn:id = ../../../../bgp-instance]/srl-bgp-ipvpn:encapsulation-type = 'mpls')" {
+          error-message "the bgp-ipvpn bgp-instance must use mpls encapsulation";
+        }
       }
     }
   }
@@ -226,6 +235,16 @@ module srl_nokia-mvpn-l3 {
         type srl_nokia-comm:oper-state;
         description
           "The operational state of the destination PMSI.";
+      }
+      leaf create-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry was created";
+      }
+      leaf up-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry became operational";
       }
       container mldp {
         description
@@ -272,6 +291,16 @@ module srl_nokia-mvpn-l3 {
         description
           "The operational state of the destination PMSI.";
       }
+      leaf create-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry was created";
+      }
+      leaf up-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry became operational";
+      }
       container mldp {
         description
           "Multipoint LDP inclusive provider tunnel identifier";
@@ -289,11 +318,6 @@ module srl_nokia-mvpn-l3 {
           description
             "The number of (C-S,C-G)'s mapped to this PMSI";
           type uint32;
-        }
-        leaf up-time {
-          description
-            "Time elapsed since this PMSI entry was created";
-          type srl_nokia-comm:date-and-time-delta;
         }
       }
     }
@@ -368,6 +392,9 @@ module srl_nokia-mvpn-l3 {
       }
       must "../../srl_nokia-netinst:type != 'srl_nokia-netinst:host'" {
         error-message "L3 MVPN routing configuration is not possible on network-instance of type host";
+      }
+      must "../srl_nokia-netinst:bgp-ipvpn" {
+        error-message "bgp-ipvpn must be configured under protocols to configure multicast-vpn";
       }
       list multicast-vpn-instance {
         key "id";

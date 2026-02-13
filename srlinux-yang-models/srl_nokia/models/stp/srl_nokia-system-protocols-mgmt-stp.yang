@@ -9,9 +9,6 @@ module srl_nokia-system-protocols-mgmt-stp {
   import srl_nokia-stp-common {
     prefix srl_nokia-stp-common;
   }
-  import openconfig-vlan-types {
-    prefix oc-vlan-types;
-  }
   import srl_nokia-common {
     prefix srl_nokia-comm;
   }
@@ -113,9 +110,12 @@ module srl_nokia-system-protocols-mgmt-stp {
           "Priority component of the Bridge Identifier";
       }
       leaf-list vlan-range {
-        type oc-vlan-types:vlan-range;
+        type string {
+          // range specified as [lower]..[upper]
+          pattern '^(409[0-4]|40[0-8][0-9]|[1-3][0-9]{3}|[1-9][0-9]{1,2}|[1-9])\.\.(409[0-4]|40[0-8][0-9]|[1-3][0-9]{3}|[1-9][0-9]{1,2}|[1-9])$';
+        }
         description
-          "List of vlans mapped to the MST instance";
+          " An inclusive range mapped to the MST instance specified as x..y where x and y are valid VLAN IDs (1 <= vlan-id <= 4094)";
       }
       uses mst-instance-state;
     }

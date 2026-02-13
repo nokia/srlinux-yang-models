@@ -122,7 +122,9 @@ module srl_nokia-msdp {
         "Enter the group list instance";
       uses msdp-group-state;
       leaf name {
-        type string;
+        type srl_nokia-comm:restricted-name {
+            length "1..32";
+        }
         description
           "MSDP group name";
       }
@@ -344,6 +346,9 @@ module srl_nokia-msdp {
         type srl_nokia-comm:ipv4-prefix-unicast;
         description
           "Source IP address for accepted source-active messages";
+        must "not(starts-with(string(.), '0.'))" {
+            error-message "Not a valid IPv4 unicast address prefix";
+        }
       }
       leaf active-source-limit {
         type int32 {
