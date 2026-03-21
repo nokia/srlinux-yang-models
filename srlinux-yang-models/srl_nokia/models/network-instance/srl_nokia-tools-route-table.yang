@@ -1,0 +1,61 @@
+module srl_nokia-tools-route-table {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:tools-route-table";
+  prefix srl_nokia-tools-route-table;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "YANG model for IP route operational commands";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping route-tools-top {
+    container route-table {
+      presence "Top-level container for operational commands related to route tables";
+      container ipv4-unicast {
+        description
+          "The container for the IPv4 unicast routing table of the network instance.";
+        container longest-prefix-match {
+          leaf ipv4-address {
+            type srl_nokia-comm:ipv4-address;
+            description
+              "The IPv4 address for which the longest prefix match route should be returned";
+          }
+        }
+      }
+      container ipv6-unicast {
+        description
+          "The container for the IPv6 unicast routing table of the network instance.";
+        container longest-prefix-match {
+          leaf ipv6-address {
+            type srl_nokia-comm:ipv6-address;
+            description
+              "The IPv6 address for which the longest prefix match route should be returned";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance" {
+    if-feature "srl_nokia-feat:longest-prefix-match";
+    uses route-tools-top;
+  }
+}

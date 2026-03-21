@@ -1,0 +1,345 @@
+module srl_nokia-grpc-tunnel {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:grpc-tunnel";
+  prefix srl-grpc-tunnel;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-grpc {
+    prefix srl-grpc;
+  }
+  import srl_nokia-netconf-server {
+    prefix srl-netconf-server;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-ssh {
+    prefix srl-ssh;
+  }
+  import srl_nokia-tls {
+    prefix srl-tls;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the gRPC-tunnel application.";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+
+  grouping destination-state {
+    leaf oper-state {
+      type srl-comm:oper-state;
+      config false;
+      srl-ext:show-importance "high";
+      description
+        "Operational state of the destination";
+    }
+    leaf oper-state-down-reason {
+      type string;
+      config false;
+      default "";
+      description
+        "Reason the oper-state is DOWN";
+    }
+    list target {
+      config false;
+      key "name";
+      leaf name {
+        type srl-comm:restricted-name;
+      }
+      leaf id {
+        type string;
+        description
+          "gRPC tunnel target ID";
+      }
+      leaf type {
+        type string;
+        description
+          "gRPC tunnel target type";
+      }
+      leaf oper-state {
+        type srl-comm:oper-state;
+        config false;
+        srl-ext:show-importance "high";
+        description
+          "Operational state of the target";
+      }
+      leaf oper-state-down-reason {
+        type string;
+        config false;
+        default "";
+        description
+          "Reason the oper-state is down";
+      }
+    }
+  }
+
+  grouping grpc-tunnel-top {
+    container grpc-tunnel {
+      presence "Configure gRPC tunnel";
+      description
+        "Configures the gRPC tunnel instances";
+      list destination {
+        description
+          "list of gRPC tunnel destinations, i.e gRPC tunnel servers.";
+        key "name";
+        max-elements 16;
+        leaf name {
+          type srl-comm:restricted-name;
+          description
+            "Destination name.";
+        }
+        leaf description {
+          type srl-comm:description;
+          description
+            "Destination description.";
+        }
+        leaf address {
+          type srl-comm:ip-address;
+          srl-ext:show-importance "high";
+          mandatory true;
+          description
+            "Destination address.";
+        }
+        leaf port {
+          type srl-comm:port-number;
+          srl-ext:show-importance "high";
+          mandatory true;
+          description
+            "destination port number";
+        }
+        leaf network-instance {
+          type leafref {
+            path "/srl-netinst:network-instance/srl-netinst:name";
+          }
+          srl-ext:show-importance "high";
+          default "mgmt";
+          description
+            "Reference to a configured network-instance used to establish the gRPC tunnel from.
+             This network-instance must already exist in the system.";
+        }
+        leaf tls-profile {
+          type leafref {
+            path "/srl-system:system/srl-tls:tls/srl-tls:profile/srl-tls:name";
+          }
+          srl-ext:show-importance "high";
+          description
+            "Reference to a TLS profile to use when initiating connections to this destination.
+             This TLS profile must already exist";
+        }
+      }
+      list tunnel {
+        description
+          "gRPC tunnel represent the set of tunnels serving a set of targets (ID, Type) towards one or multiple destinations.";
+        key "name";
+        max-elements 16;
+        leaf name {
+          type srl-comm:restricted-name;
+          description
+            "Tunnel name";
+        }
+        leaf description {
+          type srl-comm:description;
+          description
+            "tunnel description";
+        }
+        list destination {
+          key "name";
+          leaf name {
+            type leafref {
+              path "/srl-system:system/grpc-tunnel/destination/name";
+            }
+          }
+          max-elements 16;
+          description
+            "Reference to a created destination.";
+          leaf admin-state {
+            type srl-comm:admin-state;
+            default "disable";
+            srl-ext:show-importance "high";
+            description
+              "Administrative state of the gRPC tunnel destination.";
+          }
+          uses destination-state;
+        }
+        leaf admin-state {
+          type srl-comm:admin-state;
+          default "disable";
+          srl-ext:show-importance "high";
+          description
+            "Administrative state of the gRPC tunnel.";
+        }
+        leaf oper-state {
+          type srl-comm:oper-state;
+          config false;
+          srl-ext:show-importance "high";
+          description
+            "Operational state of the gRPC tunnel.";
+        }
+        leaf oper-state-down-reason {
+          type string;
+          config false;
+          default "";
+          description
+            "Reason the oper-state is DOWN.";
+        }
+        list target {
+          key "name";
+          max-elements 16;
+          leaf name {
+            type srl-comm:restricted-name;
+            description
+              "Target local name.";
+          }
+          container id {
+            description
+              "Target ID.";
+            choice id {
+              mandatory true;
+              case node-name {
+                leaf node-name {
+                  type empty;
+                }
+              }
+              case user-agent {
+                leaf user-agent {
+                  type empty;
+                }
+              }
+              case mac-address {
+                leaf mac-address {
+                  type empty;
+                }
+              }
+              case custom {
+                container custom {
+                  description
+                    "User-defined pattern composed of ordered tokens separated by a delimiter.";
+                  leaf-list pattern {
+                    min-elements 1;
+                    type enumeration {
+                      enum hostname;
+                      enum vendor;
+                      enum model;
+                      enum version;
+                      enum literal;
+                    }
+                    ordered-by user;
+                    must "not(. = 'literal') or ../custom" {
+                      error-message "leaf 'custom' must be configured";
+                    }
+                    description
+                      "Ordered list of pattern elements chosen by the user.";
+                  }
+                  leaf custom {
+                    description
+                      "A custom string chosen by the user.";
+                    type string {
+                      length "1..256";
+                    }
+                  }
+                  leaf delimiter {
+                    description
+                      "A delimiter string to be inserted between the pattern tokens.";
+                    default "|";
+                    type string {
+                      length "1..64";
+                    }
+                  }
+                }
+              }
+            }
+          }
+          container type {
+            description
+              "Target type.";
+            choice type {
+              mandatory true;
+              case gnmi-gnoi-server {
+                leaf gnmi-gnoi-server {
+                  type leafref {
+                    path "/srl-system:system/srl-grpc:grpc-server/srl-grpc:name";
+                  }
+                }
+              }
+              case ssh-server {
+                leaf ssh-server {
+                  type leafref {
+                    path "/srl-system:system/srl-ssh:ssh-server/srl-ssh:name";
+                  }
+                }
+              }
+              case netconf-server {
+                leaf netconf-server {
+                  type leafref {
+                    path "/srl-system:system/srl-netconf-server:netconf-server/srl-netconf-server:name";
+                  }
+                }
+              }
+              case gribi-server {
+                leaf gribi-server {
+                  type leafref {
+                    path "/srl-system:system/srl-grpc:grpc-server/srl-grpc:name";
+                  }
+                }
+              }
+              case p4-runtime-server {
+                leaf p4-runtime-server {
+                  type leafref {
+                    path "/srl-system:system/srl-grpc:grpc-server/srl-grpc:name";
+                  }
+                }
+              }
+              case custom {
+                container custom {
+                  leaf type {
+                    type string {
+                      length "1..256";
+                    }
+                    mandatory true;
+                  }
+                  leaf local-address {
+                    type string {
+                      length "1..256";
+                    }
+                    mandatory true;
+                    description
+                      "The local address to dial for an established tunnel towards this target.";
+                  }
+                  leaf network-instance {
+                    type leafref {
+                      path "/srl-netinst:network-instance/srl-netinst:name";
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl-feat:grpc-tunnel";
+    uses grpc-tunnel-top;
+  }
+}

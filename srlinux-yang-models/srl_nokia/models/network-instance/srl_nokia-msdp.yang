@@ -1,0 +1,756 @@
+module srl_nokia-msdp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:msdp:msdp";
+  prefix srl_nokia-msdp;
+
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-rpol;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module models MSDP configuration in default network instance";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2025-03-31 {
+    description
+      "SRLinux 25.3.1";
+  }
+
+  typedef group-mode {
+    type enumeration {
+      enum standard;
+      enum mesh-group;
+    }
+  }
+
+  grouping msdp-global-config {
+    leaf active-source-limit {
+      type int32 {
+        range "0..1000000";
+      }
+      description
+        "Maximum source-active messages accepted by MSDP";
+    }
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      description
+        "Administratively enable or disable MSDP";
+      default "enable";
+    }
+    leaf local-address {
+      type srl_nokia-comm:ipv4-address-unicast;
+      description
+        "Local end IP address of the MSDP group";
+    }
+    leaf data-encapsulation {
+      type boolean;
+      default "true";
+      description
+        "Enable encapsulation of multicast data used by MSDP";
+    }
+    leaf source-active-cache-lifetime {
+      type uint32 {
+        range "90..600";
+      }
+      units "seconds";
+      default "90";
+      description
+        "Timeout interval for SA entries in the cache";
+    }
+    container receive-message-rate {
+      description
+        "Enter the receive-message-rate context";
+      leaf rate {
+        type uint32 {
+          range "10..10000";
+        }
+        description
+          "Maximum number of MSDP messages read from TCP session";
+        must '../time > 0' {
+          error-message "MSDP receive rate interval config required";
+        }
+      }
+      leaf time {
+        type uint32 {
+          range "1..600";
+        }
+        units "seconds";
+        description
+          "Time interval to rate limit MSDP messages";
+        must '../rate > 0' {
+          error-message "MSDP receive rate config required";
+        }
+      }
+      leaf threshold {
+        type uint32 {
+          range "1..1000000";
+        }
+        description
+          "Processed MSDP message limit to activate rate limiting";
+        must '../rate > 0' {
+          error-message "MSDP receive rate config required";
+        }
+        must '../time > 0' {
+          error-message "MSDP receive rate interval config required";
+        }
+      }
+    }
+    list group {
+      key "name";
+      description
+        "Enter the group list instance";
+      uses msdp-group-state;
+      leaf name {
+        type srl_nokia-comm:restricted-name {
+          length "1..32";
+        }
+        description
+          "MSDP group name";
+      }
+      leaf active-source-limit {
+        type int32 {
+          range "0..1000000";
+        }
+        description
+          "Maximum source-active messages accepted by MSDP";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "Administrative state of MSDP";
+      }
+      leaf local-address {
+        type srl_nokia-comm:ipv4-address-unicast;
+        description
+          "Local end IP address of the MSDP group";
+      }
+      leaf mode {
+        type group-mode;
+        default "standard";
+        description
+          "Topology of the group of peers";
+      }
+      container receive-message-rate {
+        description
+          "Enter the receive-message-rate context";
+        leaf rate {
+          type uint32 {
+            range "10..10000";
+          }
+          description
+            "Maximum number of MSDP messages read from TCP session";
+          must '../time > 0' {
+            error-message "MSDP receive rate interval config required";
+          }
+        }
+        leaf time {
+          type uint32 {
+            range "1..600";
+          }
+          units "seconds";
+          description
+            "Time interval to rate limit MSDP messages";
+          must '../rate > 0' {
+            error-message "MSDP receive rate config required";
+          }
+        }
+        leaf threshold {
+          type uint32 {
+            range "1..1000000";
+          }
+          description
+            "Processed MSDP message limit to activate rate limiting";
+          must '../rate > 0' {
+            error-message "MSDP receive rate config required";
+          }
+          must '../time > 0' {
+            error-message "MSDP receive rate interval config required";
+          }
+        }
+      }
+      list peer {
+        key "ip-address";
+        description
+          "Enter the peer list instance";
+        uses msdp-peer-state;
+        leaf ip-address {
+          type srl_nokia-comm:ipv4-address-unicast;
+          description
+            "IP address of the remote MSDP router for peering";
+        }
+        leaf active-source-limit {
+          type int32 {
+            range "0..1000000";
+          }
+          description
+            "Maximum source-active messages accepted by MSDP";
+        }
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default "enable";
+          description
+            "Administrative state of MSDP";
+        }
+        leaf local-address {
+          type srl_nokia-comm:ipv4-address-unicast;
+          description
+            "Local end IP address of the MSDP group";
+        }
+        leaf default-peer {
+          type boolean;
+          default "false";
+          description
+            "Set the peer as a default MSDP peer";
+        }
+        container receive-message-rate {
+          description
+            "Enter the receive-message-rate context";
+          leaf rate {
+            type uint32 {
+              range "10..10000";
+            }
+            description
+              "Maximum number of MSDP messages read from TCP session";
+            must '../time > 0' {
+              error-message "MSDP receive rate interval config required";
+            }
+          }
+          leaf time {
+            type uint32 {
+              range "1..600";
+            }
+            units "seconds";
+            description
+              "Time interval to rate limit MSDP messages";
+            must '../rate > 0' {
+              error-message "MSDP receive rate config required";
+            }
+          }
+          leaf threshold {
+            type uint32 {
+              range "1..1000000";
+            }
+            description
+              "Processed MSDP message limit to activate rate limiting";
+            must '../rate > 0' {
+              error-message "MSDP receive rate config required";
+            }
+            must '../time > 0' {
+              error-message "MSDP receive rate interval config required";
+            }
+          }
+        }
+      }
+    }
+    list peer {
+      key "ip-address";
+      description
+        "Enter the peer list instance";
+      uses msdp-peer-state;
+      leaf ip-address {
+        type srl_nokia-comm:ipv4-address-unicast;
+        description
+          "IP address of the remote MSDP router for peering";
+      }
+      leaf active-source-limit {
+        type int32 {
+          range "0..1000000";
+        }
+        description
+          "Maximum source-active messages accepted by MSDP";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "Administrative state of MSDP";
+      }
+      leaf local-address {
+        type srl_nokia-comm:ipv4-address-unicast;
+        description
+          "Local end IP address of the MSDP group";
+      }
+      leaf default-peer {
+        type boolean;
+        default "false";
+        description
+          "Set the peer as a default MSDP peer";
+      }
+      container receive-message-rate {
+        description
+          "Enter the receive-message-rate context";
+        leaf rate {
+          type uint32 {
+            range "10..10000";
+          }
+          description
+            "Maximum number of MSDP messages read from TCP session";
+          must '../time > 0' {
+            error-message "MSDP receive rate interval config required";
+          }
+        }
+        leaf time {
+          type uint32 {
+            range "1..600";
+          }
+          units "seconds";
+          description
+            "Time interval to rate limit MSDP messages";
+          must '../rate > 0' {
+            error-message "MSDP receive rate config required";
+          }
+        }
+        leaf threshold {
+          type uint32 {
+            range "1..1000000";
+          }
+          description
+            "Processed MSDP message limit to activate rate limiting";
+          must '../rate > 0' {
+            error-message "MSDP receive rate config required";
+          }
+          must '../time > 0' {
+            error-message "MSDP receive rate interval config required";
+          }
+        }
+      }
+    }
+    list source {
+      key "ip-prefix";
+      description
+        "Enter the source list instance";
+      uses msdp-source-state;
+      leaf ip-prefix {
+        type srl_nokia-comm:ipv4-prefix-unicast;
+        description
+          "Source IP address for accepted source-active messages";
+        must "not(starts-with(string(.), '0.'))" {
+          error-message "Not a valid IPv4 unicast address prefix";
+        }
+      }
+      leaf active-source-limit {
+        type int32 {
+          range "0..1000000";
+        }
+        description
+          "Number of source-active messages accepted by MSDP";
+      }
+    }
+  }
+
+  grouping msdp-global-state {
+    leaf peer-count {
+      config false;
+      description
+        "The number of configured peers";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf peers-established {
+      config false;
+      description
+        "The number of peers in established state";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf source-active-messages-count {
+      config false;
+      description
+        "The number of source active configured in cache";
+      type srl_nokia-comm:gauge32;
+    }
+    leaf last-time-up {
+      config false;
+      description
+        "The last time the protocol was enabled";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf active-source-limit-exceeded {
+      config false;
+      description
+        "The number of time the global active source
+          limit has been exceeded";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping msdp-peer-statistics-state {
+    description
+      "Statistics related to MSDP peer messages";
+    leaf rpf-failures {
+      config false;
+      description
+        "The number of reverse path forwarding (RPF) failures.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf remote-closes {
+      config false;
+      description
+        "The number of times the remote peer closed.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf sa-msgs-sent {
+      config false;
+      description
+        "The number of source-active messages sent.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf sa-msgs-recvd {
+      config false;
+      description
+        "The number of source-active messages received.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf sa-req-msg-recvd {
+      config false;
+      description
+        "The number of source-active request messages received.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf sa-res-msg-recvd {
+      config false;
+      description
+        "The number of source-active response messages received.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf keepalive-msg-sent {
+      config false;
+      description
+        "The number of keepalive messages sent.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf keepalive-msg-recvd {
+      config false;
+      description
+        "The number of keepalive messages received.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf unknown-msg-recvd {
+      config false;
+      description
+        "The number of unknown messages received.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf reserved-msg-recvd {
+      config false;
+      description
+        "The number of reserved messages received.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf err-msg-recvd {
+      config false;
+      description
+        "The number of error messages received.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf sa-lim-excd {
+      config false;
+      description
+        "The number of SA limit exceeded.";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping msdp-peer-state {
+    leaf peer-state {
+      config false;
+      description
+        "The status of connection";
+      type enumeration {
+        enum listen {
+          value 0;
+        }
+        enum established {
+          value 1;
+        }
+        enum inactive {
+          value 2;
+        }
+        enum disabled {
+          value 3;
+        }
+        enum connecting {
+          value 4;
+        }
+      }
+    }
+    leaf last-peer-state-change {
+      config false;
+      description
+        "The time at which the most recent peer-state change occurred";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf connection-retry {
+      config false;
+      description
+        "The number of peer connection retry attempts";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf state-timer {
+      config false;
+      description
+        "The number of seconds to wait before another message is sent to a peer";
+      type uint32;
+      units "seconds";
+    }
+    leaf timeout {
+      config false;
+      description
+        "The number of seconds to wait for a response from the peer before declaring
+         the peer unavailable";
+      type uint32;
+      units "seconds";
+    }
+    leaf active-source-accepted {
+      config false;
+      description
+        "The number of source-active cache accepted from the peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf active-source-received {
+      config false;
+      description
+        "The number of source-active cache received by the peer";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf last-active-source-limit {
+      config false;
+      description
+        "The time that the last active source limit was triggered";
+      type srl_nokia-comm:date-and-time-delta;
+    }
+    leaf operational-local-address {
+      config false;
+      description
+        "The operational value of the local address";
+      type srl_nokia-comm:ipv4-address;
+    }
+    container statistics {
+      config false;
+      description
+        "MSDP Peer statistics";
+      uses msdp-peer-statistics-state;
+    }
+  }
+
+  grouping msdp-group-state {
+    leaf active-source-limit-exceeded {
+      config false;
+      description
+        "The number of source active messages received from this
+          group that exceeded the established maximum number";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping msdp-source-state {
+    leaf discovery-method {
+      config false;
+      description
+        "The discovery method for this multicast source";
+      type enumeration {
+        enum dynamic {
+          value 0;
+        }
+        enum configured {
+          value 1;
+        }
+      }
+    }
+    leaf active-messages-exceed-max {
+      config false;
+      description
+        "The number of source active messages received from
+          the source that exceeded the established maximum number";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+    leaf last-exceeded-event-time {
+      config false;
+      description
+        "The time the last exceed event was triggered";
+      type srl_nokia-comm:zero-based-counter32;
+    }
+  }
+
+  grouping msdp-packet-tracing-config {
+    container packet {
+      presence "Enable the tracing of MSDP packets";
+      description
+        "Enable the tracing of MSDP packets";
+      choice type {
+        default "all-types";
+        case all-types {
+          container all-packet-types {
+            presence "Enable tracing for all packet types";
+            description
+              "Enable tracing for all packet types";
+          }
+        }
+        case selected-types {
+          container packet-types {
+            description
+              "Enable tracing for selected packet types only";
+            container peer {
+              presence "Enable tracing for peer packets";
+              description
+                "Enable tracing for peer packets";
+              leaf peer-address {
+                description
+                  "The peer-address for which to trace peer packets";
+                type srl_nokia-comm:ipv4-address;
+              }
+            }
+            container tx {
+              presence "Enable tracing for tx packets";
+              description
+                "Enable tracing for tx packets";
+            }
+            container rx {
+              presence "Enable tracing for rx packets";
+              description
+                "Enable tracing for rx packets";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping msdp-events-tracing-config {
+    container events {
+      presence "Enable the tracing of MSDP events";
+      description
+        "Enable the tracing of MSDP events";
+      choice type {
+        default "all-types";
+        case all-types {
+          container all-event-types {
+            presence "Enable tracing for all events";
+            description
+              "Enable tracing for all events";
+          }
+        }
+        case selected-types {
+          container event-types {
+            description
+              "Enable tracing for selected event types only";
+            container node {
+              presence "Enable tracing for node events";
+              description
+                "Enable tracing for node events";
+            }
+            container peer-group {
+              presence "Enable tracing for peer-group events";
+              description
+                "Enable tracing for peer-group events";
+            }
+            container peer {
+              presence "Enable tracing for peer events";
+              description
+                "Enable tracing for peer events";
+            }
+            container source-active {
+              presence "Enable tracing for source-active events";
+              description
+                "Enable tracing for source-active events";
+              leaf source-address {
+                description
+                  "The source address for which to trace events";
+                type srl_nokia-comm:ipv4-address;
+              }
+              leaf group-address {
+                description
+                  "The group address for which to trace events";
+                type srl_nokia-comm:ipv4-address;
+              }
+              leaf rp-address {
+                description
+                  "The rp address for which to trace events";
+                type srl_nokia-comm:ipv4-address;
+              }
+            }
+            container flood {
+              presence "Enable tracing for flood events";
+              description
+                "Enable tracing for flood events";
+            }
+            container pim {
+              presence "Enable tracing for pim events";
+              description
+                "Enable tracing for pim events";
+              leaf group-address {
+                description
+                  "The group address for which to trace events";
+                type srl_nokia-comm:ipv4-address;
+              }
+            }
+            container rp {
+              presence "Enable tracing for rp events";
+              description
+                "Enable tracing for rp events";
+              leaf rp-address {
+                description
+                  "The rp address for which to trace events";
+                type srl_nokia-comm:ipv4-address;
+              }
+            }
+            container sa-reject {
+              presence "Enable tracing for sa-reject events";
+              description
+                "Enable tracing for sa-reject events";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping msdp-global-trace-options {
+    container trace-options {
+      description
+        "Enter the trace-options context";
+      container trace {
+        description
+          "Tracing parameter flags";
+        uses msdp-events-tracing-config;
+        uses msdp-packet-tracing-config;
+      }
+    }
+  }
+
+  grouping msdp-top {
+    container msdp {
+      if-feature "srl_nokia-feat:msdp";
+      presence "Configure MSDP";
+      description
+        "Enable MSDP context";
+      uses msdp-global-config;
+      uses msdp-global-state;
+      uses msdp-global-trace-options;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses msdp-top;
+  }
+}

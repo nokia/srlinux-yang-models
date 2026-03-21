@@ -1,0 +1,510 @@
+module srl_nokia-first-hop-security-ip-mac-binding {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:srl_nokia-first-hop-security-ip-mac-binding";
+  prefix srl_nokia-fhs-ip-mac-binding;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_rpol;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for First Hop Security (FHS) policy configuration.";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  typedef ip-mac-association-learn-protocol {
+    description
+      "Enumeration of protocol names used to learn IP-MAC associations.";
+    type enumeration {
+      enum dhcp {
+        value 1;
+        description
+          "Use DHCP protocol messages for learning IP-MAC association for endpoints.";
+      }
+      enum dhcp-pd {
+        value 2;
+        description
+          "Use DHCPv6 Prefix Delegation messages for learning IP-prefixes assigned
+           to endpoints and the associated MAC address.";
+      }
+      enum nd {
+        value 3;
+        description
+          "Use IPv6 ND messages exchanged during IPv6 SLACC based address assignment
+           for learning IP-MAC association for endpoints.";
+      }
+      enum static {
+        value 4;
+        description
+          "Use user configured static IP-MAC association.";
+      }
+    }
+  }
+
+  grouping first-hop-security-policy {
+    list first-hop-security-policy {
+      description
+        "List of First Hop Security policies";
+      max-elements 64;
+      key "name";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "First Hop Security (FHS) policy name";
+      }
+      leaf-list protocols {
+        description
+          "List of protocols to build IP-MAC association
+
+           List of protocols used to build IP-MAC association and can be
+            configured by the user. User can specify one or more values.";
+        type ip-mac-association-learn-protocol;
+        default "static";
+        default "dhcp";
+        default "dhcp-pd";
+        default "nd";
+        min-elements 0;
+        max-elements 4;
+      }
+      leaf limit-entries {
+        description
+          "Maximum number of IP-MAC association entries to learn
+
+           Maximum number of IP-MAC association allowed to be associated with an
+             entity (e.g. sub-interface, etc.)  where this policy is attached.";
+        type uint32 {
+          range "0..8192";
+        }
+      }
+      leaf device-role {
+        type enumeration {
+          enum endpoint {
+            description
+              "Set role to endpoint
+
+               When the value is set to endpoint, IP-MAC association of the connected
+               endpoint is learnt and First Hop security policy is enforced for messages
+               received from the endpoint (if enabled).";
+          }
+          enum switch {
+            description
+              "Set role to swtich
+
+               When the value is set to switch, no IP-MAC association of endpoints
+               is not learnt. The assumption is that when the role is set to switch and the
+               connected device is a switch, user will apply first hop security policy on
+               the connected switch too and hence all traffic received from that switch
+               can be forwarded without any additional checks.";
+          }
+        }
+        default "switch";
+      }
+    }
+  }
+
+  grouping first-hop-security-config {
+    container first-hop-security-config {
+      description
+        "Configure First Hop Security Policy parameters.";
+      must "(starts-with(../../srl_nokia-if:name, 'ethernet') or
+            starts-with(../../srl_nokia-if:name, 'lag') or
+            starts-with(../../srl_nokia-if:name, 'irb') or
+            starts-with(../../srl_nokia-if:name, 'mgmt'))" {
+        error-message "Frist Hop Security policy not supported on the subinterface of this interface";
+      }
+      presence "Context to configure First Hop Security policy parameters";
+      leaf policy {
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-fhs-ip-mac-binding:first-hop-security-policy/name";
+        }
+        description
+          "Provide the name of the First Hop Security policy template";
+      }
+      container static-entries {
+        presence "Context to configure static IP-MAC associations";
+        description
+          "Configure First Hop Security policy static IP-MAC associations";
+        list entry {
+          key "id";
+          leaf id {
+            type uint32;
+            description
+              "A number to identify the static entry";
+          }
+          leaf mac-address {
+            type srl_nokia-comm:unicast-mac-address;
+            description
+              "Unicast MAC address of the endpoint";
+            mandatory true;
+          }
+          leaf ip-address {
+            description
+              "IPv4 or IPv6 address to be configured";
+            type srl_nokia-comm:ip-address-unicast;
+            mandatory true;
+          }
+          leaf action {
+            description
+              "Enable or disable this static entry
+
+               Enable to add the static IP-MAC association to the database and for
+               enforcement of First Hop Security policy (such as ARP inspection, etc.).
+               Disabled entries are not added to IP-MAC association database and not
+               used for enforcement of First Hop Security policy.";
+            type srl_nokia-comm:admin-state;
+            default "disable";
+          }
+        }
+      }
+      leaf ip-source-guard {
+        description
+          "Enable IP source guard checks for IP traffic received from connected endpoint";
+        type enumeration {
+          enum disable {
+            description
+              "Set to disable
+
+               If set to disable - Disables IP source guard checks for IP traffic received
+               from the connected endpoint.";
+            value 0;
+          }
+          enum ipv4 {
+            if-feature "not srl_nokia-feat:future-0-0";
+            description
+              "Set to ipv4
+
+               If set to ipv4 - IPv4 traffic received from the endpoint is checked to
+               ensure that traffic is received from a known endpoint (i.e. endpoint's
+               IPv4 address and MAC address is available in IP-MAC association database).";
+            value 1;
+          }
+          enum ipv6 {
+            if-feature "not srl_nokia-feat:future-0-0";
+            description
+              "Set to ipv6
+
+               If set to ipv6 - IPv6 traffic received from the endpoint is checked to
+               ensure that traffic is received from a known endpoint (i.e. endpoint's
+               IPv6 address and MAC address is available in the IP-MAC association database).";
+            value 2;
+          }
+          enum both-ipv4-ipv6 {
+            description
+              "Set to ipv4-ipv6
+
+               If set to both-ipv4-ipv6 - All IP traffic (with either IPv4 or IPv6 addresses)
+               are validated to ensure that traffic is received from a known endpoint.";
+            value 3;
+          }
+        }
+      }
+      leaf dynamic-arp-nd-inspection {
+        description
+          "Enable or Disable ARP and ND inspection
+
+           If Enabled, ARP/ND messages used for IP address to MAC address resolution are
+           inspected to ensure that IP and MAC addresses in the ARP/ND messages is a known.
+           Only known ARP/ND messages are further processed by the node, while unknown ones
+           are dropped.
+           If Disabled, ARP/ND messages are not checked against the IP-MAC association
+           database.";
+        type srl_nokia-comm:admin-state;
+      }
+      leaf ip-prefix-guard {
+        type enumeration {
+          enum enable;
+          enum disable;
+        }
+      }
+      leaf dynamic-arp-inspection_success {
+        config false;
+        type uint32;
+      }
+      leaf dynamic-arp-inspection_failure {
+        config false;
+        type uint32;
+      }
+    }
+  }
+
+  typedef dhcpmessage {
+    type enumeration {
+      enum dhcp_discover {
+        value 1;
+      }
+      enum dhcp_offer {
+        value 2;
+      }
+      enum dhcp_request {
+        value 3;
+      }
+      enum dhcp_decline {
+        value 4;
+      }
+      enum dhcp_ack {
+        value 5;
+      }
+      enum dhcp_nak {
+        value 6;
+      }
+      enum dhcp_release {
+        value 7;
+      }
+      enum dhcp_inform {
+        value 8;
+      }
+    }
+  }
+
+  typedef dhcp6message {
+    type enumeration {
+      enum dhcp6_solicit {
+        value 1;
+      }
+      enum dhcp6_advertise {
+        value 2;
+      }
+      enum dhcp6_request {
+        value 3;
+      }
+      enum dhcp6_confirm {
+        value 4;
+      }
+      enum dhcp6_renew {
+        value 5;
+      }
+      enum dhcp6_rebind {
+        value 6;
+      }
+      enum dhcp6_reply {
+        value 7;
+      }
+      enum dhcp6_release {
+        value 8;
+      }
+      enum dhcp6_decline {
+        value 9;
+      }
+      enum dhcp6_reconfigure {
+        value 10;
+      }
+      enum dhcp6_info_request {
+        value 11;
+      }
+      enum dhcp6_relay_forward {
+        value 12;
+      }
+      enum dhcp6_relay_reply {
+        value 13;
+      }
+    }
+  }
+
+  grouping fhs-ip-mac-binding-table {
+    container fhs-ip-mac-bindings {
+      description
+        "List of First Hop Security IP-MAC association in the database.";
+      list binding-table {
+        config false;
+        key "mac-address ip-address network-instance";
+        leaf mac-address {
+          config false;
+          type srl_nokia-comm:unicast-mac-address;
+          description
+            "MAC address of the endpoint";
+        }
+        leaf network-instance {
+          config false;
+          type leafref {
+            path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+          }
+          description
+            "Network instance where the endpoint is connected";
+        }
+        leaf subinterface {
+          config false;
+          type leafref {
+            path "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:name";
+          }
+          description
+            "Subnterface where the endpoint is connected";
+        }
+        leaf ip-address {
+          config false;
+          type srl_nokia-comm:ip-address-unicast;
+          description
+            "IP address associated with the endpoint";
+        }
+        leaf binding-type {
+          config false;
+          type ip-mac-association-learn-protocol;
+          description
+            "Indicates protocol used to learn this IP-MAC association entry";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf lease-time-start {
+          config false;
+          description
+            "Start of time when DHCP server provided IP address lease.";
+          type srl_nokia-comm:date-and-time;
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf lease-time-end {
+          config false;
+          type srl_nokia-comm:date-and-time;
+          description
+            "Time beyond which the DHCP provided IP address lease expires.";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf oper-state {
+          config false;
+          description
+            "Indicates the operational state of this IP-MAC association entry";
+          type enumeration {
+            enum init {
+              value 1;
+              description
+                "IP-MAC association entry is in INIT state
+
+                 Created on receiving DHCP OFFER message";
+            }
+            enum in-progress {
+              value 2;
+              description
+                "IP-MAC association entry is in IN-PROGRESS state
+
+                 DHCP messages are being exchanged with DHCP server and DHCP ACK
+                 is not yet received.";
+            }
+            enum complete {
+              value 3;
+              description
+                "IP-MAC association entry had been ACK'ed by DHCP server";
+            }
+          }
+        }
+        leaf config_updated {
+          config false;
+          type boolean;
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf bridge_updated {
+          config false;
+          description
+            "Indicates that the MAC and subinterface is present in the bridge tables";
+          type boolean;
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf message_type {
+          config false;
+          type dhcpmessage;
+        }
+        leaf message6_type {
+          config false;
+          type dhcp6message;
+        }
+      }
+    }
+  }
+
+  grouping netinst-fhs-policy {
+    container fhs {
+      leaf policy {
+        type leafref {
+          path "/srl_nokia-system:system/srl_nokia-fhs-ip-mac-binding:first-hop-security-policy/name";
+        }
+        description
+          "Reference to FHS Policy to apply to the associated netinstance";
+      }
+    }
+  }
+
+  grouping fhs_plat_mgmt {
+    container fhs-classid-mgmt {
+      leaf first-hop-security {
+        if-feature "srl_nokia-feat:ip-mac-binding";
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Controls the first hop security feature.";
+      }
+      leaf ra-guard {
+        if-feature "srl_nokia-feat:ip-mac-binding";
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "Controls the ra-guard security feature.";
+      }
+      leaf first-hop-security-ip-source-guard-entries {
+        if-feature "srl_nokia-feat:first-hop-security and srl_nokia-feat:future-0-0";
+        description
+          "Number of hardware TCAM entries to use for First Hop Security (FHS) IP Source Guard
+
+           The number of hardware TCAM entries to allocate when First Hop Security
+           IP source guard is enabled on a subinterface. This number must be set to be
+           equal to or more than the number of IP-MAC association entries in the
+           First Hop security ip-mac-binding-table. Software will allocate the required
+           number of hardware TCAM entries.";
+        type uint16 {
+          range "0..1280";
+        }
+        default "0";
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl_nokia-feat:ip-mac-binding";
+    uses fhs_plat_mgmt;
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl_nokia-feat:ip-mac-binding";
+    uses first-hop-security-policy;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface" {
+    if-feature "srl_nokia-feat:ip-mac-binding";
+    uses first-hop-security-config;
+  }
+
+  augment "/srl_nokia-system:system" {
+    if-feature "srl_nokia-feat:ip-mac-binding";
+    uses fhs-ip-mac-binding-table;
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    if-feature "srl_nokia-feat:ip-mac-binding";
+    uses netinst-fhs-policy;
+  }
+}

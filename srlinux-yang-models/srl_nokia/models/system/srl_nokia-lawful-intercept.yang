@@ -1,0 +1,258 @@
+module srl_nokia-lawful-intercept {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:lawful-intercept:targets";
+  prefix srl_nokia-lawful-intercept;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-logging {
+    prefix srl_nokia-logging;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data for lawful intercept (LI).";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2025-03-31 {
+    description
+      "SRLinux 25.3.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  identity li {
+    if-feature "srl-feat:lawful-intercept";
+    base srl_nokia-logging:srlinux-subsystem;
+    description
+      "Logging subsystem for LI";
+  }
+
+  typedef direction {
+    type enumeration {
+      enum ingress-only {
+        value 1;
+        description
+          "Ingress traffic only";
+      }
+      enum egress-only {
+        value 2;
+        description
+          "Egress traffic only";
+      }
+      enum ingress-egress {
+        value 4;
+        description
+          "Ingress and egress traffic";
+      }
+    }
+    description
+      "Direction of traffic to be mirrored";
+  }
+
+  grouping lawful-intercept-global-top {
+    description
+      "Grouping of reusable elements";
+    container system {
+      description
+        "Properties of the LI system";
+      leaf name {
+        type string {
+          length "1..64";
+          pattern '([a-zA-Z0-9]+[\-\.])*[a-zA-Z0-9]+';
+        }
+        description
+          "Hostname of the LI management system";
+      }
+    }
+    container pfcp {
+      presence "pfcp";
+      description
+        "Configure the PFCP interface between the cMAG-c and the MAG-u";
+      srl-ext:delivery-node-override "separate-state-request";
+      leaf shared-secret {
+        type srl-comm:routing-password {
+          length "1..128";
+        }
+        mandatory true;
+        description
+          "Secret shared between the cMAG-c and the MAG-u";
+      }
+    }
+    container admf {
+      presence "admf";
+      description
+        "Configure IP address and port of the administration function (ADMF)";
+      srl-ext:delivery-node-override "separate-state-request";
+      leaf address {
+        type srl-comm:ipv4-address;
+        must 'not(re-match(., "(0|127|22[4-9]|2[3-5][0-9]])\..*"))' {
+          error-message "Not a valid IPv4 unicast address";
+        }
+        mandatory true;
+        description
+          "IP address of the ADMF server";
+      }
+      leaf port {
+        type srl-comm:port-number;
+        must '. != 0' {
+          error-message "Port 0 is not supported";
+        }
+        description
+          "Port number of the ADMF server";
+      }
+    }
+    leaf admin-state {
+      type srl-comm:admin-state;
+      default "enable";
+      description
+        "Administrative state";
+    }
+    leaf oper-state {
+      type srl-comm:oper-state;
+      config false;
+      description
+        "Operational state";
+    }
+  }
+
+  grouping lawful-intercept-target-top {
+    description
+      "Grouping of reusable elements";
+    container targets {
+      description
+        "Properties of LI targets on the local system";
+      list subscriber {
+        key "subscriber-name";
+        max-elements 32768;
+        description
+          "List of broadband network gateway (BNG) subscribers";
+        leaf subscriber-name {
+          type srl-comm:name;
+          description
+            "Name of the wireline subscriber";
+        }
+        leaf description {
+          type srl-comm:description;
+          description
+            "Text description";
+        }
+        leaf intercept-id {
+          type uint32 {
+            range "1..4294967295";
+          }
+          description
+            "Intercept ID in the shim header";
+        }
+        leaf session-id {
+          type uint32 {
+            range "1..4294967295";
+          }
+          description
+            "Session ID in the shim header";
+        }
+        leaf direction {
+          type direction;
+          mandatory true;
+          description
+            "Direction of traffic to be mirrored";
+        }
+        leaf mirror-instance-name {
+          type srl-comm:name;
+          mandatory true;
+          description
+            "Name of the mirror instance target
+
+             The name of the mirror instance must match the name of the mirror service on the MAG-u.";
+        }
+        leaf oper-state {
+          type srl-comm:oper-state;
+          config false;
+          description
+            "Operational state";
+        }
+        leaf oper-down-reason {
+          type string;
+          config false;
+          description
+            "Interception has not started because the subscriber is not online or a problem occurred";
+        }
+      }
+      container statistics {
+        config false;
+        description
+          "LI statistics";
+        srl-ext:delivery-node-override "true";
+        srl-ext:statistics-node "true";
+        container subscribers {
+          description
+            "Subscriber statistics";
+          leaf total-configured {
+            type srl-comm:zero-based-counter64;
+            description
+              "Total number of subscribers provisioned as LI targets in the system";
+          }
+          leaf total-active {
+            type srl-comm:zero-based-counter64;
+            description
+              "Total number of subscribers in active LI sessions";
+          }
+          leaf total-down {
+            type srl-comm:zero-based-counter64;
+            description
+              "Total number of subscribers not in active LI sessions";
+          }
+          leaf total-error {
+            type srl-comm:zero-based-counter64;
+            description
+              "Total number of subscribers with failed LI sessions";
+          }
+        }
+      }
+    }
+  }
+
+  grouping lawful-intercept-top {
+    description
+      "Grouping of reusable elements";
+    container lawful-intercept {
+      presence "Enable lawful intercept";
+      if-feature "srl-feat:lawful-intercept";
+      description
+        "LI properties";
+      uses lawful-intercept-target-top;
+      uses lawful-intercept-global-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses lawful-intercept-top;
+  }
+}

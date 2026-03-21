@@ -1,0 +1,62 @@
+module srl_nokia-system-coordinates {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:system-coordinates";
+  prefix srl_nokia-system-coordinates;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-system-info {
+    prefix srl-info;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-common {
+    prefix srl-common;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration related system banners";
+
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  grouping coordinates-config-top {
+    container coordinates {
+      description
+        "Contains configuration and state related to system coordinates";
+      leaf latitude {
+        type srl-common:coordinate-location-latitude;
+        description
+          "Decimal latitude between -90 and 90 to a maximum of 6 decimal places";
+      }
+      leaf longitude {
+        type srl-common:coordinate-location-longitude;
+        description
+          "Decimal longitude between -180 and 180 to a maximum of 6 decimal places";
+      }
+      leaf height {
+        type srl-common:coordinate-location-height;
+        description
+          "Height in meters";
+      }
+    }
+  }
+
+  grouping coordinates-top {
+    uses coordinates-config-top;
+  }
+
+  augment "/srl-system:system/srl-info:information" {
+    if-feature "srl-feat:location-coordinates";
+    uses coordinates-top;
+  }
+}

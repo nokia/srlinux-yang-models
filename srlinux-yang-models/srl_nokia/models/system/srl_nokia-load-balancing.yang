@@ -1,0 +1,339 @@
+module srl_nokia-load-balancing {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:load-balancing";
+  prefix srl_nokia-lb;
+
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to ECMP and other load-balancing options.";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2025-03-31 {
+    description
+      "SRLinux 25.3.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping generic-load-balancing {
+    container load-balancing {
+      if-feature "srl_nokia-feat:load-balancing and not srl_nokia-feat:platform-imgmt";
+      description
+        "Adjust system-wide ECMP load balancing options.";
+      container dynamic {
+        if-feature "srl_nokia-feat:dynamic-load-balancing";
+        leaf flowset-size {
+          description
+            "Number of movable flows per ECMP group";
+          type enumeration {
+            enum 256 {
+              value 1;
+            }
+            enum 512 {
+              value 2;
+            }
+            enum 1024 {
+              value 3;
+            }
+            enum 2048 {
+              value 4;
+            }
+            enum 4096 {
+              value 5;
+            }
+            enum 8192 {
+              value 6;
+            }
+            enum 16384 {
+              value 7;
+            }
+            enum 32768 {
+              value 8;
+            }
+          }
+          default "256";
+        }
+        leaf inactivity-timer {
+          description
+            "Minimum inactivity time for a flow before it can be moved to a better quality interface";
+          srl_nokia-ext:show-importance "high";
+          type uint16 {
+            range "50..32767";
+          }
+          default "50";
+          units "microseconds";
+        }
+        leaf mode {
+          description
+            "Dynamic load-balancing mode";
+          srl_nokia-ext:show-importance "high";
+          type enumeration {
+            enum flow-fixed {
+              description
+                "Load-balancing assigns each flow to an ECMP member at the time when the ECMP group is created and flows do not move after this initial assignment";
+            }
+            enum flow-dynamic {
+              description
+                "Load-balancing assigns flows to ECMP members at the time when the ECMP group is created and can re-assign a flow to a new ECMP member whenever the flow is inactive";
+            }
+            enum per-packet {
+              description
+                "Load-balancing assigns each packet to an ECMP member using a round-robin discipline that disregards the loading of different interfaces";
+            }
+          }
+          default "flow-dynamic";
+        }
+        leaf link-quality-sampling-interval {
+          type uint8 {
+            range "1..255";
+          }
+          description
+            "Interval between link quality metrics samples
+             The interval determines how often the link quality is revisited adn updated";
+          default "5";
+          units "microseconds";
+        }
+        container weighting-factor {
+          leaf port-utilization {
+            type uint8 {
+              range "0..100";
+            }
+            description
+              "Weight (percentage) assigned to port-utilization within the dynamic load-balancing algorithm";
+            default "70";
+            units "percentage";
+          }
+          leaf queue-utilization {
+            type uint8 {
+              range "0..100";
+            }
+            description
+              "Weight (percentage) assigned to queue-utilization within the dynamic load-balancing algorithm";
+            default "20";
+            units "percentage";
+          }
+          leaf itm-utilization {
+            type uint8 {
+              range "0..100";
+            }
+            description
+              "Weight (percentage) assigned to the Ingress-Traffic Manager queue-utilization within the dynamic load-balancing algorithm";
+            default "10";
+            units "percentage";
+          }
+        }
+      }
+      container hash-options {
+        if-feature "not srl_nokia-feat:fpcx";
+        must 'destination-address = source-address' {
+          error-message "Destination address and source address hashing cannot be set differently on this platform";
+          srl_nokia-ext:if-feature "srl_nokia-features:ixr-dnx";
+        }
+        must 'destination-port = source-port' {
+          error-message "Destination address and source port hashing cannot be set differently on this platform";
+          srl_nokia-ext:if-feature "srl_nokia-features:ixr-dnx";
+        }
+        description
+          "Container for packet header fields and other inputs used in hashing calculations";
+        leaf hash-seed {
+          type union {
+            type uint16;
+            type enumeration {
+              enum generate-from-mac;
+            }
+          }
+          default "generate-from-mac";
+          description
+            "The hash seed to use for random selection of ECMP/LAG members
+
+             To avoid polarization effects, directly-connected nodes should have unique hash-seeds. This can be achieved through explicit configuration of the hash-seed, or using the generate-from-mac option (which is the default), and checking that the auto-generated hash-seed is in fact unique (by reading the state value of this leaf).";
+        }
+        leaf destination-address {
+          description
+            "Include the destination IP address in the hash calculation";
+          type boolean;
+          default "true";
+        }
+        leaf destination-port {
+          description
+            "Include the destination TCP/UDP port number in the hash calculation if the packet is an unfragmented IP packet carrying a TCP/UDP payload";
+          type boolean;
+          default "true";
+        }
+        leaf ipv6-flow-label {
+          description
+            "Include the IPv6 flow label in the hash calculation if the packet is an IPv6 packet
+
+             It is expected that the IPv6 flow label value is written by the server or other host originating the flow and not changed by any intermediate switch or router.";
+          type boolean;
+          default "false";
+        }
+        leaf protocol {
+          description
+            "Include the IP protocol number in the hash calculation. For an IPv6 packet this is protocol value in the next-header field of the last extension header.";
+          type boolean;
+          default "true";
+        }
+        leaf source-address {
+          description
+            "Include the source IP address in the hash calculation";
+          type boolean;
+          default "true";
+        }
+        leaf source-port {
+          description
+            "Include the source TCP/UDP port number in the hash calculation if the packet is an unfragmented IP packet carrying a TCP/UDP payload";
+          type boolean;
+          default "true";
+        }
+        leaf vlan {
+          if-feature "srl_nokia-feat:trident3 or srl_nokia-feat:trident4 or srl_nokia-feat:tomahawk3 or srl_nokia-feat:tomahawk4";
+          description
+            "Include the received VLAN ID in the hash calculation";
+          type boolean;
+          default "true";
+        }
+        leaf mpls-label-stack {
+          if-feature "srl_nokia-feat:mpls";
+          description
+            "Include the received labels (terminated and non-terminated) in the hash calculation";
+          type boolean;
+          default "true";
+        }
+        leaf per-complex-randomization {
+          if-feature "srl_nokia-feat:system-hash-l3-parser-seed-and-ethernet";
+          description
+            "When set true, hashing uses a different random parser seed on each forwarding complex
+
+             When set false, every forwarding complex uses the same parser seed
+
+             In general, the true setting provides better hashing performance. Consider false only if traffic belonging to a specific flow show always hash to the same egress next-hop, even when a reroute or some other network event causes the flow to land on a different ingress complex";
+          type boolean;
+          default "true";
+        }
+        leaf terminated-eth-fields {
+          if-feature "srl_nokia-feat:system-hash-l3-parser-seed-and-ethernet";
+          description
+            "When set true, hashing uses Ethernet header fields that are terminated when an IP/MPLS packet is forwarded
+
+             When set false, L3 forwarding does not consider any Ethernet header fields in the hash calculation.
+
+             In general, the true setting provides better hashing performance.";
+          type boolean;
+          must 'not(. = true() and ../mpls-label-stack = false())' {
+            error-message "Terminated Ethernet fields hashing also requires hashing using MPLS label stack";
+          }
+          default "false";
+        }
+      }
+      list hash-profile {
+        if-feature "srl_nokia-feat:system-hash-profile";
+        key "name";
+        description
+          "List of user configured hash profiles";
+        leaf name {
+          description
+            "The name of the user-configured hash profile";
+          type srl_nokia-comm:name;
+        }
+        leaf hash-seed {
+          type uint16;
+          description
+            "The hash seed to use for random selection of ECMP/LAG members
+
+             To avoid polarization effects, directly-connected nodes should have unique hash-seeds.";
+          mandatory true;
+        }
+      }
+      leaf lsr-profile {
+        description
+          "Adjust system-wide LSR ECMP load balancing options.";
+        if-feature "srl_nokia-feat:fpcx";
+        type enumeration {
+          enum label-stack {
+            description
+              "LSR load balancing based on only the label stack.
+
+               The datapath searches for BoS=1 or up until hash label search depth is reached";
+          }
+          enum label-eth-or-ip-l4-teid {
+            description
+              "LSR load balancing based on the label stack and Eth or IP headers
+
+               The datapath performs Eth speculation after BoS=1 or once max label stack depth is reached.
+               Irrespective of the outcome of the Eth speculation further attempts IPv4/6 speculation based on first nibble, includes source and destination IP address, followed by UDP/TCP check
+               for inclusion of soruce and destination ports and includes GTP/TEID when UDP or TCP port is 2123 or 2152.
+               When Ethernet header speculation yields a positive outcome, source and destination MAC together with up to two VLANs are included in the hash";
+          }
+        }
+        default "label-stack";
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses generic-load-balancing;
+  }
+}

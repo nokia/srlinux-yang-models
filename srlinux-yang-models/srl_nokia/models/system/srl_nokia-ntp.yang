@@ -1,0 +1,368 @@
+module srl_nokia-ntp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:ntp";
+  prefix srl_nokia-ntp;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-tls {
+    prefix srl-tls;
+  }
+  import srl_nokia-timezone {
+    prefix srl-tz;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines NTP configuration and state";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2025-03-31 {
+    description
+      "SRLinux 25.3.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2020-06-30 {
+    description
+      "SRLinux 20.6.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  identity NTP_AUTH_TYPE {
+    description
+      "Base identity for all encryption methods supported by NTP authentication keys";
+  }
+
+  identity NTP_AUTH_MD5 {
+    base NTP_AUTH_TYPE;
+    description
+      "MD5 encryption method";
+  }
+
+  identity NTP_AUTH_SHA1 {
+    base NTP_AUTH_TYPE;
+    description
+      "SHA1 encryption method";
+  }
+
+  identity NTP_AUTH_SHA256 {
+    base NTP_AUTH_TYPE;
+    description
+      "SHA256 encryption method";
+  }
+
+  identity NTP_AUTH_SHA384 {
+    base NTP_AUTH_TYPE;
+    description
+      "SHA384 encryption method";
+  }
+
+  identity NTP_AUTH_SHA512 {
+    base NTP_AUTH_TYPE;
+    description
+      "SHA512 encryption method";
+  }
+
+  identity NTP_AUTH_AES_CBC_128 {
+    base NTP_AUTH_TYPE;
+    description
+      "AES-CBC-128 encryption method";
+  }
+
+  identity NTP_AUTH_AES_CBC_256 {
+    base NTP_AUTH_TYPE;
+    description
+      "AES-CBC-256 encryption method";
+  }
+
+  grouping server-entry {
+    leaf address {
+      type srl-comm:host;
+      description
+        "Domain or IP address of the NTP server
+
+         IP address may be either IPv4 or IPv6.
+
+         Domain resolution requires working DNS configuration in the same network-instance.";
+    }
+    leaf iburst {
+      type boolean;
+      default "false";
+      description
+        "Indicates whether this server should enable burst synchronization or not
+         iburst, or initial burst, improves the time taken for initial synchronization
+         by sending a burst of eight packets instead of the usual one, these packets are
+         spaced by a two second delay";
+    }
+    leaf prefer {
+      type boolean;
+      default "false";
+      description
+        "Indicates whether this server should be preferred or not
+         All other things being equal, this host will be chosen for synchronization among
+         a set of correctly operating NTP servers";
+    }
+    leaf stratum {
+      type uint8;
+      config false;
+      description
+        "Indicates the level of the server in the NTP hierarchy
+         as number increases, the accuracy is degraded.
+         Primary servers are stratum 1 while a maximum value of 16
+         indicates unsynchronized. The values have the following meanings:
+         0 unspecified or invalid
+         1 primary server (e.g., equipped with a GPS receiver)
+         2-15 secondary server (via NTP)
+         16 unsynchronized
+         17-255 reserved";
+    }
+    leaf jitter {
+      type uint64;
+      units "milliseconds";
+      config false;
+      description
+        "Measurement of the variance in latency on the network";
+    }
+    leaf offset {
+      type uint64;
+      units "microseconds";
+      config false;
+      description
+        "Estimate of the current time offset from the peer
+         This is the time difference between the local and reference clock.";
+    }
+    leaf root-delay {
+      type uint64;
+      config false;
+      units "milliseconds";
+      description
+        "The round-trip delay to the server";
+    }
+    leaf root-dispersion {
+      type uint64;
+      config false;
+      units "milliseconds";
+      description
+        "Dispersion (epsilon) represents the maximum error inherent in the measurement";
+    }
+    leaf poll-interval {
+      type uint32;
+      units "seconds";
+      config false;
+      description
+        "Polling interval of the peer";
+    }
+    leaf network-instance {
+      if-feature "not srl_nokia-feat:platform-imgmt";
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+      }
+      must 'not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+        error-message "NTP client cannot be started in a network-instance of type 'mac-vrf'";
+      }
+      description
+        "Reference to a configured network-instance";
+    }
+    leaf source-address {
+      type srl-comm:ip-address;
+      description
+        "Source address for NTP to use for messages sent to a remote server";
+    }
+    leaf key-id {
+      if-feature "srl_nokia-feat:ntp-tls";
+      type leafref {
+        path "../../ntp-key/key-id";
+      }
+      description
+        "Reference to the NTP symmetric key to be used for this server entry
+
+         The same key, type, and value must be used by the client and server.";
+    }
+    leaf nts {
+      if-feature "srl_nokia-feat:ntp-tls";
+      type boolean;
+      default "false";
+      description
+        "Enable Network Time Security (NTS) for this server entry
+
+         An optional TLS profile can be associated with an appropriate CA";
+    }
+    leaf tls-profile {
+      if-feature "srl_nokia-feat:ntp-tls";
+      type leafref {
+        path "/srl-system:system/srl-tls:tls/srl-tls:profile/srl-tls:name";
+        require-instance false;
+      }
+      must '../nts = true()' {
+        error-message "nts must be enabled to assign a tls-profile.";
+      }
+      srl_nokia-ext:show-importance "high";
+      description
+        "Reference to a TLS profile to use for NTS
+
+         If not configured, the default system CA certificates will be used.";
+    }
+  }
+
+  grouping server-config {
+    description
+      "List of NTP servers to use for system clock synchronization";
+    list server {
+      key "address";
+      description
+        "List of NTP servers to use for system clock synchronization";
+      uses server-entry;
+    }
+  }
+
+  grouping authkey-entry {
+    leaf key-id {
+      type uint16;
+      description
+        "The identifier of the secret key.  This value must match between client and server";
+    }
+    leaf key-type {
+      type identityref {
+        base NTP_AUTH_TYPE;
+      }
+      description
+        "Encryption type for this NTP key";
+      mandatory true;
+    }
+    leaf key-value {
+      type string {
+        srl_nokia-ext:generated-class-name "SecretKey";
+      }
+      description
+        "Authentication key value. Stored encrypted";
+      mandatory true;
+    }
+  }
+
+  grouping authkey-config {
+    list ntp-key {
+      if-feature "srl_nokia-feat:ntp-tls";
+      key "key-id";
+      description
+        "List of NTP authentication keys";
+      uses authkey-entry;
+    }
+  }
+
+  grouping ntp-top {
+    container ntp {
+      presence "Configure NTP";
+      description
+        "Top-level container for NTP configuration and state";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        description
+          "Enables the system NTP client
+           and indicates that the system should attempt to synchronize
+           the clock";
+      }
+      leaf oper-state {
+        type srl-comm:oper-state;
+        config false;
+        description
+          "Details the operational state of the NTP client";
+      }
+      leaf synchronized {
+        type union {
+          type srl-comm:host;
+          type string {
+            pattern 'unsynchronized';
+          }
+        }
+        config false;
+        description
+          "Address of the NTP server that the local client is synchronized to
+           This field is set to 'unsynchronized', if the local client is not
+           synchronized";
+      }
+      leaf network-instance {
+        if-feature "not srl_nokia-feat:platform-imgmt";
+        type leafref {
+          path "/srl_nokia-netinst:network-instance/srl_nokia-netinst:name";
+        }
+        must 'not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name=current()]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+          error-message "NTP client cannot be started in a network-instance of type 'mac-vrf'";
+        }
+        description
+          "Reference to a configured network-instance";
+      }
+      leaf source-address {
+        type srl-comm:ip-address;
+        description
+          "Source address for NTP to use for messages sent to a remote server";
+      }
+      uses server-config;
+      uses authkey-config;
+    }
+  }
+
+  grouping clock-top {
+    container clock {
+      description
+        "Top-level container for system clock configuration and state";
+      leaf timezone {
+        type srl-tz:tzdata-timezone;
+        description
+          "The timezone to use for the system
+           Based on IANAs Time Zone database";
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "not srl_nokia-feat:platform-imgmt";
+    uses ntp-top;
+    uses clock-top;
+  }
+}

@@ -1,0 +1,103 @@
+module srl_nokia-flexible-algorithms-segment-routing {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:flexible-algorithms-segment-routing";
+  prefix srl_nokia-flexible-algorithms-segment-routing;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-flexible-algorithms {
+    prefix srl_flex-algo;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-segment-routing {
+    prefix srl_nokia-segrt;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-mpls-label-management {
+    prefix srl_nokia-mplslbl;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of Segment Routing Flexible Algorithms";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  grouping flex-algo-id-key {
+    leaf flex-algo-id {
+      description
+        "Flexible Algorithm Identifier used as key";
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_flex-algo:flexible-algorithm/srl_flex-algo:flexible-algorithm-definitions/srl_flex-algo:flexible-algorithm-definition/srl_flex-algo:flex-algo-id";
+      }
+    }
+  }
+
+  grouping flex-algo-sids {
+    description
+      "Flexible Algorithms SID configurations for ISIS";
+    container ipv4-node-sid {
+      presence "Enable the ipv4-node-sid context";
+      description
+        "Enable the ipv4-node-sid context";
+      leaf index {
+        description
+          "Node SID index for this interface";
+        type uint32 {
+          range "0..1048575";
+        }
+        must '(current() <= ((/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../global-block/label-range]/srl_nokia-mplslbl:end-label) - (/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../global-block/label-range]/srl_nokia-mplslbl:start-label)))' {
+          error-message "Label index is out of global label block's range";
+        }
+      }
+    }
+    container ipv6-node-sid {
+      presence "Enable the ipv6-node-sid context";
+      description
+        "Enable the ipv6-node-sid context";
+      leaf index {
+        description
+          "Node SID index for this interface";
+        type uint32 {
+          range "0..1048575";
+        }
+        must '(current() <= ((/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../global-block/label-range]/srl_nokia-mplslbl:end-label) - (/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../global-block/label-range]/srl_nokia-mplslbl:start-label)))' {
+          error-message "Label index is out of global label block's range";
+        }
+      }
+    }
+  }
+
+  grouping flex-algo-mpls-shared-sid-top {
+    description
+      "Flexible Algorithms configurations for ISIS";
+    list flex-algo {
+      description
+        "List of Flexible Algorithms associated with this node";
+      key "flex-algo-id";
+      max-elements 7;
+      uses flex-algo-id-key;
+      uses flex-algo-sids;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:local-prefix-sid" {
+    if-feature "srl_nokia-feat:flex-algo-common";
+    uses flex-algo-mpls-shared-sid-top;
+  }
+}

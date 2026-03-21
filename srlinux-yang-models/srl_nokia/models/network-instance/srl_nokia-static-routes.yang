@@ -1,0 +1,481 @@
+module srl_nokia-static-routes {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:static-route:static-routes";
+  prefix srl_nokia-static-routes;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-next-hop-groups {
+    prefix srl_nokia-nhg;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-routing-pol;
+  }
+  import srl_nokia-policy-types {
+    prefix srl_nokia-pol-types;
+  }
+  import srl_nokia-group-based-policy {
+    prefix srl_nokia-gbp;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file gives a description of static route configuration.";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping static-route-top {
+    container static-routes {
+      presence "Configure Static Routes";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        must "current() = 'enable'" {
+          error-message "Static routes admin-state cannot be disabled";
+        }
+      }
+      list route {
+        max-elements 16384;
+        key "prefix";
+        leaf prefix {
+          must "not(../../../srl_nokia-netinst:type = 'srl_nokia-netinst:host')" {
+            error-message "Static route configuration not valid in network instance of type host";
+          }
+          type srl_nokia-comm:ip-prefix;
+        }
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default "enable";
+          description
+            "Administratively enable or disable the static route.";
+        }
+        leaf metric {
+          type uint32;
+          default "1";
+          description
+            "IGP metric of the static route.";
+        }
+        leaf preference {
+          type uint8 {
+            range "0..255";
+          }
+          default "5";
+          description
+            "Route preference with lower values indicating a higher degree of preference.";
+        }
+        choice next-hop-group-type {
+          case legacy-nhg {
+            leaf next-hop-group {
+              type leafref {
+                path "../../../srl_nokia-nhg:next-hop-groups/srl_nokia-nhg:group/srl_nokia-nhg:name";
+              }
+            }
+          }
+          case new-nhg {
+            if-feature "srl_nokia-feat:static-nhg-nh-reference";
+            leaf static-next-hop-group {
+              type leafref {
+                path "../../../srl_nokia-static-routes:static/srl_nokia-static-routes:next-hop-group/srl_nokia-static-routes:name";
+              }
+            }
+          }
+        }
+        leaf tag-set {
+          if-feature "srl_nokia-feat:internal-tags and srl_nokia-feat:static-route-tag-set";
+          description
+            "Tag set to associate with the static route";
+          type leafref {
+            path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+          }
+        }
+        leaf tag-value {
+          if-feature "srl_nokia-feat:static-route-tag-value";
+          description
+            "Tag value to associate with the static route";
+          type srl_nokia-pol-types:tag-type;
+          must 'not(../tag-set)' {
+            error-message "tag-value and tag-set are mutually exclusive";
+          }
+          must "not(re-match(string(.), '[0:]+'))" {
+            error-message "tag-value must be non-zero";
+          }
+        }
+        leaf installed {
+          config false;
+          type boolean;
+          description
+            "If set to true, this indicates that the static route was installed into the datapath. If this is false then there are 3 possible reasons:
+             (a) the admin-state is disable
+             (b) there is another IP route for the same prefix that has a superior preference
+             (c) the next-hop-group has no resolvable next-hops";
+        }
+        container group-based-policy {
+          description
+            "Micro Segmentation Group Based Policy associations for the static route";
+          if-feature "srl_nokia-feat:static-route-group-based-policy";
+          leaf-list group {
+            description
+              "List of groups associated to the the static route";
+            max-elements 1;
+            type leafref {
+              path "../../../../srl_nokia-gbp:group-based-policy/srl_nokia-gbp:group/srl_nokia-gbp:name";
+            }
+          }
+        }
+        container follow {
+          if-feature "srl_nokia-feat:static-route-group-based-policy";
+          leaf next-longest {
+            description
+              "Let the static route inherit the forwarding behaviour of a parent route already present in the route-table of the same network-instance.
+
+               When set to true, the route-table of the same network instance gets searched for the longest‑matching route with a shorter prefix and the static-route gets installed with that route's forwarding information. If no such longest-matching route can be found, this static-route is not installed.";
+            type boolean;
+            default "false";
+            must 'not (. and ../../next-hop-group)' {
+              error-message "next-longest cannot be enabled with a next-hop-group";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  grouping static-nhg-nh-top {
+    container static {
+      presence "Configure static NHGs and static NHs";
+      list next-hop-group {
+        key "name";
+        description
+          "List of user defined next-hop-groups
+
+           Each next-hop-group references a list of next-hops specifying where packets should be forwarded, plus any packet header modifications. Static routes and policy-forwarding actions can reference a next-hop-group.";
+        leaf name {
+          type srl_nokia-comm:name;
+          description
+            "A user defined name that uniquely identifies the next-hop-group";
+          must 'not(../../../srl_nokia-nhg:next-hop-groups/srl_nokia-nhg:group[srl_nokia-nhg:name = current()])' {
+            error-message "Cannot create a /network-instance/static/next-hop-group and a /network-instance/next-hop-groups/group with the same name inside the same network-instance";
+          }
+        }
+        leaf backup-next-hop-group {
+          if-feature "srl_nokia-feat:static-next-hop-group-backup";
+          type leafref {
+            path "/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../srl_nokia-netinst:name]/static/next-hop-group/name";
+          }
+          description
+            "The backup next-hop-group for the current group";
+          must 'not(. = ../name)' {
+            error-message "NHG cannot be its own backup NHG";
+          }
+          must 'not(current()/../../next-hop-group[name = current()]/backup-next-hop-group)' {
+            error-message "backup NHG cannot itself have a backup NHG";
+          }
+        }
+        list next-hop {
+          key "index";
+          description
+            "An individual next-hop within the next-hop-group
+
+             Each next-hop is a reference to an entry within the next-hop list.";
+          leaf index {
+            type leafref {
+              path "../../../next-hop/index";
+            }
+            description
+              "A reference to the identifier for the next-hop";
+          }
+        }
+      }
+      list next-hop {
+        key "index";
+        description
+          "A statically defined next-hop associated with the network instance";
+        leaf index {
+          type uint64;
+          description
+            "A user-specified number to uniquely identify a next-hop entry in the network-instance";
+        }
+        choice next-hop-type {
+          case ip-address {
+            leaf ip-address {
+              type srl_nokia-comm:ip-address-with-zone;
+              description
+                "For packets sent to this next-hop, forward them towards the specified IPv4 or IPv6 address
+
+                 If the IPv6 address is a link-local address then the zoned format must be used.";
+            }
+            leaf resolve {
+              type boolean;
+              default "true";
+              must 'not(. and re-match(../ip-address, "[^%]+%[^%]+"))' {
+                error-message "resolve should be set to false when ../ip-address is link-local.";
+              }
+              description
+                "When set to true, the router is allowed to use any route to resolve the nexthop address to an outgoing interface
+
+                 When set to false the router is only allowed to use a local route to resolve the next-hop address.";
+            }
+          }
+          case drop {
+            leaf drop {
+              type empty;
+              description
+                "Drop packets sent to this next-hop";
+            }
+          }
+          case local-link {
+            container local-link {
+              presence "For paclets sent to this next-hop, forward them on the specified unnumbered interface";
+              container interface-ref {
+                description
+                  "Reference to the subinterface used for an unnumbered IP next-hop";
+                leaf interface {
+                  type leafref {
+                    path "/srl_nokia-if:interface/srl_nokia-if:name";
+                  }
+                  description
+                    "Reference to a base interface, for example a port or LAG";
+                  must '../subinterface >= 0' {
+                    error-message "subinterface must be configured when interface is set";
+                  }
+                  must "not(starts-with(.,'lo'))" {
+                    error-message "Loopback interfaces cannot be configured as a next-hop";
+                  }
+                  must "not(starts-with(.,'system'))" {
+                    error-message "System interfaces cannot be configured as a next-hop";
+                  }
+                }
+                leaf subinterface {
+                  type leafref {
+                    path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+                  }
+                  description
+                    "Reference to a subinterface
+
+                     This requires the base interface to be specified using the interface leaf in this container.";
+                  must '../interface' {
+                    error-message "interface must be configured when subinterface is set";
+                  }
+                  must '/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface[srl_nokia-if:index=current()]/srl_nokia-if:ipv4/srl_nokia-if:unnumbered/srl_nokia-if:admin-state = "enable"' {
+                    error-message "subinterface must be configured to operate in unnumbered mode for IPv4";
+                  }
+                }
+              }
+            }
+          }
+        }
+        container failure-detection {
+          if-feature "srl_nokia-feat:bfd";
+          container enable-bfd {
+            if-feature "srl_nokia-feat:bfd or srl_nokia-feat:static-next-hop-cpe";
+            presence "Enable BFD for this next hop";
+            must '../../ip-address' {
+              error-message "BFD requires the next-hop to have ip-address configured";
+            }
+            leaf local-address {
+              type srl_nokia-comm:ip-address;
+              description
+                "The local address to be used for the associated BFD session";
+              mandatory true;
+              must 'not(../../../ip-address) or (contains(../../../ip-address, ":") = contains(., ":"))' {
+                error-message "BFD requires local-address to be of same ip-version as the next-hop's ip-address";
+              }
+              must 're-match(../../../ip-address, "[fF][eE][89abAB][0-9a-fA-F]:.*") = re-match(., "[fF][eE][89abAB][0-9a-fA-F]:.*")' {
+                error-message "Both BFD local-address and next-hop IP address must either be IPv6 link-local addresses or neither should be an IPv6 link-local address";
+              }
+            }
+            leaf local-discriminator {
+              type uint32 {
+                range "1..16384";
+              }
+              must '../remote-discriminator' {
+                error-message "Cannot configure local-discriminator without remote-discriminator";
+              }
+              description
+                "The local discriminator to be used for the associated BFD session";
+            }
+            leaf remote-discriminator {
+              type uint32 {
+                range "1..16384";
+              }
+              must '../local-discriminator' {
+                error-message "Cannot configure remote-discriminator without local-discriminator";
+              }
+              description
+                "The remote discriminator to be used for the associated BFD session";
+            }
+          }
+          container cpe-check {
+            if-feature "srl_nokia-feat:static-next-hop-cpe";
+            presence "Enable CPE Check for this next hop";
+            must '../../ip-address' {
+              error-message "CPE Check requires the next-hop to have ip-address configured";
+            }
+            leaf interval {
+              type uint8 {
+                range "1..255";
+              }
+              default "1";
+              description
+                "Interval in seconds between CPE Check probes";
+            }
+            leaf drop-threshold {
+              type uint8 {
+                range "1..255";
+              }
+              default "3";
+              description
+                "Number of consecutive missed CPE Check probes before considering the next-hop as down";
+            }
+            leaf logging {
+              type boolean;
+              default "false";
+              description
+                "Enable logging of CPE Check state changes for this next-hop";
+            }
+            leaf padding {
+              type uint32 {
+                range "0..16384";
+              }
+              default "0";
+              description
+                "Number of padding bytes to add to each CPE Check probe packet";
+            }
+          }
+        }
+        list encap-header {
+          if-feature "srl_nokia-feat:static-nhg-udp-tunnel";
+          max-elements 1;
+          description
+            "The list of headers added on top of a packet ordered by the index value
+
+             The innermost header, adjacent to the original packet, has the lowest index value.  Additional headers are ordered by ascending index value. For example, for MPLS in UDPv4 encapsulatuon, the lowest index corresponds to the MPLS header and the higher index corresponds to the UDPv4 header.";
+          key "index";
+          leaf index {
+            type uint8;
+            description
+              "Index indicating the relative order of an encapsulation header";
+          }
+          leaf type {
+            type srl_nokia-comm:encapsulation-header-type;
+            description
+              "Defines which type of packet header should be added";
+            must ". = 'udp-v4'" {
+              error-message "only UDP-V4 is supported";
+            }
+            must "not((. = 'udp-v4') and ../../failure-detection/enable-bfd)" {
+              error-message "BFD not supported for next-hops with UDP encapsulation";
+            }
+            must "not((. = 'udp-v4') and (not(../udp-v4/source-ip) or not(../udp-v4/destination-ip) or not(../udp-v4/ip-ttl)))" {
+              error-message "at least ../udp-v4/source-ip, ../udp-v4/destination-ip and ../udp-v4/ip-ttl must be configured for udp-v4 encapsulation";
+            }
+            must "not((. = 'udp-v4') and (../../ip-address or ../../drop or ../../local-link/interface-ref/interface))" {
+              error-message "udp-v4 encapsulation cannot be combined with next-hop ip-address, drop or local-link";
+            }
+            must "not((. = 'udp-v4') and not(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default'))" {
+              error-message "udp-v4 encapsulation only supported on default network instance";
+            }
+          }
+          container udp-v4 {
+            when "../type = 'udp-v4'";
+            description
+              "Container of nodes for UDP in IPv4 encapsulation
+
+               When this container is used, an IPv4 header with a UDP header is added to the encapsulation list.";
+            leaf source-ip {
+              type srl_nokia-comm:ipv4-address-unicast;
+              must '../../type = "udp-v4"' {
+                error-message "only relevant for udp-v4 encapsulation";
+              }
+              description
+                "The source IPv4 address for IP/UDP encapsulation";
+            }
+            leaf destination-ip {
+              type srl_nokia-comm:ipv4-address-unicast;
+              must '../../type = "udp-v4"' {
+                error-message "only relevant for udp-v4 encapsulation";
+              }
+              description
+                "Destination IPv4 address for IP/UDP encapsulation";
+            }
+            leaf destination-udp-port {
+              type srl_nokia-comm:port-number {
+                range "6080";
+              }
+              default "6080";
+              description
+                "Destination UDP port number to use for the UDP header of the encapsulated
+                 packet
+
+                 When the payload packet is MPLS, then RFC 7510 - Encapsulating MPLS
+                 in UDP should be followed.";
+            }
+            leaf ip-ttl {
+              type uint8 {
+                range "1..255";
+              }
+              must '../../type = "udp-v4"' {
+                error-message "only relevant for udp-v4 encapsulation";
+              }
+              description
+                "Initial IP TTL value that is used in the outer header during packet encapsulation
+
+                 When this leaf is not set, the TTL value of the inner packet is copied over as the
+                 outer packet's IP TTL value during encapsulation.";
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses static-route-top;
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    if-feature "srl_nokia-feat:static-nhg-nh-reference";
+    uses static-nhg-nh-top;
+  }
+}

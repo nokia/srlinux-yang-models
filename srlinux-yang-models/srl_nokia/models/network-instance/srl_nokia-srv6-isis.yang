@@ -1,0 +1,787 @@
+module srl_nokia-srv6-isis {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:srv6:srv6-isis";
+  prefix srl_nokia-srv6-isis;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-isis {
+    prefix srl_nokia-isis;
+  }
+  import srl_nokia-isis-types {
+    prefix srl_nokia-isis-types;
+  }
+  import srl_nokia-isis-lsdb-types {
+    prefix srl_nokia-isis-lsdb-types;
+  }
+  import srl_nokia-isis-lsdb {
+    prefix srl_nokia-isis-lsdb;
+  }
+  import srl_nokia-srv6 {
+    prefix srl_nokia-srv6;
+  }
+  import srl_nokia-srv6-types {
+    prefix srl_nokia-srv6-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG file covers the segment routing v6 enhancements to ISIS";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  grouping srv6-isis {
+    container srv6 {
+      description
+        "Enter the srv6 context";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Administrative state of Segment Routing with IPv6";
+        must "(. = 'disable') or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+          error-message "SRv6 is supported only in the default network instance";
+        }
+      }
+      leaf adj-sid-hold {
+        type union {
+          type enumeration {
+            enum none;
+          }
+          type uint16 {
+            range "1..300";
+          }
+        }
+        units "seconds";
+        default "15";
+        description
+          "Adjacency SID hold time that is applicable to dynamically allocated adjacency SIDs";
+      }
+      list locator {
+        key "locator-name";
+        max-elements 8;
+        description
+          "Enter the locator list instance";
+        leaf locator-name {
+          type leafref {
+            path "/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator/srl_nokia-srv6:locator-name";
+          }
+          description
+            "Locator name";
+        }
+        leaf level-capability {
+          type srl_nokia-isis-types:isis-level;
+          description
+            "IS-IS routing level capability";
+        }
+        leaf tag {
+          type uint32 {
+            range "1..max";
+          }
+          description
+            "Route tag to advertise in the locator";
+        }
+        container multi-topology {
+          description
+            "Enter the multi-topology context";
+          leaf multi-topology-0 {
+            type boolean;
+            default "true";
+            must "((../multi-topology-0 = true() ) and (../multi-topology-2 = false() )) or
+                  ((../multi-topology-0 = false() ) and (../multi-topology-2 = true() ))" {
+              error-message "multi-topology-0 or multi-topology-2 must be supported";
+            }
+            description
+              "Support standard topology (MT0)";
+          }
+          leaf multi-topology-2 {
+            type boolean;
+            default "false";
+            description
+              "Support IPv6 routing topology (MT2)";
+          }
+        }
+        list level {
+          key "level-number";
+          max-elements 2;
+          description
+            "Enter the level list instance";
+          leaf level-number {
+            type srl_nokia-isis-types:isis-level-number;
+            description
+              "ISIS protocol level number";
+          }
+          leaf metric {
+            type srl_nokia-isis-types:isis-wide-metric;
+            description
+              "IS-IS metric to advertise in the locator level list";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:segment-routing" {
+    uses srv6-isis;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  grouping srv6-lfa {
+    leaf max-srv6-lfa-sids {
+      description
+        "Maximum number of SIDs the TI-LFA backup path can use";
+      type uint32 {
+        range "0..3";
+      }
+      default "1";
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:loopfree-alternate/srl_nokia-isis:ti-lfa" {
+    uses srv6-lfa;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  grouping srv6-isis-lsdb-router-capability {
+    container srv6-capabilities {
+      when "../srl_nokia-isis:type = 'srl_nokia-srv6-types:router-capability-srv6-capabilities'";
+      description
+        "This container defines SR Capability sub-TLV 25";
+      leaf-list flags {
+        type enumeration {
+          enum oam {
+            description
+              "If set, the router supports use of the O-bit in the SRH, as defined in RFC 9259";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:level/srl_nokia-isis:link-state-database/srl_nokia-isis:lsp/srl_nokia-isis:tlvs/srl_nokia-isis:tlv/srl_nokia-isis:router-capabilities/srl_nokia-isis:capability/srl_nokia-isis:subtlvs/srl_nokia-isis:subtlv" {
+    uses srv6-isis-lsdb-router-capability;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  grouping srv6-isis-lsdb-node-msds {
+    leaf-list msl-msd {
+      type uint16;
+      description
+        "Maximum Segments Left (MLS) MSD Type, is defined to advertise
+         the maximum value of the Segments Left field [RFC8754] in the SRH of a received packet
+         before applying the Endpoint behavior associated with a SID";
+    }
+    leaf-list mep-msd {
+      type uint16;
+      description
+        "Maximum End Pop (MEP) MSD Type, is defined to advertise
+         the maximum number of SIDs in the SRH to which the router can apply
+         Penultimate Segment Pop (PSP) of the SRH or Ultimate Segment Pop (USP)
+         of the SRH behavior, as defined in Flavors (Section 4.16 of [RFC8986])";
+    }
+    leaf-list mhe-msd {
+      type uint16;
+      description
+        "Maximum H.Encaps (MHE) MSD Type, is defined to advertise
+         the maximum number of SIDs that can be added to the segment list
+         of an SRH as part of the H.Encaps behavior, as defined in [RFC8986]";
+    }
+    leaf-list med-msd {
+      type uint16;
+      description
+        "Maximum End D (MED) MSD Type, is defined to advertise
+         the maximum number of SIDs present in an SRH when performing decapsulation";
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:level/srl_nokia-isis:link-state-database/srl_nokia-isis:lsp/srl_nokia-isis:tlvs/srl_nokia-isis:tlv/srl_nokia-isis:router-capabilities/srl_nokia-isis:capability/srl_nokia-isis:subtlvs/srl_nokia-isis:subtlv/srl_nokia-isis:node-msds" {
+    uses srv6-isis-lsdb-node-msds;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  grouping srv6-isis-lsdb-tlv-27 {
+    container srv6-locator {
+      when "../srl_nokia-isis:type = 'srl_nokia-srv6-types:srv6-locator'";
+      description
+        "This container defines the list of SRv6 Locator TLVs";
+      container locators {
+        description
+          "This container describes SRv6 Locators";
+        list locator {
+          key "prefix mtid";
+          description
+            "This list describes SRv6 Locator attributes";
+          leaf prefix {
+            type srl_nokia-comm:ipv6-prefix-unicast;
+            description
+              "The IPv6 prefix of the locator";
+          }
+          leaf algorithm {
+            type uint8 {
+              range "0|128..255";
+            }
+            description
+              "The value indicates the algorithm related to the Locator";
+          }
+          leaf-list flags {
+            type enumeration {
+              enum down {
+                description
+                  "The Locator has been leaked from Level-2 to Level-1 (only downwards, not upwards to prevent looping)";
+              }
+            }
+            description
+              "The flags advertised in the SRv6 Locator TLV";
+          }
+          leaf metric {
+            type uint32;
+            description
+              "rfc5305";
+          }
+          leaf mtid {
+            type uint16;
+            description
+              "The value specifies the multi-topology id number for the locator.
+
+               If multi-topology is not supported for the locator then
+               the value should be 0";
+          }
+          container subtlvs {
+            description
+              "This container describes sub-TLVs of the SRv6 Locator TLV";
+            list subtlv {
+              key "type";
+              description
+                "List of sub-TLV types in the LSDB for the specified TLV";
+              leaf type {
+                type identityref {
+                  base srl_nokia-isis-lsdb-types:isis-subtlv-type;
+                }
+                description
+                  "The type of sub-TLV being described. The type of sub-TLV is expressed as a canonical name";
+              }
+              uses srl_nokia-isis-lsdb:isis-lsdb-prefix-reach-subtlv-tag;
+              uses srl_nokia-isis-lsdb:isis-lsdb-prefix-reach-subtlv-tag64;
+              uses srl_nokia-isis-lsdb:isis-lsdb-prefix-reach-subtlv-flags;
+              uses srl_nokia-isis-lsdb:isis-lsdb-prefix-reach-subtlv-ipv4-source-router-id;
+              uses srl_nokia-isis-lsdb:isis-lsdb-prefix-reach-subtlv-ipv6-source-router-id;
+              uses srv6-isis-lsdb-end-sid;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:level/srl_nokia-isis:link-state-database/srl_nokia-isis:lsp/srl_nokia-isis:tlvs/srl_nokia-isis:tlv" {
+    uses srv6-isis-lsdb-tlv-27;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  grouping srv6-isis-lsdb-end-sid {
+    container srv6-end-sids {
+      when "../type = 'srl_nokia-srv6-types:srv6-end-sid'";
+      description
+        "This container defines segment routing v6 extensions for prefixes";
+      list srv6-end-sid {
+        key "address";
+        description
+          "END SID list. IGP-Prefix Segment is an IGP segment attached to an IGP prefix. An IGP-Prefix Segment is global (unless explicitly advertised otherwise) within the SR/IGP domain";
+        leaf address {
+          type srl_nokia-comm:ipv6-address;
+          description
+            "IGP END SID IPv6 address";
+        }
+        leaf behavior {
+          description
+            "The endpoint behavior of the SRv6 End SID";
+          type enumeration {
+            enum end {
+              value 1;
+              description
+                "Endpoint";
+            }
+            enum end-psp {
+              value 2;
+              description
+                "Endpoint with PSP flavor";
+            }
+            enum end-usp {
+              value 3;
+              description
+                "Endpoint with USP flavor";
+            }
+            enum end-psp-usp {
+              value 4;
+              description
+                "Endpoint with PSP and USP flavors";
+            }
+            enum end-usd {
+              value 28;
+              description
+                "Endpoint with USD flavor";
+            }
+            enum end-psp-usd {
+              value 29;
+              description
+                "Endpoint with PSP and USD flavors";
+            }
+            enum end-usp-usd {
+              value 30;
+              description
+                "Endpoint with USP and USD flavors";
+            }
+            enum end-psp-usp-usd {
+              value 31;
+              description
+                "Endpoint with PSP, USP and USD flavors";
+            }
+            enum un-only {
+              value 42;
+              description
+                "Endpoint with NEXT-ONLY-CSID flavor";
+            }
+            enum un {
+              value 43;
+              description
+                "Endpoint with NEXT-CSID flavor";
+            }
+            enum un-psp {
+              value 44;
+              description
+                "Endpoint with NEXT-CSID and PSP flavors";
+            }
+            enum un-usp {
+              value 45;
+              description
+                "Endpoint with NEXT-CSID and USP flavors";
+            }
+            enum un-psp-usp {
+              value 46;
+              description
+                "Endpoint with NEXT-CSID and PSP and USP flavors";
+            }
+            enum un-usd {
+              value 47;
+              description
+                "Endpoint with NEXT-CSID and USD flavors";
+            }
+            enum un-psp-usd {
+              value 48;
+              description
+                "Endpoint with NEXT-CSID and PSP and USD flavors";
+            }
+            enum un-usp-usd {
+              value 49;
+              description
+                "Endpoint with NEXT-CSID and USP and USD flavors";
+            }
+            enum un-psp-usp-usd {
+              value 50;
+              description
+                "Endpoint with NEXT-CSID and PSP, USP and USD flavors";
+            }
+          }
+        }
+        container sub-sub-tlvs {
+          description
+            "This container describes sub-sub-TLVs of SRv6 End SID sub-TLV";
+          list sub-sub-tlv {
+            key "type";
+            description
+              "List of sub-sub-TLVs types in the LSDB for the specified sub-TLV";
+            leaf type {
+              type identityref {
+                base srl_nokia-isis-lsdb-types:isis-subsubtlv-type;
+              }
+              description
+                "The type of sub-sub-TLV being described. The type of sub-sub-TLV is expressed as a canonical name";
+            }
+            uses srv6-sid-structure-subsubtlv;
+          }
+        }
+      }
+    }
+  }
+
+  grouping srv6-sid-structure-subsubtlv {
+    container srv6-sid-structure {
+      when "../type = 'srl_nokia-srv6-types:srv6-sid-structure-isis'";
+      description
+        "This container describes sub-sub-TLV 1";
+      leaf block-length {
+        type uint8;
+        description
+          "The length of the block part of the SRv6 SID";
+      }
+      leaf node-length {
+        type uint8;
+        description
+          "The length of the node part of the SRv6 SID";
+      }
+      leaf function-length {
+        type uint8;
+        description
+          "The length of the function part of the SRv6 SID";
+      }
+      leaf argument-length {
+        type uint8;
+        description
+          "The length of the argument part of the SRv6 SID";
+      }
+    }
+  }
+
+  grouping srv6-isis-lsdb-adj-sids {
+    container srv6-adjacency-sids {
+      when "../srl_nokia-isis:type = 'srl_nokia-srv6-types:srv6-adj-sid'";
+      description
+        "This container defines segment routing v6 Adjacency SIDs";
+      list srv6-adjacency-sid {
+        key "address";
+        description
+          "SRv6 Adjacency SID (END.X) List. An IGP-Adjacency Segment is an IGP segment attached to a unidirectional adjacency or a set of unidirectional adjacencies. By default, an IGP- Adjacency Segment is local to the node which advertises it";
+        leaf address {
+          type srl_nokia-comm:ipv6-address;
+          description
+            "SRv6 Adjacency SID (END.X) address";
+        }
+        leaf algorithm {
+          type uint8;
+          description
+            "The value indicates the algorithm related to the SRv6 Adj-SID";
+        }
+        leaf behavior {
+          description
+            "The endpoint behavior of the SRv6 Adj-SID";
+          type enumeration {
+            enum end-x {
+              value 5;
+              description
+                "Endpoint L3 cross-connect";
+            }
+            enum end-x-psp {
+              value 6;
+              description
+                "Endpoint L3 cross-connect with PSP flavor";
+            }
+            enum end-x-usp {
+              value 7;
+              description
+                "Endpoint L3 cross-connect with USP flavor";
+            }
+            enum end-x-psp-usp {
+              value 8;
+              description
+                "Endpoint L3 cross-connect with PSP and USP flavors";
+            }
+            enum end-x-usd {
+              value 32;
+              description
+                "Endpoint L3 cross-connect with USD flavor";
+            }
+            enum end-x-psp-usd {
+              value 33;
+              description
+                "Endpoint L3 cross-connect with PSP and USD flavors";
+            }
+            enum end-x-usp-usd {
+              value 34;
+              description
+                "Endpoint L3 cross-connect with USP and USD flavors";
+            }
+            enum end-x-psp-usp-usd {
+              value 35;
+              description
+                "Endpoint L3 cross-connect with PSP, USP and USD flavors";
+            }
+            enum ua-only {
+              value 51;
+              description
+                "Endpoint L3 cross-connect with NEXT-ONLY-CSID flavor";
+            }
+            enum ua {
+              value 52;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID flavor";
+            }
+            enum ua-psp {
+              value 53;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP flavors";
+            }
+            enum ua-usp {
+              value 54;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and USP flavors";
+            }
+            enum ua-psp-usp {
+              value 55;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP and USP flavors";
+            }
+            enum ua-usd {
+              value 56;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and USD flavor";
+            }
+            enum ua-psp-usd {
+              value 57;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP and USD flavors";
+            }
+            enum ua-usp-usd {
+              value 58;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and USP and USD flavors";
+            }
+            enum ua-psp-usp-usd {
+              value 59;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP, USP, and USD flavors";
+            }
+          }
+        }
+        leaf-list flags {
+          type enumeration {
+            enum backup {
+              description
+                "Backup flag. When set, the END.X SID refers to an adjacency being protected (e.g.: using TILFA)";
+            }
+            enum set {
+              description
+                "Set flag. When set, the S-Flag indicates that the END.X SID refers to a set of adjacencies";
+            }
+            enum persistent {
+              description
+                "Persistent flag. When set, the S-Flag indicates that the END.X SID is persistently allocated,
+                 i.e., the SID value remains consistent across router restart and/or interface flap";
+            }
+          }
+          description
+            "Flags associated with SRv6 Adj-SID";
+        }
+        leaf weight {
+          type uint8;
+          description
+            "Value that represents the weight of the SRv6 Adj-SID for the purpose of load balancing";
+        }
+        container sub-sub-tlvs {
+          description
+            "This container describes sub-sub-TLVs of SRv6 Adj-SID sub-TLV";
+          list sub-sub-tlv {
+            key "type";
+            description
+              "List of sub-sub-TLVs types in the LSDB for the specified sub-TLV";
+            leaf type {
+              type identityref {
+                base srl_nokia-isis-lsdb-types:isis-subsubtlv-type;
+              }
+              description
+                "The type of sub-sub-TLV being described. The type of sub-sub-TLV is expressed as a canonical name";
+            }
+            uses srv6-sid-structure-subsubtlv;
+          }
+        }
+      }
+    }
+    container srv6-lan-adjacency-sids {
+      when "../srl_nokia-isis:type = 'srl_nokia-srv6-types:srv6-adj-lan-sid'";
+      description
+        "This container defines segment routing v6 LAN Adjacency SIDs";
+      list srv6-lan-adjacency-sid {
+        key "address";
+        description
+          "SRv6 LAN Adjacency SID (LAN END.X) List. An IGP-Adjacency Segment is an IGP segment attached to a unidirectional adjacency or a set of unidirectional adjacencies. By default, an IGP-Adjacency Segment is local to the node which advertises it";
+        leaf address {
+          type srl_nokia-comm:ipv6-address;
+          description
+            "SRv6 LAN Adjacency SID (LAN END.X) address";
+        }
+        leaf algorithm {
+          type uint8;
+          description
+            "The value indicates the algorithm related to the SRv6 Adj-SID";
+        }
+        leaf behavior {
+          description
+            "The endpoint behavior of the SRv6 LAN Adj-SID";
+          type enumeration {
+            enum end-x {
+              value 5;
+              description
+                "Endpoint L3 cross-connect";
+            }
+            enum end-x-psp {
+              value 6;
+              description
+                "Endpoint L3 cross-connect with PSP flavor";
+            }
+            enum end-x-usp {
+              value 7;
+              description
+                "Endpoint L3 cross-connect with USP flavor";
+            }
+            enum end-x-psp-usp {
+              value 8;
+              description
+                "Endpoint L3 cross-connect with PSP and USP flavors";
+            }
+            enum end-x-usd {
+              value 32;
+              description
+                "Endpoint L3 cross-connect with USD flavor";
+            }
+            enum end-x-psp-usd {
+              value 33;
+              description
+                "Endpoint L3 cross-connect with PSP and USD flavors";
+            }
+            enum end-x-usp-usd {
+              value 34;
+              description
+                "Endpoint L3 cross-connect with USP and USD flavors";
+            }
+            enum end-x-psp-usp-usd {
+              value 35;
+              description
+                "Endpoint L3 cross-connect with PSP, USP and USD flavors";
+            }
+            enum ua-only {
+              value 51;
+              description
+                "Endpoint L3 cross-connect with NEXT-ONLY-CSID flavor";
+            }
+            enum ua {
+              value 52;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID flavor";
+            }
+            enum ua-psp {
+              value 53;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP flavors";
+            }
+            enum ua-usp {
+              value 54;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and USP flavors";
+            }
+            enum ua-psp-usp {
+              value 55;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP and USP flavors";
+            }
+            enum ua-usd {
+              value 56;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and USD flavor";
+            }
+            enum ua-psp-usd {
+              value 57;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP and USD flavors";
+            }
+            enum ua-usp-usd {
+              value 58;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and USP and USD flavors";
+            }
+            enum ua-psp-usp-usd {
+              value 59;
+              description
+                "Endpoint L3 cross-connect with NEXT-CSID and PSP, USP, and USD flavors";
+            }
+          }
+        }
+        leaf-list flags {
+          type enumeration {
+            enum backup {
+              description
+                "Backup flag. When set, the END.X SID refers to an adjacency being protected (e.g.: using TILFA)";
+            }
+            enum set {
+              description
+                "Set flag. When set, the S-Flag indicates that the END.X SID refers to a set of adjacencies";
+            }
+            enum persistent {
+              description
+                "Set flag. When set, the S-Flag indicates that the END.X SID is persistently allocated,
+                 i.e., the SID value remains consistent across router restart and/or interface flap";
+            }
+          }
+          description
+            "Flags associated with LAN-Adj-Segment-ID";
+        }
+        leaf neighbor-id {
+          type srl_nokia-comm:isis-system-id;
+          description
+            "System ID of the neighbor associated with the LAN-Adj-Segment-ID value";
+        }
+        leaf weight {
+          type uint8;
+          description
+            "Value that represents the weight of the Adj-SID for the purpose of load balancing";
+        }
+        container sub-sub-tlvs {
+          description
+            "This container describes sub-sub-TLVs of SRv6 LAN Adjacency SID sub-TLV";
+          list sub-sub-tlv {
+            key "type";
+            description
+              "List of sub-sub-TLVs types in the LSDB for the specified sub-TLV";
+            leaf type {
+              type identityref {
+                base srl_nokia-isis-lsdb-types:isis-subsubtlv-type;
+              }
+              description
+                "The type of sub-sub-TLV being described. The type of sub-sub-TLV is expressed as a canonical name";
+            }
+            uses srv6-sid-structure-subsubtlv;
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:level/srl_nokia-isis:link-state-database/srl_nokia-isis:lsp/srl_nokia-isis:tlvs/srl_nokia-isis:tlv/srl_nokia-isis:extended-is-reachability/srl_nokia-isis:neighbors/srl_nokia-isis:neighbor/srl_nokia-isis:instances/srl_nokia-isis:instance/srl_nokia-isis:subtlvs/srl_nokia-isis:subtlv" {
+    uses srv6-isis-lsdb-adj-sids;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:level/srl_nokia-isis:link-state-database/srl_nokia-isis:lsp/srl_nokia-isis:tlvs/srl_nokia-isis:tlv/srl_nokia-isis:isis-neighbor-attribute/srl_nokia-isis:neighbors/srl_nokia-isis:neighbor/srl_nokia-isis:instances/srl_nokia-isis:instance/srl_nokia-isis:subtlvs/srl_nokia-isis:subtlv" {
+    uses srv6-isis-lsdb-adj-sids;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:level/srl_nokia-isis:link-state-database/srl_nokia-isis:lsp/srl_nokia-isis:tlvs/srl_nokia-isis:tlv/srl_nokia-isis:mt-isn/srl_nokia-isis:neighbors/srl_nokia-isis:neighbor/srl_nokia-isis:instances/srl_nokia-isis:instance/srl_nokia-isis:subtlvs/srl_nokia-isis:subtlv" {
+    uses srv6-isis-lsdb-adj-sids;
+    if-feature "srl_nokia-feat:srv6";
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:level/srl_nokia-isis:link-state-database/srl_nokia-isis:lsp/srl_nokia-isis:tlvs/srl_nokia-isis:tlv/srl_nokia-isis:mt-isis-neighbor-attribute/srl_nokia-isis:neighbors/srl_nokia-isis:neighbor/srl_nokia-isis:instances/srl_nokia-isis:instance/srl_nokia-isis:subtlvs/srl_nokia-isis:subtlv" {
+    uses srv6-isis-lsdb-adj-sids;
+    if-feature "srl_nokia-feat:srv6";
+  }
+}

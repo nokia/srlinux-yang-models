@@ -1,0 +1,86 @@
+module srl_nokia-platform-oam {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-oam";
+  prefix srl_nokia-platform-oam;
+
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-platform-lc {
+    prefix srl_nokia-platform-lc;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational state related to OAM resources in the system";
+
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  grouping sat-generator-stream-resources {
+    leaf stream-total {
+      type uint8;
+      description
+        "Total generator streams supported";
+    }
+    leaf stream-allocated {
+      type uint8;
+      description
+        "Active generator streams in use";
+    }
+    leaf stream-free {
+      type uint8;
+      description
+        "Available generator streams";
+    }
+  }
+
+  grouping sat-generator-bandwidth-resources {
+    leaf bandwidth-total-kbps {
+      type uint32;
+      description
+        "Total generator bandwidth supported";
+      units "kbps";
+    }
+    leaf bandwidth-allocated-kbps {
+      type uint32;
+      description
+        "Active generator bandwidth in use";
+      units "kbps";
+    }
+    leaf bandwidth-free-kbps {
+      type uint32;
+      description
+        "Available generator bandwidth";
+      units "kbps";
+    }
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-lc:linecard/srl_nokia-platform-lc:forwarding-complex" {
+    if-feature "srl_nokia-feat:service-activation-testhead";
+    container oam {
+      config false;
+      description
+        "Enter the OAM context";
+      container resources {
+        description
+          "OAM resources usage and allocation";
+        container service-activation-testhead {
+          description
+            "Service activation generator stream and bandwidth resources";
+          uses sat-generator-stream-resources;
+          uses sat-generator-bandwidth-resources;
+        }
+      }
+    }
+  }
+}

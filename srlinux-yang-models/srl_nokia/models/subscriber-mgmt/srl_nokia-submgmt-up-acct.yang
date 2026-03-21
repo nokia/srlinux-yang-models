@@ -1,0 +1,104 @@
+module srl_nokia-submgmt-up-acct {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:submgmt:submgmt-up-acct";
+  prefix srl_nokia-submgmt-up-acct;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-submgmt {
+    prefix srl_nokia-submgmt;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+
+  typedef stats-aggregation-scope {
+    type enumeration {
+      enum specific-qids {
+        description
+          "Aggregate statistics for specific queue/policer IDs only";
+      }
+      enum all {
+        description
+          "Aggregate statistics for all queues/policers";
+      }
+      enum all-static {
+        description
+          "Aggregate statistics for all static queues/policers";
+      }
+      enum all-dynamic {
+        description
+          "Aggregate statistics for all dynamic queues/policers";
+      }
+    }
+    description
+      "Scope for statistics aggregation";
+  }
+
+  grouping stats-aggregator {
+    description
+      "Grouping for statistics aggregator configuration";
+    container aggregator {
+      description
+        "Configuration for statistics aggregation";
+      leaf ingress-queues-scope {
+        type stats-aggregation-scope;
+      }
+      leaf ingress-policers-scope {
+        type stats-aggregation-scope;
+      }
+      leaf egress-queues-scope {
+        type stats-aggregation-scope;
+      }
+      leaf egress-policers-scope {
+        type stats-aggregation-scope;
+      }
+      leaf-list queue-ids {
+        type uint8 {
+          range "0..255";
+        }
+        description
+          "List of queue/policer IDs to include in aggregated statistics.";
+      }
+    }
+  }
+
+  grouping custom-statistics-group-top {
+    description
+      "Grouping for custom statistics group list";
+    list custom-statistics-group {
+      key "name";
+      description
+        "List of custom statistics groups. Each group defines how statistics are aggregated
+         for a specific set of queues and policers";
+      leaf name {
+        type srl_nokia-comm:name;
+        description
+          "Name for the custom statistics group";
+      }
+      uses stats-aggregator;
+    }
+  }
+
+  augment "/srl_nokia-submgmt:subscriber-management/srl_nokia-submgmt:sla-profile" {
+    if-feature "srl-feat:submgmt-fpcx";
+    description
+      "Augment SLA profile with custom statistics groups configuration";
+    uses custom-statistics-group-top;
+  }
+}

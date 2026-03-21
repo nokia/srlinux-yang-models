@@ -1,0 +1,43 @@
+module srl_nokia-tools-interfaces-fhs-binding {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:fhs:tools-interfaces-fhs-binding";
+  prefix srl_nokia-tools-interfaces-fhs-binding;
+
+  import srl_nokia-tools-interfaces {
+    prefix srl_nokia_tools-if;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for interface fhs binding operational commands";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  grouping tools-interface-fhs-binding {
+    container fhs-binding {
+      presence "Clear FHS binding";
+      leaf clear {
+        type empty;
+      }
+    }
+  }
+
+  augment "/srl_nokia_tools-if:interface/srl_nokia_tools-if:subinterface" {
+    if-feature "srl-feat:ip-mac-binding";
+    uses tools-interface-fhs-binding;
+  }
+}

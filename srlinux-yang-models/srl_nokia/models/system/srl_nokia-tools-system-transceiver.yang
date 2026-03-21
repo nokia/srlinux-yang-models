@@ -1,0 +1,200 @@
+module srl_nokia-tools-system-transceiver {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:tools-interfaces-transceiver";
+  prefix srl_nokia-tools-transceiver;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for operational commands on transceivers";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  grouping tools-transceiver-top {
+    description
+      "Top-level grouping for transceiver tools";
+    container transceiver {
+      if-feature "srl_nokia-feat:transceiver-firmware-upgrade";
+      presence "Configure tools system transceiver";
+      description
+        "Tools related to transceivers";
+      container firmware {
+        description
+          "Tools related to transceiver firmware";
+        container transfer {
+          presence "Required due to mandatory statements";
+          description
+            "Initiate a transfer of a new image into one or more transceivers
+
+             Only one transfer operation can be active at a time.";
+          choice interface-or-all {
+            mandatory true;
+            case interface {
+              leaf-list interface {
+                min-elements 1;
+                max-elements 1;
+                description
+                  "The list of interfaces with transceivers to be included in the operation
+
+                   Current support restricts the list to a maximum of one interface.";
+                type srl_nokia-comm:name;
+              }
+            }
+            case all-interfaces {
+              if-feature "srl_nokia-feat:transceiver-firmware-upgrade-oif";
+              leaf all-interfaces {
+                type empty;
+              }
+            }
+          }
+          choice image-source {
+            mandatory true;
+            case file {
+              leaf file {
+                type srl_nokia-comm:local-file;
+                description
+                  "File containing an image
+
+                   This is used for a traditional distribution of images as binary files containing only the entire block of data to be transferred to the transceiver.";
+              }
+            }
+            case package {
+              if-feature "srl_nokia-feat:transceiver-firmware-upgrade-oif";
+              leaf package {
+                type srl_nokia-comm:local-file;
+                description
+                  "File containing a package of images including metadata headers
+
+                   This is used for packages as defined by OIF XXX.  It is expected to be .tgz format that needs extraction.
+                   The package by target transceiver to select the newest image for that transceiver based on vendor and vendor part number.";
+              }
+            }
+          }
+        }
+        container abort-transfer {
+          presence "Required due to mandatory statements";
+          description
+            "Abort the current transfer operation active on one or more transceivers";
+          choice interface-or-all {
+            mandatory true;
+            case interface {
+              leaf-list interface {
+                min-elements 1;
+                max-elements 1;
+                description
+                  "The list of interfaces with transceivers to be included in the operation
+
+                   Current support restricts the list to a maximum of one interface.";
+                type srl_nokia-comm:name;
+              }
+            }
+            case all-interfaces {
+              if-feature "srl_nokia-feat:transceiver-firmware-upgrade-oif";
+              leaf all-interfaces {
+                type empty;
+              }
+            }
+          }
+        }
+        container activate {
+          presence "Required due to mandatory statements";
+          description
+            "Activate firmware";
+          choice interface-or-all {
+            mandatory true;
+            case interface {
+              leaf-list interface {
+                min-elements 1;
+                max-elements 1;
+                description
+                  "The list of interfaces with transceivers to be included in the operation
+
+                   Current support restricts the list to a maximum of one interface.";
+                type srl_nokia-comm:name;
+              }
+            }
+            case all-interfaces {
+              if-feature "srl_nokia-feat:transceiver-firmware-upgrade-oif";
+              leaf all-interfaces {
+                type empty;
+              }
+            }
+          }
+          leaf action {
+            description
+              "Specifies the specific activation action to be performed";
+            mandatory true;
+            type enumeration {
+              enum switch-to-inactive-bank {
+                value 1;
+              }
+              enum switch-hitless-to-inactive-bank {
+                value 2;
+              }
+              enum restart-active-bank {
+                value 3;
+              }
+              enum restart-hitless-active-bank {
+                value 4;
+              }
+            }
+          }
+          leaf no-commit {
+            type empty;
+            description
+              "If specified, committed bank is not changed";
+          }
+        }
+        container commit-running {
+          presence "Required due to mandatory statements";
+          description
+            "Commit the active bank on one or more transceivers";
+          choice interface-or-all {
+            mandatory true;
+            case interface {
+              leaf-list interface {
+                min-elements 1;
+                max-elements 1;
+                description
+                  "The list of interfaces with transceivers to be included in the operation
+
+                   Current support restricts the list to a maximum of one interface.";
+                type srl_nokia-comm:name;
+              }
+            }
+            case all-interfaces {
+              if-feature "srl_nokia-feat:transceiver-firmware-upgrade-oif";
+              leaf all-interfaces {
+                type empty;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    uses tools-transceiver-top;
+  }
+}

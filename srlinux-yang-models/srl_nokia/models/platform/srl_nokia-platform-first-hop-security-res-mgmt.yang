@@ -1,0 +1,165 @@
+module srl_nokia-platform-first-hop-security-res-mgmt {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-first-hop-security-res-mgmt";
+  prefix srl_nokia-platform-first-hop-security-res-mgmt;
+
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-platform-resource-mgmt {
+    prefix srl_nokia-platform-res-mgmt;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines the configuration of resources required to use First Hop Security.";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  grouping first-hop-security-res-mgmt {
+    description
+      "Grouping to define the configuration for First Hop security and RA-guard resource sharing.";
+    container first-hop-security {
+      if-feature "srl-feat:first-hop-security and srl-feat:trident3";
+      description
+        "Container to provide an option for allocating required hardware resources to First Hop security ";
+      leaf first-hop-security-protocols {
+        description
+          "Set to enable use of hardware resource by protocols used for First Hop security
+
+           When First Hop Security is enabled, this results in redirection of select
+           protocol packets such as DHCPv4, DHCPv6, IPv6 RA, etc. from select subinterfaces
+           to CPU for further processing by First Hop Security manager.
+           When First Hop security is disabled, the above hardware resource will be used
+           IPv6 Router Advertisement Guard (ra-guard) feature.  ";
+        type srl-comm:admin-state;
+        default "disable";
+        must '((. = "disable" and ../ipv6-ra-guard = "enable") or (. = "enable" and ../ipv6-ra-guard = "disable"))' {
+          error-message
+            "Mismatch in First Hop Security and IPv6 Router Advertisement Guard configuration.
+             Only one of them can be enabled at a time.";
+        }
+      }
+      leaf ipv6-ra-guard {
+        description
+          "Set to enable for exclusive use of hardware resource by IPv6 Router Advertisement guard (ra-guard)
+
+           When IPv6 RA-guard is enabled, software allocates hardware resources used to
+           identify IPv6 Router Advertisement protocol packets from select subinterfaces
+           to be sent to CPU for further processing by IPv6 ra-guard manager.
+           When IPv6 RA-guard is disabled, software takes away the hardware resource
+           allocated for exclusive use by IPv6 Router Advertisement Guard (ra-guard) feature
+           and IPv6 RA packets received on any subinterface is not sent to CPU. ";
+        type srl-comm:admin-state;
+        default "enable";
+      }
+    }
+  }
+
+  grouping first-hop-security-tcam-res-mgmt {
+    description
+      "Grouping to define configuration of TCAM resources required for First Hop Security.";
+    container dot1x-multi-host-authentication-tcam {
+      if-feature "srl-feat:dot1x-authenticator-multi-host-auth-tcam-res-mgmt";
+      description
+        "Container to provide an option for allocating required hardware resources to dot1x multi-host-authentication or mac-based-authentication ";
+      leaf dot1x-multi-host {
+        description
+          "number of hardware TCAM entries to use for multi host authentication";
+        type uint16 {
+          range "0..254";
+        }
+        default "0";
+      }
+    }
+    container first-hop-security-tcam {
+      description
+        "Container for managing the allocation of TCAM banks to First Hop Security.";
+      leaf first-hop-security-ip-source-guard-entries {
+        if-feature "srl-feat:first-hop-security and srl-feat:future-0-0";
+        description
+          "Number of hardware TCAM entries to use for First Hop Security (FHS) IP Source Guard
+
+           The number of hardware TCAM entries to allocate when First Hop Security
+           IP source guard is enabled on a subinterface. This number must be set to be
+           equal to or more than the number of IP-MAC association entries in the
+           First Hop security ip-mac-binding-table. Software will allocate the required
+           number of hardware TCAM entries.";
+        type uint16 {
+          range "0..1280";
+        }
+        default "0";
+      }
+      leaf first-hop-security-ip-source-guard {
+        if-feature "srl-feat:first-hop-security and srl-feat:trident3";
+        description
+          "Set to enable, to allocate hardware resource to enforce IP Source Guard
+
+           When set to enable, hardware resource is taken away from Ingress IPv6 ACLs,
+           reducing the number of Ingress IPv6 ACLs that can be used.
+
+           When set to disable, First Hop security IP source guard cannot be enable. ";
+        type srl-comm:admin-state;
+        default "disable";
+        must '(. = "disable" or  /srl_nokia-platform:platform/srl_nokia-platform-res-mgmt:resource-management/srl_nokia-platform-first-hop-security-res-mgmt:first-hop-security/first-hop-security-protocols = "enable")' {
+          error-message "First Hop Security protocols must be enabled.";
+        }
+      }
+      leaf first-hop-security-ip-source-guard-v4-entries {
+        if-feature "srl-feat:first-hop-security and srl-feat:trident3";
+        description
+          "Allocate hardware resources required for IPv4 Source Guard
+
+           The number of hardware TCAM entries to allocate when First Hop Security
+           IP source guard is enabled on a subinterface. This number must be set to be
+           equal to or more than the number of IP-MAC association entries in the
+           First Hop security ip-mac-binding-table. Software will allocate the required
+           number of hardware TCAM entries if available. ";
+        type uint16 {
+          range "0..6144";
+        }
+        default "0";
+      }
+      leaf first-hop-security-ip-source-guard-v6-entries {
+        if-feature "srl-feat:first-hop-security and srl-feat:trident3";
+        description
+          "Allocate hardware resources required for IPv6 Source Guard
+
+           The number of hardware TCAM entries to allocate when First Hop Security
+           IP source guard is enabled on a subinterface. This number must be set to be
+           equal to or more than the number of IP-MAC association entries in the
+           First Hop security ip-mac-binding-table. Software will allocate the required
+           number of hardware TCAM entries if available. ";
+        type uint16 {
+          range "0..6144";
+        }
+        default "0";
+      }
+    }
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-res-mgmt:resource-management" {
+    uses first-hop-security-res-mgmt;
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-res-mgmt:resource-management/srl_nokia-platform-res-mgmt:tcam" {
+    uses first-hop-security-tcam-res-mgmt;
+  }
+}

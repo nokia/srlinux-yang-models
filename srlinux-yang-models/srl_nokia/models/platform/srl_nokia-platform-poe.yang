@@ -1,0 +1,53 @@
+module srl_nokia-platform-poe {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-poe";
+  prefix srl_nokia-platform-poe;
+
+  import srl_nokia-platform {
+    prefix srl-platform;
+  }
+  import srl_nokia-features {
+    prefix srl-nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to PoE";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  grouping poe-power-node-state {
+    description
+      "Power Over Ethernet (PoE) node state grouping";
+    leaf max-poe-power-budget-available {
+      description
+        "Maximum PoE power available for use by connected devices per platform";
+      type decimal64 {
+        fraction-digits 2;
+      }
+      units "watts";
+    }
+  }
+
+  grouping poe-platform-top {
+    description
+      "PoE power budget parameters";
+    uses poe-power-node-state;
+  }
+
+  augment "/srl-platform:platform" {
+    if-feature "srl-nokia-feat:poe";
+    uses poe-platform-top;
+  }
+}

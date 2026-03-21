@@ -1,0 +1,644 @@
+module srl_nokia-srv6-instance {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:srv6:srv6-instance";
+  prefix srl_nokia-srv6-inst;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-segment-routing {
+    prefix srl_nokia-sr;
+  }
+  import srl_nokia-srv6 {
+    prefix srl_nokia-srv6;
+  }
+  import srl_nokia-srv6-types {
+    prefix srl_nokia-srv6-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG file covers the segment routing v6 shortest path enhancements to SRL for function configuration";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  grouping srv6-func-state {
+    leaf status {
+      config false;
+      description
+        "The status of the SRv6 sid";
+      type srl_nokia-srv6-types:status;
+    }
+    leaf sid {
+      config false;
+      description
+        "The sid address associated with function";
+      type srl_nokia-comm:ipv6-prefix;
+    }
+  }
+
+  grouping srv6-func-state-with-oper-value {
+    leaf oper-value {
+      config false;
+      type uint32;
+      description
+        "SRv6 SID operational function value";
+    }
+    uses srv6-func-state;
+  }
+
+  grouping srv6-instance {
+    container srv6 {
+      presence "Enable srv6 instance";
+      description
+        "Enter the Segment Routing IPv6 context";
+      leaf status {
+        config false;
+        description
+          "The status of the network instance";
+        type srl_nokia-srv6-types:status;
+      }
+      list instance {
+        must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\") or
+                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:ip-vrf\") or
+                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:mac-vrf\") or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:vpws\")" {
+          error-message "An SRv6 instance only applies to a network instance the type of which is default or ip-vrf or mac-vrf or vpws";
+        }
+        description
+          "Enter the Segment Routing IPv6 instance list";
+        key "id";
+        leaf id {
+          must 'not((/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default") and (. != 1))' {
+            error-message "Only SRv6 instance id 1 is allowed for the default network-instance";
+          }
+          must 'not((/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:vpws" or /srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf") and (. != 1))' {
+            error-message "Only SRv6 instance id 1 is allowed for network-instance type vpws or mac-vrf";
+          }
+          type srl_nokia-srv6-types:srv6-instance;
+          description
+            "Segment routing IPv6 instance";
+        }
+        list locator {
+          key "locator-name";
+          description
+            "Enter the locator list instance";
+          leaf locator-name {
+            type leafref {
+              path "/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator/srl_nokia-srv6:locator-name";
+            }
+            description
+              "SRv6 locator name";
+          }
+          container full-segment {
+            description
+              "Enter the full-segment context";
+            container function {
+              description
+                "Enter the function context";
+              list end {
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+                  error-message "This function only applies to a network instance the type of which is default";
+                }
+                key "value";
+                max-elements 8;
+                description
+                  "Enter the end list instance";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 SID function value";
+                }
+                leaf srh-mode {
+                  type srl_nokia-srv6-types:srh-mode;
+                  default "psp";
+                  description
+                    "Segment Routing Header (SRH) mode";
+                }
+                uses srv6-func-state;
+              }
+              list end-x {
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+                  error-message "This function only applies to a network instance the type of which is default";
+                }
+                key "value";
+                description
+                  "Enter the end-x list instance";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 SID function value";
+                }
+                leaf srh-mode {
+                  type srl_nokia-srv6-types:srh-mode;
+                  default "psp";
+                  description
+                    "Segment Routing Header (SRH) mode";
+                }
+                leaf protection {
+                  type enumeration {
+                    enum unprotected {
+                      value 0;
+                    }
+                    enum protected {
+                      value 1;
+                    }
+                  }
+                  default "protected";
+                  description
+                    "Adjacency protection for SID function";
+                }
+                leaf subinterface-name {
+                  type srl_nokia-comm:subinterface-all;
+                  must "starts-with(., 'ethernet') or starts-with(., 'lag')" {
+                    error-message "SRv6 is only supported on Ethernet and LAG subinterfaces";
+                  }
+                  mandatory true;
+                  description
+                    "SubInterface name";
+                }
+                uses srv6-func-state;
+              }
+              list end-x-auto-allocate {
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+                  error-message "This function only applies to a network instance the type of which is default";
+                }
+                key "srh-mode protection";
+                max-elements 2;
+                description
+                  "Add a list entry for end-x-auto-allocate";
+                leaf srh-mode {
+                  type srl_nokia-srv6-types:srh-mode;
+                  description
+                    "Segment Routing Header (SRH) mode";
+                }
+                leaf protection {
+                  type enumeration {
+                    enum unprotected {
+                      value 0;
+                    }
+                    enum protected {
+                      value 1;
+                    }
+                  }
+                  description
+                    "Adjacency protection for automatic SID function";
+                }
+              }
+              list end-x-auto-allocated-sids {
+                config false;
+                key "owner request-id";
+                leaf request-id {
+                  config false;
+                  type uint64;
+                  description
+                    "Auto allocate sid request id";
+                }
+                leaf owner {
+                  config false;
+                  type enumeration {
+                    enum isis {
+                      value 0;
+                    }
+                  }
+                  description
+                    "Auto allocate sid owner";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container end-dt4 {
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\") or
+                                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:ip-vrf\")" {
+                  error-message "This function only applies to a network instance the type of which is ip-vrf or default";
+                }
+                presence "Enable the end-dt4 context";
+                description
+                  "Enable the end-dt4 context";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container end-dt6 {
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\") or
+                                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:ip-vrf\")" {
+                  error-message "This function only applies to a network instance the type of which is ip-vrf or default";
+                }
+                presence "Enable the end-dt6 context";
+                description
+                  "Enable the end-dt6 context";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container end-dt46 {
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\") or
+                                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:ip-vrf\")" {
+                  error-message "This function only applies to a network instance the type of which is ip-vrf or default";
+                }
+                presence "Enable the end-dt46 context";
+                description
+                  "Enable the end-dt46 context";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container end-dt2u {
+                if-feature "srl_nokia-feat:srv6-dt2";
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+                  error-message "This function only applies to a network instance the type of which is mac-vrf";
+                }
+                presence "Enable the end-dt2u context";
+                description
+                  "Enable the end-dt2u context";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container end-dt2m {
+                if-feature "srl_nokia-feat:srv6-dt2";
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+                  error-message "This function only applies to a network instance the type of which is mac-vrf";
+                }
+                presence "Enable the end-dt2m context";
+                description
+                  "Enable the end-dt2m context";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container end-dx2 {
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment = true())' {
+                  error-message "The locator must be configured as full-segment to use it as full-segment";
+                }
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:vpws")' {
+                  error-message "This function only applies to a network instance the type of which is vpws";
+                }
+                presence "Enable the end-dx2 context";
+                description
+                  "Enable the end-dx2 context";
+                leaf value {
+                  type uint32 {
+                    range "1..1048575";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:full-segment/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+            }
+          }
+          container micro-segment {
+            description
+              "Enter the micro-segment context";
+            container function {
+              description
+                "Enter the function context";
+              list ua {
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+                  error-message "This function only applies to a network instance the type of which is default";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                key "value";
+                description
+                  "Enter the ua list instance";
+                leaf value {
+                  type uint32 {
+                    range "1..65535";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block[srl_nokia-srv6:block-name=(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block)]/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 SID function value";
+                }
+                leaf srh-mode {
+                  type srl_nokia-srv6-types:srh-mode;
+                  default "psp";
+                  description
+                    "Segment Routing Header (SRH) mode";
+                }
+                leaf protection {
+                  type enumeration {
+                    enum unprotected {
+                      value 0;
+                    }
+                    enum protected {
+                      value 1;
+                    }
+                  }
+                  default "protected";
+                  description
+                    "Adjacency protection for SID function";
+                }
+                leaf subinterface-name {
+                  type srl_nokia-comm:subinterface-all;
+                  must "starts-with(., 'ethernet') or starts-with(., 'lag')" {
+                    error-message "SRv6 is only supported on Ethernet and LAG subinterfaces";
+                  }
+                  mandatory true;
+                  description
+                    "Subinterface name";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              list ua-auto-allocate {
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+                  error-message "This function only applies to a network instance the type of which is default";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                key "srh-mode protection";
+                max-elements 2;
+                description
+                  "Add a list entry for ua-auto-allocate";
+                leaf srh-mode {
+                  type srl_nokia-srv6-types:srh-mode;
+                  description
+                    "Segment Routing Header (SRH) mode";
+                }
+                leaf protection {
+                  type enumeration {
+                    enum unprotected {
+                      value 0;
+                    }
+                    enum protected {
+                      value 1;
+                    }
+                  }
+                  description
+                    "Adjacency protection for automatic SID function";
+                }
+              }
+              list ua-auto-allocated-sids {
+                config false;
+                key "owner request-id";
+                leaf request-id {
+                  config false;
+                  type uint64;
+                  description
+                    "Auto allocate sid request id";
+                }
+                leaf owner {
+                  config false;
+                  type enumeration {
+                    enum isis {
+                      value 0;
+                    }
+                  }
+                  description
+                    "Auto allocate sid owner";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container udt4 {
+                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\") or
+                                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:ip-vrf\")" {
+                  error-message "This function only applies to a network instance the type of which is ip-vrf or default";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                presence "Enable the udt4 context";
+                description
+                  "Enable the udt4 context";
+                leaf value {
+                  type uint32 {
+                    range "1..65535";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block[srl_nokia-srv6:block-name=(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block)]/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container udt6 {
+                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\") or
+                                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:ip-vrf\")" {
+                  error-message "This function only applies to a network instance the type of which is ip-vrf or default";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                presence "Enable the udt6 context";
+                description
+                  "Enable the udt6 context";
+                leaf value {
+                  type uint32 {
+                    range "1..65535";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block[srl_nokia-srv6:block-name=(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block)]/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container udt46 {
+                must "(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:default\") or
+                                            (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = \"srl_nokia-netinst:ip-vrf\")" {
+                  error-message "This function only applies to a network instance the type of which is ip-vrf or default";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                presence "Enable the udt46 context";
+                description
+                  "Enable the udt46 context";
+                leaf value {
+                  type uint32 {
+                    range "1..65535";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block[srl_nokia-srv6:block-name=(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block)]/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container udt2u {
+                if-feature "srl_nokia-feat:srv6-dt2";
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+                  error-message "This function only applies to a network instance the type of which is mac-vrf";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                presence "Enable the udt2u context";
+                description
+                  "Enable the udt2u context";
+                leaf value {
+                  type uint32 {
+                    range "1..65535";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block[srl_nokia-srv6:block-name=(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block)]/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container udt2m {
+                if-feature "srl_nokia-feat:srv6-dt2";
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:mac-vrf")' {
+                  error-message "This function only applies to a network instance the type of which is mac-vrf";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                presence "Enable the udt2m context";
+                description
+                  "Enable the udt2m context";
+                leaf value {
+                  type uint32 {
+                    range "1..65535";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block[srl_nokia-srv6:block-name=(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block)]/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+              container udx2 {
+                must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../../../../../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:vpws")' {
+                  error-message "This function only applies to a network instance the type of which is vpws";
+                }
+                must '(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment = true())' {
+                  error-message "The locator must be configured as micro-segment to use it as micro-segment";
+                }
+                presence "Enable the udx2 context";
+                description
+                  "Enable the udx2 context";
+                leaf value {
+                  type uint32 {
+                    range "1..65535";
+                  }
+                  must '(current() <= (/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block[srl_nokia-srv6:block-name=(/srl_nokia-system:system/srl_nokia-srv6:srv6/srl_nokia-srv6:locator[srl_nokia-srv6:locator-name=current()/../../../../srl_nokia-srv6-inst:locator-name]/srl_nokia-srv6:micro-segment/srl_nokia-srv6:block)]/srl_nokia-srv6:static-function/srl_nokia-srv6:max-entries))' {
+                    error-message "Value must be within max-entries range";
+                  }
+                  description
+                    "SRv6 function value";
+                }
+                uses srv6-func-state-with-oper-value;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-sr:segment-routing" {
+    if-feature "srl_nokia-feat:srv6";
+    uses srv6-instance;
+  }
+}

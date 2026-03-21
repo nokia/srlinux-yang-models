@@ -1,0 +1,128 @@
+module srl_nokia-interfaces-dynamic-subinterfaces {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:active-vlan-detection:interfaces-dynamic-subinterfaces";
+  prefix srl_nokia-if-dynamic-subinterfaces;
+
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of the active VLAN detection and dynamic subinterfaces";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+
+  typedef vlan-id {
+    type uint16 {
+      range "1..4094";
+    }
+    description
+      "Type definition representing a VLAN identifier";
+  }
+
+  grouping dynamic-subinterface-vlan-range {
+    description
+      "Specifies a range of VLAN identifiers for dynamic subinterfaces";
+    container vlan-range {
+      description
+        "Specifies a range of VLAN identifiers for dynamic subinterfaces";
+      container untagged {
+        presence "Match untagged packets";
+        description
+          "Match untagged packets for the creation of dynamic subinterfaces";
+        must 'not(../single-tagged)' {
+          error-message "untagged and single-tagged cannot be configured together";
+        }
+      }
+      container single-tagged {
+        presence "Match single-tagged packets";
+        description
+          "Match single-tagged packets for the creation of dynamic subinterfaces";
+        must '(../../../vlan-tagging = true())' {
+          error-message "single-tagged  only configurable if vlan-tagging enabled on parent interface";
+        }
+        list low-vlan-id {
+          min-elements 1;
+          max-elements 1;
+          key "range-low-vlan-id";
+          leaf range-low-vlan-id {
+            type vlan-id;
+            description
+              "The low-value VLAN identifier in a range for single-tagged packets
+
+               The range is matched inclusively.";
+          }
+          leaf high-vlan-id {
+            type vlan-id;
+            description
+              "The high-value VLAN identifier in a range for single-tagged packets
+
+               The range is matched inclusively.";
+            must '( . >= ../range-low-vlan-id)' {
+              error-message "high-vlan-id must be greater than or equal to low-vlan-id";
+            }
+            mandatory true;
+          }
+        }
+      }
+    }
+  }
+
+  grouping dynamic-subinterface-top {
+    description
+      "Top-level configuration and state for dynamic subinterfaces";
+    container dynamic-subinterfaces {
+      if-feature "srl_nokia-feat:dynamic-subinterfaces";
+      presence "Enables dynamic subinterfaces on the interface";
+      must "starts-with(../srl_nokia-if:name, 'ethernet') or starts-with(../srl_nokia-if:name, 'lag')" {
+        error-message "Dynamic subinterfaces can only be created on ethernet or lag interfaces";
+      }
+      description
+        "Dynamic subinterface configuration and state";
+      uses dynamic-subinterface-vlan-range;
+      leaf retention-timer {
+        type uint16 {
+          range "1..65535";
+        }
+        units "minutes";
+        default "240";
+        description
+          "The inactivity period after which the configuration for the corresponding VLAN is removed";
+      }
+      leaf-list active-vlans {
+        config false;
+        type union {
+          type vlan-id;
+          type enumeration {
+            enum untagged {
+              value 0;
+            }
+          }
+        }
+        description
+          "The active VLAN identifiers for the creation of dynamic subinterfaces";
+        srl_nokia-ext:show-importance "high";
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface" {
+    description
+      "Active VLAN detection and dynamic subinterfaces configuration and state";
+    uses dynamic-subinterface-top;
+  }
+}

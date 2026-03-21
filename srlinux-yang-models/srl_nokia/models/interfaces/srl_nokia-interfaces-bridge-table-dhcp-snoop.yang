@@ -1,0 +1,227 @@
+module srl_nokia-interfaces-bridge-table-dhcp-snoop {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:interfaces-bridge-table-dhcp-snoop";
+  prefix srl_nokia-if-bridge-table-dhcp-snoop;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for managing DHCPv4 and DHCPv6 Snooping on IP subinterfaces";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  typedef dhcp-snoop-v4-oper-down-reason {
+    type enumeration {
+      enum dhcp-snoop-admin-down;
+      enum sub-interface-oper-down;
+    }
+    description
+      "The dhcp-snoop-v4-oper-down-reason represents the possible reasons causing DHCPv4 snoop to go into operational down state";
+  }
+
+  typedef dhcp-snoop-v6-oper-down-reason {
+    type enumeration {
+      enum dhcp-snoop-admin-down;
+      enum sub-interface-oper-down;
+    }
+    description
+      "The dhcp-snoop-v6-oper-down-reason represents the possible reasons causing DHCPv6 snoop to go into operational down state";
+  }
+
+  grouping dhcp-snoop-statistics {
+    container statistics {
+      config false;
+      leaf client-packets-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total received DHCP packets from dhcp client(s) for DHCP Snoop";
+      }
+      leaf client-packets-snooped {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total snooped DHCP packets from dhcp client(s) towards DHCP server(s)";
+      }
+      leaf client-packets-discarded {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total discarded DHCP packets from dhcp client(s) towards DHCP server(s)";
+      }
+      leaf server-packets-received {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total received DHCP packets from DHCP server(s) for DHCP Snoop";
+      }
+      leaf server-packets-snooped {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total snooped DHCP packets from DHCP server(s) towards dhcp client(s)";
+      }
+      leaf server-packets-discarded {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total discarded DHCP packets from DHCP server(s) towards dhcp client(s)";
+      }
+    }
+  }
+
+  grouping subinterface-dhcpv4-snoop {
+    container dhcpv4-snoop {
+      presence "Performs snooping function for incoming IPv4 DHCP messages";
+      description
+        "Container for options related to DHCPv4-Snoop";
+      must "not(starts-with(../../../srl_nokia-if:name, 'mgmt') or starts-with(../../../srl_nokia-if:name, 'lo') or starts-with(../../../srl_nokia-if:name, 'system')  or starts-with(../../../srl_nokia-if:name, 'sync') or starts-with(../../../srl_nokia-if:name, 'irb'))" {
+        error-message "DHCPv4 snoop is not supported on mgmt, lo, IRB, or system interfaces";
+      }
+      must "(../../srl_nokia-if:type = 'srl_nokia-if:bridged')" {
+        error-message "DHCPv4 snoop is not supported on non-bridged subinterfaces";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        srl-ext:show-importance "high";
+        default "disable";
+        description
+          "Enables/Disables DHCPv4 Snooping function on subinterface";
+      }
+      leaf oper-state {
+        config false;
+        type srl_nokia-comm:oper-state;
+        description
+          "The operational state of the DHCP snoop";
+      }
+      leaf oper-down-reason {
+        config false;
+        type dhcp-snoop-v4-oper-down-reason;
+        description
+          "The reason causing the DHCP snoop to go into operational down state";
+      }
+      leaf-list option {
+        type enumeration {
+          enum circuit-id {
+            description
+              "Enable option 82 suboption 1 circuit-id into Snooped packet towards DHCPv4 server, format=system_name/VRF_instance/sub-interface_id:vlan_id";
+          }
+          enum remote-id {
+            description
+              "Enable option 82 suboption 2 remote-id into Snooped packet towards DHCPv4 server, format=client MAC address";
+          }
+        }
+        description
+          "List of option82 suboptions to insert into Snooped packet towards DHCPv4 server";
+      }
+      container trace-options {
+        description
+          "Container for tracing DHCPv4 Snoop operations on the subinterface";
+        leaf-list trace {
+          type enumeration {
+            enum messages {
+              description
+                "Capture all DHCPv4 messages sent and received by the subinterface";
+            }
+          }
+          description
+            "List of events to trace";
+        }
+      }
+      uses dhcp-snoop-statistics;
+    }
+  }
+
+  grouping subinterface-dhcpv6-snoop {
+    container dhcpv6-snoop {
+      presence "Performs snooping function for incoming IPv6 DHCP messages";
+      description
+        "Container for options related to DHCPv6-Snoop";
+      must "not(starts-with(../../../srl_nokia-if:name, 'mgmt') or starts-with(../../../srl_nokia-if:name, 'lo') or starts-with(../../../srl_nokia-if:name, 'system')  or starts-with(../../../srl_nokia-if:name, 'sync') or starts-with(../../../srl_nokia-if:name, 'irb'))" {
+        error-message "DHCPv6 snoop is not supported on mgmt, lo, IRB, or system interfaces";
+      }
+      must "(../../srl_nokia-if:type = 'srl_nokia-if:bridged')" {
+        error-message "DHCPv6 snoop is not supported on non-bridged subinterfaces";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        srl-ext:show-importance "high";
+        default "disable";
+        description
+          "Enables/Disables DHCPv6 Snooping function on subinterface";
+      }
+      leaf oper-state {
+        config false;
+        type srl_nokia-comm:oper-state;
+        description
+          "The operational state of the DHCP snoop";
+      }
+      leaf oper-down-reason {
+        config false;
+        type dhcp-snoop-v6-oper-down-reason;
+        description
+          "The reason causing the DHCP snoop to go into operational down state";
+      }
+      leaf-list option {
+        type enumeration {
+          enum interface-id {
+            description
+              "Enable option 18 Interface-Id into snooped packet towards DHCPv6 server, format=system_name/VRF_instance/sub-interface_id:vlan_id";
+          }
+          enum remote-id {
+            description
+              "Enable option 37 Remote Identifier into snooped packet towards DHCPv6 server, format=client MAC address";
+          }
+          enum client-link-layer-address {
+            description
+              "Enable option 79 Client Link-Layer Address into snooped packet towards DHCPv6 server, format based on rfc-6939";
+          }
+        }
+        description
+          "List of options to insert into snooped packet towards DHCPv6 server";
+      }
+      container trace-options {
+        description
+          "Container for tracing DHCPv6 Snoop operations on the subinterface";
+        leaf-list trace {
+          type enumeration {
+            enum messages {
+              description
+                "Capture all DHCPv6 messages sent and received by the subinterface";
+            }
+          }
+          description
+            "List of events to trace";
+        }
+      }
+      uses dhcp-snoop-statistics;
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:bridge-table" {
+    if-feature "srl_nokia-feat:dhcpv4-snooping";
+    uses subinterface-dhcpv4-snoop;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:bridge-table" {
+    if-feature "srl_nokia-feat:dhcpv6-snooping";
+    uses subinterface-dhcpv6-snoop;
+  }
+}

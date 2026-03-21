@@ -1,0 +1,90 @@
+module srl_nokia-tools-boot {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:tools-boot";
+  prefix srl-tools-boot;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational commands related to the booting the system.";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+  revision 2019-11-30 {
+    description
+      "SRLinux 19.11.1";
+  }
+
+  grouping boot-fips-top {
+    description
+      "Top-level container for FIPS-related operational commands.";
+    container fips-140 {
+      description
+        "Operational state and commands related to FIPS 140 cryptographic module validation.";
+      leaf conditional-test {
+        type empty;
+        description
+          "Execute an on-demand Conditional Self-Test (CST) to verify the current
+           operational health and compliance of the FIPS module.
+
+           Invoking this command triggers a cryptographic operation (e.g., ECDSA key generation)
+           that forces the module to run the Pairwise Consistency Test (PCT) and the
+           Continuous Random Number Generator Test (CRNGT). The command returns success only
+           if the FIPS provider is loaded, functional, and passes these critical runtime checks.";
+      }
+    }
+  }
+
+  grouping boot-top {
+    container boot {
+      presence "Configure tools system boot";
+      description
+        "Top-level container for operational commands related to booting the system";
+      container golden-image {
+        if-feature "srl_nokia-feat:factory-reset";
+        description
+          "Container for operational commands related to golden image";
+        leaf image {
+          type srl-comm:local-file-no-path;
+          description
+            "Sets the golden image the system uses
+
+             This command selects an image to act as a golden-image
+             to which the system reverts when a factory reset operation is requested.";
+        }
+        leaf clear {
+          type empty;
+          must 'not(../image)' {
+            error-message "clear and image are mutually exclusive";
+          }
+          description
+            "Unset the golden-image";
+        }
+      }
+      uses boot-fips-top;
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    uses boot-top;
+  }
+}

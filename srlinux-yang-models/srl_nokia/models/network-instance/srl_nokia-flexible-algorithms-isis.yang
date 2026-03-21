@@ -1,0 +1,547 @@
+module srl_nokia-flexible-algorithms-isis {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:flexible-algorithms-isis";
+  prefix srl_nokia-flexible-algorithms-isis;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-flexible-algorithms {
+    prefix srl_flex-algo;
+  }
+  import srl_nokia-flexible-algorithms-types {
+    prefix srl_flex-algo-types;
+  }
+  import srl_nokia-isis-types {
+    prefix srl_nokia-isis-types;
+  }
+  import srl_nokia-isis {
+    prefix srl_nokia-isis;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-mpls-label-management {
+    prefix srl_nokia-mplslbl;
+  }
+  import srl_nokia-segment-routing {
+    prefix srl_nokia-segrt;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of Segment Routing Flexible Algorithms";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  grouping flex-algo-id-key {
+    leaf flex-algo-id {
+      description
+        "Flexible Algorithm Identifier used as key";
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_flex-algo:flexible-algorithm/srl_flex-algo:flexible-algorithm-definitions/srl_flex-algo:flexible-algorithm-definition/srl_flex-algo:flex-algo-id";
+      }
+    }
+  }
+
+  grouping flex-algo-sids {
+    description
+      "Flexible Algorithms SID configurations for ISIS";
+    container ipv4-node-sid {
+      presence "Enable the ipv4-node-sid context";
+      description
+        "Enable the ipv4-node-sid context";
+      leaf index {
+        description
+          "Node SID index for this interface";
+        type uint32 {
+          range "0..1048575";
+        }
+        must '(current() <= ((/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:end-label) - (/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:start-label)))' {
+          error-message "Label index is out of global label block's range";
+        }
+      }
+    }
+    container ipv6-node-sid {
+      presence "Enable the ipv6-node-sid context";
+      description
+        "Enable the ipv6-node-sid context";
+      leaf index {
+        description
+          "Node SID index for this interface";
+        type uint32 {
+          range "0..1048575";
+        }
+        must '(current() <= ((/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:end-label) - (/srl-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:static[srl_nokia-mplslbl:name=current()/../../../../../../../../../srl_nokia-segrt:segment-routing/srl_nokia-segrt:mpls/srl_nokia-segrt:global-block/srl_nokia-segrt:label-range]/srl_nokia-mplslbl:start-label)))' {
+          error-message "Label index is out of global label block's range";
+        }
+      }
+    }
+  }
+
+  grouping fad-info {
+    description
+      "Flexible Algorithm Definition information.";
+    leaf fad-owner {
+      description
+        "Owner of the Flexible Algorithm Definition.";
+      type srl_nokia-comm:isis-system-id;
+      config false;
+    }
+    leaf supported {
+      description
+        "Indicates if this FAD is supported.";
+      type boolean;
+      config false;
+    }
+    leaf priority {
+      description
+        "Priority of the FAD.";
+      type uint8;
+      config false;
+    }
+    leaf metric-type {
+      description
+        "Type of metric used by Flexible Algorithms.";
+      type srl_flex-algo-types:flex-algo-metric-type;
+      config false;
+    }
+    leaf calculation-type {
+      description
+        "Type of calculation (e.g., SPF).";
+      type srl_flex-algo-types:flex-algo-calc-type;
+      config false;
+    }
+    leaf-list exclude {
+      description
+        "Extended Admin Groups Bitmask to display the Exclude fad tlv.";
+      type uint32;
+      config false;
+    }
+    leaf-list include-any {
+      description
+        "Extended Admin Groups Bitmask to display the Include-any fad tlv.";
+      type uint32;
+      config false;
+    }
+    leaf-list include-all {
+      description
+        "Extended Admin Groups Bitmask to display the Include-all fad tlv.";
+      type uint32;
+      config false;
+    }
+    leaf-list fad-flags {
+      description
+        "Flags associated with the FAD.";
+      type srl_flex-algo-types:fad-flags;
+      config false;
+    }
+    leaf level {
+      description
+        "IS-IS level (e.g., L1 or L2).";
+      type srl_nokia-isis-types:isis-level-number;
+      config false;
+    }
+  }
+
+  grouping flex-algo-isis-level-state {
+    leaf fad-count {
+      description
+        "Number of FADs at this ISIS Level.";
+      type uint32;
+      config false;
+    }
+    container selected-fad {
+      description
+        "Information about the selected FAD for this ISIS Level.";
+      uses fad-info;
+    }
+    list other-fads {
+      description
+        "Information about other FADs advertised at this ISIS Level.";
+      config false;
+      key "fad-owner";
+      uses fad-info;
+    }
+  }
+
+  grouping flex-algo-route-attributes {
+    leaf topology-id {
+      description
+        "isis routing topology.
+
+         native(1) - Indicates standard topology.
+         mt(2) - Indicates multi-topology for IPv4/IPv6 unicast/multicast routing.";
+      type srl_nokia-isis-types:isis-routing-topology;
+    }
+    list backup-nexthop {
+      key "ip-address interface";
+      description
+        "List of nexthop entries.";
+      leaf ip-address {
+        type union {
+          type srl_nokia-comm:ip-address;
+          type srl_nokia-comm:ipv6-address;
+        }
+        description
+          "The IP address of the backup-nexthop, which may be either an IPv4 or an IPv6 address.";
+      }
+      leaf interface {
+        type string;
+        description
+          "The interface used to reach the nexthop.
+           Used when the backup-nexthop references an ambiguous next hop (i.e. unnumbered or link local address)";
+      }
+    }
+    leaf level {
+      description
+        "ISIS level at which this route was computed.";
+      type srl_nokia-isis-types:isis-level;
+    }
+    leaf metric-type {
+      description
+        "ISIS route metric type (internal or external).";
+      type srl_nokia-isis-types:isis-metric-type;
+    }
+    leaf metric {
+      description
+        "IGP metric for the prefix.";
+      type uint32;
+    }
+    leaf version {
+      description
+        "Version of the route (from SPF calculation).";
+      type uint32;
+    }
+    leaf system-id {
+      description
+        "System-id of originating system.";
+      type string;
+    }
+    leaf hostname {
+      description
+        "hostname of originating system.";
+      type string;
+    }
+    leaf sid {
+      description
+        "Segment Identifier associated with the route.";
+      type uint32;
+    }
+    leaf-list sid-flags {
+      description
+        "Set of Segment Identifier flags associated with the sid.";
+      type srl_flex-algo-types:sid-flags;
+    }
+    leaf route-tag {
+      description
+        "Administrative tag associated with the route.";
+      type srl_nokia-isis-types:isis-admin-tag;
+    }
+  }
+
+  grouping flex-algo-isis-state {
+    list flex-algo {
+      config false;
+      key "flex-algo-id";
+      leaf flex-algo-id {
+        description
+          "ID of the Flexible Algorithm.";
+        type uint8;
+        config false;
+      }
+      leaf flex-algo-binding {
+        description
+          "Binding ID for the Flexible Algorithm.";
+        type uint8;
+        config false;
+      }
+      leaf advertising-fad {
+        description
+          "Indicates if the local router is advertising the FAD.";
+        type boolean;
+        config false;
+      }
+      leaf participating {
+        description
+          "Indicates if the router is participating in the algorithm.";
+        type boolean;
+        config false;
+      }
+      leaf micro-loop-avoidance {
+        if-feature "srl_nokia-feat:isis-micro-loop-avoidance-flex-algo";
+        description
+          "Indicates if the node activated micro-loop-avoidance in this Flex Algorithm.";
+        type boolean;
+        config false;
+      }
+      leaf loopfree-alternate {
+        if-feature "srl_nokia-feat:isis-loopfree-alternate-flex-algo";
+        description
+          "Status of loopfree alternate.";
+        type boolean;
+        config false;
+      }
+      leaf l1-oper-state {
+        description
+          "Operational state for IS-IS Level-1.";
+        type srl_nokia-comm:oper-state;
+        config false;
+      }
+      leaf l2-oper-state {
+        description
+          "Operational state for IS-IS Level-2.";
+        type srl_nokia-comm:oper-state;
+        config false;
+      }
+      container level-1 {
+        uses flex-algo-isis-level-state;
+      }
+      container level-2 {
+        uses flex-algo-isis-level-state;
+      }
+      container topology {
+        config false;
+        description
+          "This context enters IS-IS topology state information.";
+        list path {
+          key "topology isis-level system-id";
+          description
+            "IS-IS IP path and optional LFA backup info, per topology.";
+          leaf topology {
+            description
+              "Multi-Topology Identifier (MT-ID) associated with the path.";
+            type srl_nokia-isis-types:isis-routing-topology;
+          }
+          leaf isis-level {
+            description
+              "IS-IS Level associated with Flex Algorithm path";
+            type srl_nokia-isis-types:isis-level;
+          }
+          leaf system-id {
+            description
+              "System ID of the remote IS-IS node";
+            type string;
+          }
+          leaf interface {
+            description
+              "Outgoing interface to reach the primary nexthop";
+            type srl_nokia-comm:subinterface-all;
+          }
+          leaf nexthop {
+            description
+              "Primary nexthop system ID";
+            type union {
+              type srl_nokia-comm:isis-system-id;
+              type string;
+            }
+          }
+          leaf metric {
+            description
+              "The metric towards the remote system-id";
+            type srl_nokia-isis-types:isis-wide-metric;
+          }
+          leaf lfa-interface {
+            if-feature "srl_nokia-feat:isis-loopfree-alternate-flex-algo";
+            description
+              "LFA backup outgoing interface (if available)";
+            type srl_nokia-comm:subinterface-all;
+          }
+          leaf lfa-nexthop {
+            if-feature "srl_nokia-feat:isis-loopfree-alternate-flex-algo";
+            description
+              "LFA backup nexthop system ID (if available)";
+            type union {
+              type srl_nokia-comm:isis-system-id;
+              type string;
+            }
+          }
+          leaf lfa-metric {
+            description
+              "The metric using lfa towards the remote system-id";
+            type srl_nokia-isis-types:isis-wide-metric;
+          }
+        }
+      }
+      container route-table {
+        list ipv4-unicast {
+          key "prefix";
+          description
+            "List of routes computed using the specified flexible algorithm.";
+          leaf prefix {
+            type srl_nokia-comm:ip-prefix;
+            description
+              "The IP prefix associated with the route.";
+          }
+          list nexthop {
+            key "ip-address interface";
+            description
+              "List of nexthop entries.";
+            leaf ip-address {
+              type union {
+                type srl_nokia-comm:ip-address;
+                type srl_nokia-comm:ipv6-address;
+              }
+              description
+                "The IP address of the nexthop, which may be either an IPv4 or an IPv6 address.";
+            }
+            leaf interface {
+              type string;
+              description
+                "The interface used to reach the nexthop.
+                 Used when the nexthop references an ambiguous next hop (i.e. unnumbered or link local address)";
+            }
+          }
+          uses flex-algo-route-attributes;
+        }
+        list ipv6-unicast {
+          key "prefix";
+          description
+            "List of routes computed using the specified flexible algorithm.";
+          leaf prefix {
+            type srl_nokia-comm:ipv6-prefix;
+            description
+              "The IPv6 prefix associated with the flexible algorithm route.";
+          }
+          list nexthop {
+            key "ip-address interface";
+            description
+              "List of nexthop entries.";
+            leaf ip-address {
+              type union {
+                type srl_nokia-comm:ip-address;
+                type srl_nokia-comm:ipv6-address;
+              }
+              description
+                "The IP address of the nexthop, which may be either an IPv4 or an IPv6 address.";
+            }
+            leaf interface {
+              type string;
+              description
+                "The interface used to reach the nexthop.
+                 Used when the nexthop references an ambiguous next hop (i.e. unnumbered or link local address)";
+            }
+          }
+          uses flex-algo-route-attributes;
+        }
+      }
+    }
+  }
+
+  grouping flex-algo-state-top {
+    description
+      "Flexible Algorithms FAD State details for ISIS";
+    uses flex-algo-isis-state;
+  }
+
+  grouping flex-algo-isis-interface-mpls-top {
+    description
+      "Flexible Algorithms configurations for ISIS";
+    list flex-algo {
+      description
+        "List of Flexible Algorithms associated with this node";
+      must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo'))" {
+        error-message "The node SID can only be associated with the system0.0 or loopback subinterface";
+      }
+      key "flex-algo-id";
+      max-elements 7;
+      uses flex-algo-id-key;
+      uses flex-algo-sids;
+    }
+  }
+
+  grouping flex-algo-binding-attributes-top {
+    description
+      "Attributes for Flexible Algorithm bindings";
+    leaf isis-level {
+      description
+        "IS-IS Level associated with this Flex Algorithm";
+      type srl_flex-algo-types:flex-algo-isis-level;
+      default "l1l2";
+    }
+    leaf advertised {
+      description
+        "Indicates if the Flex Algorithm definition is advertised by this node";
+      type boolean;
+      default "false";
+    }
+    leaf participate {
+      description
+        "Indicates if the node participates in this Flex Algorithm";
+      type boolean;
+      default "false";
+    }
+    leaf micro-loop-avoidance {
+      if-feature "srl_nokia-feat:isis-micro-loop-avoidance-flex-algo";
+      description
+        "Indicates if the node activated micro-loop-avoidance in this Flex Algorithm";
+      type boolean;
+      default "false";
+      must "(. = false()) or (../../srl_nokia-isis:micro-loop-avoidance/srl_nokia-isis:admin-state = 'enable')" {
+        error-message "Top-level micro-loop-avoidance must be enabled when micro-loop-avoidance is enabled for a flexible algorithm.";
+      }
+    }
+    leaf loopfree-alternate {
+      if-feature "srl_nokia-feat:isis-loopfree-alternate-flex-algo";
+      description
+        "Enables loopfree-alternate (LFA) protection for the IS-IS flexible algorithm.
+
+         This setting allows the flex-algo to attempt to compute LFA backup paths.
+         Enabling this does not guarantee LFA will be available.
+
+         Note: LFA must also be enabled at the top-level IS-IS instance for this to be effective.";
+      type boolean;
+      default "false";
+      must ". = false() or ../../../srl_nokia-isis:loopfree-alternate/srl_nokia-isis:admin-state = 'enable'" {
+        error-message "Top-level loopfree-alternate must be enabled when loopfree-alternate is enabled for a flexible algorithm.";
+      }
+    }
+  }
+
+  grouping flex-algo-isis-top {
+    description
+      "Flexible Algorithms configurations for ISIS";
+    list flexible-algorithm-binding {
+      description
+        "List of Flexible Algorithm bindings associated with this interface";
+      must "(../../../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+        error-message "Flexible algorithm is only supported in the default network instance";
+      }
+      key "flex-algo-id";
+      max-elements 7;
+      uses flex-algo-id-key;
+      uses flex-algo-binding-attributes-top;
+    }
+    uses flex-algo-state-top;
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:segment-routing" {
+    if-feature "srl_nokia-feat:isis-flex-algo";
+    uses flex-algo-isis-top;
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-isis:isis/srl_nokia-isis:instance/srl_nokia-isis:interface/srl_nokia-isis:segment-routing/srl_nokia-isis:mpls" {
+    if-feature "srl_nokia-feat:isis-flex-algo";
+    uses flex-algo-isis-interface-mpls-top;
+  }
+}

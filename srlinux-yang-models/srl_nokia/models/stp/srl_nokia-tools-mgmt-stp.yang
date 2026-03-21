@@ -1,0 +1,88 @@
+module srl_nokia-tools-mgmt-stp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:stp:tools-mgmt-stp";
+  prefix srl_nokia-tools-mgmt-stp;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-system {
+    prefix srl_nokia-tools-system;
+  }
+  import srl_nokia-tools-system-network-instance-protocols {
+    prefix srl_nokia-tools-system-network-instance-protocols;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for Mgmt-Stp operational commands";
+
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  grouping mgmt-stp-tools-top {
+    list mgmt-stp {
+      key "name";
+      description
+        "Management Stp Instance on the system";
+      leaf name {
+        type srl_nokia-comm:restricted-name;
+        description
+          "mgmt-stp instance name";
+      }
+      container statistics {
+        leaf clear {
+          type empty;
+          description
+            "Clear all Stp statistics of this Mgmt-Stp Instance";
+        }
+      }
+      container bpdu-guard-error {
+        leaf clear {
+          type empty;
+          description
+            "Clear bpdu guard error on Mgmt-Stp";
+        }
+      }
+      list interface {
+        key "interface-name";
+        description
+          "List of Interfaces managed by Mgmt-Stp";
+        leaf interface-name {
+          type string;
+          description
+            "Mgmt-Stp interface name";
+        }
+        container statistics {
+          leaf clear {
+            type empty;
+            description
+              "Clear all Stp statistics on this Mgmt-Stp Interface";
+          }
+        }
+        container bpdu-guard-error {
+          leaf clear {
+            type empty;
+            description
+              "Clear bpdu guard error on Mgmt-Stp interface";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-system:system/srl_nokia-tools-system-network-instance-protocols:network-instance/srl_nokia-tools-system-network-instance-protocols:protocols" {
+    uses mgmt-stp-tools-top {
+      if-feature "srl_nokia-feat:stp";
+    }
+  }
+}

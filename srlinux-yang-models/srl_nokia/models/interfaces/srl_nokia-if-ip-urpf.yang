@@ -1,0 +1,96 @@
+module srl_nokia-if-ip-urpf {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:if-ip-urpf";
+  prefix srl_nokia-if-ip-urpf;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-features {
+    prefix srl_feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "YANG model for unicast RPF operations";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+
+  grouping subinterface-urpf-check {
+    container unicast-rpf-check {
+      description
+        "Configuration and state related to unicast RPF lookups for source address validation";
+      leaf admin-state {
+        description
+          "Enable or disable uRPF lookup for arriving packets of this protocol
+
+           By default uRPF lookups are disabled.";
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        must "(. = 'disable') or starts-with(../../../../name,'ethernet') or starts-with(../../../../name,'lag')" {
+          error-message "Only supported on ethernet and lag subinterfaces";
+        }
+      }
+      leaf mode {
+        description
+          "The mode of operation for uRPF lookup
+
+           In loose mode a packet is dropped if there is no non-default route in the lookup network-instance that matches the source IP address of the packet. The lookup network-instance can be configured explicitly; if it is unconfigured, the lookup network-instance is the one that owns the subinterface where the packet arrived.";
+        type enumeration {
+          enum loose;
+        }
+      }
+      leaf lookup-network-instance {
+        description
+          "The network-instance where source IP address lookup occurs
+
+           This is optional. If not specified, the lookup network-instance is the one that owns the subinterface where the packet arrived.";
+        type leafref {
+          path "/srl-netinst:network-instance/srl-netinst:name";
+        }
+        must '(/srl-netinst:network-instance[srl-netinst:name=current()]/srl-netinst:type = "srl-netinst:ip-vrf")' {
+          error-message "uRPF lookup network-instance must be type 'ip-vrf'";
+        }
+      }
+      container counters {
+        config false;
+        leaf urpf-drop-packets {
+          description
+            "Number of packets of this protocol arriving on this subinterface dropped because of uRPF lookup failure";
+          type srl_nokia-comm:zero-based-counter64;
+        }
+        leaf urpf-drop-octets {
+          description
+            "Number of octets in packets of this protocol arriving on this subinterface dropped because of uRPF lookup failure";
+          type srl_nokia-comm:zero-based-counter64;
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv4" {
+    if-feature "srl_feat:unicast-rpf-check";
+    uses subinterface-urpf-check;
+  }
+
+  augment "/srl_nokia-if:interface/srl_nokia-if:subinterface/srl_nokia-if:ipv6" {
+    if-feature "srl_feat:unicast-rpf-check";
+    uses subinterface-urpf-check;
+  }
+}

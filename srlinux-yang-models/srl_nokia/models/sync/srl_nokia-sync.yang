@@ -1,0 +1,86 @@
+module srl_nokia-sync {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:time:sync";
+  prefix srl_nokia-sync;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-sync-ptp {
+    prefix srl_nokia-sync-ptp;
+  }
+  import srl_nokia-sync-freq {
+    prefix srl_nokia-sync-freq;
+  }
+  import srl_nokia-sync-interfaces {
+    prefix srl_nokia-sync-interfaces;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2022-06-30 {
+    description
+      "SRLinux 22.6.1";
+  }
+  revision 2022-03-31 {
+    description
+      "SRLinux 22.3.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+
+  grouping sync-top {
+    container sync {
+      if-feature "srl_nokia-feat:sync";
+      description
+        "Context to configure sync parameters and report sessions state";
+      container freq-references {
+        uses srl_nokia-sync-freq:freq-references-top;
+      }
+      container freq-clock {
+        uses srl_nokia-sync-freq:freq-clock-top;
+      }
+      container ptp {
+        uses srl_nokia-sync-ptp:ptp-instance-top;
+      }
+      container gnss {
+        if-feature "srl_nokia-feat:sync-gnss";
+        uses srl_nokia-sync-interfaces:gnss-interface-top;
+      }
+      container one-pps {
+        if-feature "srl_nokia-feat:sync-one-pps";
+        uses srl_nokia-sync-interfaces:one-pps-interface-top;
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl_nokia-feat:sync";
+    uses sync-top;
+  }
+}

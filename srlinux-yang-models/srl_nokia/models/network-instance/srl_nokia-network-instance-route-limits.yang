@@ -1,0 +1,80 @@
+module srl_nokia-network-instance-route-limits {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:fib:network-instance-route-limits";
+  prefix srl_nokia-ni-rt-limit;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-ni;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "YANG model for network-instance level route limits";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+
+  grouping route-limits {
+    list route-limit {
+      description
+        "List of route limits that apply to the network-instance";
+      key "family";
+      leaf family {
+        description
+          "The family to which a limit applies";
+        type enumeration {
+          enum ipv4;
+          enum ipv6;
+        }
+      }
+      leaf maximum {
+        description
+          "The maximum number of unique prefixes that will be accepted for the family";
+        type uint32;
+        default "0";
+      }
+      leaf warning-only {
+        description
+          "When configured true and there are excess routes over the maximum, the condition is recorded but the excess routes are still programmed
+
+           When configured false, excess routes over the maximum are not programmed into the IP FIB table unless the excess routes are local, host or linux routes.";
+        type boolean;
+        default "false";
+      }
+      leaf warning-threshold-percent {
+        description
+          "Sets the threshold for generating a log event when the current route count reaches maximum times this percentage";
+        type uint8 {
+          range "1..100";
+        }
+        default "90";
+      }
+      leaf maximum-exceeded {
+        config false;
+        description
+          "Reads true when the number of submitted routes is above the configured maximum and false when it is equal or below";
+        type boolean;
+      }
+    }
+  }
+
+  augment "/srl_nokia-ni:network-instance" {
+    if-feature "srl-feat:network-instance-route-limits";
+    uses route-limits;
+  }
+}

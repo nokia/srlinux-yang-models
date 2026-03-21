@@ -1,0 +1,437 @@
+module srl_nokia-mvpn-l3 {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:pim:mvpn-l3";
+  prefix srl_nokia-mvpn-l3;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-bgp-ipvpn {
+    prefix srl-bgp-ipvpn;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl-rpol;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-policy-types {
+    prefix srl_nokia-pol-types;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of the L3 Multicast vpn service";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  typedef provider-tunnel-type {
+    type enumeration {
+      enum pmsi-rx {
+        description
+          "Incoming, provider multicast service tunnel interface type ";
+      }
+      enum pmsi-tx {
+        description
+          "Outgoing, provider multicast service tunnel interface type ";
+      }
+    }
+    description
+      "L3 mvpn tunnel types";
+  }
+
+  typedef provider-tunnel-protocol {
+    type enumeration {
+      enum mldp {
+        description
+          "Multi-point LDP tunnel type";
+        reference
+          "rfc7441";
+      }
+    }
+    description
+      "Next generation multicast vpn customers route types";
+  }
+
+  typedef mvpn-participation-type {
+    type enumeration {
+      enum sender-only {
+        description
+          "this mvpn is only a root pe";
+      }
+      enum receiver-only {
+        description
+          "this mvpn is only a leaf pe";
+      }
+      enum sender-receiver {
+        description
+          "this mvpn is activing as root and leaf pe";
+      }
+    }
+    description
+      "PE participation as root or leaf mvpn";
+  }
+
+  grouping mvpn-l3-global-config {
+    leaf bgp-instance {
+      type uint8 {
+        range "1..2";
+      }
+      description
+        "unicast BGP instance used for default RD of this MVPN";
+      must '../../../srl_nokia-netinst:bgp-ipvpn/srl-bgp-ipvpn:bgp-instance[srl-bgp-ipvpn:id=current()]' {
+        error-message "the bgp-instance must refer to a bgp-ipvpn bgp-instance";
+      }
+    }
+    leaf participation {
+      type mvpn-participation-type;
+      description
+        "set the mvpn participation type as root, leaf or both";
+      default "sender-receiver";
+    }
+    choice import-policy-config {
+      if-feature "srl_nokia-feat:l3-multicast-vpn-policy";
+      description
+        "Policy used to specify the routes leaked by other NIs that should be imported into this NI";
+      default "multicast";
+      case multicast {
+        leaf-list import-policy {
+          ordered-by user;
+          max-elements 14;
+          type leafref {
+            path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+          }
+        }
+      }
+      case unicast {
+        leaf import-policy-unicast {
+          type empty;
+          description
+            "import routes from unicast policy";
+        }
+      }
+    }
+    choice export-policy-config {
+      if-feature "srl_nokia-feat:l3-multicast-vpn-policy";
+      description
+        "Policy used to specify the routes of this NI that should be made available for leaking to other NIs";
+      default "multicast";
+      case multicast {
+        leaf-list export-policy {
+          ordered-by user;
+          max-elements 14;
+          type leafref {
+            path "/srl-rpol:routing-policy/srl-rpol:policy/srl-rpol:name";
+          }
+        }
+      }
+      case unicast {
+        leaf export-policy-unicast {
+          type empty;
+          description
+            "export routes to unicast policy";
+        }
+      }
+    }
+    choice import-route-target-config {
+      default "multicast";
+      case multicast {
+        leaf import-route-target {
+          srl_nokia-ext:show-importance "high";
+          type srl_nokia-pol-types:bgp-ext-community-type;
+          must "starts-with(.,'target')";
+          description
+            "Import Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is
+             auto-derived with the format <asn>:<evi> where 'asn' is the autonomous-system configured in the network-instance default.";
+        }
+      }
+      case unicast {
+        leaf import-route-target-unicast {
+          type empty;
+          description
+            "Enable the unicast vrf-target for the MVPN";
+        }
+      }
+    }
+    choice export-route-target-config {
+      default "multicast";
+      case multicast {
+        leaf export-route-target {
+          srl_nokia-ext:show-importance "high";
+          type srl_nokia-pol-types:bgp-ext-community-type;
+          must "starts-with(.,'target')";
+          description
+            "Export Route Target (RT) in the bgp-vpn instance. When used for evpn and if not configured, the RT is auto-derived
+
+             with the format <asn>:<evi> where 'asn' is the autonomous-system configured in the network-instance default.";
+        }
+      }
+      case unicast {
+        leaf export-route-target-unicast {
+          type empty;
+          description
+            "Enable the unicast vrf-target for the MVPN";
+        }
+      }
+    }
+  }
+
+  grouping mldp-tunnel {
+    container mldp {
+      description
+        "multipoint ldp for provider tunnel";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        description
+          "Administratively enable or disable mldp as a provider tunnel";
+        default "disable";
+        must "(. = 'disable') or (../../../../../../srl_nokia-netinst:bgp-ipvpn/srl-bgp-ipvpn:bgp-instance[srl-bgp-ipvpn:id = ../../../../bgp-instance]/srl-bgp-ipvpn:encapsulation-type = 'mpls')" {
+          error-message "the bgp-ipvpn bgp-instance must use mpls encapsulation";
+        }
+      }
+    }
+  }
+
+  grouping inclusive-provider-tunnel-state {
+    description
+      "Inclusive provider tunnel information";
+    list interface {
+      config false;
+      description
+        "List of Provider Tunnel Interface used in L3 Multicast VPN as Inclusive PMSI";
+      key "name";
+      leaf name {
+        description
+          "Provider Tunnel Interface name";
+        type string;
+      }
+      leaf pmsi-type {
+        type provider-tunnel-type;
+        description
+          "Provider tunnel multicast tunnel type";
+      }
+      leaf oper-state {
+        type srl_nokia-comm:oper-state;
+        description
+          "The operational state of the destination PMSI.";
+      }
+      leaf create-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry was created";
+      }
+      leaf up-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry became operational";
+      }
+      leaf pseudo {
+        type boolean;
+        description
+          "indicates if pseudo interface";
+      }
+      container mldp {
+        description
+          "Multipoint LDP inclusive provider tunnel identifier";
+        leaf root-address {
+          type srl_nokia-comm:ip-address;
+          description
+            "Root address identifier for this inclusive pmsi";
+        }
+        leaf lsp-id {
+          type uint32;
+          description
+            "lsp-id to identify the p2mp ldp inclusive pmsi";
+        }
+      }
+    }
+  }
+
+  grouping selective-provider-tunnel-state {
+    description
+      "Selective provider tunnel information";
+    list interface {
+      config false;
+      description
+        "List of Provider Tunnel Interface used in L3 Multicast VPN as Inclusive PMSI";
+      key "name";
+      leaf name {
+        description
+          "Provider Tunnel Interface name";
+        type string;
+      }
+      leaf pmsi-type {
+        type provider-tunnel-type;
+        description
+          "Provider tunnel multicast tunnel type";
+      }
+      leaf oper-state {
+        type srl_nokia-comm:oper-state;
+        description
+          "The operational state of the destination PMSI.";
+      }
+      leaf vpn-cscg-count {
+        type uint32;
+        description
+          "The number of (C-S,C-G)'s mapped to this PMSI";
+      }
+      leaf create-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry was created";
+      }
+      leaf up-time {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time elapsed since this PMSI entry became operational";
+      }
+      container mldp {
+        description
+          "Multipoint LDP inclusive provider tunnel identifier";
+        leaf root-address {
+          type srl_nokia-comm:ip-address;
+          description
+            "Root address identifier for this selective pmsi";
+        }
+        leaf lsp-id {
+          type uint32;
+          description
+            "lsp-id to identify the p2mp ldp selective pmsi";
+        }
+        leaf source-address {
+          type srl_nokia-comm:ip-address;
+          description
+            "Source address identifier for this selective pmsi";
+        }
+        leaf group-address {
+          type srl_nokia-comm:ip-address;
+          description
+            "Group address identifier for this selective pmsi";
+        }
+      }
+    }
+  }
+
+  grouping inclusive-provider-tunnel {
+    container inclusive {
+      uses mldp-tunnel;
+      uses inclusive-provider-tunnel-state;
+    }
+  }
+
+  grouping selective-configuration {
+    container data-rate-threshold {
+      description
+        "Enter the data-threshold context";
+      list group-range {
+        description
+          "The data rate threshold to switch an (c-s,c-g) from IPMSI to SPMSI
+
+           When an (c-s, c-g) surpasses this threshold, it switches from the inclusive provider tunnel to the selective provider tunnel.";
+        key "group-prefix";
+        leaf group-prefix {
+          description
+            "A multicast IP v4 or v6 prefix for a group range";
+          type srl_nokia-comm:ip-prefix;
+          must "re-match(.,'22[4-9]\\..*') or re-match(.,'23[0-9]\\..*') or starts-with(.,'ff')" {
+            error-message "Not a valid multicast IP address";
+          }
+        }
+        leaf rate-threshold {
+          type uint64 {
+            range "0..4294967294";
+          }
+          units "kbps";
+          mandatory true;
+          description
+            "Configured throughput rate for a (c-s, c-g) to switch from IPMSI to SPMSI
+
+             If the rate for a (C-S, C-G) within the specified group range exceeds the threshold, traffic for the (C-S, C-G) is switched to the selective provider tunnel.
+             Threshold 0 is supported. When threshold 0 is configured, the (C-S, C-G) switches to S-PMSI as soon as it is learned in the MVPN and without traffic flowing for that (C-S, C-G)";
+        }
+      }
+    }
+  }
+
+  grouping selective-provider-tunnel {
+    container selective {
+      if-feature "srl_nokia-feat:l3-multicast-vpn-spmsi";
+      uses mldp-tunnel;
+      uses selective-configuration;
+      uses selective-provider-tunnel-state;
+    }
+  }
+
+  grouping mvpn-l3-global-provider-tunnel {
+    container provider-tunnel {
+      uses inclusive-provider-tunnel;
+      uses selective-provider-tunnel;
+    }
+  }
+
+  grouping bgp-mvpn-top {
+    container bgp-multicast-vpn {
+      if-feature "srl_nokia-feat:l3-multicast-vpn";
+      presence "Configure mvpn-l3";
+      must "(../../srl_nokia-netinst:type = 'srl_nokia-netinst:ip-vrf')" {
+        error-message "L3 MVPN configuration is only possible on network-instance of type ip-vrf";
+      }
+      must "not(../../srl_nokia-netinst:type = 'srl_nokia-netinst:mac-vrf')" {
+        error-message "L3 MVPN routing configuration is not possible on network-instance of type mac-vrf";
+      }
+      must "../../srl_nokia-netinst:type != 'srl_nokia-netinst:host'" {
+        error-message "L3 MVPN routing configuration is not possible on network-instance of type host";
+      }
+      must '../srl_nokia-netinst:bgp-ipvpn' {
+        error-message "bgp-ipvpn must be configured under protocols to configure multicast-vpn";
+      }
+      list multicast-vpn-instance {
+        key "id";
+        max-elements 1;
+        description
+          "List of multicast-vpn instances configured in the network-instance. Only one instance allowed in the current release.";
+        leaf id {
+          type uint8 {
+            range "1";
+          }
+          description
+            "The index of the multicast-vpn instance";
+          must 'current()/../../../../srl_nokia-netinst:protocols/srl_nokia-netinst:pim' {
+            error-message "pim must be configured under protocols to configure multicast-vpn";
+          }
+        }
+        uses mvpn-l3-global-config;
+        uses mvpn-l3-global-provider-tunnel;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses bgp-mvpn-top;
+  }
+}

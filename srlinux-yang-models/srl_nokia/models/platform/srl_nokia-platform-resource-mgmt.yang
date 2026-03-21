@@ -1,0 +1,305 @@
+module srl_nokia-platform-resource-mgmt {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-resource-mgmt";
+  prefix srl_nokia-platform-res-mgmt;
+
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational data for system-wide management of critical resources";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2025-03-31 {
+    description
+      "SRLinux 25.3.1";
+  }
+  revision 2023-03-31 {
+    description
+      "SRLinux 23.3.1";
+  }
+  revision 2022-11-30 {
+    description
+      "SRLinux 22.11.1";
+  }
+  revision 2021-11-30 {
+    description
+      "SRLinux 21.11.1";
+  }
+  revision 2021-06-30 {
+    description
+      "SRLinux 21.6.1";
+  }
+  revision 2021-03-31 {
+    description
+      "SRLinux 21.3.1";
+  }
+
+  grouping bank-binding {
+    description
+      "Counter bank allocation for different applications";
+    list bank-allocation {
+      key "bank-id";
+      leaf bank-id {
+        description
+          "Unique identifier of the bank. Starts with 1. Some applications support allocation of multiple banks";
+        type uint16 {
+          range "1..34";
+        }
+        must "(. <= 32 and ../../../name = 'Gen3') or (../../../name = 'Gen2c+')" {
+          error-message "max bank-id is 32 for forwarding-complex-type Gen3";
+          srl_nokia-ext:if-feature "not srl_nokia-feat:ixr-dnx-gen2";
+        }
+        must '(. <= 22)' {
+          error-message "max bank-id is 22 for forwarding-complex-type Gen2";
+          srl_nokia-ext:if-feature "srl_nokia-feat:ixr-dnx-gen2";
+        }
+      }
+    }
+  }
+
+  grouping res-mgmt {
+    container resource-management {
+      description
+        "Container for managing resources in a system-wide context";
+      container mdb-profile {
+        if-feature "srl-feat:platform-mdb-profile";
+        description
+          "Container for managing the allocation of hardware resources according to a Broadcom MDB profile";
+        leaf chassis-reboot-required {
+          config false;
+          type boolean;
+          description
+            "Reads true if the user has committed a change in the MDB profile configuration but has not yet saved the config and restarted the system, so previous configuration (and the associated MDB profile) is still in effect";
+        }
+        leaf id {
+          description
+            "MDB profile ID. Different MDB profiles are supported on 7250 IXR platforms with different scaling profiles to align better with scaling needs of various use-cases ";
+          type enumeration {
+            enum 1 {
+              description
+                "The default profile for all 7250 IXR based platforms. Different profile-IDs restructures datapath tables for scaling changes.";
+            }
+            enum 2 {
+              if-feature "srl-feat:ixr-dnx-gen2cp-only-system";
+              description
+                "Profile for enabling secondary-default-lookup on 7250 IXR Gen 2cp based platforms";
+            }
+            enum 3 {
+              if-feature "srl-feat:ixr-dnx-gen2cp-only-system and srl-feat:platform-mdb-profile-3";
+              description
+                "Profile for hosting IP multicast (S,G) entries on 7250 IXR Gen 2cp based platforms";
+            }
+            enum 4 {
+              if-feature "srl-feat:ixr-dnx-gen3-only-system and srl-feat:platform-mdb-profile-4";
+              description
+                "Profile for hosting labels including push and swap entries together with labeled prefixes (e.g. BGP-LU, Prefix SID) on 7250 IXR Gen 3 based platforms";
+            }
+          }
+          default "1";
+        }
+      }
+      container tcam {
+        description
+          "Container for managing the allocation of TCAM banks to different applications.";
+      }
+      container unified-forwarding-resources {
+        if-feature "srl-feat:unified-forwarding-tables";
+        description
+          "Container for managing Broadcom-specific UFT resources.";
+        leaf xdp-restart-required {
+          config false;
+          type boolean;
+          description
+            "Reads true if the user has committed a change to one or more of the configurable values in the uft container but has not yet restarted XDP so the operational values are still the values initialized at the last XDP restart.";
+        }
+        leaf alpm {
+          if-feature "srl-feat:trident3 or srl-feat:trident4";
+          description
+            "Controls the ALPM mode.
+
+             If this is set to disabled then no UFT banks are allocated to ALPM.  This mode is not supported by 7220 IXR-D4 or 7220 IXR-D5.
+
+             If this is set to enabled then 4 UFT shared banks are allocated to ALPM.  This mode is not supported by 7220 IXR-D2 or 7220 IXR-D3.
+
+             If this is set to high-scale then 8 UFT shared banks are allocated to ALPM. This mode is not supported by 7220 IXR-D1.";
+          type enumeration {
+            enum disabled {
+              if-feature "srl-feat:trident3";
+            }
+            enum enabled {
+              if-feature "srl-feat:platform-7220-d1 or srl-feat:trident4";
+            }
+            enum high-scale {
+              if-feature "srl-feat:platform-7220-d2 or srl-feat:platform-7220-d3 or srl-feat:trident4";
+            }
+          }
+        }
+        leaf requested-extra-ip-host-entries {
+          if-feature "srl-feat:trident3";
+          description
+            "The extra number of host entries that are desired.
+
+             The number of UFT shared banks that are reserved for IPv4 and IPv6 host entries is given by:
+             min(N//X,P-A)
+
+             where:
+             N = configured value of requested-extra-ip-host-entries
+             X = the size of each shared bank, which is platform specific
+             P-A = platform-specific number of shared banks, subtracting the ALPM banks
+
+             requested-extra-ip-host-entries is interpreted in terms of IPv4 hosts (single-wide entries). IPv6 host entries are double-wide so 1 IPv4 host entry + 1 IPv6 host-entry counts as 3 entries.
+
+             All UFT shared banks that are not reserved by ALPM and not reserved for extra IP host entries are used for extra MAC entries.
+
+             On D1 the default value is 48K entries, which provides 3 shared banks, max is 96K.
+             On D2/D3 the default value is 128K entries, which provides 4 shared banks, max is 256K.";
+          type uint32 {
+            range "0..262144";
+          }
+        }
+        leaf allocated-extra-ip-host-entries {
+          if-feature "srl-feat:trident3";
+          config false;
+          description
+            "The extra number of host entries that have been allocated from UFT shared banks.";
+          type uint32 {
+            range "0..262144";
+          }
+        }
+        leaf allocated-extra-mac-entries {
+          if-feature "srl-feat:trident3";
+          config false;
+          description
+            "The extra number of MAC address entries that have been allocated from UFT shared banks.";
+          type uint32 {
+            range "0..262144";
+          }
+        }
+        leaf ipv6-128bit-lpm-entries {
+          if-feature "srl-feat:trident3 or srl-feat:tomahawk3";
+          description
+            "Sets the value for num_ipv6_lpm_128b_entries, which affects IP FIB scale.
+
+             H2/H3 range: 0-1024
+             D1 range: 0-4096
+             D2/D3 range: 0-8192";
+          type uint16 {
+            range "0..8192";
+          }
+        }
+      }
+      container counter-banks {
+        if-feature "srl-feat:platform-counter-bank-allocation";
+        description
+          "Container for managing the allocation of hardware counter banks";
+        leaf chassis-reboot-required {
+          config false;
+          type boolean;
+          description
+            "Reads true if the user has committed a change in the counter bank allocation configuration but has not yet saved the config and restarted the system, so previous configuration (and the associated counter bank allocation) is still in effect";
+        }
+        list forwarding-complex-type {
+          description
+            "List of forwarding complex types in the system";
+          key "name";
+          leaf name {
+            type enumeration {
+              enum Gen2 {
+                description
+                  "7250 IXR Gen 2 based forwarding complex";
+                if-feature "srl-feat:ixr-dnx-gen2";
+              }
+              enum Gen2c+ {
+                description
+                  "7250 IXR Gen 2c+ based forwarding complex";
+                if-feature "srl-feat:ixr-dnx-gen2cp";
+              }
+              enum Gen3 {
+                description
+                  "7250 IXR Gen 3 based forwarding complex";
+                if-feature "srl-feat:ixr-dnx-gen3";
+              }
+            }
+            description
+              "Counter bank sizes and scale can be different among various ASICs within the same chassis. Configuration is on per ASIC basis";
+          }
+          list application {
+            key "name";
+            leaf name {
+              description
+                "Bank allocation is facilitated on per application (LSP Stats, Policer Stats, and alike) basis";
+              type identityref {
+                base srl-comm:applications-utilizing-banks;
+              }
+            }
+            uses bank-binding;
+          }
+        }
+      }
+      container group-based-policy {
+        if-feature "srl-feat:platform-group-based-policy";
+        description
+          "Container for managing the allocation of hardware resources used for group-based policy";
+        leaf chassis-reboot-required {
+          if-feature "srl-feat:platform-group-based-policy-ip-vrf";
+          config false;
+          type boolean;
+          description
+            "Indicates if a chassis reboot is required to activate configuration changes in this container
+
+             Reads true if the user has committed a change in the configuration of lpm-source-lookup but has not yet saved the config and restarted the system, so previous configuration is still in effect.";
+        }
+        leaf mac-lookup {
+          type boolean;
+          default "false";
+          description
+            "Enables support for group-based policy on MAC-VRF network-instances
+
+             When set to true, the system allocates resources for group-based policy on MAC-VRF network-instances.
+             When set to false, the system does not allocate resources for group-based policy on MAC-VRF network-instances
+             and uses those resources for other purposes.";
+        }
+        leaf lpm-source-lookup {
+          if-feature "srl-feat:platform-group-based-policy-ip-vrf";
+          type boolean;
+          default "false";
+          description
+            "True means the datapath is operating in a mode that can find the source tag from LPM route table lookups
+
+             Certain route scale numbers may be reduced when operating in this mode.";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-platform:platform" {
+    uses res-mgmt;
+  }
+}

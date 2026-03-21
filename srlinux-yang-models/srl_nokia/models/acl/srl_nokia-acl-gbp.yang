@@ -1,0 +1,369 @@
+module srl_nokia-acl-gbp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:acl:acl-gbp";
+  prefix srl_nokia-acl-gbp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-group-based-policy {
+    prefix srl_nokia-gbp;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-acl {
+    prefix srl_nokia-acl;
+  }
+  import srl_nokia-packet-match-types {
+    prefix srl_nokia-pkt-match-types;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "A model for ACL of Group Based Policy of a network instance";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  grouping acl-gbp-filter-entry-statistics {
+    description
+      "ACL entry statistics";
+    container statistics {
+      description
+        "Container for per-entry statistics";
+      config false;
+      srl_nokia-ext:delivery-node-override "true";
+      leaf last-clear {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time of the last clear command performed by the user at this level or a higher level";
+      }
+      leaf incomplete {
+        if-feature "not srl_nokia-feat:fpcx";
+        type boolean;
+        description
+          "Returns true when at least one linecard had insufficient stats resources to ensure an accurate set of values for the number of matched packets";
+      }
+      leaf matched-packets {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The number of packets matching the entry since it was programmed or since the last clear, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+      leaf matched-octets {
+        srl_nokia-ext:show-importance "high";
+        if-feature "srl_nokia-feat:fpcx";
+        description
+          "The number of octets packets matching the entry since it was programmed or since the last clear, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+        type srl_nokia-comm:zero-based-counter64;
+      }
+      leaf last-match {
+        srl_nokia-ext:show-importance "high";
+        description
+          "The elapsed time since a packet last matched the entry, considering the mgmt0 subinterface and all subinterfaces of all linecard ports that use the ACL as an input ACL";
+        type srl_nokia-comm:date-and-time-delta;
+      }
+      container policer {
+        srl_nokia-ext:delivery-node-override "true";
+        if-feature "srl_nokia-feat:acl-group-based-policy-policer and not srl_nokia-feat:vsrl";
+        description
+          "Policer stats for traffic matching the entry:
+
+           Statistics for policer configured with scope=global and entry-specific=true, and acl configured with subinterface-specific=false.";
+        uses srl_nokia-acl:acl-policer-statistics;
+      }
+    }
+  }
+
+  grouping acl-gbp-top {
+    container acl {
+      presence "Container for Group Based Policy ACL definition for this network-instance";
+      description
+        "Group Based Policy (GBP) ACL definition for this network-instance";
+      list entry {
+        key "sequence-id";
+        description
+          "List of ACL entries";
+        leaf sequence-id {
+          type uint32 {
+            range "1..65535";
+          }
+          description
+            "A number to indicate the relative evaluation order of the different entries
+             Lower numbered entries are evaluated before higher numbered entries.";
+        }
+        leaf description {
+          type srl_nokia-comm:description-4k-chars;
+          description
+            "Description string for the filter entry";
+        }
+        container match {
+          description
+            "Container for the conditions that determine whether a packet matches this entry";
+          leaf-list source-group {
+            type leafref {
+              path "../../../../srl_nokia-gbp:group/srl_nokia-gbp:name";
+            }
+            max-elements 1;
+            description
+              "An IPv4 or IPv6 packet matches this condition if its destination group matches the name specified";
+          }
+          leaf-list destination-group {
+            type leafref {
+              path "../../../../srl_nokia-gbp:group/srl_nokia-gbp:name";
+            }
+            max-elements 1;
+            description
+              "An IPv4 or IPv6 packet matches this condition if its destination group matches the name specified";
+          }
+          leaf ip-version {
+            type enumeration {
+              enum ipv4 {
+                description
+                  "IPv4 address family";
+              }
+              enum ipv6 {
+                description
+                  "IPv6 address family";
+              }
+            }
+            description
+              "An IPv4 packet matches this condition if the ip-version specified is ipv4, an IPv6 packet matches this condition if the ip-version specified ip ipv6";
+          }
+          leaf protocol {
+            description
+              "An IPv4 or IPv6 packet matches this condition if its IPv4 protocol type field or IPv6 next-header field matches the specified value";
+            type srl_nokia-pkt-match-types:ip-protocol-type;
+          }
+          container source-port {
+            description
+              "A packet matches this condition if its source TCP or UDP port number matches the value or range that is specified
+
+               The rule should also have a condition that the IP protocol equals 6 (TCP) or 17 (UDP) in order for this to be interpreted correctly.";
+            choice port {
+              case value {
+                leaf operator {
+                  description
+                    "Comparison operator
+
+                     eq = equal
+                     ge = greater than or equal to
+                     le = less than or equal to";
+                  type srl_nokia-pkt-match-types:operator;
+                  must "string(../value) != ''" {
+                    error-message "The source port value must be specified along with operator";
+                  }
+                }
+                leaf value {
+                  description
+                    "A source port number";
+                  type srl_nokia-pkt-match-types:l4-port-type;
+                  must "string(../../protocol) = '6' or string(../../protocol) = '17' or
+                        string(../../protocol) = 'tcp' or string(../../protocol) = 'udp' " {
+                    error-message "The protocol or next-header must be TCP or UDP to use port value";
+                  }
+                }
+              }
+              case range {
+                container range {
+                  description
+                    "Container used to specify a contiguous range of TCP/UDP port numbers";
+                  leaf start {
+                    type srl_nokia-pkt-match-types:l4-port-type;
+                    description
+                      "The starting port number to include in the range";
+                    must "string(../../value) = ''" {
+                      error-message "The source port value must not be set to use range";
+                    }
+                    must "not(../../operator >= '')" {
+                      error-message "The source port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../protocol) = '17' or
+                          string(../../../protocol) = 'tcp' or string(../../../protocol) = 'udp' " {
+                      error-message "The protocol or next-header must be TCP or UDP to use port value";
+                    }
+                  }
+                  leaf end {
+                    type srl_nokia-pkt-match-types:l4-port-type;
+                    description
+                      "The ending port number to include in the range";
+                    must "string(../../value) = ''" {
+                      error-message "The source port value must not be set to use range";
+                    }
+                    must "not(../../operator >= '')" {
+                      error-message "The source port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../protocol) = '17' or
+                          string(../../../protocol) = 'tcp' or string(../../../protocol) = 'udp' " {
+                      error-message "The protocol or next-header must be TCP or UDP to use port value";
+                    }
+                  }
+                }
+              }
+            }
+          }
+          container destination-port {
+            description
+              "A packet matches this condition if its destination TCP or UDP port number matches the value or range that is specified
+
+               The rule should also have a condition that the IP protocol equals 6 (TCP) or 17 (UDP) in order for this to be interpreted correctly.";
+            choice port {
+              case value {
+                leaf operator {
+                  description
+                    "Comparison operator
+
+                     eq = equal
+                     ge = greater than or equal to
+                     le = less than or equal to";
+                  type srl_nokia-pkt-match-types:operator;
+                  must "string(../value) != ''" {
+                    error-message "The source port value must be specified along with operator";
+                  }
+                }
+                leaf value {
+                  description
+                    "A source port number";
+                  type srl_nokia-pkt-match-types:l4-port-type;
+                  must "string(../../protocol) = '6' or string(../../protocol) = '17' or
+                        string(../../protocol) = 'tcp' or string(../../protocol) = 'udp' " {
+                    error-message "The protocol or next-header must be TCP or UDP to use port value";
+                  }
+                }
+              }
+              case range {
+                container range {
+                  description
+                    "Container used to specify a contiguous range of TCP/UDP port numbers";
+                  leaf start {
+                    type srl_nokia-pkt-match-types:l4-port-type;
+                    description
+                      "The starting port number to include in the range";
+                    must "string(../../value) = ''" {
+                      error-message "The source port value must not be set to use range";
+                    }
+                    must "not(../../operator >= '')" {
+                      error-message "The source port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../protocol) = '17' or
+                          string(../../../protocol) = 'tcp' or string(../../../protocol) = 'udp' " {
+                      error-message "The protocol or next-header must be TCP or UDP to use port value";
+                    }
+                  }
+                  leaf end {
+                    type srl_nokia-pkt-match-types:l4-port-type;
+                    description
+                      "The ending port number to include in the range";
+                    must "string(../../value) = ''" {
+                      error-message "The source port value must not be set to use range";
+                    }
+                    must "not(../../operator >= '')" {
+                      error-message "The source port operator must be empty to use range";
+                    }
+                    must "string(../../../protocol) = '6' or string(../../../protocol) = '17' or
+                          string(../../../protocol) = 'tcp' or string(../../../protocol) = 'udp' " {
+                      error-message "The protocol or next-header must be TCP or UDP to use port value";
+                    }
+                  }
+                }
+              }
+            }
+          }
+          leaf tcp-flags {
+            type string {
+              pattern '(\(|\)|&|\||!|ack|rst|syn)+';
+              length "1..255";
+            }
+            must "string(../protocol) = '6' or string(../protocol) = 'tcp' " {
+              error-message "A protocol or next-header must be TCP to use with tcp flags";
+            }
+            description
+              "A logical expression using the &, | and ! logical operators and the TCP flag names: rst, syn and ack";
+          }
+        }
+        container action {
+          description
+            "Container for the actions to be applied to packets matching the filter entry";
+          choice action {
+            container accept {
+              presence "Accept matching packets and forward them towards their normal destination";
+              description
+                "Accept matching packets and forward them towards their normal destination";
+              container rate-limit {
+                if-feature "srl_nokia-feat:acl-group-based-policy-policer";
+                description
+                  "Rate-limit accepted packets";
+                leaf policer {
+                  if-feature "srl_nokia-feat:acl-policer";
+                  type leafref {
+                    path "/srl_nokia-acl:acl/srl_nokia-acl:policers/srl_nokia-acl:policer/srl_nokia-acl:name";
+                  }
+                  description
+                    "Reference to a policer";
+                }
+              }
+            }
+            container drop {
+              presence "Drop matching packets";
+              description
+                "Drop matching packets
+
+                 Dropped IP packets do not result in sending ICMP messages back to the source";
+            }
+          }
+          leaf log {
+            if-feature "srl_nokia-feat:acl-logging";
+            default "false";
+            type boolean;
+            description
+              "When this is true, a log is created for each packet matching the entry
+
+               For IP packets matched by an IP filter entry the log entry contains the following information:
+               - timestamp
+               - filter name
+               - filter entry sequence-id
+               - incoming subinterface name
+               - action: drop
+               - IP protocol
+               - packet-length
+               - source IP address
+               - source L4 port number (TCP/UDP packets)
+               - destination IP address
+               - destination L4 port number (TCP/UDP packets)
+               - icmp-type (ICMP packets)
+               - icmp-code (ICMP packets)";
+          }
+          leaf collect-stats {
+            type boolean;
+            default "false";
+            description
+              "Collect statistics for each entry of the ACL. If this is set to false no hardware resources are allocated to collecting statistics for this ACL entry.";
+          }
+        }
+        uses acl-gbp-filter-entry-statistics;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-gbp:group-based-policy" {
+    uses acl-gbp-top;
+    if-feature "srl_nokia-feat:group-based-policy";
+  }
+}

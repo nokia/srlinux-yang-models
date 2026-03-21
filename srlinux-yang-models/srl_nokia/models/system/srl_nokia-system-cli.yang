@@ -1,0 +1,638 @@
+module srl_nokia-system-cli {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:linux:system-cli";
+  prefix srl_nokia-system-cli;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl-netinst;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration related to cli environment";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  typedef alias-name-type {
+    type string {
+      pattern '[^|\[\]>\t\n"]*';
+      pattern "[^']*";
+      pattern '[^\s{}].*';
+      pattern '.*[^\s]$';
+      pattern '^([^{}]*(\{([^{}\s]*)\})?)*[^{}]*$';
+      length "1..max";
+    }
+    description
+      "Alias name string with constraints";
+  }
+
+  typedef output-modifier-alias-name-type {
+    type string {
+      pattern '[^|\[\]>\t\n" ]*';
+      pattern "[^']*";
+      pattern '[^\s].*';
+      pattern '.*[^\s]$';
+      length "1..max";
+    }
+    description
+      "Output modifier alias name string with constraints";
+  }
+
+  typedef alias-command-type {
+    type string {
+      pattern '[^\s].*';
+      pattern '.*[^\s]$';
+      length "1..max";
+    }
+    description
+      "Alias command string with constraints";
+  }
+
+  grouping cli-environment-config {
+    description
+      "Configuration data for environment";
+    list alias {
+      key "name";
+      description
+        "Create or overwrite an alias
+
+         Aliases can be entered at the start of the input line, and must represent a complete command.
+
+         The alias name can contain the following:
+            - One or more fixed keywords, for example 'display stuff' and 'my-alias' are valid names.
+            - One or more required arguments, entered between '{' and '}'.
+              These arguments will then be substituted in the alias value before executing.
+
+         For example, if you create this alias:
+             environment alias 'display interface {name}' 'info / interface {name} | as table'
+
+         Then entering 'display interface ethernet-1/1' will execute 'info / interface ethernet-1/1 | as table'.
+
+         The alias value can contain the following keywords:
+             - '{}' will add an optional unnamed parameter.
+                 It defaults to '*' if it is not entered.
+             - '{<name>}' will add an optional named parameter with name '<name>'.
+                 It defaults to '*' if it is not entered.
+
+         For example, if you create this alias:
+             environment alias 'display interface' 'info / interface {} subinterface {subinterface} | as table'
+
+         Then entering the following are all equivalent:
+             display interface
+             display interface *
+             display interface * subinterface *
+         But you can of course also use other values
+             display interface my_interface subinterface 1";
+      leaf name {
+        srl-ext:no-globbing;
+        type alias-name-type;
+        description
+          "Name of the alias";
+      }
+      leaf command {
+        mandatory true;
+        type alias-command-type;
+        description
+          "Aliased command";
+      }
+    }
+    leaf basic-prompt {
+      type string;
+      default "\\n--{{ {banner}{startup_config_state}{modified_flags}{short_yang_models}{mode_and_session} }}--[ {pwc} ]--\\n{short_redundancy}{hw_slot}:{aaa_user}@{host}# ";
+      description
+        "Change the prompt for 'basic' cli-engine type displayed before every input line
+
+         The following list of keywords will be replaced automatically:
+             aaa_session_id  The session id of the current AAA session.
+             aaa_user        The user name from the current AAA session.
+             banner          Shows server status banner if there is any (for example
+                             [WARM BOOT])
+             candidate_name  The current candidate name or empty string if not in
+                             candidate mode.
+             commit_confirmed
+                             Shows [commit confirmed] if there is commit confirmed in
+                             progress.
+             commit_confirmed_with_remaining_time
+                             Shows [commit confirmed] and the remaining time if there is
+                             commit confirmed in progress.
+             configuration_session_type
+                             The current configuration session type (e.g. shared,
+                             shared-exclusive or private or private-exclusive).
+                             Will output empty string when no configuration session
+                             has been established.
+             domain          The domain name (as returned by domainname program, same as
+                             sysctl kernel.domainname).
+             fqdn            Returns FQDN (if the domain name is not defined or unknown,
+                             then returns the host name).
+             host            The host name.
+             hw_slot         Slot letter of the CPM slot ('A' or 'B').
+             jspath_pwc      The present working context, formatted as a jspath.
+                             Example: .interface{.name==\"mgmt0\"}.subinterface{.index==0}
+             last_executed_command_duration
+                             Duration of the last executed command in seconds.
+             last_executed_command_status
+                             Status of the last executed command ('0' if successful, '1'
+                             if the last command failed to parse or execute).
+             mode            The current CLI mode (e.g. candidate, running, show, state
+                             or tools).
+             mode_and_session
+                             The current CLI mode and configuration session type and
+                             candidate name (e.g. candidate shared default, candidate
+                             private-exclusive mycandidate, running, show, state or
+                             tools).
+             mode_and_session_type
+                             The current CLI mode and configuration session type (e.g.
+                             candidate shared, candidate shared-exclusive, running, show,
+                             state or tools).
+             modified        Same as {banner}{startup_config_state}{modified_flags}
+             modified_flags  Shows + if the running configuration is different from the
+                             saved configuration (unsaved changes).
+                             Shows ! if the baseline is out of sync with the running
+                             configuration.
+                             Shows * if there are any changes in the candidate
+                             configuration to commit or discard.
+             modified_with_change_count
+                             Same as {modified} but shows count of changed objects in
+                             addition to '*' if there are any changes in the candidate
+                             configuration.
+             pwc             The present working context, formatted as a CLI command.
+                             Example: interface mgmt0 subinterface 0
+             pwd             The present working directory
+                             Example: /home/admin
+             redundancy      Active/standby CPM redundancy status ('standby ' or ' ').
+             short_pwc       The nodes in the present working context, separated by '>'.
+                             Note this does not include any key values.
+                             Example: interface>subinterface
+             short_redundancy
+                             Short active/standby CPM redundancy status ('s' or '').
+             short_yang_models
+                             The currently used yang models ('' or 'oc ')
+             startup_config_state
+                             Shows [RESCUE], [FACTORY] or [FAILED] if the initial
+                             configuration has issues or does not exist.
+                             Is empty when the initial configuration exists and was
+                             loaded/saved without problems.
+                             [RESCUE] means that the initial (startup) configuration
+                             failed to load or commit, but rescue configuration was
+                             successfully loaded and committed.
+                             [FACTORY] means that neither initial (startup) configuration
+                             or rescue configuration exists and hard-coded factory
+                             configuration was successfully loaded and committed.
+                             [FAILED] means that no configuration was successfully loaded
+                             and committed. The default candidate may contain initial
+                             (startup) or rescue configuration content (it can be empty
+                             if it is not possible to load them because they are
+                             invalid).
+             time_12         Current day of the week and local time (e.g. Fri 1:23PM).
+             time_24         Same as {time_12} but using 24h format (e.g. Fri 13:23).
+             user            The user name.
+             vi_editing_mode
+                             The current vi editing mode (if vi-editing-mode is enabled).
+                             Shows one of INSERT, REPLACE, REPLACE_SINGLE, NAVIGATION
+             xpath_pwc       The present working context, formatted as a xpath path.
+                             Example: /interface[name=mgmt0]/subinterface[index=0]
+         To enter a keyword, enclose it with '{' and '}', e.g. '{pwc}'.
+         To create a multiline prompt, use '\n' for newlines.
+         To print a '{' or '}', use '{{' or '}}', respectively. e.g. '{{pwc}}'.
+         In addition | can be used to separate left and right aligned part.
+         Use || for literal '|'.";
+    }
+    leaf bottom-toolbar {
+      type string;
+      default "{banner}{startup_config_state}{commit_confirmed_with_remaining_time}|{time_24}";
+      description
+        "Change the text displayed in the bottom toolbar
+
+         The following list of keywords will be replaced automatically:
+             aaa_session_id  The session id of the current AAA session.
+             aaa_user        The user name from the current AAA session.
+             banner          Shows server status banner if there is any (for example
+                             [WARM BOOT])
+             candidate_name  The current candidate name or empty string if not in
+                             candidate mode.
+             commit_confirmed
+                             Shows [commit confirmed] if there is commit confirmed in
+                             progress.
+             commit_confirmed_with_remaining_time
+                             Shows [commit confirmed] and the remaining time if there is
+                             commit confirmed in progress.
+             configuration_session_type
+                             The current configuration session type (e.g. shared,
+                             shared-exclusive or private or private-exclusive).
+                             Will output empty string when no configuration session
+                             has been established.
+             domain          The domain name (as returned by domainname program, same as
+                             sysctl kernel.domainname).
+             fqdn            Returns FQDN (if the domain name is not defined or unknown,
+                             then returns the host name).
+             host            The host name.
+             hw_slot         Slot letter of the CPM slot ('A' or 'B').
+             jspath_pwc      The present working context, formatted as a jspath.
+                             Example: .interface{.name==\"mgmt0\"}.subinterface{.index==0}
+             last_executed_command_duration
+                             Duration of the last executed command in seconds.
+             last_executed_command_status
+                             Status of the last executed command ('0' if successful, '1'
+                             if the last command failed to parse or execute).
+             mode            The current CLI mode (e.g. candidate, running, show, state
+                             or tools).
+             mode_and_session
+                             The current CLI mode and configuration session type and
+                             candidate name (e.g. candidate shared default, candidate
+                             private-exclusive mycandidate, running, show, state or
+                             tools).
+             mode_and_session_type
+                             The current CLI mode and configuration session type (e.g.
+                             candidate shared, candidate shared-exclusive, running, show,
+                             state or tools).
+             modified        Same as {banner}{startup_config_state}{modified_flags}
+             modified_flags  Shows + if the running configuration is different from the
+                             saved configuration (unsaved changes).
+                             Shows ! if the baseline is out of sync with the running
+                             configuration.
+                             Shows * if there are any changes in the candidate
+                             configuration to commit or discard.
+             modified_with_change_count
+                             Same as {modified} but shows count of changed objects in
+                             addition to '*' if there are any changes in the candidate
+                             configuration.
+             pwc             The present working context, formatted as a CLI command.
+                             Example: interface mgmt0 subinterface 0
+             pwd             The present working directory
+                             Example: /home/admin
+             redundancy      Active/standby CPM redundancy status ('standby ' or ' ').
+             short_pwc       The nodes in the present working context, separated by '>'.
+                             Note this does not include any key values.
+                             Example: interface>subinterface
+             short_redundancy
+                             Short active/standby CPM redundancy status ('s' or '').
+             short_yang_models
+                             The currently used yang models ('' or 'oc ')
+             startup_config_state
+                             Shows [RESCUE], [FACTORY] or [FAILED] if the initial
+                             configuration has issues or does not exist.
+                             Is empty when the initial configuration exists and was
+                             loaded/saved without problems.
+                             [RESCUE] means that the initial (startup) configuration
+                             failed to load or commit, but rescue configuration was
+                             successfully loaded and committed.
+                             [FACTORY] means that neither initial (startup) configuration
+                             or rescue configuration exists and hard-coded factory
+                             configuration was successfully loaded and committed.
+                             [FAILED] means that no configuration was successfully loaded
+                             and committed. The default candidate may contain initial
+                             (startup) or rescue configuration content (it can be empty
+                             if it is not possible to load them because they are
+                             invalid).
+             time_12         Current day of the week and local time (e.g. Fri 1:23PM).
+             time_24         Same as {time_12} but using 24h format (e.g. Fri 13:23).
+             user            The user name.
+             vi_editing_mode
+                             The current vi editing mode (if vi-editing-mode is enabled).
+                             Shows one of INSERT, REPLACE, REPLACE_SINGLE, NAVIGATION
+             xpath_pwc       The present working context, formatted as a xpath path.
+                             Example: /interface[name=mgmt0]/subinterface[index=0]
+         To enter a keyword, enclose it with '{' and '}', e.g. '{pwc}'.
+         To create a multiline prompt, use '
+         ' for newlines.
+         To print a '{' or '}', use '{{' or '}}', respectively. e.g. '{{pwc}}'.
+         In addition | can be used to separate left and right aligned part.
+         Use || for literal '|'.";
+    }
+    uses cli-environment-cli-engine;
+    leaf complete-on-enter {
+      type boolean;
+      default true;
+      description
+        "Trigger auto-completion whenever you type an Enter
+
+         Enabled by default.";
+    }
+    leaf complete-on-space {
+      type boolean;
+      default true;
+      description
+        "Trigger auto-completion whenever you type a Space
+
+         Enabled by default.";
+    }
+    leaf complete-on-tab {
+      type boolean;
+      default "true";
+      description
+        "Trigger auto-completion whenever you type a Tab
+
+         Enabled by default.";
+    }
+    leaf network-instance {
+      description
+        "The default network-instance to be used if not specified";
+      type leafref {
+        path "/srl-netinst:network-instance/srl-netinst:name";
+      }
+    }
+    leaf key-completer-limit {
+      type uint16 {
+        range "1..1000";
+      }
+      default "100";
+      description
+        "The limit on number of keys shown in auto-completion";
+    }
+    leaf output-format {
+      type enumeration {
+        enum json;
+        enum table;
+        enum text;
+        enum xml;
+        enum yaml;
+      }
+      default "text";
+      description
+        "The CLI output display format. Set to 'text' by default";
+    }
+    list output-modifier-alias {
+      key "name";
+      description
+        "Create or overwrite an output modifier alias
+
+         Output modifier aliases can be entered after '|'.
+         They can represent a complete command or part of a target command.
+
+         For example, if you create the following aliases, the output will be the same:
+         count = \"grep --count\"
+         match_if = \"grep interface\"
+         count_if = \"count interface\"
+         info | count interface
+         info | match_if --count
+         info | count_if";
+      leaf name {
+        srl-ext:no-globbing;
+        type output-modifier-alias-name-type;
+        description
+          "Name of the alias";
+      }
+      leaf command {
+        mandatory true;
+        type alias-command-type;
+        description
+          "Aliased command";
+      }
+    }
+    leaf pagination {
+      type enumeration {
+        enum off;
+        enum on;
+      }
+      description
+        "Pagination override of the CLI output, either 'on' or 'off'
+
+         If turned on, then any CLI command behaves as if '| more' was entered at the
+         end of the input command.
+         Default value is unset (empty string). Unset value means there is no override.";
+    }
+    leaf prompt {
+      type string;
+      default "\\n--{{ {modified_flags}{short_yang_models}{mode_and_session} }}--[ {pwc} ]--\\n{short_redundancy}{hw_slot}:{aaa_user}@{host}# ";
+      description
+        "Change the prompt for 'advanced' cli-engine type displayed before every input line
+
+         The following list of keywords will be replaced automatically:
+             aaa_session_id  The session id of the current AAA session.
+             aaa_user        The user name from the current AAA session.
+             banner          Shows server status banner if there is any (for example
+                             [WARM BOOT])
+             candidate_name  The current candidate name or empty string if not in
+                             candidate mode.
+             commit_confirmed
+                             Shows [commit confirmed] if there is commit confirmed in
+                             progress.
+             commit_confirmed_with_remaining_time
+                             Shows [commit confirmed] and the remaining time if there is
+                             commit confirmed in progress.
+             configuration_session_type
+                             The current configuration session type (e.g. shared,
+                             shared-exclusive or private or private-exclusive).
+                             Will output empty string when no configuration session
+                             has been established.
+             domain          The domain name (as returned by domainname program, same as
+                             sysctl kernel.domainname).
+             fqdn            Returns FQDN (if the domain name is not defined or unknown,
+                             then returns the host name).
+             host            The host name.
+             hw_slot         Slot letter of the CPM slot ('A' or 'B').
+             jspath_pwc      The present working context, formatted as a jspath.
+                             Example: .interface{.name==\"mgmt0\"}.subinterface{.index==0}
+             last_executed_command_duration
+                             Duration of the last executed command in seconds.
+             last_executed_command_status
+                             Status of the last executed command ('0' if successful, '1'
+                             if the last command failed to parse or execute).
+             mode            The current CLI mode (e.g. candidate, running, show, state
+                             or tools).
+             mode_and_session
+                             The current CLI mode and configuration session type and
+                             candidate name (e.g. candidate shared default, candidate
+                             private-exclusive mycandidate, running, show, state or
+                             tools).
+             mode_and_session_type
+                             The current CLI mode and configuration session type (e.g.
+                             candidate shared, candidate shared-exclusive, running, show,
+                             state or tools).
+             modified        Same as {banner}{startup_config_state}{modified_flags}
+             modified_flags  Shows + if the running configuration is different from the
+                             saved configuration (unsaved changes).
+                             Shows ! if the baseline is out of sync with the running
+                             configuration.
+                             Shows * if there are any changes in the candidate
+                             configuration to commit or discard.
+             modified_with_change_count
+                             Same as {modified} but shows count of changed objects in
+                             addition to '*' if there are any changes in the candidate
+                             configuration.
+             pwc             The present working context, formatted as a CLI command.
+                             Example: interface mgmt0 subinterface 0
+             pwd             The present working directory
+                             Example: /home/admin
+             redundancy      Active/standby CPM redundancy status ('standby ' or ' ').
+             short_pwc       The nodes in the present working context, separated by '>'.
+                             Note this does not include any key values.
+                             Example: interface>subinterface
+             short_redundancy
+                             Short active/standby CPM redundancy status ('s' or '').
+             short_yang_models
+                             The currently used yang models ('' or 'oc ')
+             startup_config_state
+                             Shows [RESCUE], [FACTORY] or [FAILED] if the initial
+                             configuration has issues or does not exist.
+                             Is empty when the initial configuration exists and was
+                             loaded/saved without problems.
+                             [RESCUE] means that the initial (startup) configuration
+                             failed to load or commit, but rescue configuration was
+                             successfully loaded and committed.
+                             [FACTORY] means that neither initial (startup) configuration
+                             or rescue configuration exists and hard-coded factory
+                             configuration was successfully loaded and committed.
+                             [FAILED] means that no configuration was successfully loaded
+                             and committed. The default candidate may contain initial
+                             (startup) or rescue configuration content (it can be empty
+                             if it is not possible to load them because they are
+                             invalid).
+             time_12         Current day of the week and local time (e.g. Fri 1:23PM).
+             time_24         Same as {time_12} but using 24h format (e.g. Fri 13:23).
+             user            The user name.
+             vi_editing_mode
+                             The current vi editing mode (if vi-editing-mode is enabled).
+                             Shows one of INSERT, REPLACE, REPLACE_SINGLE, NAVIGATION
+             xpath_pwc       The present working context, formatted as a xpath path.
+                             Example: /interface[name=mgmt0]/subinterface[index=0]
+         To enter a keyword, enclose it with '{' and '}', e.g. '{pwc}'.
+         To create a multiline prompt, use '
+         ' for newlines.
+         To print a '{' or '}', use '{{' or '}}', respectively. e.g. '{{pwc}}'.
+         In addition | can be used to separate left and right aligned part.
+         Use || for literal '|'.";
+    }
+    leaf session-idle-timeout {
+      type uint32 {
+        range "0..86400";
+      }
+      description
+        "The idle timeout override for the CLI session in seconds
+
+         Can be used to override the value of the idle timer value received from AAA session.
+         Value of 0 means idle timeout is disabled.
+         Unset value means there is no override.";
+    }
+    leaf yang-models {
+      type enumeration {
+        enum oc {
+          if-feature "srl-nokia-feat:openconfig and not srl-nokia-feat:platform-imgmt";
+        }
+        enum srl;
+      }
+      default "srl";
+      description
+        "The default yang-models to be used when starting the CLI
+
+         Default is 'srl'.";
+    }
+  }
+
+  grouping cli-environment-cli-engine {
+    description
+      "Top-level grouping for cli-engine";
+    container cli-engine {
+      description
+        "CLI engine settings";
+      leaf completion-ignore-case {
+        type boolean;
+        default "false";
+        description
+          "Ignore case when filtering completion results";
+      }
+      leaf completion-display {
+        type enumeration {
+          enum inline;
+          enum popup;
+        }
+        default "popup";
+        description
+          "Display style of possible commands
+
+           Note: The basic CLI engine supports only completion display 'inline'.";
+      }
+      leaf completion-type {
+        type enumeration {
+          enum fuzzy;
+          enum prefix;
+          enum smart;
+          enum substring;
+        }
+        default "smart";
+        description
+          "Set completion type used for auto completions and auto suggestions in the CLI
+
+           Note: The basic CLI engine supports only completion type 'prefix'.";
+      }
+      leaf history-filename {
+        type string;
+        default "~/.srlinux_history";
+        description
+          "Set the filename where history is stored";
+      }
+      leaf max-history-items {
+        type uint16 {
+          range "1..1000";
+        }
+        default "1000";
+        description
+          "Set the maximum history items to be stored in persistent storage";
+      }
+      leaf refresh-interval {
+        type uint32 {
+          range "0..86400";
+        }
+        default "5";
+        description
+          "Set refresh interval in seconds (0 means refresh is disabled)";
+      }
+      leaf type {
+        type enumeration {
+          enum basic;
+          enum advanced;
+        }
+        default "advanced";
+        description
+          "Set CLI engine type for interactive logins";
+      }
+      leaf vi-editing-mode {
+        type boolean;
+        default "false";
+        description
+          "Set vi editing mode";
+      }
+    }
+  }
+
+  grouping cli-environment-top {
+    description
+      "Top-level grouping for global environment data";
+    container environment {
+      description
+        "Top-level container for global environment data";
+      uses cli-environment-config;
+    }
+  }
+
+  grouping cli-top {
+    description
+      "Top-level grouping for CLI services";
+    container cli {
+      description
+        "Top-level container for CLI services";
+      uses cli-environment-top;
+    }
+  }
+
+  augment "/srl-system:system" {
+    if-feature "srl-nokia-feat:cli-modeled-environment";
+    uses cli-top;
+  }
+}

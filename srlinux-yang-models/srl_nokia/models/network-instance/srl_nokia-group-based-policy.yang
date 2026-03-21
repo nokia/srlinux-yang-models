@@ -1,0 +1,127 @@
+module srl_nokia-group-based-policy {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:net-inst:group-based-policy";
+  prefix srl_nokia-group-based-policy;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-platform-resource-mgmt {
+    prefix srl_nokia-platform-res-mgmt;
+  }
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "A model for Group Based Policy of a network instance";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+
+  grouping group-based-policy-top {
+    container group-based-policy {
+      presence "Container for the micro segmentation Group Based Policy";
+      description
+        "Container for the micro segmentation Group Based Policy";
+      must "(../srl_nokia-netinst:type = 'mac-vrf' or ../srl_nokia-netinst:type = 'ip-vrf')" {
+        error-message "Group-Based Policy is supported on network instance of type mac-vrf and ip-vrf";
+      }
+      must "../srl_nokia-netinst:type = 'ip-vrf'" {
+        error-message "Group-Based Policy is supported on ip-vrf network-instances only";
+        srl_nokia-ext:if-feature "not(srl_nokia-feat:platform-group-based-policy)";
+      }
+      must "(/srl_nokia-platform:platform/srl_nokia-platform-res-mgmt:resource-management/srl_nokia-platform-res-mgmt:group-based-policy/srl_nokia-platform-res-mgmt:mac-lookup = true()) or (../srl_nokia-netinst:type = 'ip-vrf')" {
+        error-message "Group-Based Policy is supported on mac-vrf network-instances only when platform resource-management group-based-policy mac-lookup is true";
+        srl_nokia-ext:if-feature "srl_nokia-feat:platform-group-based-policy";
+      }
+      must "../srl_nokia-netinst:type != 'ip-vrf'" {
+        error-message "On the current platform Group-Based Policy is not supported on network instance of type ip-vrf";
+        srl_nokia-ext:if-feature "not(srl_nokia-feat:group-based-policy-ip-vrf)";
+      }
+      list group {
+        description
+          "List of groups in the Group Based Policy";
+        key "name";
+        max-elements 65534;
+        unique "tag-value";
+        leaf name {
+          type string;
+          description
+            "The name of the group";
+        }
+        leaf tag-value {
+          mandatory true;
+          type uint16 {
+            range "0..65535";
+          }
+          description
+            "The tag value associated to this group";
+          must "../../../srl_nokia-netinst:type = 'mac-vrf' or . <= 127" {
+            error-message "Valid range for GBP tags in IP-VRF is [0..127]";
+            srl_nokia-ext:if-feature "srl_nokia-feat:trident3";
+          }
+          must "../../../srl_nokia-netinst:type = 'ip-vrf' or . <= 255" {
+            error-message "Valid range for GBP tags in MAC-VRF is [0..255]";
+            srl_nokia-ext:if-feature "srl_nokia-feat:trident3";
+          }
+          must "../../../srl_nokia-netinst:type = 'mac-vrf' or . <= 16383 " {
+            error-message "Valid range for GBP tags in IP-VRF is [0..16383]";
+            srl_nokia-ext:if-feature "srl_nokia-feat:trident4";
+          }
+          must "../../../srl_nokia-netinst:type = 'ip-vrf' or . <= 16383" {
+            error-message "Valid range for GBP tags in MAC-VRF is [0..16383]";
+            srl_nokia-ext:if-feature "srl_nokia-feat:trident4";
+          }
+          must "../../../srl_nokia-netinst:type = 'mac-vrf' or . <= 255" {
+            error-message "Valid range for GBP tags in IP-VRF is [0..255]";
+            srl_nokia-ext:if-feature "srl_nokia-feat:future-0-0";
+          }
+          must "../../../srl_nokia-netinst:type = 'ip-vrf' or . <= 127" {
+            error-message "Valid range for GBP tags in MAC-VRF is [0..127]";
+            srl_nokia-ext:if-feature "srl_nokia-feat:future-0-0";
+          }
+        }
+      }
+      list interface {
+        description
+          "List of subinterfaces part of this network-instance with their group association";
+        key "interface-name";
+        leaf interface-name {
+          type srl_nokia-comm:subinterface-all;
+          description
+            "Reference to a specific subinterface of the form <interface-name>.<subinterface-index>";
+        }
+        leaf-list group {
+          description
+            "List if groups associated to the subinterface";
+          max-elements 1;
+          type leafref {
+            path "../../group/name";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    uses group-based-policy-top;
+    if-feature "srl_nokia-feat:group-based-policy";
+  }
+}
