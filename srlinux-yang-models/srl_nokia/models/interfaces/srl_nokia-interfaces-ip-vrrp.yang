@@ -31,6 +31,10 @@ module srl_nokia-interfaces-ip-vrrp {
      management described by RFC 8347.  The primary differences are
      in the structure of configuration and state data.";
 
+  revision 2025-12-31 {
+    description
+      "SRLinux 24.10.6";
+  }
   revision 2024-10-31 {
     description
       "SRLinux 24.10.1";
@@ -366,6 +370,9 @@ module srl_nokia-interfaces-ip-vrrp {
       must 'not(../../../anycast-gw)' {
         error-message "Only supported if anycast-gw is not configured";
       }
+      must "not(starts-with(../../../../name, 'lo') or starts-with(../../../../name, 'system'))" {
+        error-message "VRRP is not supported on loopback or system interfaces";
+      }
       presence "Configure VRRP IPv4";
       description
         "VRRP Configuration and State under a IPv4 context of a
@@ -402,6 +409,9 @@ module srl_nokia-interfaces-ip-vrrp {
       if-feature "srl_nokia-feat:vrrp";
       must 'not(../anycast-gw) or ../anycast-gw = false()' {
         error-message "Only supported if anycast-gw leaf is not true";
+      }
+      must "not(starts-with(../../../../name, 'lo') or starts-with(../../../../name, 'system'))" {
+        error-message "VRRP is not supported on loopback or system interfaces";
       }
       presence "Configure VRRP IPv6";
       description
