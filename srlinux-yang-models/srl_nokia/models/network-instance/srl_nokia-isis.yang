@@ -607,7 +607,16 @@ module srl_nokia-isis {
       }
       leaf unidirectional-minimum-link-delay {
         config false;
-        type uint32;
+        type union {
+          type uint32 {
+            range "1..4294967295";
+          }
+          type enumeration {
+            enum "none" {
+              value 0;
+            }
+          }
+        }
         units "microseconds";
         description
           "Operational Unidirectional link delay advertised by ISIS";
@@ -781,7 +790,7 @@ module srl_nokia-isis {
             "Configuration of IPv4 node SID.
 
              The (primary) IPv4 address of this interface is advertised as a prefix SID with the node-SID flag set. The associated label is derived from the label index configured in this container.";
-          must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo'))" {
+          must "(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface and ((../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))) or (not(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface) and ((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo'))))" {
             error-message "The node SID can only be associated with the system0.0 or loopback subinterface";
           }
           leaf index {
@@ -803,7 +812,7 @@ module srl_nokia-isis {
             "Configuration of IPv6 node SID.
 
              The (primary) IPv6 address of this interface is advertised as a prefix SID with the node-SID flag set. The associated label is derived from the label index configured in this container.";
-          must "(../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo'))" {
+          must "(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface and ((../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))) or (not(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface) and ((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo'))))" {
             error-message "The node SID can only be associated with the system0.0 or loopback subinterface";
           }
           leaf index {
@@ -825,7 +834,7 @@ module srl_nokia-isis {
           description
             "The IPv4 adjacency SID associated with the interface";
           uses adj-sid-common;
-          must "not((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))" {
+          must "not((../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface and ((../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))) or (not(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface) and ((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')))))" {
             error-message "The adjacency sid cannot be associated with the system0.0 or loopback subinterface";
           }
         }
@@ -835,7 +844,7 @@ module srl_nokia-isis {
           description
             "The IPv6 adjacency SID associated with the interface";
           uses adj-sid-common;
-          must "not((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')) or (../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))" {
+          must "not((../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface and ((../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface = 'system0') or (starts-with(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface, 'lo')))) or (not(../../../srl_nokia-isis:interface-ref/srl_nokia-isis:interface) and ((../../../srl_nokia-isis:interface-name = 'system0.0') or (starts-with(../../../srl_nokia-isis:interface-name, 'lo')))))" {
             error-message "The adjacency sid cannot be associated with the system0.0 or loopback subinterface";
           }
         }

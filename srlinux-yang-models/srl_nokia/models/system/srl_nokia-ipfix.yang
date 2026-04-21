@@ -231,7 +231,10 @@ module srl_nokia-ipfix {
          in the PSAMP MIB module.";
     }
     leaf packet-space {
-      type uint32;
+      type uint32
+      {
+        range "1..4294967295";
+      }
       units "packets";
       mandatory true;
       must "(.>0)" {
@@ -276,8 +279,7 @@ module srl_nokia-ipfix {
       description
         "This parameters specified the active timeout for active flows within the cache
 
-         This parameter configures the time in seconds after which a Flow is expired even though packets matching this Flow are still received by the Cache.
-         The parameter value zero indicates infinity, meaning that there is no active timeout.";
+         This parameter configures the time in seconds after which a Flow is expired even though packets matching this Flow are still received by the Cache.";
     }
     leaf idle-timeout {
       type uint32 {
@@ -288,9 +290,7 @@ module srl_nokia-ipfix {
       description
         "This parameters specified the idle timeout for inactive flows within the cache.
 
-         This parameter configures the time in seconds after which a Flow is expired if no more packets matching this Flow are received by the Cache.
-         The parameter value zero indicates infinity, meaning that there is no idle timeout.
-         If not configured by the user, the Monitoring Device sets this parameter.";
+         This parameter configures the time in seconds after which a Flow is expired if no more packets matching this Flow are received by the Cache.";
     }
     leaf active-flows {
       type srl_nokia-comm:gauge32;
@@ -462,7 +462,10 @@ module srl_nokia-ipfix {
         "IPFIX version number.";
     }
     leaf destination-port {
-      type srl_nokia-comm:port-number;
+      type srl_nokia-comm:port-number
+      {
+        range "1..65535";
+      }
       default "4739";
       must "(.>0)"{
         error-message "port 0 is not a valid destination port";
