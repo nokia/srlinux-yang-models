@@ -1,0 +1,89 @@
+module srl_nokia-tools-interfaces-dynamic-subinterfaces {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:active-vlan-detection:tools-interfaces-dynamic-subinterfaces";
+  prefix srl_nokia-tools-interfaces-dynamic-subinterfaces;
+
+  import srl_nokia-tools-interfaces {
+    prefix srl-tools-if;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for interface dynamic subinterfaces operational commands";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  typedef vlan-id {
+    type union {
+      type uint16 {
+        range "1..4094";
+      }
+      type enumeration {
+        enum untagged {
+          value 0;
+          description
+            "Untagged traffic";
+        }
+        enum all {
+          value 4095;
+          description
+            "All VLANs on vlan-range configured for dynamic subinterfaces";
+        }
+      }
+    }
+    description
+      "Type definition representing a VLAN identifier or untagged or all";
+  }
+
+  grouping tools-dynamic-subinterface-top {
+    description
+      "Top-level container for tools dynamic subinterfaces";
+    container dynamic-subinterfaces {
+      if-feature "srl_nokia-feat:dynamic-subinterfaces";
+      presence "tools for dynamic subinterfaces";
+      description
+        "Tools for dynamic subinterfaces";
+      container retention-timer {
+        description
+          "Enter the retention-timer context
+
+           Retention timer for dynamic subinterfaces";
+        list active-vlan-id {
+          key "active-vlan-id";
+          description
+            "List of active vlan-ids on the interface configured for dynamic subinterfaces";
+          leaf active-vlan-id {
+            type vlan-id;
+            description
+              "The active vlan-id(s) on the interface configured for dynamic subinterfaces";
+          }
+          leaf clear {
+            type empty;
+            description
+              "Clear the retention-timer for the VLAN scope selected (a specific VLAN, untagged traffic, or all VLANs)
+
+               Normally, a VLAN remains in the active-vlans list until its retention timer expires after traffic
+               ceases. This tools command clears that timer, causing any VLAN currently marked as active, due to
+               frames observed on the interface, to be removed from active-vlans immediately. This command does
+               not remove a VLAN from the active-vlans list if it was created as a result of the existence of
+               an Ethernet Segment destination.";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-if:interface" {
+    uses tools-dynamic-subinterface-top;
+  }
+}

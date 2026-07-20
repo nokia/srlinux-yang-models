@@ -1,0 +1,161 @@
+module srl_nokia-grpc-gnoi-containerz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:grpc-gnoi-containerz";
+  prefix srl-grpc-gnoi-containerz;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for gNOI Containerz operational state";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping containerz-state {
+    container containerz {
+      config false;
+      srl-ext:first-released "26.3.1";
+      description
+        "Enter the containerz context
+
+         Operational state for gNOI Containerz
+
+         Displays the current containers, images, and volumes managed by the container runtime.";
+      list container {
+        key "id";
+        description
+          "List of containers on the system
+
+           The key is the unique container ID from the container runtime.
+           When a container runs on both active and standby CPMs (location all),
+           each instance has a distinct ID.";
+        leaf id {
+          type string;
+          srl-ext:show-importance "low";
+          description
+            "The unique identifier of the container as reported by the container runtime";
+        }
+        leaf name {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "The name of the container instance";
+        }
+        leaf image-name {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "The image name used by this container";
+        }
+        leaf status {
+          type enumeration {
+            enum UNSPECIFIED;
+            enum STOPPED;
+            enum RUNNING;
+            enum PRESENT;
+            enum NOT_FOUND;
+          }
+          srl-ext:show-importance "high";
+          description
+            "The current status of the container";
+        }
+        list labels {
+          key "key";
+          description
+            "Labels associated with this container
+
+             Labels may contain dynamic information added by the containerz
+             implementation, such as location placement metadata.
+             Notable labels include:
+               net.openconfig.containerz.location.intended: the requested placement (L_PRIMARY, L_BACKUP, L_ALL)
+               net.openconfig.containerz.location.actual: where this instance is running (primary or backup)
+               net.openconfig.containerz.location.reason: reason if placement failed on intended CPM";
+          leaf key {
+            type string;
+            description
+              "The label key";
+          }
+          leaf value {
+            type string;
+            srl-ext:show-importance "high";
+            description
+              "The label value";
+          }
+        }
+        container hash {
+          description
+            "Enter the hash context
+
+             The computed hash of the image as returned by the container runtime.";
+          leaf method {
+            type string;
+            srl-ext:show-importance "high";
+            description
+              "The method used to compute the hash";
+          }
+          leaf hash {
+            type string;
+            srl-ext:show-importance "high";
+            description
+              "The computed hash value of the image";
+          }
+        }
+      }
+      list image {
+        key "name";
+        description
+          "List of container images available on the system
+
+           Each entry represents a unique image name and tag combination.
+           The key is in the format 'image-name:tag'.";
+        leaf name {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "The image name and tag in 'image-name:tag' format";
+        }
+        leaf id {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "The unique identifier (digest) of the image";
+        }
+      }
+      list volume {
+        key "name";
+        description
+          "List of volumes on the system";
+        leaf name {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "The name of the volume";
+        }
+        leaf created {
+          type srl-comm:date-and-time-delta;
+          srl-ext:show-importance "low";
+          description
+            "The timestamp when the volume was created";
+        }
+        leaf driver {
+          type string;
+          srl-ext:show-importance "high";
+          description
+            "The volume driver";
+        }
+      }
+    }
+  }
+}

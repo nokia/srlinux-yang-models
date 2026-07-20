@@ -1,0 +1,215 @@
+module srl_nokia-p2mp-lsp-ping-trace {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mplsoam:p2mp-lsp-ping-trace";
+  prefix srl_nokia-p2mp-lsp-ping-trace;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-oam {
+    prefix srl-oam;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-lsp-ping-trace {
+    prefix srl-lsp-ping-trace;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for P2MP LSP ping and trace telemetry state";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping p2mp-ping-reply {
+    container reply {
+      description
+        "Enter the reply context
+
+         Details about the reply message from a mLDP leaf node";
+      leaf received {
+        description
+          "Reads true if the reply message was received";
+        type boolean;
+      }
+      leaf reply-sender {
+        srl-ext:show-importance "high";
+        description
+          "The IP address of the sender of the echo-reply message";
+        type srl-comm:ip-address;
+      }
+      leaf udp-data-length {
+        description
+          "The length of the UDP payload";
+        type uint16;
+        units "bytes";
+        default "0";
+      }
+      leaf round-trip-time {
+        srl-ext:show-importance "high";
+        description
+          "The round trip-time between the request and reply for this leaf node";
+        type uint32;
+        units "microseconds";
+        default "0";
+      }
+      leaf return-code {
+        srl-ext:show-importance "high";
+        description
+          "Return code value in the echo-reply";
+        type srl-lsp-ping-trace:return-code;
+        default "no-return-code";
+      }
+      leaf return-subcode {
+        srl-ext:show-importance "high";
+        description
+          "Return subcode in the echo-reply";
+        type uint8;
+        default "0";
+      }
+    }
+  }
+
+  grouping p2mp-ping-session-info {
+    description
+      "Common information for point-to-multipoint LSP ping sessions";
+    list session-id {
+      max-elements 10;
+      description
+        "List of recent sessions (up to 10) with saved LSP ping results for the prefix";
+      key "id";
+      leaf id {
+        srl-ext:show-importance "high";
+        description
+          "The system-assigned session ID";
+        type uint16;
+      }
+      leaf test-active {
+        srl-ext:show-importance "high";
+        description
+          "Indicates if the test is still running (true) or not (false)";
+        type boolean;
+      }
+      leaf request-sent {
+        description
+          "True when it is possible for the datapath to send the request message";
+        type boolean;
+      }
+      leaf total-leafs-responded {
+        description
+          "Total no. leafs responded to the p2mp lsp mpls-echo request";
+        type uint8;
+        default "0";
+      }
+      container statistics {
+        description
+          "Enter the statistics context
+
+           Summary statistics for the test";
+        container round-trip-time {
+          description
+            "Enter the round-trip-time context
+
+             Statistics for the round trip time, considering all the replies received in the test";
+          leaf minimum {
+            srl-ext:show-importance "high";
+            description
+              "The minimum round trip-time across all replies";
+            type uint32;
+            units "microseconds";
+          }
+          leaf maximum {
+            srl-ext:show-importance "high";
+            description
+              "The maximum round trip-time across all replies";
+            type uint32;
+            units "microseconds";
+          }
+          leaf average {
+            srl-ext:show-importance "high";
+            description
+              "The average round trip-time across all replies";
+            type uint32;
+            units "microseconds";
+          }
+          leaf standard-deviation {
+            srl-ext:show-importance "high";
+            description
+              "The standard deviation of the round trip-time across all replies";
+            type uint32;
+            units "microseconds";
+          }
+        }
+      }
+      leaf send-failure-reason {
+        srl-ext:show-importance "high";
+        description
+          "Indicates the reason why the OAM manager could not send the request message";
+        type enumeration {
+          enum timeout;
+          enum source-ip-not-local;
+          enum packet-size-too-big;
+          enum unexpected-error;
+          enum "no errors";
+        }
+        default "no errors";
+      }
+      list leaf-id {
+        key "reply-sender";
+        leaf reply-sender {
+          srl-ext:show-importance "high";
+          description
+            "The IP address of the sender of the echo-reply message";
+          type srl-comm:ip-address;
+        }
+        uses p2mp-ping-reply;
+      }
+    }
+  }
+
+  grouping p2mp-ldp-ping {
+    container ldp {
+      description
+        "Enter the ldp context
+
+         Container of LSP ping results for different LDP tunnels";
+      list lsp {
+        key "generic-id";
+        leaf generic-id {
+          srl-ext:show-importance "high";
+          type uint32;
+          description
+            "The value of a point-to-multipoint opaque element (type 1)";
+        }
+        uses p2mp-ping-session-info;
+      }
+    }
+  }
+
+  grouping p2mp-lsp-ping-top {
+    container p2mp-ldp-lsp-ping {
+      if-feature "srl-feat:mpls-oam-p2mp-ldp";
+      config false;
+      description
+        "Enter the p2mp-ldp-lsp-ping context
+
+         Container of last ping results for mLDP tunnels";
+      uses p2mp-ldp-ping;
+    }
+  }
+
+  augment "/srl-oam:oam" {
+    uses p2mp-lsp-ping-top;
+  }
+}

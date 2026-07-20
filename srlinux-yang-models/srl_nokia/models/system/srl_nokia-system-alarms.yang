@@ -1,0 +1,164 @@
+module srl_nokia-system-alarms {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:alarm";
+  prefix srl-alarms;
+
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module describes a YANG model for alarms.";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping alarm-top {
+    container alarms {
+      if-feature "srl-feat:facility-alarm-mgr";
+      description
+        "Enter the alarms context
+
+         System alarms";
+      leaf admin-state {
+        type srl-comm:admin-state;
+        default "enable";
+        description
+          "Enable or disable system alarms";
+      }
+      list active {
+        srl_nokia-ext:telemetry-atomic "true";
+        key "id";
+        config false;
+        description
+          "Contains facility alarm state";
+        leaf id {
+          type string;
+          description
+            "Facility alarm ID";
+        }
+        leaf resource {
+          type string;
+          description
+            "Hardware resource displayed in XPath format";
+        }
+        leaf text {
+          type string;
+          description
+            "Log event message";
+        }
+        leaf time-created {
+          type srl-comm:date-and-time-delta;
+          description
+            "Time the facility alarm was raised";
+        }
+        leaf severity {
+          type enumeration {
+            enum critical;
+            enum major;
+            enum minor;
+            enum warning;
+          }
+          description
+            "In increasing severity, they are: warning, minor, major, critical";
+        }
+        leaf type-id {
+          type string;
+          description
+            "Log event application name";
+        }
+      }
+    }
+    list alarm-contact-input {
+      if-feature "srl-feat:alarm-hardware";
+      key "input-alarm-number";
+      description
+        "Configure alarm contact input";
+      leaf input-alarm-number {
+        type uint8 {
+          range "1..4";
+        }
+        description
+          "Alarm contact input number";
+      }
+      leaf admin-state {
+        type srl-comm:admin-state;
+        default "disable";
+        description
+          "Administrative state of the alarm contact input";
+      }
+      leaf description {
+        type srl-comm:description;
+        default "(Not Specified)";
+        description
+          "Text description";
+      }
+      leaf normal-state {
+        type enumeration {
+          enum open {
+            value 1;
+          }
+          enum closed {
+            value 2;
+          }
+        }
+        default "open";
+        description
+          "Normal state associated with the alarm contact input";
+      }
+      leaf trigger-message {
+        type srl-comm:description;
+        default "Alarm Input Triggered";
+        description
+          "Text message sent in the log event when input changes";
+      }
+      leaf clear-message {
+        type srl-comm:description;
+        default "Alarm Input Cleared";
+        description
+          "Message sent in the log event when an alarm clears";
+      }
+      leaf input-status {
+        config false;
+        type enumeration {
+          enum no-alarm {
+            description
+              "Input pin is not triggered (at the normal state)";
+            value 1;
+          }
+          enum alarm {
+            description
+              "Input pin is triggered (not at the normal state)";
+            value 2;
+          }
+        }
+      }
+      leaf last-status-changed {
+        config false;
+        type srl-comm:date-and-time-delta;
+        description
+          "Time that the input pin last changed status";
+      }
+    }
+  }
+
+  augment "/srl-system:system" {
+    uses alarm-top;
+  }
+}

@@ -1,0 +1,101 @@
+module srl_nokia-tools-p2mp-lsp-ping-trace {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mplsoam:tools-p2mp-lsp-ping-trace";
+  prefix srl_nokia-tools-p2mp-lsp-ping-trace;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-oam {
+    prefix srl_nokia-tools-oam;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for P2MP LSP ping and trace telemetry state";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping ping-common-params {
+    leaf probe-size {
+      description
+        "The size of the IP packet MPLS echo-request message. Probe size does not include MPLS headers, if any";
+      type uint16 {
+        range "1..9500";
+      }
+      units "bytes";
+      default "1";
+    }
+    leaf source-ip {
+      description
+        "The source IP address of the UDP/IP MPLS echo request message
+
+         This should be a routable address of the router. This will be destination of the MPLS echo reply message sent back to the sender. By default this is the system address of the default network-instance; if the default network-instance does not have system interface then it will be primary address of the lowest numbered loopback subinterface of the default network-instace.";
+      type srl_nokia-comm:ip-address;
+    }
+    leaf timeout {
+      description
+        "The maximum time the sender waits to receive an MPLS echo-reply message before considering that the ping failed";
+      type uint8 {
+        range "1..60";
+      }
+      units "seconds";
+      default "3";
+    }
+    leaf-list leaves-ip {
+      max-elements 5;
+      type srl_nokia-comm:ip-address;
+      description
+        "The destination leaf IP address of the UDP/IP MPLS echo request message";
+    }
+  }
+
+  grouping ldp-ping {
+    container ldp {
+      description
+        "Enter the ldp context
+
+         Parameters required to ping the endpoint of an P2MP LDP tunnel";
+      list lsp {
+        key "generic-id";
+        leaf generic-id {
+          type uint32;
+          description
+            "The value of a point-to-multipoint opaque element (type 1)";
+        }
+        uses ping-common-params;
+        leaf clear {
+          type empty;
+          description
+            "Clear all LDP ping session transmit and receive packet counts and all error counts";
+        }
+      }
+    }
+  }
+
+  grouping lsp-ping-top {
+    container p2mp-lsp-ping {
+      if-feature "srl_nokia-feat:mpls-oam-p2mp-ldp";
+      description
+        "Enter the p2mp-lsp-ping context
+
+         Initiate P2MP LSP ping of the remote endpoints (leaves)";
+      uses ldp-ping;
+    }
+  }
+
+  augment "/srl_nokia-tools-oam:oam" {
+    if-feature "srl_nokia-feat:mpls-oam";
+    uses lsp-ping-top;
+  }
+}

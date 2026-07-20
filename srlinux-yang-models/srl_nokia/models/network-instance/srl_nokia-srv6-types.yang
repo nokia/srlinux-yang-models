@@ -1,0 +1,279 @@
+module srl_nokia-srv6-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:srv6:srv6-types";
+  prefix srl_nokia-srv6-types;
+
+  import srl_nokia-isis-lsdb-types {
+    prefix srl_nokia-isis-lsdb-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG file covers segment routing v6 types";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+
+  typedef srv6-instance {
+    type int32 {
+      range "1..2";
+    }
+    description
+      "SRv6 instance range";
+  }
+
+  typedef srh-mode {
+    type enumeration {
+      enum psp {
+        value 1;
+      }
+      enum usp {
+        value 2;
+      }
+      enum psp-usd {
+        value 3;
+      }
+      enum usp-usd {
+        value 4;
+      }
+      enum psp-usp-usd {
+        value 5;
+      }
+    }
+    description
+      "Segment Routing Header (SRH) mode.
+
+       psp - Penultimate Segment Pop of the SRH.
+       usp - Ultimate Segment Pop of the SRH.
+       psp-usd - PSP Ultimate Segment Decapsulation.
+       usp-usd - USP Ultimate Segment Decapsulation.
+       psp-usp-usd - PSP USP Ultimate Segment Decapsulation";
+  }
+
+  typedef status {
+    description
+      "Describe various SRv6 state";
+    type enumeration {
+      enum not-active {
+        value 1;
+        description
+          "Entry is not active";
+      }
+      enum cleanup-in-progress {
+        value 2;
+        description
+          "Cleanup in progress";
+      }
+      enum active {
+        value 3;
+        description
+          "Entry is active and ready to be used";
+      }
+      enum net-inst-down {
+        value 4;
+        description
+          "Network instance is down";
+      }
+      enum waiting-for-resource {
+        value 5;
+        description
+          "Waiting for a resource";
+      }
+    }
+  }
+
+  identity srv6-endpoint-behavior {
+    description
+      "SRv6 endpoint behavior";
+  }
+
+  identity srv6-service-endpoint-behavior {
+    base srv6-endpoint-behavior;
+    description
+      "SRv6 service endpoint behavior";
+  }
+
+  identity end {
+    base srv6-endpoint-behavior;
+    description
+      "SRv6 instantiation of a Prefix-SID";
+  }
+
+  identity end-x {
+    base srv6-endpoint-behavior;
+    description
+      "Endpoint L3 cross-connect";
+  }
+
+  identity end-dt6 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and specific IPv6 table lookup";
+  }
+
+  identity end-dt4 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and specific IPv4 table lookup";
+  }
+
+  identity end-dt46 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and specific IP table lookup";
+  }
+
+  identity end-dx2 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and L2 cross-connect";
+  }
+
+  identity end-dt2u {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and unicast MAC L2 table lookup";
+  }
+
+  identity end-dt2m {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and L2 table flooding";
+  }
+
+  identity un {
+    base srv6-endpoint-behavior;
+    description
+      "SRv6 instantiation of a Prefix-SID with NEXT-CSID flavor";
+  }
+
+  identity ua {
+    base srv6-endpoint-behavior;
+    description
+      "Endpoint L3 cross-connect with NEXT-CSID flavor";
+  }
+
+  identity udt6 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and specific IPv6 table lookup with NEXT-CSID flavor";
+  }
+
+  identity udt4 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and specific IPv4 table lookup with NEXT-CSID flavor";
+  }
+
+  identity udt46 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and specific IP table lookup with NEXT-CSID flavor";
+  }
+
+  identity udx2 {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and L2 cross-connect with NEXT-CSID flavor";
+  }
+
+  identity udt2u {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and unicast MAC L2 table lookup with NEXT-CSID flavor";
+  }
+
+  identity udt2m {
+    base srv6-service-endpoint-behavior;
+    description
+      "Endpoint decapsulation and L2 table flooding with NEXT-CSID flavor";
+  }
+
+  identity srv6-locator {
+    base srl_nokia-isis-lsdb-types:isis-tlv-type;
+    description
+      "ISIS TLV 27. A locator is a covering prefix for all SIDs provisioned on that node that have the matching topology/algorithm";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  identity srv6-end-sid {
+    base srl_nokia-isis-lsdb-types:ip-reachability-subtlvs-type;
+    description
+      "sub-TLV 5. SRv6 END SID";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  identity router-capability-srv6-capabilities {
+    base srl_nokia-isis-lsdb-types:router-capability-subtlvs-type;
+    description
+      "sub-TLV 25. SRv6 Capabilities";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  identity srv6-adj-sid {
+    base srl_nokia-isis-lsdb-types:is-reachability-subtlvs-type;
+    description
+      "sub-TLV 43. SRv6 END.X SID";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  identity srv6-adj-lan-sid {
+    base srl_nokia-isis-lsdb-types:is-reachability-subtlvs-type;
+    description
+      "sub-TLV 44. SRv6 LAN END.X SID";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  identity srv6-sid-structure-isis {
+    base srl_nokia-isis-lsdb-types:isis-subsubtlv-type;
+    description
+      "sub-sub-TLV 1 for SRv6 SID sub-TLVs (END, END.X, LAN END.X)";
+    reference
+      "RFC9352: IS-IS Extensions to Support Segment Routing over the IPv6 Data Plane";
+  }
+
+  identity srv6-service-sub-tlv-type {
+    description
+      "Base identity for a SRv6 Service Sub-TLV type";
+  }
+
+  identity srv6-sid-information {
+    base srv6-service-sub-tlv-type;
+    description
+      "SRv6 Service SID information (sub-TLV 1)";
+    reference
+      "RFC9252: BGP Overlay Services Based on Segment Routing over IPv6 (SRv6)";
+  }
+
+  identity srv6-service-data-sub-sub-tlv-type {
+    description
+      "Base identity for a SRv6 Service Data Sub-Sub-TLV type";
+  }
+
+  identity srv6-sid-structure-bgp {
+    base srv6-service-data-sub-sub-tlv-type;
+    description
+      "SRv6 SID Structure (sub-sub-TLV 1)";
+    reference
+      "RFC9252: BGP Overlay Services Based on Segment Routing over IPv6 (SRv6)";
+  }
+}

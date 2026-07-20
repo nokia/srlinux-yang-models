@@ -1,0 +1,114 @@
+module srl_nokia-bgp-evpn-multicast-gateway {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:evpn:multicast-evpn-gateway";
+  prefix srl_nokia-bgp-evpn-multicast-gateway;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-extensions {
+    prefix srl_nokia-ext;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-system-network-instance-bgp-evpn-ethernet-segments {
+    prefix srl_nokia-system-bgp-evpn-ethernet-segments;
+  }
+  import srl_nokia-bgp-evpn {
+    prefix srl_nokia-bgp-evpn;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models the state of the BGP EVPN multicast gateway";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping multicast-evpn-gateway-dr-candidates-info {
+    container computed-designated-router-candidates {
+      list designated-router-candidate {
+        key "address";
+        description
+          "designated router PEG/MEG gateway candidates";
+        leaf address {
+          type srl_nokia-comm:ip-address;
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf add-time {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "The date and time when the designated-router-candidate was added to the designated router candidate list";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf designated-router {
+          type boolean;
+          default "false";
+          description
+            "Indicates if this designated-router-candidate is the designated-router.";
+          srl_nokia-ext:show-importance "high";
+        }
+      }
+      description
+        "Enter the computed-designated-router-candidates context";
+    }
+  }
+
+  grouping multicast-evpn-gateway-dr-election-top {
+    container dr-election-state {
+      description
+        "Enter the dr-election-state context
+
+         DR election configuration and state";
+      container algorithm {
+        leaf oper-type {
+          type srl_nokia-system-bgp-evpn-ethernet-segments:df-algorithm-type;
+          srl_nokia-ext:show-importance "high";
+          config false;
+          description
+            "Operational designated router election algorithm type for this PEG/MEG gateway";
+        }
+        description
+          "Enter the algorithm context";
+      }
+      container dr-info {
+        srl_nokia-ext:show-importance "high";
+        config false;
+        description
+          "Enter the dr-info context
+
+           DR information for this PEG/MEG gateway";
+        leaf designated-router-role-last-change {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Indicates the time at which the designated-router role was changed";
+        }
+        leaf designated-router-activation-start-time {
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Indicates the time at which the designated-router activation timer started";
+          srl_nokia-ext:show-importance "high";
+        }
+        leaf designated-router-activation-time {
+          type uint32;
+          units "seconds";
+          description
+            "Indicates the number of seconds for the activation timer to run, for this node to become the designated router";
+          srl_nokia-ext:show-importance "high";
+        }
+        uses multicast-evpn-gateway-dr-candidates-info;
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-netinst:bgp-evpn/srl_nokia-bgp-evpn:bgp-instance/srl_nokia-bgp-evpn:supplementary-broadcast-domain/srl_nokia-bgp-evpn:evpn-multicast-gateway" {
+    uses multicast-evpn-gateway-dr-election-top;
+  }
+}

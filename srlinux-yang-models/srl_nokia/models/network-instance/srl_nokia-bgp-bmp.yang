@@ -1,0 +1,313 @@
+module srl_nokia-bgp-bmp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:bgp:bmp";
+  prefix srl_nokia-bgp-bmp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-bgp {
+    prefix srl_nokia-bgp;
+  }
+  import srl_nokia-bgp-bmp-types {
+    prefix srl_nokia-bgp-bmp-types;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG file models configuration and state of the BGP Monitoring Protocol (BMP)";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping bmp-station-config {
+    description
+      "Configuration parameters for a BMP station (collector)";
+    leaf name {
+      type srl_nokia-comm:name {
+        length "1..64";
+      }
+      description
+        "The configured name of the BMP station";
+    }
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Administratively enable or disable the BMP station";
+    }
+    leaf description {
+      type srl_nokia-comm:description;
+      description
+        "A user provided description string for the BMP station";
+    }
+    leaf address {
+      type srl_nokia-comm:ip-address;
+      mandatory true;
+      description
+        "The IP address of the BMP collector";
+    }
+    leaf port {
+      type srl_nokia-comm:port-number;
+      default "5000";
+      description
+        "The TCP port number of the BMP collector";
+    }
+    leaf local-address {
+      type srl_nokia-comm:ip-address;
+      description
+        "The local IP address used as the source for the BMP session";
+    }
+    leaf-list route-monitoring-policy {
+      min-elements 1;
+      type identityref {
+        base srl_nokia-bgp-bmp-types:route-monitoring-policy;
+      }
+      description
+        "List of route monitoring policies to apply for this station";
+    }
+    leaf initiation-message {
+      type string {
+        length "1..255";
+      }
+      description
+        "String to include in the BMP Initiation Message sent to the collector";
+    }
+  }
+
+  grouping bmp-station-state {
+    description
+      "Operational state for a BMP station";
+    container state {
+      config false;
+      description
+        "Enter the state context
+
+         Operational state of the BMP station";
+      leaf session-state {
+        type srl_nokia-bgp-bmp-types:session-state;
+        description
+          "Current state of the BMP session";
+      }
+      leaf session-uptime {
+        type srl_nokia-comm:date-and-time-delta;
+        description
+          "Time since the BMP session was established";
+      }
+      leaf last-state-change {
+        type srl_nokia-comm:date-and-time;
+        description
+          "Timestamp of the last session state change";
+      }
+      leaf connection-attempt-count {
+        type srl_nokia-comm:zero-based-counter32;
+        description
+          "Number of connection attempts to the collector";
+      }
+      leaf messages-sent {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total number of BMP messages sent to the collector";
+      }
+      leaf messages-failed {
+        type srl_nokia-comm:zero-based-counter32;
+        description
+          "Number of BMP messages that failed to send";
+      }
+      leaf last-error {
+        type string;
+        description
+          "Description of the last error encountered";
+      }
+      leaf monitored-peers {
+        type srl_nokia-comm:zero-based-counter32;
+        description
+          "Number of BGP peers currently monitored by this station";
+      }
+    }
+  }
+
+  grouping bmp-statistics {
+    description
+      "BMP statistics";
+    container statistics {
+      config false;
+      description
+        "Enter the statistics context
+
+         BMP operational statistics";
+      leaf total-peers-monitored {
+        type srl_nokia-comm:zero-based-counter32;
+        description
+          "Total number of BGP peers monitored across all stations";
+      }
+      leaf total-route-monitoring-sent {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total number of route monitoring messages sent";
+      }
+      leaf total-statistics-sent {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total number of statistics report messages sent";
+      }
+      leaf total-peer-up-sent {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total number of peer up notification messages sent";
+      }
+      leaf total-peer-down-sent {
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Total number of peer down notification messages sent";
+      }
+    }
+  }
+
+  grouping bmp-monitor-group-neighbor {
+    description
+      "BMP monitoring configuration for AFI-SAFI";
+    container bmp {
+      description
+        "Enter the bmp context
+
+         BMP monitoring configuration";
+      container monitor {
+        description
+          "Enter the monitor context
+
+           BMP route monitoring configuration";
+        list station {
+          key "name";
+          description
+            "List of BMP stations monitoring this AFI-SAFI";
+          leaf name {
+            type leafref {
+              path "../../../../../../bmp/station/name";
+            }
+            description
+              "Reference to a configured BMP station";
+          }
+          leaf admin-state {
+            type srl_nokia-comm:admin-state;
+            default "enable";
+            description
+              "Administratively enable or disable monitoring for this station";
+          }
+          leaf-list route-monitoring-policy {
+            type identityref {
+              base srl_nokia-bgp-bmp-types:route-monitoring-policy;
+            }
+            description
+              "Override the station-level route monitoring policy for this AFI-SAFI";
+          }
+        }
+      }
+    }
+  }
+
+  grouping bmp-monitor-state {
+    description
+      "BMP monitoring operational state at neighbor level";
+    leaf last-bmp-peer-up {
+      config false;
+      type srl_nokia-comm:date-and-time;
+      description
+        "Timestamp of the last peer up notification sent";
+    }
+    leaf last-bmp-peer-down {
+      config false;
+      type srl_nokia-comm:date-and-time;
+      description
+        "Timestamp of the last peer down notification sent";
+    }
+  }
+
+  grouping bmp-top {
+    description
+      "Top-level BMP configuration and state";
+    container bmp {
+      description
+        "Enter the bmp context
+
+         BGP Monitoring Protocol configuration and state";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "Administratively enable or disable BMP for the network-instance";
+      }
+      leaf vrf-distinguisher {
+        type srl_nokia-comm:route-distinguisher;
+        description
+          "VRF Route Distinguisher used in BMP messages for peers in this network-instance";
+      }
+      container buffer {
+        description
+          "Enter the buffer context
+
+           BMP message buffer configuration";
+        leaf max-size {
+          type uint32 {
+            range "1048576..52428800";
+          }
+          units "bytes";
+          default "10485760";
+          description
+            "Maximum buffer size for BMP messages (1MB to 50MB)";
+        }
+      }
+      list station {
+        key "name";
+        max-elements 8;
+        description
+          "List of BMP collectors (stations)";
+        uses bmp-station-config;
+        uses bmp-station-state;
+      }
+      uses bmp-statistics;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-bgp:bgp" {
+    if-feature "srl_nokia-feat:bgp-bmp-support";
+    uses bmp-top;
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-bgp:bgp/srl_nokia-bgp:group/srl_nokia-bgp:afi-safi" {
+    if-feature "srl_nokia-feat:bgp-bmp-support";
+    uses bmp-monitor-group-neighbor;
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-bgp:bgp/srl_nokia-bgp:neighbor/srl_nokia-bgp:afi-safi" {
+    if-feature "srl_nokia-feat:bgp-bmp-support";
+    uses bmp-monitor-group-neighbor;
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-bgp:bgp/srl_nokia-bgp:neighbor/srl_nokia-bgp:afi-safi/srl_nokia-bgp-bmp:bmp/srl_nokia-bgp-bmp:monitor" {
+    if-feature "srl_nokia-feat:bgp-bmp-support";
+    leaf route-monitoring-messages-sent {
+      config false;
+      type srl_nokia-comm:zero-based-counter64;
+      description
+        "Number of route monitoring messages sent for this AFI-SAFI";
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols/srl_nokia-bgp:bgp/srl_nokia-bgp:neighbor" {
+    if-feature "srl_nokia-feat:bgp-bmp-support";
+    uses bmp-monitor-state;
+  }
+}

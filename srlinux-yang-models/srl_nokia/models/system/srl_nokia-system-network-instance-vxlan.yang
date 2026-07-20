@@ -1,0 +1,49 @@
+module srl_nokia-system-network-instance-vxlan {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:vxlan:system-network-instance-vxlan";
+  prefix srl_nokia-system-network-instance-vxlan;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-system-network-instance {
+    prefix srl_nokia-system-network-instance;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of VXLAN in the system network-instance.";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping system-network-instance-vxlan-top {
+    description
+      "Top-level grouping containing the configuration and state of VXLAN in the system network-instance.";
+    container vxlan {
+      if-feature "srl_nokia-feat:evpn-anycast-l3-subnet";
+      presence "Configure VXLAN in the system network-instance";
+      leaf router-mac-address {
+        type srl_nokia-comm:unicast-mac-address;
+        description
+          "The router MAC address for VXLAN across all routed vxlan-interfaces";
+      }
+    }
+  }
+
+  augment "/srl_nokia-system:system/srl_nokia-system-network-instance:network-instance/srl_nokia-system-network-instance:protocols" {
+    uses system-network-instance-vxlan-top;
+  }
+}

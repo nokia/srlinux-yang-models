@@ -1,0 +1,77 @@
+module srl_nokia-tools-msdp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:msdp:tools-msdp";
+  prefix srl_nokia-tools-msdp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-tools-network-instance {
+    prefix srl_nokia-tools-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Model for MSDP operational commands";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.03.1";
+  }
+
+  grouping msdp-tools-top {
+    container msdp {
+      if-feature "srl_nokia-feat:msdp";
+      presence "Send operational commands to MSDP manager";
+      description
+        "Operational tools commands for MSDP.";
+      container statistics {
+        description
+          "Enter the statistics context
+
+           Clear MSDP instance statistics.";
+        leaf clear {
+          type empty;
+          description
+            "Reset all MSDP counters for this network-instance to zero.";
+        }
+      }
+      list peer {
+        key "ip-address";
+        description
+          "MSDP peer tools.";
+        leaf ip-address {
+          type srl_nokia-comm:ipv4-address-unicast;
+          description
+            "IP address of the remote MSDP peer.";
+        }
+        container statistics {
+          description
+            "Enter the statistics context
+
+             Clear MSDP peer statistics.";
+          leaf clear {
+            type empty;
+            description
+              "Reset all MSDP counters for this peer to zero.";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-tools-netinst:network-instance/srl_nokia-tools-netinst:protocols" {
+    uses msdp-tools-top;
+  }
+}

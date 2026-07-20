@@ -1,0 +1,444 @@
+module srl_nokia-tools-gnoi-containerz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:grpc:tools-gnoi-containerz";
+  prefix srl_nokia-tools-gnoi-containerz;
+
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational commands related to gNOI Containerz.";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping tools-gnoi-containerz-top {
+    container containerz {
+      description
+        "Enter the containerz context
+
+         gNOI Containerz tools commands";
+      container deploy-image {
+        presence "Deploy a container image";
+        srl-ext:first-released "26.3.1";
+        description
+          "Deploy a container image from a local file path
+
+           The image file must be a valid container image archive (e.g. tar).
+           Upon successful deployment, the image is loaded into the container runtime registry.";
+        leaf local-path {
+          type string;
+          description
+            "The local file path of the container image archive to deploy";
+        }
+        leaf name {
+          type string;
+          description
+            "The name to assign to the container image
+
+             If not specified, the name is derived from the image archive.";
+        }
+        leaf tag {
+          type string;
+          description
+            "The tag (version) to assign to the container image
+
+             If not specified, the tag is derived from the image archive.";
+        }
+      }
+      container deploy-plugin {
+        presence "Deploy a plugin";
+        srl-ext:first-released "26.3.1";
+        description
+          "Deploy a plugin from a local file path
+
+           The plugin file must be a valid plugin archive (e.g. tar).
+           Upon successful deployment, the plugin is saved until StartPlugin is called.";
+        leaf local-path {
+          type string;
+          description
+            "The local file path of the plugin archive to deploy";
+        }
+        leaf name {
+          type string;
+          description
+            "The name to assign to the plugin";
+        }
+        leaf tag {
+          type string;
+          description
+            "The tag (version) to assign to the plugin";
+        }
+      }
+      container start-container {
+        presence "Start a container";
+        srl-ext:first-released "26.3.1";
+        description
+          "Start a container from a specified image
+
+           If the image does not exist on the target, an error is returned.
+           An instance name can optionally be provided, otherwise the target assigns one.";
+        leaf image-name {
+          type string;
+          description
+            "The name of the container image to start";
+        }
+        leaf tag {
+          type string;
+          description
+            "The tag (version) of the container image to start";
+        }
+        leaf instance-name {
+          type string;
+          description
+            "The name to give the running container instance
+
+             If not specified, the target assigns a name.";
+        }
+        leaf cmd {
+          type string;
+          description
+            "The command to run inside the container";
+        }
+        leaf network {
+          type string;
+          description
+            "The network to attach this container to
+
+             This could be 'host', 'bridged', or any other network available in the runtime.";
+        }
+        list ports {
+          key "internal";
+          description
+            "List of internal ports to expose outside the container";
+          leaf internal {
+            type uint32;
+            description
+              "Internal container port";
+          }
+          leaf external {
+            type uint32;
+            description
+              "External host port";
+          }
+        }
+        leaf-list environment {
+          type string;
+          description
+            "Environment variables to set in the container
+
+             Each entry should be in KEY=VALUE format.";
+        }
+        list volume {
+          key "name";
+          description
+            "List of volumes to attach to the container";
+          leaf name {
+            type string;
+            description
+              "The name of the volume";
+          }
+          leaf mount-point {
+            type string;
+            description
+              "The mount point inside the container where the volume should be attached";
+          }
+          leaf read-only {
+            type boolean;
+            default "false";
+            description
+              "If true, the volume is mounted in read-only mode";
+          }
+        }
+        leaf-list cap-add {
+          type string;
+          description
+            "Linux capabilities to add to the container
+
+             Valid capabilities can be found in capabilities(7).";
+        }
+        leaf-list cap-remove {
+          type string;
+          description
+            "Linux capabilities to remove from the container";
+        }
+        leaf restart-policy {
+          type enumeration {
+            enum none {
+              description
+                "Never restart the container";
+            }
+            enum always {
+              description
+                "Always restart the container unless explicitly stopped, including across runtime restarts";
+            }
+            enum unless-stopped {
+              description
+                "Same as always but not across container runtime restarts";
+            }
+            enum on-failure {
+              description
+                "Restart on failure for a maximum number of attempts";
+            }
+          }
+          description
+            "The restart policy to use for this container";
+        }
+        leaf restart-attempts {
+          type uint32;
+          description
+            "Maximum restart attempts when restart-policy is on-failure";
+        }
+        leaf run-as-user {
+          type string;
+          description
+            "The user to run the container as";
+        }
+        leaf run-as-group {
+          type string;
+          description
+            "The group to run the container as";
+        }
+        leaf-list label {
+          type string;
+          description
+            "Labels to apply to the container
+
+             Each entry should be in KEY=VALUE format.";
+        }
+        leaf max-cpu {
+          type decimal64 {
+            fraction-digits 2;
+          }
+          description
+            "Maximum amount of CPU the container can use
+
+             For example, 0.5 means this container can use a maximum of half a CPU.";
+        }
+        leaf soft-mem-bytes {
+          type int64;
+          description
+            "Soft memory limit in bytes
+
+             If the system is memory constrained, the container may be OOM killed
+             if it exceeds this limit.";
+        }
+        leaf hard-mem-bytes {
+          type int64;
+          description
+            "Hard memory limit in bytes
+
+             If the container exceeds this limit, the container runtime can
+             terminate (OOM kill) the container.";
+        }
+        leaf location {
+          if-feature "srl-feat:containerz-location";
+          type enumeration {
+            enum unknown;
+            enum primary {
+              description
+                "Run on the primary supervisor card";
+            }
+            enum backup {
+              description
+                "Run on the backup supervisor card";
+            }
+            enum all {
+              description
+                "Run on all supervisor cards";
+            }
+          }
+          description
+            "Defines where the container should run";
+        }
+      }
+      container stop-container {
+        presence "Stop a container";
+        srl-ext:first-released "26.3.1";
+        description
+          "Stop a running container
+
+           If the container does not exist or is not running, an error is returned.";
+        leaf instance-name {
+          type string;
+          description
+            "The name of the container instance to stop";
+        }
+        leaf force {
+          type boolean;
+          default "false";
+          description
+            "If true, forcibly kill the container";
+        }
+        leaf restart {
+          type boolean;
+          default "false";
+          description
+            "If true, restart the container immediately after stopping it";
+        }
+      }
+      container remove-container {
+        presence "Remove a container";
+        srl-ext:first-released "26.3.1";
+        description
+          "Remove a container from the system
+
+           The container must be stopped unless force is specified.";
+        leaf instance-name {
+          type string;
+          description
+            "The name of the container instance to remove";
+        }
+        leaf force {
+          type boolean;
+          default "false";
+          description
+            "If true, forcibly remove the container even if it is running";
+        }
+      }
+      container remove-image {
+        presence "Remove a container image";
+        srl-ext:first-released "26.3.1";
+        description
+          "Remove a container image from the system
+
+           If the image is associated with a running container, an error is returned.";
+        leaf name {
+          type string;
+          description
+            "The name of the container image to remove";
+        }
+        leaf tag {
+          type string;
+          description
+            "The tag of the container image to remove";
+        }
+        leaf force {
+          type boolean;
+          default "false";
+          description
+            "If true, forcibly remove the image";
+        }
+      }
+      container create-volume {
+        presence "Create a volume";
+        srl-ext:first-released "26.3.1";
+        description
+          "Create a persistent volume for container use
+
+           A volume is backed by persistent storage and is expected to exist across device reboots.";
+        leaf name {
+          type string;
+          description
+            "The name of the volume to create";
+        }
+        leaf driver {
+          type enumeration {
+            enum local {
+              description
+                "Standard mount(8) built-in volume driver";
+            }
+            enum custom {
+              description
+                "Custom volume driver loaded via Plugin RPCs";
+            }
+          }
+          description
+            "The volume driver to use
+
+             If not specified, defaults to the standard Linux mount driver.";
+        }
+        leaf-list label {
+          type string;
+          description
+            "Labels to apply to the volume
+
+             Each entry should be in KEY=VALUE format. Labels are metadata for the volume.";
+        }
+        leaf mountpoint {
+          type string;
+          description
+            "The mount point for the local driver";
+        }
+        leaf-list mount-option {
+          type string;
+          description
+            "Mount options for the local driver
+
+             Options as specified by mount(8).";
+        }
+      }
+      container remove-volume {
+        presence "Remove a volume";
+        srl-ext:first-released "26.3.1";
+        description
+          "Remove a volume from the system";
+        leaf name {
+          type string;
+          description
+            "The name of the volume to remove";
+        }
+        leaf force {
+          type boolean;
+          default "false";
+          description
+            "If true, forcibly remove the volume";
+        }
+      }
+      container start-plugin {
+        presence "Start a plugin";
+        srl-ext:first-released "26.3.1";
+        description
+          "Start a previously deployed plugin";
+        leaf name {
+          type string;
+          description
+            "The name of the plugin as specified during the deploy request";
+        }
+        leaf instance-name {
+          type string;
+          description
+            "The name to give the running plugin instance";
+        }
+        leaf config {
+          type string;
+          description
+            "The JSON configuration for the plugin";
+        }
+      }
+      container stop-plugin {
+        presence "Stop a plugin";
+        srl-ext:first-released "26.3.1";
+        description
+          "Stop a running plugin";
+        leaf instance-name {
+          type string;
+          description
+            "The name of the plugin instance to stop";
+        }
+      }
+      container remove-plugin {
+        presence "Remove a plugin";
+        srl-ext:first-released "26.3.1";
+        description
+          "Remove a plugin from the system";
+        leaf instance-name {
+          type string;
+          description
+            "The name of the plugin instance to remove";
+        }
+      }
+    }
+  }
+}

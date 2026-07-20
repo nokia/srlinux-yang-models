@@ -1,0 +1,585 @@
+module srl_nokia-mpls-rsvp-tunnel {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mpls:mpls-rsvp-tunnel";
+  prefix srl_nokia-mpls-rsvp-tunnel;
+
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-traffic-engineering {
+    prefix srl_nokia-te;
+  }
+  import srl_nokia-mpls {
+    prefix srl_nokia-mpls;
+  }
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-mpls-rsvp-tunnel-types {
+    prefix srl_nokia-mpls-rsvp-tunnel-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG module defines the configuration and state components for the management of the Resource reSerVation Protocol (RSVP).";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping constrained-path-tunnel-state {
+    description
+      "SR Linux RSVP-TE Tunnel state";
+    leaf oper-state {
+      config false;
+      description
+        "The operational state of the TE Tunnel";
+      type srl_nokia-comm:oper-state;
+    }
+  }
+
+  grouping constrained-path-tunnel-global-config {
+    description
+      "Global parameters to apply to RSVP-TE Tunnels";
+    container global {
+      leaf dynamic-bypass {
+        type boolean;
+        default "true";
+        description
+          "Create dynamic bypass LSPs in FRR";
+      }
+      leaf exponential-backoff-retry {
+        type boolean;
+        default "false";
+        description
+          "Use exponential back-off timer when retrying an LSP";
+      }
+      leaf hold-timer {
+        type union {
+          type uint32 {
+            range "1..1000";
+          }
+          type enumeration {
+            enum disable {
+              value 0;
+            }
+          }
+        }
+        units "seconds";
+        default "1";
+        description
+          "Hold timer value";
+      }
+      leaf tunnel-init-retry-timeout {
+        type uint32 {
+          range "10..600";
+        }
+        units "seconds";
+        default "30";
+        description
+          "Initial retry timeout for tunnel path state";
+      }
+      leaf max-bypass-associations {
+        type uint32 {
+          range "100..131072";
+        }
+        default "1000";
+        description
+          "Maximum number of LSPs associated with a bypass tunnel";
+      }
+      leaf max-bypass-plr-associations {
+        type uint32 {
+          range "1..16";
+        }
+        default "16";
+        description
+          "Maximum number of PLRs per RSVP-TE bypass LSP";
+      }
+      leaf mbb-prefer-current-hops {
+        type boolean;
+        default "false";
+        description
+          "Select preference to use the current hops for Make-Before-Break (MBB)";
+      }
+      container tunnel-history {
+        presence "Enable the tunnel-history context";
+        description
+          "Enter the tunnel-history context";
+        leaf admin-state {
+          type srl_nokia-comm:admin-state;
+          default "enable";
+          description
+            "Administrative state of tunnel history recording";
+        }
+      }
+      description
+        "Enter the global context";
+    }
+    list named-explicit-path {
+      key "path-name";
+      description
+        "Named paths used to specify the explicit route for paths belonging to constrained path tunnels";
+      leaf path-name {
+        type srl_nokia-mpls-rsvp-tunnel-types:path-name;
+        description
+          "Name of the explicit path";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Administrative state of the explicit path";
+      }
+      list hop {
+        key "index";
+        max-elements 255;
+        description
+          "Enter the hop list instance";
+        leaf index {
+          type int32 {
+            range "1..1024";
+          }
+          description
+            "Index to identify a particular explicit route object hop";
+        }
+        leaf ip-address {
+          type srl_nokia-comm:ipv4-address-unicast;
+          description
+            "IP address of the explicit hop";
+          mandatory true;
+        }
+        leaf type {
+          type enumeration {
+            enum strict {
+              value 1;
+            }
+          }
+          description
+            "Type of the explicit hop";
+          mandatory true;
+        }
+      }
+    }
+  }
+
+  grouping admin-group-constraints {
+    leaf-list include-any {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-te:traffic-engineering/srl_nokia-te:admin-groups/srl_nokia-te:group/srl_nokia-te:name";
+      }
+      max-elements 32;
+      description
+        "List of references to named admin groups any of which must be included in path computation";
+    }
+    leaf-list exclude-all {
+      type leafref {
+        path "/srl_nokia-netinst:network-instance/srl_nokia-te:traffic-engineering/srl_nokia-te:admin-groups/srl_nokia-te:group/srl_nokia-te:name";
+      }
+      max-elements 32;
+      description
+        "List of references to named admin groups which must be excluded in path computation";
+    }
+  }
+
+  grouping p2p-path-common-state {
+    description
+      "SR Linux RSVP-TE Tunnel state";
+    leaf oper-state {
+      config false;
+      description
+        "The operational state of the TE Tunnel";
+      type srl_nokia-comm:oper-state;
+    }
+  }
+
+  grouping p2p-path-config {
+    description
+      "SR Linux P2P path configuration";
+    leaf p2p-path-name {
+      type srl_nokia-mpls-rsvp-tunnel-types:p2p-path-name;
+      description
+        "P2P path name";
+    }
+    leaf explicit-path-name {
+      type leafref {
+        path "../../../../named-explicit-path/path-name";
+      }
+      description
+        "Name of the explicit path to use
+
+         If no value is configured, then an empty path is used.";
+    }
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "enable";
+      description
+        "Administrative state of the P2P path";
+    }
+    leaf adaptive {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "adaptive only applicable for type p2p-rsvp";
+      }
+      type boolean;
+      description
+        "Enable make-before-break functionality.
+
+         If no value is configured, the setting is inherited from the tunnel configuration.";
+    }
+    leaf bandwidth {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "bandwidth only applicable for type p2p-rsvp";
+      }
+      type srl_nokia-mpls-rsvp-tunnel-types:path-bandwidth;
+      default "0";
+      description
+        "Amount of bandwidth to be reserved";
+    }
+    leaf hop-limit {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "hop-limit only applicable for types p2p-rsvp";
+      }
+      type srl_nokia-mpls-rsvp-tunnel-types:hop-limit;
+      description
+        "Maximum number of hops that the P2P path can traverse including ingress and egress routers.
+
+         If no value is configured, the setting is inherited from the tunnel configuration.";
+    }
+    leaf record {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "record only applicable for types p2p-rsvp";
+      }
+      type boolean;
+      default "true";
+      description
+        "Enable recording of all hops that the P2P path traverses";
+    }
+    leaf record-label {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "record-label only applicable for types p2p-rsvp";
+      }
+      type boolean;
+      default "true";
+      description
+        "Enable recording of labels at each hop that the P2P path traverses";
+    }
+    container priority {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "Only applicable to type p2p-rsvp";
+      }
+      description
+        "Enter the priority context";
+      leaf setup-priority {
+        type srl_nokia-mpls-rsvp-tunnel-types:priority;
+        default "7";
+        description
+          "Setup priority for P2P path";
+      }
+      leaf hold-priority {
+        type srl_nokia-mpls-rsvp-tunnel-types:priority;
+        default "0";
+        description
+          "Hold priority for P2P path";
+      }
+    }
+    container admin-group-constraints {
+      uses admin-group-constraints;
+      description
+        "Enter the admin-group-constraints context
+
+         Admin group constraints for the P2P path";
+    }
+  }
+
+  grouping constrained-path-tunnel-config {
+    description
+      "SR Linux Constrained path tunnel configuration";
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Administrative state of the tunnel";
+    }
+    leaf type {
+      type enumeration {
+        enum p2p-rsvp {
+          value 1;
+        }
+      }
+      mandatory true;
+      description
+        "Tunnel type";
+    }
+    leaf source {
+      type srl_nokia-comm:ipv4-address-unicast;
+      description
+        "Source address for the tunnel
+
+         By default, this the TE Router ID of this ingress LER";
+    }
+    leaf hop-limit {
+      type srl_nokia-mpls-rsvp-tunnel-types:hop-limit;
+      default "255";
+      description
+        "Maximum number of hops that the tunnel can traverse including ingress and egress routers";
+    }
+    leaf rsvp-resv-style {
+      type enumeration {
+        enum se {
+          value 1;
+        }
+        enum ff {
+          value 2;
+        }
+      }
+      default "se";
+      description
+        "RSVP reservation style";
+    }
+    leaf adaptive {
+      type boolean;
+      default "true";
+      description
+        "Enable make-before-break functionality";
+    }
+    leaf propagate-admin-group {
+      type boolean;
+      default "false";
+      description
+        "Enable propagation of admin groups via session attribute object";
+    }
+    leaf retry-limit {
+      type uint32 {
+        range "1..10000";
+      }
+      description
+        "Number of attempts to re-establish LSP path after it fails";
+    }
+    leaf retry-timer {
+      type uint32 {
+        range "1..600";
+      }
+      units "seconds";
+      default "30";
+      description
+        "Time for LSP path re-establishment attempts after failure";
+    }
+    leaf path-computation-method {
+      type enumeration {
+        enum local-cspf {
+          value 1;
+        }
+      }
+      default "local-cspf";
+      description
+        "Path computation method";
+    }
+    leaf metric-type {
+      type enumeration {
+        enum igp {
+          value 1;
+        }
+        enum te {
+          value 2;
+        }
+      }
+      default "igp";
+      description
+        "Metric type used for path computation";
+    }
+    leaf soft-preemption {
+      type boolean;
+      default "true";
+      description
+        "Enable soft preemption";
+    }
+    container admin-group-constraints {
+      uses admin-group-constraints;
+      description
+        "Enter the admin-group-constraints context
+
+         Admin group constraints";
+    }
+  }
+
+  grouping p2p-tunnel-config {
+    leaf destination {
+      type srl_nokia-comm:ipv4-address-unicast;
+      description
+        "Destination address for the P2P tunnel";
+      mandatory true;
+    }
+    leaf revert-timer {
+      must "not(../../type) or ../../type = 'p2p-rsvp' " {
+        error-message "revert-timer only applicable for type p2p-rsvp";
+      }
+      type uint32 {
+        range "1..4320";
+      }
+      units "minutes";
+      description
+        "Revert timer for the P2P tunnel";
+    }
+    leaf metric {
+      must "not(../../type) or ../../type = 'p2p-rsvp' " {
+        error-message "metric only applicable for type p2p-rsvp";
+      }
+      type uint32 {
+        range "1..16777215";
+      }
+      description
+        "Force the P2P tunnel metric to a constant value";
+    }
+    leaf adspec {
+      must "not(../../type) or ../../type = 'p2p-rsvp' " {
+        error-message "adspec only applicable for type p2p-rsvp";
+      }
+      type boolean;
+      default "false";
+      description
+        "Include ADSPEC object in RSVP messages";
+    }
+    leaf load-balancing-weight {
+      must "not(../../type) or ../../type = 'p2p-rsvp' " {
+        error-message "load-balancing-weight only applicable for type p2p-rsvp";
+      }
+      type uint32 {
+        range "1..max";
+      }
+      description
+        "Load balancing weight for the P2P tunnel";
+    }
+    container fast-reroute {
+      presence "Enable the fast-reroute context";
+      must "not(../../type) or ../../type = 'p2p-rsvp'" {
+        error-message "fast-reroute only applicable for type p2p-rsvp";
+      }
+      description
+        "Enter the fast-reroute context";
+      leaf hop-limit {
+        type uint32 {
+          range "0..255";
+        }
+        default "16";
+        description
+          "Total number of hops backup tunnel can take";
+      }
+      leaf propagate-admin-group {
+        type boolean;
+        default "false";
+        description
+          "Enable propagation of admin group constraints in fast reroute object";
+      }
+      leaf node-protect {
+        type boolean;
+        default "true";
+        description
+          "Enable node protection";
+      }
+    }
+  }
+
+  grouping p2p-secondary-config {
+    leaf path-preference {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "path-preference only applicable for type p2p-rsvp";
+      }
+      type int32 {
+        range "1..255";
+      }
+      default "255";
+      description
+        "Path preference for the secondary standby path";
+    }
+    leaf srlg {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "srlg only applicable for type p2p-rsvp";
+      }
+      type boolean;
+      default "false";
+      description
+        "Use SRLG constraint in secondary path computation for an LSP at the head-end LER";
+    }
+    leaf standby {
+      must "not(../../../type) or ../../../type = 'p2p-rsvp'" {
+        error-message "standby only applicable for type p2p-rsvp";
+      }
+      type boolean;
+      default "false";
+      description
+        "Configure this secondary path to be a standby";
+    }
+  }
+
+  grouping constrained-path-tunnel-top {
+    container constrained-path {
+      if-feature "srl_nokia-feat:rsvp";
+      presence "Configure Constrained Path Tunnels";
+      must "(../../../srl_nokia-netinst:type = 'srl_nokia-netinst:default')" {
+        error-message "Constrained path tunnels are only allowed on network-instance of type default";
+      }
+      description
+        "Top-level configuration and operational state for Constrained Path Tunnels";
+      uses constrained-path-tunnel-global-config;
+      list tunnel {
+        key "tunnel-name";
+        description
+          "List of RSVP-TE tunnels";
+        leaf tunnel-name {
+          type srl_nokia-mpls-rsvp-tunnel-types:tunnel-name;
+          description
+            "Name of the RSVP-TE tunnel";
+        }
+        uses constrained-path-tunnel-config;
+        uses constrained-path-tunnel-state;
+        container p2p-tunnel-attributes {
+          presence "Configure Point-to-Point Tunnels";
+          must "not(../type) or ../type = 'p2p-rsvp'" {
+            error-message "Point-to-Point constained path tunnels must be of type p2p-rsvp";
+          }
+          description
+            "Container for P2P tunnel parameters";
+          uses p2p-tunnel-config;
+          list p2p-primary {
+            must "not(../../type) or ../../type = 'p2p-rsvp'" {
+              error-message "Primary only applicable for type p2p-rsvp";
+            }
+            key "p2p-path-name";
+            max-elements 1;
+            description
+              "Enter the primary list instance";
+            uses p2p-path-config;
+            uses p2p-path-common-state;
+          }
+          list p2p-secondary {
+            must "not(../../type) or ../../type = 'p2p-rsvp'" {
+              error-message "Secondary only applicable for type p2p-rsvp";
+            }
+            must 'not(../p2p-primary[p2p-path-name = current()/p2p-path-name])' {
+              error-message "Secondary name must be different from primary name";
+            }
+            key "p2p-path-name";
+            max-elements 8;
+            description
+              "Enter the secondary list instance";
+            uses p2p-path-config;
+            uses p2p-secondary-config;
+            uses p2p-path-common-state;
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-mpls:mpls/srl_nokia-mpls:lsps" {
+    if-feature "srl_nokia-feat:mpls-static-lsp or srl_nokia-feat:rsvp";
+    uses constrained-path-tunnel-top;
+  }
+}

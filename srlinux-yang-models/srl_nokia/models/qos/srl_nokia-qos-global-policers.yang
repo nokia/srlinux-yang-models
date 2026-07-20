@@ -1,0 +1,198 @@
+module srl_nokia-qos-global-policers {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:qos:qos-glb-pol";
+  prefix srl_nokia-qos-global-pol;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-qos {
+    prefix srl_nokia-qos;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  typedef policer-type {
+    type enumeration {
+      enum one-rate-two-color;
+      enum two-rate-three-color;
+    }
+  }
+
+  grouping committed-rate-parameters {
+    leaf committed-rate {
+      type uint64;
+      units "bps";
+      description
+        "Committed information rate for the token bucket scheduler
+
+         This value represents the rate at which tokens are added to the bucket.";
+    }
+    leaf committed-burst {
+      type uint32;
+      units "bytes";
+      description
+        "Committed burst size for the token bucket scheduler
+
+         This value represents the depth of the token bucket.";
+    }
+  }
+
+  grouping excess-rate-parameters {
+    leaf peak-rate {
+      type uint64;
+      units "bps";
+      description
+        "Peak information rate for the dual-rate token bucket policer
+
+         This value represents the rate at which tokens are added to the secondary bucket.";
+    }
+    leaf excess-burst {
+      type uint32;
+      units "bytes";
+      description
+        "Excess burst size for the dual-rate token bucket policer
+
+         This value represents the depth of the secondary bucket.";
+    }
+  }
+
+  grouping conform-action-grouping {
+    container conform-action {
+      leaf conforming-packets {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Number of conforming packets.";
+      }
+      leaf conforming-octets {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Number of octets in conforming packets.";
+      }
+      description
+        "Enter the conform-action context";
+    }
+  }
+
+  grouping exceed-action-grouping {
+    container exceed-action {
+      leaf exceeding-packets {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Number of exceeding packets.";
+      }
+      leaf exceeding-octets {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Number of octets in exceeding packets.";
+      }
+      description
+        "Enter the exceed-action context";
+    }
+  }
+
+  grouping violate-action-grouping {
+    container violate-action {
+      leaf violating-packets {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Number of violating packets.";
+      }
+      leaf violating-octets {
+        config false;
+        type srl_nokia-comm:zero-based-counter64;
+        description
+          "Number of octets in violating packets.";
+      }
+      description
+        "Enter the violate-action context";
+    }
+  }
+
+  grouping global-policers-top {
+    container policers {
+      description
+        "Enter the policers context
+
+         Configuration and state for global policers
+
+         A global policer is single-rate or dual-rate traffic meter that can be used to rate limit traffic by discarding or remarking non-compliant traffic. An instance of each global policer exists on every forwarding-complex and core of the system, whether traffic is directed to each instance or not.";
+      leaf discard-all-high-drop-probability {
+        if-feature "srl_nokia-feat:qos-discard-all-high-drop-probability";
+        description
+          "Defines system-wide policer behaviour with respect to treating high drop-probability packets.
+
+           When set to true, all policers will discard violating packets. As a consequence, also all packets classified by classifiers as high drop-probability will be dropped";
+        type boolean;
+        default "false";
+      }
+      list policer {
+        if-feature "srl_nokia-feat:qos-global-policers";
+        description
+          "List of global policers";
+        key "name";
+        must "(not(one-rate-two-color/committed-rate) and not(one-rate-two-color/committed-burst)) or type = 'one-rate-two-color'" {
+          error-message "If one-rate-two-color is configured then type must be one-rate-two-color";
+        }
+        must "(not(two-rate-three-color/committed-rate) and not(two-rate-three-color/committed-burst) and
+              not(two-rate-three-color/peak-rate) and not(two-rate-three-color/excess-burst)) or type = 'two-rate-three-color'" {
+          error-message "If two-rate-three-color is configured then type must be two-rate-three-color";
+        }
+        leaf name {
+          description
+            "Name of the global policer";
+          type srl_nokia-comm:name;
+        }
+        leaf type {
+          description
+            "The type of global policer";
+          type policer-type;
+        }
+        leaf last-clear {
+          config false;
+          type srl_nokia-comm:date-and-time-delta;
+          description
+            "Timestamp of the last time the statistics associated with this global policer were cleared.";
+        }
+        container one-rate-two-color {
+          uses committed-rate-parameters;
+          uses conform-action-grouping;
+          uses violate-action-grouping;
+          description
+            "Enter the one-rate-two-color context";
+        }
+        container two-rate-three-color {
+          uses committed-rate-parameters;
+          uses excess-rate-parameters;
+          uses conform-action-grouping;
+          uses exceed-action-grouping;
+          uses violate-action-grouping;
+          description
+            "Enter the two-rate-three-color context";
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-qos:qos" {
+    if-feature "srl_nokia-feat:qos-policers-subtree";
+    uses global-policers-top;
+  }
+}

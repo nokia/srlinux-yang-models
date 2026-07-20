@@ -1,0 +1,65 @@
+module srl_nokia-tools-oam-pm-ip {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:twamp:tools-oam-pm-ip";
+  prefix srl_nokia-tools-oam-pm-ip;
+
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-tools-oam {
+    prefix srl_nokia-tools-oam;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines the tools commands available for OAM-PM IP sessions";
+
+  revision 2024-07-31 {
+    description
+      "SRLinux 24.7.1";
+  }
+
+  grouping on-demand-action {
+    leaf on-demand-action {
+      type enumeration {
+        enum start {
+          value 1;
+        }
+        enum stop {
+          value 2;
+        }
+      }
+      description
+        "Action required to start and stop an OAM-PM on-demand session";
+    }
+  }
+
+  grouping raw-bin {
+    leaf clear {
+      type empty;
+    }
+    description
+      "Clear all raw bin statistics";
+  }
+
+  augment "/srl_nokia-tools-oam:oam/srl_nokia-tools-oam:performance-monitoring" {
+    if-feature "srl_nokia-feat:oam-pm-ip";
+    container ip {
+      presence "Tools commands to affect IP performance monitoring tests and results";
+      description
+        "OAM-PM IP on-demand tools";
+      list session {
+        key "session-name";
+        leaf session-name {
+          type string;
+        }
+        uses on-demand-action;
+        uses raw-bin;
+      }
+    }
+  }
+}

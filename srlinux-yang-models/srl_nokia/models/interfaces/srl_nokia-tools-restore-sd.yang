@@ -1,0 +1,46 @@
+module srl_nokia-tools-restore-sd {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:general:tools-restore-sd";
+  prefix srl-tools-restore-sd;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational commands related to restoration of a SD card.";
+
+  revision 2026-03-31 {
+    description
+      "SRLinux 26.3.1";
+  }
+
+  grouping restore-sd-top {
+    container restore-sd {
+      if-feature "srl_nokia-feat:restore-sdcard";
+      presence "Configure tools system restore-sd";
+      description
+        "Top-level container for operational commands related to restoring a SD card";
+      leaf current {
+        type empty;
+        description
+          "Restore the current active SD card image to the external SD card slot";
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    uses restore-sd-top;
+  }
+}

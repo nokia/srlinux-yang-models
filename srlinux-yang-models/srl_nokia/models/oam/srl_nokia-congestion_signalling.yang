@@ -1,0 +1,460 @@
+module srl_nokia-congestion_signalling {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:csig";
+  prefix srl-csig;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-oam {
+    prefix srl-oam;
+  }
+  import srl_nokia-interfaces {
+    prefix srl-if;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the Congestion Signalling function";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping csig-system {
+    container congestion-signaling {
+      description
+        "Enter the congestion-signaling context
+
+         Configuration for congestion signaling parameters.";
+      must "admin-state != 'enable' or tag-length = 'compact' or tag-length = 'wide'" {
+        error-message "tag-length must be set to 'compact' or 'wide' when admin-state is 'enable'";
+      }
+      must "admin-state != 'enable' or node-locator > 0" {
+        error-message "node-locator must be set to a non-zero value when admin-state is 'enable'";
+      }
+      must "not(tag-length = 'compact') or not(node-locator) or node-locator <= 63" {
+        error-message "node-locator must be less than or equal to 63 when tag-length is 'compact'";
+      }
+      must "admin-state != 'enable' or tpid" {
+        error-message "tpid must be set to a non-zero value when admin-state is 'enable'";
+      }
+      must 'not(tpid) or (tpid != 2048 and tpid != 34525 and tpid != 2054 and tpid != 34887 and tpid != 33024)' {
+        error-message
+          "tpid must not be 0x0800 (IPv4), 0x86DD (IPv6), 0x0806 (ARP),
+           0x8847 (MPLS), or 0x8100 (802.1Q VLAN tag)";
+      }
+      leaf admin-state {
+        type srl-comm:admin-state;
+        srl-ext:show-importance "high";
+        default "disable";
+        description
+          "Administratively enable or disable congestion signalling";
+      }
+      leaf oper-state {
+        config false;
+        type srl-comm:oper-state;
+        srl-ext:show-importance "high";
+        description
+          "The operational state of congestion signalling on this device";
+      }
+      leaf tag-length {
+        description
+          "Indicate CSig tag length expected";
+        type enumeration {
+          enum compact {
+            value 1;
+            description
+              "4-byte tag";
+          }
+          enum wide {
+            value 2;
+            description
+              "8-byte tag";
+          }
+        }
+      }
+      leaf node-locator {
+        description
+          " indicates the node-wide locator to be used when updating CSig metrics";
+        type uint16 {
+          range "0..32767";
+        }
+      }
+      leaf interval {
+        type enumeration {
+          enum 1 {
+            value 1;
+            description
+              "1 microsecond";
+          }
+          enum 100 {
+            value 100;
+            description
+              "100 microseconds";
+          }
+          enum 1000 {
+            value 1000;
+            description
+              "1000 microseconds";
+          }
+          enum 10000 {
+            value 10000;
+            description
+              "10000 microseconds";
+          }
+          enum 100000 {
+            value 100000;
+            description
+              "100000 microseconds";
+          }
+        }
+        units "us";
+        default "100";
+        description
+          "The interval for 4-byte congestion signaling in microseconds.";
+      }
+      leaf tpid {
+        type uint16 {
+          range "1536..65535";
+          srl-ext:output-flavor "hex";
+        }
+        description
+          "The TPID (Tag Protocol Identifier) for congestion signaling.";
+      }
+      container compact {
+        description
+          "Enter the compact context
+
+           Configuration for 4-byte congestion signaling.";
+        container quantization-parameters {
+          container available-bandwidth {
+            leaf algorithm {
+              description
+                "Algorithm used for available bandwidth quantization";
+              type enumeration {
+                enum default-bucket {
+                  description
+                    "Default quantization algorithm is used to set bucket values";
+                }
+                enum manual-bucket {
+                  description
+                    "Manually defined quantization buckets";
+                }
+              }
+              default "default-bucket";
+            }
+            list bucket {
+              key "index";
+              max-elements 32;
+              description
+                "List of quantization buckets for available bandwidth";
+              leaf index {
+                type uint8 {
+                  range "0..31";
+                }
+                description
+                  "Index of the quantization bucket";
+              }
+              leaf maximum-value {
+                type uint64 {
+                  range "0..200000000000";
+                }
+                description
+                  "Maximum value for the quantization bucket, in bytes per second.
+                   The configured value must not exceed 200,000,000,000 bytes per second.";
+              }
+            }
+            description
+              "Enter the available-bandwidth context";
+          }
+          container relative-available-bandwidth {
+            leaf algorithm {
+              description
+                "Algorithm used for relative available bandwidth quantization";
+              type enumeration {
+                enum default-bucket {
+                  description
+                    "Default quantization algorithm is used to set bucket values.
+                     32 buckets will be distributed across 0-100% range evenly";
+                }
+              }
+              default "default-bucket";
+            }
+            list bucket {
+              config false;
+              key "index";
+              max-elements 32;
+              description
+                "List of quantization buckets for available bandwidth";
+              leaf index {
+                type uint8 {
+                  range "0..31";
+                }
+                description
+                  "Index of the quantization bucket";
+              }
+              leaf maximum-value {
+                type uint32;
+                description
+                  "Maximum value for the quantization bucket";
+              }
+            }
+            description
+              "Enter the relative-available-bandwidth context";
+          }
+          container delay {
+            leaf algorithm {
+              description
+                "Algorithm used for delay quantization";
+              type enumeration {
+                enum default-bucket {
+                  description
+                    "Default quantization algorithm is used to set bucket values";
+                }
+                enum manual-bucket {
+                  description
+                    "Manually defined quantization buckets";
+                }
+              }
+              default "default-bucket";
+            }
+            list bucket {
+              key "index";
+              max-elements 32;
+              description
+                "List of quantization buckets for delay";
+              leaf index {
+                type uint8 {
+                  range "0..31";
+                }
+                description
+                  "Index of the quantization bucket";
+              }
+              leaf maximum-value {
+                type uint32;
+                description
+                  "Maximum value for the quantization bucket";
+              }
+            }
+            description
+              "Enter the delay context";
+          }
+          description
+            "Enter the quantization-parameters context";
+        }
+      }
+      container wide {
+        description
+          "Enter the wide context
+
+           Configuration for 8-byte congestion signaling.";
+        container quantization-parameters {
+          container available-bandwidth {
+            leaf algorithm {
+              description
+                "Algorithm used for available bandwidth quantization";
+              type enumeration {
+                enum default-bucket {
+                  description
+                    "Default quantization algorithm is used to set bucket values";
+                }
+                enum manual-bucket {
+                  description
+                    "Manually defined quantization";
+                }
+              }
+              default "manual-bucket";
+            }
+            list bucket {
+              key "index";
+              max-elements 32;
+              description
+                "List of quantization buckets for available bandwidth";
+              leaf index {
+                type uint8 {
+                  range "0..31";
+                }
+                description
+                  "Index of the quantization bucket";
+              }
+              leaf maximum-value {
+                type uint64 {
+                  range "0..200000000000";
+                }
+                description
+                  "Maximum value for the quantization bucket, in bytes per second.
+                   The configured value must not exceed 200,000,000,000 bytes per second.";
+              }
+            }
+            description
+              "Enter the available-bandwidth context";
+          }
+          container relative-available-bandwidth {
+            leaf algorithm {
+              description
+                "Algorithm used for relative available bandwidth quantization";
+              type enumeration {
+                enum default {
+                  description
+                    "Default quantization algorithm is used to set bucket values
+                     Each bucket will represent 1% within the 1-100% range";
+                }
+              }
+              default "default";
+            }
+            list bucket {
+              config false;
+              key "index";
+              max-elements 32;
+              description
+                "List of quantization buckets for available bandwidth";
+              leaf index {
+                type uint8 {
+                  range "0..31";
+                }
+                description
+                  "Index of the quantization bucket";
+              }
+              leaf maximum-value {
+                type uint32;
+                description
+                  "Maximum value for the quantization bucket";
+              }
+            }
+            description
+              "Enter the relative-available-bandwidth context";
+          }
+          container delay {
+            leaf algorithm {
+              description
+                "Algorithm used for packet delay quantization";
+              type enumeration {
+                enum default {
+                  description
+                    "Default quantization algorithm is used to set bucket values
+                     A step value of 0 results in a maximum delay value of 1ms
+                     A larger step values can be specified if a larger delay range is required";
+                }
+              }
+              default "default";
+            }
+            leaf step {
+              description
+                "Step value used per quantized bucket";
+              type uint8 {
+                range "0..63";
+              }
+              default "0";
+            }
+            description
+              "Enter the delay context";
+          }
+          description
+            "Enter the quantization-parameters context";
+        }
+      }
+      container statistics {
+        config false;
+        description
+          "Enter the statistics context
+
+           Statistics Container for Congestion Signaling";
+        leaf available-bandwidth-packet-counter {
+          type uint64;
+          description
+            "Number of congestion enabled packets processed.";
+        }
+        leaf available-bandwidth-byte-counter {
+          type uint64;
+          description
+            "Number of bytes processed in congestion enabled packets.";
+        }
+        leaf relative-available-bandwidth-packet-counter {
+          type uint64;
+          description
+            "Number of congestion enabled packets processed.";
+        }
+        leaf relative-available-bandwidth-byte-counter {
+          type uint64;
+          description
+            "Number of bytes processed in congestion enabled packets.";
+        }
+        leaf delay-packet-counter {
+          type uint64;
+          description
+            "Number of congestion enabled packets processed.";
+        }
+        leaf delay-byte-counter {
+          type uint64;
+          description
+            "Number of bytes processed in congestion enabled packets.";
+        }
+      }
+    }
+  }
+
+  grouping csig-interface {
+    container congestion-signaling {
+      description
+        "Enter the congestion-signaling context
+
+         Configuration for congestion signaling parameters.";
+      must "not(/srl-oam:oam/srl-csig:congestion-signaling/srl-csig:tag-length = 'compact') or not(locator) or locator <= 63" {
+        error-message "locator must be less than or equal to 63 when tag-length is 'compact'";
+      }
+      leaf locator {
+        description
+          "Interface specific loactor to be used when updating CSIG metric
+            Onlt used in CSig wide tag type is used";
+        type uint16 {
+          range "1..32767";
+        }
+      }
+      leaf action {
+        type enumeration {
+          enum update {
+            description
+              "Indicates an action to update the congestion signaling configuration.";
+          }
+          enum terminate {
+            description
+              "Indicates an action to terminate the congestion signaling.";
+          }
+        }
+        default "update";
+        description
+          "The specific action to be performed on the congestion signaling.";
+      }
+      leaf remote-csig-indicator {
+        config false;
+        type boolean;
+        description
+          "Indicates if the remote neighbor has signaled support for congestion signaling.";
+      }
+    }
+  }
+
+  augment "/srl-oam:oam" {
+    if-feature "srl-feat:oam-csig";
+    srl-ext:first-released "26.7.1";
+    uses csig-system;
+  }
+
+  augment "/srl-if:interface" {
+    if-feature "srl-feat:oam-csig";
+    srl-ext:first-released "26.7.1";
+    uses csig-interface;
+  }
+}

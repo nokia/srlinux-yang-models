@@ -1,0 +1,271 @@
+module srl_nokia-gnsi-authz {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:aaa:gnsi-authz";
+  prefix srl-gnsi-authz;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-system {
+    prefix srl-system;
+  }
+  import srl_nokia-aaa {
+    prefix srl-aaa;
+  }
+  import srl_nokia-extensions {
+    prefix srl-ext;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines configuration and operational state data related to the Authz service within gNSI.";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+  revision 2024-10-31 {
+    description
+      "SRLinux 24.10.1";
+  }
+  revision 2024-03-31 {
+    description
+      "SRLinux 24.3.1";
+  }
+  revision 2023-10-31 {
+    description
+      "SRLinux 23.10.1";
+  }
+  revision 2023-07-31 {
+    description
+      "SRLinux 23.7.1";
+  }
+
+  grouping counters {
+    description
+      "A collection of counters that were collected by the gNSI.authz
+       module while evaluating access to a RPC.";
+    leaf access-rejects {
+      type uint64;
+      description
+        "The total number of times the gNSI.authz module denied access
+         to a RPC.";
+    }
+    leaf last-access-reject {
+      type srl-comm:date-and-time-delta;
+      description
+        "A timestamp of the last time the gNSI.authz denied access to
+         a RPC.";
+    }
+    leaf access-accepts {
+      type uint64;
+      description
+        "The total number of times the gNSI.authz module allowed access
+         to a RPC.";
+    }
+    leaf last-access-accept {
+      type srl-comm:date-and-time-delta;
+      description
+        "A timestamp of the last time the gNSI.authz allowed access to
+         a RPC.";
+    }
+  }
+
+  grouping grpc-server-user-authz-policy-success-failure-counters {
+    description
+      "A collection of counters collected by the gNSI.authz module.";
+    list rpc {
+      description
+        "A collection of counters collected by the gNSI.authz module
+         for a RPC identified by the `name`.";
+      key "name";
+      leaf name {
+        type string;
+        description
+          "The name of the RPC the counters were collected
+           for.";
+      }
+      uses counters;
+    }
+  }
+
+  grouping grpc-server-authz-policy-success-failure-counters {
+    description
+      "A collection of counters collected by the gNSI.authz module.";
+    container counters {
+      description
+        "Enter the counters context
+
+         A collection of counters collected by the gNSI.authz module.";
+      config false;
+      uses grpc-server-user-authz-policy-success-failure-counters;
+    }
+  }
+
+  grouping authz-top {
+    description
+      "Grouping of Authz state paths";
+    container authz-policy {
+      config false;
+      description
+        "Enter the authz-policy context
+
+         Information relating to the active gRPC authorization policy
+
+         This policy is provided by the gNSI gRPC service, and can be changed using the gNSI.Authz.Rotate RPC";
+      leaf version {
+        description
+          "The version string as provided by the gNSI client at the time of uploading the policy
+
+           The maps to the version field within a UploadRequest message in the Authz protobuf.";
+        type string;
+      }
+      leaf created-on {
+        description
+          "The created on timestamp as provided by the gNSI client at the time of uploading the policy
+
+           This maps to the created_on field within a UploadRequest message in the Authz protobuf.";
+        type srl-comm:date-and-time-delta;
+      }
+      leaf policy {
+        description
+          "The policy definition
+
+           This JSON string contains the full gRPC authorization rules conforming to the gRPC authorization policy schema.
+
+           This maps to the policy field within a UploadRequest message in the Authz protobuf.";
+        type string;
+      }
+      uses grpc-server-authz-policy-success-failure-counters;
+      uses authz-policy-action;
+    }
+  }
+
+  grouping authz-policy-action {
+    action probe {
+      if-feature "srl-feat:tools-as-modeled-actions-different-output";
+      description
+        "Perform a test against the current policy
+
+         Both a user and rpc must be provided.";
+      input {
+        leaf user {
+          mandatory true;
+          type string;
+          description
+            "The user to test the current policy with
+
+             This can be either a SPIFFE URI or username.";
+        }
+        leaf rpc {
+          mandatory true;
+          type string {
+            pattern '/.+\..+/.+';
+          }
+          description
+            "The RPC to test access to as the provided user
+
+             This follows the gNSI gRPC path format, in that it is /<pkg>.<service>/<rpc>, for example /gnmi.gNMI/Get.";
+        }
+      }
+      output {
+        leaf version {
+          type string;
+          description
+            "Version string of the active gRPC authorization policy used when evaluating the probe.";
+        }
+        leaf authz-action {
+          type string;
+          description
+            "Authorization decision for the probed user and RPC.
+
+             Values follow the gNSI AuthzResponse.Action enumeration names: ACTION_PERMIT, ACTION_DENY, ACTION_UNSPECIFIED.";
+        }
+      }
+    }
+    action rotate {
+      if-feature "srl-feat:tools-as-modeled-actions-different-output";
+      description
+        "Perform a rotation of the Authz gRPC policy";
+      input {
+        leaf created-on {
+          type uint64;
+          units "seconds";
+          description
+            "Sets the created on value for the new policy
+
+             Value is the number of seconds since the epoch. For reference the current time from the epoch in most Linux distributions can be retrieved via 'date +%s'. You can also select a specific date via 'date -d \"2023-03-31\" +%s'.
+
+             If no value is provided the systems current date and time is used.";
+        }
+        leaf version {
+          type string;
+          description
+            "A version string to store with the policy
+
+             No constraints are applied other than the value must be a string.
+
+             If no value is provided no default is used.";
+        }
+        leaf policy {
+          mandatory true;
+          type string;
+          description
+            "Contains the gRPC authorization policy as a JSON-formatted string
+
+                         For example:
+                         {
+                           \"name\": \"Default policy\",
+                           \"allow_rules\": [{
+                             \"name\": \"admin-access\",
+                             \"source\": {
+                               \"principals\": [
+                                 \"admin\"
+                               ]
+                             },
+                             \"request\": {
+                               \"paths\": [
+                                 \"/*\"
+                               ]
+                             }
+                           }]
+                         }";
+        }
+      }
+      output {
+        leaf created-on {
+          type string;
+          description
+            "Policy created-on time reported with the rotation, formatted as an RFC 3339 timestamp in UTC.
+
+             The value uses the form YYYY-MM-DDThh:mm:ss.sssZ.";
+        }
+      }
+    }
+    action remove {
+      if-feature "srl-feat:tools-as-modeled-actions-same-output";
+      description
+        "Remove Authz authorization policy from the system
+
+         Since there is only a single system-wide gRPC authorization policy, it will revert its contents to the
+         factory default authorization policy which authorizes any gRPC calls for every user.";
+    }
+    action clear {
+      if-feature "srl-feat:tools-as-modeled-actions-same-output";
+      description
+        "Clear Authz authorization policy counters";
+    }
+  }
+
+  augment "/srl-system:system/srl-aaa:aaa/srl-aaa:authorization" {
+    if-feature "srl-feat:gnsi-authz";
+    uses authz-top;
+  }
+}

@@ -1,0 +1,116 @@
+module srl_nokia-bgp-evpn-layer-3-neighbor-sync {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:net-inst:bgp-evpn-layer-3-neighbor-sync";
+  prefix srl_nokia-bgp-evpn-layer-3-neighbor-sync;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-routing-policy {
+    prefix srl_nokia-routing-pol;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-policy-types {
+    prefix srl_nokia-pol-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file models configuration and state of layer-3 ARP and ND synchronization on non-IRB subinterfaces";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping route-internal-tags {
+    description
+      "Grouping containing the configuration of internal tags";
+    container internal-tags {
+      if-feature "srl_nokia-feat:internal-tags and srl_nokia-feat:evpn-route-internal-tags";
+      description
+        "Enter the internal-tags context
+
+         Configuration and state of internal tags";
+      leaf-list set-tag-set {
+        max-elements 1;
+        type leafref {
+          path "/srl_nokia-routing-pol:routing-policy/srl_nokia-routing-pol:tag-set/srl_nokia-routing-pol:name";
+        }
+        description
+          "Reference to a tag-set defined under routing-policy";
+      }
+    }
+  }
+
+  grouping bgp-evpn-layer-3-neighbor-sync-top {
+    description
+      "Grouping containing the configuration and state of layer-3 ARP and ND synchronization on non-IRB subinterfaces";
+    container layer-3-evpn-neighbor-synchronization {
+      if-feature "srl_nokia-feat:evpn-neighbor-synchronization";
+      presence "Enable EVPN neighbor synchronization on layer-3 interfaces";
+      must '(/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:ip-vrf") or (/srl_nokia-netinst:network-instance[srl_nokia-netinst:name = current()/../../srl_nokia-netinst:name]/srl_nokia-netinst:type = "srl_nokia-netinst:default")' {
+        error-message "The layer-3 EVPN neighbor synchronization on non-IRB subinterfaces is possible only on network-instances of type ip-vrf or default";
+      }
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "disable";
+        description
+          "Enables the EVPN neighbor synchronization on the non-IRB subinterfaces of the network-instance";
+      }
+      leaf route-distinguisher {
+        type srl_nokia-comm:route-distinguisher;
+        description
+          "Route Distinguisher (RD) used for layer-3 EVPN neighbor synchronization in the network-instance
+
+           It is mandatory to configure an RD for the layer-3 EVPN neighbor synchronization. The RD is used to distinguish the layer-3 EVPN
+           neighbor synchronization routes.";
+        must 'not(starts-with(string(.), "0:"))' {
+          error-message "invalid value 0:*";
+        }
+        must 'not(starts-with(string(.), "0.0:"))' {
+          error-message "invalid value 0.0:*";
+        }
+        must 'not(starts-with(string(.), "0.0.0.0:") and (number(substring-after(string(.), ":")) < 513))' {
+          error-message "route-distinguisher value reserved";
+        }
+        mandatory true;
+      }
+      leaf evi-route-target {
+        type srl_nokia-pol-types:bgp-ext-community-type;
+        description
+          "EVPN evi-route-target to use for the EVPN neighbor synchronization
+
+           It is mandatory to configure an evi-target for layer-3 EVPN neighbor synchronization. The evi-target is used to identify the layer-3 EVPN
+           neighbor synchronization routes in the network-instance. This value must be unique across all the network-instances.";
+        must "starts-with(.,'evi-target:')" {
+          error-message "invalid value, must start with 'evi-target:' (e.g. evi-target:1234:1234)";
+        }
+        mandatory true;
+      }
+      leaf retention-timer {
+        description
+          "Retention Timer that determines how long an EVPN ARP/ND entry is retained";
+        type uint32 {
+          range "0..65535";
+        }
+        default "0";
+        units "seconds";
+      }
+      uses route-internal-tags;
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses bgp-evpn-layer-3-neighbor-sync-top;
+  }
+}

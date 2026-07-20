@@ -1,0 +1,291 @@
+module srl_nokia-stp-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:stp:stp-types";
+  prefix srl_nokia-stp-types;
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This yang file contains common STP and MLD types and identities";
+
+  revision 2025-10-31 {
+    description
+      "SRLinux 25.10.1";
+  }
+  revision 2025-07-31 {
+    description
+      "SRLinux 25.7.1";
+  }
+  revision 2025-03-31 {
+    description
+      "SRLinux 25.3.1";
+  }
+
+  identity STP_PROTOCOL {
+    description
+      "base identity for support spanning tree protocol";
+  }
+
+  identity RSTP {
+    base STP_PROTOCOL;
+    description
+      "Rapid Spanning Tree Protocol";
+  }
+
+  identity MSTP {
+    base STP_PROTOCOL;
+    description
+      "Multiple Spanning Tree Protocol";
+  }
+
+  identity STP_PORT_STATE {
+    description
+      "Base identity for the different Spanning Tree Protocol port states";
+  }
+
+  identity LISTENING {
+    base STP_PORT_STATE;
+    description
+      "Listening port indicates port that is processing BPDUs and building active toplogy";
+  }
+
+  identity LEARNING {
+    base STP_PORT_STATE;
+    description
+      "Learning port indicates port that is building bridging tables; no forwarding of data";
+  }
+
+  identity BLOCKING {
+    base STP_PORT_STATE;
+    description
+      "Blocking port indicates port that would cause a loop if it were sending data. It only receivs BPDUs, until a topology change removes the possibliity of a loop";
+  }
+
+  identity FORWARDING {
+    base STP_PORT_STATE;
+    description
+      "Forwarding port indicates port that is operating normally, sending and receiving data";
+  }
+
+  identity DISCARDING {
+    base STP_PORT_STATE;
+    description
+      "Discarding port indicates port that is receiving and discarding data";
+  }
+
+  identity STP_EDGE_PORT {
+    description
+      "Base identity for the different edge port modes";
+  }
+
+  identity EDGE_ENABLE {
+    base STP_EDGE_PORT;
+    description
+      "Enable edge port for the bridge port";
+  }
+
+  identity EDGE_DISABLE {
+    base STP_EDGE_PORT;
+    description
+      "Disable edge port for the bridge port";
+  }
+
+  identity EDGE_AUTO {
+    base STP_EDGE_PORT;
+    description
+      "Auto detect edge port for the bridge port";
+  }
+
+  identity STP_PORT_ROLE {
+    description
+      "Base identity for the different Spanning Tree Protocol port roles";
+  }
+
+  identity ROOT {
+    base STP_PORT_ROLE;
+    description
+      "Root port role is assigned to the port that receives the best BPDU on a bridge.";
+  }
+
+  identity DESIGNATED {
+    base STP_PORT_ROLE;
+    description
+      "Designated port role is assigned to the port that can send the best BPDU on the segment to which it is connected.";
+  }
+
+  identity ALTERNATE {
+    base STP_PORT_ROLE;
+    description
+      "Alternate port role is assigned to the port that receives more useful BPDUs from another bridge and is blocked";
+  }
+
+  identity BACKUP {
+    base STP_PORT_ROLE;
+    description
+      "Backup port role is assigned to the port that receives more useful BPDUs from the same bridge it is on and is blocked";
+  }
+
+  identity MASTER {
+    base STP_PORT_ROLE;
+    description
+      "Master port role is assigned to the port that connects an MST Region to the Root Bridge of the entire network";
+  }
+
+  identity DISABLED {
+    base STP_PORT_STATE;
+    base STP_PORT_ROLE;
+    description
+      "Disabled Port is the port that is isolated from network, either administratively down or failed";
+  }
+
+  typedef bridge-priority-type {
+    type uint16 {
+      range "0..61440";
+    }
+    default "32768";
+    description
+      "Priority component of the Bridge Identifier
+
+       The bridge-priority command is used to populate the priority portion
+       of the bridge ID field within outbound BPDUs (the most significant 4
+       bits of the bridge ID). It is also used as part of the decision process
+       when determining the best BPDU between messages received and sent.
+       When running MSTP, this is the bridge priority used for the CIST.
+
+       All values are truncated to multiples of 4096";
+  }
+
+  typedef protocol-mode-type {
+    type enumeration {
+      enum rstp;
+      enum mstp;
+    }
+    description
+      "Protocol Mode defined by standard
+
+       Following variants of the Spanning Tree protocol are supported for configuration:
+       rstp
+       Rapid Spanning Tree Protocol (RSTP) compliant with IEEE 802.1D-2004.
+       mstp
+       Compliant with the Multiple Spanning Tree Protocol specified in
+       IEEE 802.1Q REV/D5.0-09/2005.";
+  }
+
+  typedef oper-protocol-mode-type {
+    type enumeration {
+      enum stp;
+      enum rstp;
+      enum mstp;
+    }
+    description
+      "Operational Stp protocol mode variants supported";
+  }
+
+  typedef oper-bpdu-encap-type {
+    type enumeration {
+      enum dot1d;
+      enum pvst;
+    }
+    description
+      "Operational Bpdu encapsulation type supported";
+  }
+
+  typedef path-cost-type {
+    type uint32 {
+      range "1..200000000";
+    }
+    description
+      "The interface path-cost is used by STP to calculate the path cost to the root bridge
+
+       STP defined this as a function of link bandwidth
+       but this configuration is static.";
+  }
+
+  typedef port-priority-type {
+    type uint8 {
+      range "0..255";
+    }
+    description
+      "The manageable component of the Port Identifier, also known as the Port Priority";
+  }
+
+  typedef port-num-type {
+    type uint32 {
+      range "1..2047";
+    }
+    description
+      "The virtual port number uniquely identifies subinterface within configuration BPDUs
+
+       The internal representation is unique to a system
+       and has a reference space much bigger than the 12 bits definable in a
+       configuration BPDU. STP takes the internal representation value and
+       identifies it with its own virtual port number that is unique to every
+       other subinterface defined on the Mac-Vrf. The virtual port number is
+       assigned at the time that the subinterface is added to the Mac-Vrf.
+       The virtual port number can be specified explicitly or system generated";
+  }
+
+  typedef edge-port-type {
+    type identityref {
+      base STP_EDGE_PORT;
+    }
+    description
+      "Modes of Edge-Port";
+  }
+
+  grouping stp-edge-port {
+    leaf edge-port {
+      type edge-port-type;
+      default "EDGE_AUTO";
+    }
+  }
+
+  typedef link-type-type {
+    type enumeration {
+      enum P2P {
+        description
+          "Point-to-Point link";
+      }
+      enum SHARED {
+        description
+          "Shared link";
+      }
+    }
+    description
+      "Type definition for the different interface link types";
+  }
+
+  typedef guard-type {
+    type enumeration {
+      enum ROOT {
+        description
+          "Enable root guard";
+      }
+      enum NONE {
+        description
+          "Disable guard";
+      }
+    }
+    description
+      "Type of Guard either Root or Loop";
+  }
+
+  typedef port-state-type {
+    type identityref {
+      base STP_PORT_STATE;
+    }
+    description
+      "Stp Port state";
+  }
+
+  typedef port-role-type {
+    type identityref {
+      base STP_PORT_ROLE;
+    }
+    description
+      "Stp port role";
+  }
+}

@@ -1,0 +1,316 @@
+module srl_nokia-rsvp {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:mpls:rsvp";
+  prefix srl_nokia-rsvp;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-system {
+    prefix srl_nokia-system;
+  }
+  import srl_nokia-mpls-label-management {
+    prefix srl_nokia-mplslbl;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+  import srl_nokia-interfaces {
+    prefix srl_nokia-if;
+  }
+  import srl_nokia-traffic-engineering {
+    prefix srl_nokia-te;
+  }
+  import srl_nokia-rsvp-types {
+    prefix srl_nokia-rsvp-types;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG module defines the configuration and state components for the management of the Resource reSerVation Protocol (RSVP).";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping rsvp-state {
+    description
+      "SR Linux RSVP base protocol state";
+    leaf dynamic-label-block-status {
+      config false;
+      if-feature "srl_nokia-feat:label-management";
+      type enumeration {
+        enum available;
+        enum unavailable;
+      }
+      description
+        "Status of the label block
+
+         The label block may show as unavailable if there is pending cleanup";
+    }
+    leaf oper-state {
+      config false;
+      type srl_nokia-comm:oper-state;
+      description
+        "The operational state of RSVP";
+    }
+  }
+
+  grouping rsvp-interface-state {
+    description
+      "SR Linux RSVP interface state";
+    leaf oper-state {
+      config false;
+      type srl_nokia-comm:oper-state;
+      description
+        "The operational state of the RSVP interface";
+    }
+  }
+
+  grouping rsvp-config {
+    description
+      "SR Linux RSVP base protocol configuration.";
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Administrative state of RSVP";
+    }
+    leaf dynamic-label-block {
+      if-feature "srl_nokia-feat:label-management";
+      mandatory true;
+      type leafref {
+        path "/srl_nokia-system:system/srl_nokia-mplslbl:mpls/srl_nokia-mplslbl:label-ranges/srl_nokia-mplslbl:dynamic/srl_nokia-mplslbl:name";
+      }
+      description
+        "Reference to a dynamic label block to use for RSVP";
+    }
+    leaf graceful-shutdown {
+      type boolean;
+      default "false";
+      description
+        "Initiate a graceful shutdown of all RSVP interfaces on the node";
+    }
+    leaf implicit-null-label {
+      type boolean;
+      default "false";
+      description
+        "Signal the implicit null option for all RSVP LSPs";
+    }
+    container soft-premption {
+      description
+        "Enter the soft-premption context";
+      leaf admin-state {
+        type srl_nokia-comm:admin-state;
+        default "enable";
+        description
+          "Administrative state of soft preemption
+
+           Enable or disable soft preemption.";
+      }
+      leaf preemption-timeout {
+        type uint32 {
+          range "1..1800";
+        }
+        units "seconds";
+        default "300";
+        description
+          "Preemption timer for the RSVP instance";
+      }
+    }
+    container refresh-attributes {
+      description
+        "Enter the refresh-attributes context";
+      leaf keep-multiplier {
+        type uint32 {
+          range "1..255";
+        }
+        default "3";
+        description
+          "Value for the keep-multiplier to declare a reservation or neighbor as down";
+      }
+      leaf refresh-time {
+        type uint32 {
+          range "1..65535";
+        }
+        units "seconds";
+        default "30";
+        description
+          "Interval between refresh messages";
+      }
+    }
+    container traffic-engineering-thresholds {
+      description
+        "Enter the traffic-engineering-thresholds context";
+      leaf-list down-threshold {
+        type srl_nokia-rsvp-types:rsvp-te-threshold-level;
+        max-elements 16;
+        ordered-by user;
+        description
+          "Values for the down-threshold";
+      }
+      leaf-list up-threshold {
+        type srl_nokia-rsvp-types:rsvp-te-threshold-level;
+        max-elements 16;
+        ordered-by user;
+        description
+          "Values for the up-threshold";
+      }
+      leaf update-on-cac-failure {
+        type boolean;
+        default "false";
+        description
+          "CAC (Call Admission Control) failure-triggered IGP update";
+      }
+      leaf update-timer {
+        type uint32 {
+          range "1..300";
+        }
+        units "seconds";
+        description
+          "Timer-based IGP updates";
+      }
+    }
+  }
+
+  grouping rsvp-interface-config {
+    leaf admin-state {
+      type srl_nokia-comm:admin-state;
+      default "disable";
+      description
+        "Administrative state of RSVP interface";
+    }
+    container interface-ref {
+      description
+        "Enter the interface-ref context
+
+         Reference to a subinterface";
+      leaf interface {
+        type leafref {
+          path "/srl_nokia-if:interface/srl_nokia-if:name";
+        }
+        description
+          "Reference to a base interface, for example a port or LAG";
+        must '../subinterface' {
+          error-message "subinterface must be configured when interface is set";
+        }
+        must "starts-with(., 'system0') or starts-with(., 'lo') or starts-with(., 'ethernet') or starts-with(., 'lag')" {
+          error-message "RSVP is only supported on System, Loopback, Ethernet and LAG subinterfaces";
+        }
+      }
+      leaf subinterface {
+        description
+          "Reference to a subinterface
+
+            This requires the base interface to be specified using the interface leaf in this container.";
+        type leafref {
+          path "/srl_nokia-if:interface[srl_nokia-if:name=current()/../interface]/srl_nokia-if:subinterface/srl_nokia-if:index";
+        }
+        must '../interface' {
+          error-message "Interface must be configured when subinterface is set";
+        }
+      }
+    }
+    leaf graceful-shutdown {
+      type boolean;
+      default "false";
+      description
+        "Initiate a graceful shutdown of an RSVP interface";
+    }
+    leaf hello-interval {
+      type union {
+        type uint32 {
+          range "1..60";
+        }
+        type enumeration {
+          enum disable {
+            value 0;
+          }
+        }
+      }
+      units "seconds";
+      default "3";
+      description
+        "Time between RSVP Hello messages";
+    }
+    leaf subscription {
+      type uint32 {
+        range "0..1000";
+      }
+      default "100";
+      description
+        "Percentage of the link bandwidth to use for reservation";
+    }
+    leaf implicit-null-label {
+      type boolean;
+      description
+        "Signal the implicit null label value for all LSPs.
+
+          If no value is configured, the setting is inherited from the global RSVP configuration.";
+    }
+    container traffic-engineering-thresholds {
+      description
+        "Enter the traffic-engineering-thresholds context";
+      leaf-list down-threshold {
+        type srl_nokia-rsvp-types:rsvp-te-threshold-level;
+        max-elements 16;
+        ordered-by user;
+        description
+          "Values for the te-down-threshold.
+
+            If no value is configured, the setting is inherited from the global RSVP configuration.";
+      }
+      leaf-list up-threshold {
+        type srl_nokia-rsvp-types:rsvp-te-threshold-level;
+        max-elements 16;
+        ordered-by user;
+        description
+          "Values for the te-up-threshold.
+
+            If no value is configured, the setting is inherited from the global RSVP configuration.";
+      }
+    }
+  }
+
+  grouping rsvp-top {
+    container rsvp {
+      if-feature "srl_nokia-feat:rsvp";
+      presence "Configure RSVP";
+      description
+        "Top-level configuration and operational state for Resource reSerVation Protocol (RSVP)";
+      must "current()/../../srl_nokia-netinst:type = 'srl_nokia-netinst:default'" {
+        error-message "RSVP configuration only supported with network instance type default";
+      }
+      uses rsvp-config;
+      uses rsvp-state;
+      container interface-attributes {
+        description
+          "Enter the interface-attributes context";
+        list interface {
+          description
+            "List of RSVP interfaces";
+          key "interface-name";
+          leaf interface-name {
+            type srl_nokia-netinst:network-instance-subintf-name;
+            description
+              "Name of the RSVP interface";
+          }
+          uses rsvp-interface-config;
+          uses rsvp-interface-state;
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance/srl_nokia-netinst:protocols" {
+    uses rsvp-top;
+  }
+}

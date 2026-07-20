@@ -1,0 +1,109 @@
+module srl_nokia-programming-errors {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:fib:programming-errors";
+  prefix srl_nokia-prog-errors;
+
+  import srl_nokia-common {
+    prefix srl_nokia-comm;
+  }
+  import srl_nokia-network-instance {
+    prefix srl_nokia-netinst;
+  }
+  import srl_nokia-ip-route-tables {
+    prefix srl_nokia-rt;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module provides detailed information about the hardware programming
+     state of various types of routes within a particular network instance.
+     It can be used to track where there are routing hardware programming errors
+     on a device.";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping programming-errors-top {
+    description
+      "Top-level grouping for AFT hardware programming errors";
+    container programming-errors {
+      config false;
+      description
+        "Enter the programming-errors context
+
+         Information about AFT programming errors affecting the network-instance";
+      container ip-routes {
+        description
+          "Enter the ip-routes context
+
+           Information about IP route hardware programming errors";
+        leaf total-errors {
+          type srl_nokia-comm:zero-based-counter64;
+          description
+            "Total number of IP route hardware programming errors encountered
+
+             Sum of failed routes, stale routes and drop routes";
+        }
+        list failed-route {
+          key "prefix";
+          description
+            "List of failed route prefixes
+
+             A failed route is a route that should be in the IP FIB (AFT) table but it is not because the attempt to add it failed. Traffic destined for
+             this prefix will not be matched.";
+          uses route-state-common;
+        }
+        list stale-route {
+          key "prefix";
+          description
+            "List of stale route prefixes
+
+             A stale route is a route that is currently installed in IP FIB (AFT) table but a recent attempt to modify its programming state failed. Traffic destined for
+             this prefix may be forwarded incorrectly.";
+          uses route-state-common;
+        }
+        list drop-route {
+          key "prefix";
+          description
+            "List of blackhole route prefixes
+
+             A drop route is a route that is installed in IP FIB (AFT) table but its programming was temporarily overriden to be a drop action due to a lack of dependent resources. Traffic destined for this prefix is currently being dropped.";
+          uses route-state-common;
+        }
+      }
+    }
+  }
+
+  grouping route-state-common {
+    description
+      "Common parameters that correspond to a particular route type.";
+    leaf prefix {
+      type srl_nokia-comm:ip-prefix;
+      description
+        "The IPv4 or IPv6 prefix that the route state corresponds to";
+    }
+    leaf time {
+      type srl_nokia-comm:date-and-time-delta;
+      description
+        "Time when the route programming error was first detected (by one of the forwarding complexes)";
+    }
+    leaf-list forwarding-complexes-with-errors {
+      type srl_nokia-rt:failed-complex-list-including-control;
+      description
+        "The list of linecard forwarding complexes with errors";
+    }
+  }
+
+  augment "/srl_nokia-netinst:network-instance" {
+    description
+      "Augment the network-instance model with the hardware programming
+       errors container.";
+    uses programming-errors-top;
+  }
+}

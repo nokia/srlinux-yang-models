@@ -1,0 +1,141 @@
+module srl_nokia-bgp-bmp-types {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:bgp:bmp-types";
+  prefix srl_nokia-bgp-bmp-types;
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This YANG module defines types and identities for BGP Monitoring Protocol (BMP)";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  identity route-monitoring-policy {
+    description
+      "Base identity for BMP route monitoring policy types";
+  }
+
+  identity pre-policy-rib-in {
+    base route-monitoring-policy;
+    description
+      "Monitor Adj-RIB-In before import policy application";
+  }
+
+  identity post-policy-rib-in {
+    base route-monitoring-policy;
+    description
+      "Monitor Adj-RIB-In after import policy application";
+  }
+
+  identity rib-out {
+    base route-monitoring-policy;
+    description
+      "Monitor Adj-RIB-Out (future enhancement)";
+  }
+
+  identity local-rib {
+    base route-monitoring-policy;
+    description
+      "Monitor Loc-RIB (future enhancement)";
+  }
+
+  typedef session-state {
+    type enumeration {
+      enum idle {
+        value 0;
+        description
+          "BMP session is not established";
+      }
+      enum connecting {
+        value 1;
+        description
+          "BMP session is attempting to connect";
+      }
+      enum established {
+        value 2;
+        description
+          "BMP session is established";
+      }
+      enum terminating {
+        value 3;
+        description
+          "BMP session is terminating";
+      }
+    }
+    description
+      "Operational state of the BMP session";
+  }
+
+  typedef connection-mode {
+    type enumeration {
+      enum active {
+        description
+          "Router initiates connection to collector";
+      }
+      enum passive {
+        description
+          "Router listens for collector connection";
+      }
+    }
+    description
+      "BMP connection mode";
+  }
+
+  typedef bmp-error-code {
+    type enumeration {
+      enum none {
+        value 0;
+        description
+          "No error";
+      }
+      enum connection-failed {
+        value 1;
+        description
+          "Failed to establish TCP connection to collector";
+      }
+      enum authentication-failed {
+        value 2;
+        description
+          "TCP MD5 authentication failed";
+      }
+      enum send-failed {
+        value 3;
+        description
+          "Failed to send BMP message to collector";
+      }
+      enum buffer-overflow {
+        value 4;
+        description
+          "BMP message buffer overflow";
+      }
+      enum configuration-error {
+        value 5;
+        description
+          "BMP configuration error";
+      }
+      enum collector-closed {
+        value 6;
+        description
+          "Collector closed the connection";
+      }
+      enum keepalive-timeout {
+        value 7;
+        description
+          "TCP keepalive timeout";
+      }
+      enum resource-exhaustion {
+        value 8;
+        description
+          "System resource exhaustion";
+      }
+    }
+    description
+      "Error codes for BMP operations";
+  }
+}

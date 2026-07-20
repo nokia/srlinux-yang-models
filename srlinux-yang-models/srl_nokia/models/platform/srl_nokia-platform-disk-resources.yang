@@ -1,0 +1,80 @@
+module srl_nokia-platform-disk-resources {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:chassis:platform-disk-resources";
+  prefix srl_nokia-platform-disk-res;
+
+  import srl_nokia-common {
+    prefix srl-comm;
+  }
+  import srl_nokia-platform {
+    prefix srl_nokia-platform;
+  }
+  import srl_nokia-platform-resource-monitoring {
+    prefix srl_nokia-platform-res-mon;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "Disk partition resource-monitoring configuration under platform resource-monitoring.";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  identity disk-resources {
+    description
+      "Base type for disk resources";
+  }
+
+  identity percent-used {
+    base disk-resources;
+    description
+      "Percentage of the partition in use";
+  }
+
+  grouping disk-resource-monitoring {
+    container disk {
+      description
+        "Enter the disk context
+
+         Container for monitoring disk resources";
+      container partition {
+        description
+          "Enter the partition context
+
+           Container for monitoring partition resources";
+        list resource {
+          key "name";
+          leaf name {
+            type identityref {
+              base disk-resources;
+            }
+            description
+              "List of disk partition resources";
+          }
+          leaf rising-threshold-log {
+            type srl-comm:percentage;
+            default "90";
+            description
+              "Sets the threshold that triggers the generation of a WARNING log whenever the utilization of the disk partition reaches this value in a rising direction";
+          }
+          leaf falling-threshold-log {
+            type srl-comm:percentage;
+            default "70";
+            description
+              "Sets the threshold that triggers the generation of a NOTICE log whenever the utilization of the disk partition reaches this value in a falling direction";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl_nokia-platform:platform/srl_nokia-platform-res-mon:resource-monitoring" {
+    uses disk-resource-monitoring;
+  }
+}

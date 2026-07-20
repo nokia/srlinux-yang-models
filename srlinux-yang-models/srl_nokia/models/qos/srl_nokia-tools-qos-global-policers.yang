@@ -1,0 +1,51 @@
+module srl_nokia-tools-qos-global-policers {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:qos:tools-qos-global-policers";
+  prefix srl_nokia-tools-qos-global-pol;
+
+  import srl_nokia-tools-qos {
+    prefix srl_nokia-tools-qos;
+  }
+  import srl_nokia-features {
+    prefix srl_nokia-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping tools-global-policers-top {
+    container policers {
+      list policer {
+        key "name";
+        description
+          "List of global policers";
+        leaf name {
+          type string;
+          description
+            "Name of the global policer.";
+        }
+        leaf clear-stats {
+          type empty;
+          description
+            "Clear statistics for this global policer";
+        }
+      }
+      description
+        "Enter the policers context";
+    }
+  }
+
+  augment "/srl_nokia-tools-qos:qos" {
+    uses tools-global-policers-top {
+      if-feature "srl_nokia-feat:qos-global-policers";
+    }
+  }
+}

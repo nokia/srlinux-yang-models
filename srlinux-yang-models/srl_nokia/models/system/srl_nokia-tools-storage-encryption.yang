@@ -1,0 +1,69 @@
+module srl_nokia-tools-storage-encryption {
+  yang-version 1.1;
+  namespace "urn:nokia.com:srlinux:system:tools-storage-encryption";
+  prefix srl-tools-storage-encryption;
+
+  import srl_nokia-tools-system {
+    prefix srl-tools-system;
+  }
+  import srl_nokia-features {
+    prefix srl-feat;
+  }
+
+  organization
+    "Nokia";
+  contact
+    "Nokia SR Linux Support
+     Web: <http://www.nokia.com>";
+  description
+    "This module defines operational commands related to system storage encryption.";
+
+  revision 2026-07-31 {
+    description
+      "SRLinux 26.7.1";
+  }
+
+  grouping storage-encryption-tools-top {
+    container storage-encryption {
+      presence "Configure tools system storage-encryption";
+      description
+        "Top-level container for operational commands related to system storage encryption.";
+      container primary-secret {
+        presence "Manage the primary secret";
+        description
+          "Operational commands for the primary secret used for storage encryption.";
+        container set-secret {
+          presence "Set primary secret";
+          description
+            "Set or rotate the primary secret. When configuring the primary
+             secret for the first time, omit old-secret. To rotate an existing
+             primary secret, provide the current value in old-secret.";
+          leaf new-secret {
+            mandatory true;
+            type string {
+              length "12..128" {
+                error-message "primary secret must be between 12 and 128 characters";
+              }
+            }
+            description
+              "The new primary secret";
+          }
+          leaf old-secret {
+            type string {
+              length "12..128" {
+                error-message "primary secret must be between 12 and 128 characters";
+              }
+            }
+            description
+              "The current primary secret";
+          }
+        }
+      }
+    }
+  }
+
+  augment "/srl-tools-system:system" {
+    if-feature "srl-feat:central-security-module";
+    uses storage-encryption-tools-top;
+  }
+}
