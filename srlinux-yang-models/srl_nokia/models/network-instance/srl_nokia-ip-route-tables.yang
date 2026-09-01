@@ -401,12 +401,12 @@ module srl_nokia-ip-route-tables {
     leaf resilient-hash {
       type boolean;
       description
-        "Set to true if the route is covered by a resilient-hash-prefix entry";
+        "Set to true if the route is covered by a resilient-hash-prefix entry or policy action applied in this network-instance";
     }
     leaf dynamic-load-balancing {
       type boolean;
       description
-        "Set to true if the route is covered by a dynamic-load-balancing prefix
+        "Set to true if the route is covered by a dynamic-load-balancing prefix configured in this network-instance
 
          True does not guarantee that the route is programmed for DLB. This information is found in the NHG used by the route";
     }
@@ -486,13 +486,17 @@ module srl_nokia-ip-route-tables {
       leaf resilient-hash-routes {
         type uint32;
         description
-          "The total number of prefixes, belonging to this address family, with an active route in the FIB that have resilient hash support";
+          "The total number of prefixes, belonging to this address family, with an active route in the FIB that have resilient hash support
+
+           This count excludes routes with resilient hashing behavior enabled by configuration in another network-instance and then leaked into this network-instance.";
       }
       leaf dynamic-load-balancing-routes {
         if-feature "srl-feat:route-table-show-report-improvements";
         type uint32;
         description
-          "The total number of prefixes, belonging to this address family, with an active route in the FIB that has dynamic LB support";
+          "The total number of prefixes, belonging to this address family, with an active route in the FIB that has dynamic LB support
+
+           This count excludes routes with dynamic load-balancing behavior enabled by configuration in another network-instance and then leaked into this network-instance.";
       }
       leaf fib-failed-routes {
         type uint32;

@@ -187,7 +187,15 @@ module srl_nokia-platform-resource-mgmt {
           "Enter the unified-forwarding-resources context
 
            Container for managing Broadcom-specific UFT resources.";
+        leaf chassis-reboot-required {
+          if-feature "srl-feat:xdp-restart-unsupported";
+          config false;
+          type boolean;
+          description
+            "Reads true if the user has committed a change to one or more of the configurable values in the uft container but has not yet saved the config and restarted the system, so the operational values are still the values initialized at the last system restart.";
+        }
         leaf xdp-restart-required {
+          if-feature "not srl-feat:xdp-restart-unsupported";
           config false;
           type boolean;
           description

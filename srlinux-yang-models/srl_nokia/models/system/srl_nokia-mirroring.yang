@@ -274,7 +274,7 @@ module srl_nokia-mirroring {
 
   grouping mirror-destination-top {
     description
-      "Top-level grouping containing local/remote mirror destination";
+      "Top-level grouping containing local, remote, or pcap mirror destination";
     container mirror-destination {
       description
         "Enter the mirror-destination context
@@ -289,11 +289,15 @@ module srl_nokia-mirroring {
         description
           "Specify mirrored pacekt slice size. This value specifies number of bytes that should be mirrored from the beginning of the original data packet.";
       }
+      // mirror destination can be local, remote, or pcap within the same mirror-instance
       leaf local {
         if-feature "srl-feat:mirror-dest-local";
         description
           "subinterface of type local-mirror-dest used as local mirror destination";
         type mirroring-instance-subintf-ref;
+        must 'not(../remote) and not(../pcap)' {
+          error-message "mirror destination can be local, remote, or pcap within the same mirror-instance";
+        }
         must "/srl_nokia-if:interface[srl_nokia-if:name=substring-before(current(), '.')]/srl_nokia-if:subinterface[srl_nokia-if:index=substring-after(current(), '.')]/srl_nokia-if:type = 'local-mirror-dest'" {
           error-message "local-mirror-destination is only allowed on subinterfaces with type local-mirror-dest";
         }
@@ -301,8 +305,8 @@ module srl_nokia-mirroring {
       container remote {
         presence "configure remote mirror destination";
         if-feature "srl-feat:mirror-dest-remote";
-        must 'current() and not(../local)' {
-          error-message "mirror destination can be either local or remote within the same mirror-instance";
+        must 'current() and not(../local) and not(../pcap)' {
+          error-message "mirror destination can be local, remote, or pcap within the same mirror-instance";
         }
         must '(tunnel-end-points/source-address and tunnel-end-points/destination-address)' {
           error-message "tunnel source-address and destination-address must be specified";
@@ -429,6 +433,11 @@ module srl_nokia-mirroring {
         }
       }
       container pcap {
+        presence "configure pcap mirror destination";
+        if-feature "srl-feat:mirror-dest-pcap-internal-capture-if";
+        must 'current() and not(../local) and not(../remote)' {
+          error-message "mirror destination can be local, remote, or pcap within the same mirror-instance";
+        }
         description
           "Enter the pcap context
 
